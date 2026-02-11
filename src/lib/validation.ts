@@ -1,0 +1,123 @@
+import { type CliError, ErrorCode, createError } from "./errors.js";
+
+/**
+ * Validate an OmniFocus ID string.
+ * IDs are alphanumeric with possible dashes/underscores.
+ * Returns null if valid, or a CliError if invalid.
+ */
+export function validateId(
+  id: string,
+  type: "task" | "project" | "tag"
+): CliError | null {
+  if (!id || id.trim() === "") {
+    return createError(
+      ErrorCode.INVALID_ID_FORMAT,
+      `${capitalize(type)} ID cannot be empty`
+    );
+  }
+
+  // OmniFocus IDs are typically alphanumeric with possible dashes/underscores
+  // They should not contain special characters that could be used for injection
+  const idPattern = /^[a-zA-Z0-9_-]+$/;
+  if (!idPattern.test(id)) {
+    return createError(
+      ErrorCode.INVALID_ID_FORMAT,
+      `Invalid ${type} ID format: ${id}`,
+      "IDs must contain only alphanumeric characters, dashes, and underscores"
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Validate a date string for use with AppleScript.
+ * Returns null if valid (or empty), or a CliError if invalid.
+ *
+ * Note: We do basic validation here; the actual date parsing
+ * is done by AppleScript and more detailed errors come from there.
+ */
+export function validateDateString(dateStr: string): CliError | null {
+  // Empty dates are valid (used to clear a date)
+  if (!dateStr || dateStr.trim() === "") {
+    return null;
+  }
+
+  // Check for obvious injection attempts
+  // AppleScript date strings should not contain quotes or backslashes
+  if (dateStr.includes('"') || dateStr.includes("\\")) {
+    return createError(
+      ErrorCode.INVALID_DATE_FORMAT,
+      "Invalid characters in date string",
+      "Date strings cannot contain quotes or backslashes"
+    );
+  }
+
+  // Basic format check - should look like a date
+  // AppleScript accepts various formats like "January 1, 2024" or "1/1/2024 5:00 PM"
+  // We allow letters, numbers, spaces, slashes, colons, commas, and dashes
+  const datePattern = /^[a-zA-Z0-9\s/:,.-]+$/;
+  if (!datePattern.test(dateStr)) {
+    return createError(
+      ErrorCode.INVALID_DATE_FORMAT,
+      `Invalid date format: ${dateStr}`
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Validate a list of tag names.
+ * Returns null if valid, or a CliError if any tag is invalid.
+ */
+export function validateTags(tags: string[] | undefined): CliError | null {
+  if (!tags || tags.length === 0) {
+    return null;
+  }
+
+  for (const tag of tags) {
+    if (!tag || tag.trim() === "") {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "Tag name cannot be empty"
+      );
+    }
+
+    // Tag names should not contain characters that could cause injection
+    if (tag.includes('"') || tag.includes("\\")) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        `Invalid characters in tag name: ${tag}`,
+        "Tag names cannot contain quotes or backslashes"
+      );
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Validate a project name.
+ * Returns null if valid (or empty), or a CliError if invalid.
+ */
+export function validateProjectName(name: string | undefined): CliError | null {
+  if (!name || name.trim() === "") {
+    return null;
+  }
+
+  // Project names should not contain characters that could cause injection
+  if (name.includes('"') || name.includes("\\")) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      `Invalid characters in project name: ${name}`,
+      "Project names cannot contain quotes or backslashes"
+    );
+  }
+
+  return null;
+}
+
+function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
