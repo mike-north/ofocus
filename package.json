@@ -1,11 +1,11 @@
 {
-  "name": "of-cli",
+  "name": "ofocus",
   "version": "0.0.1",
   "description": "OmniFocus CLI for AI agents",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "of": "./dist/index.js"
+    "ofocus": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",

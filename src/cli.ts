@@ -55,7 +55,7 @@ export function createCli(): Command {
   const program = new Command();
 
   program
-    .name("of")
+    .name("ofocus")
     .description("OmniFocus CLI for AI agents")
     .version("0.0.1");
 
