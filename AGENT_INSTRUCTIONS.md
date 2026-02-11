@@ -212,7 +212,7 @@ const result = await addToInbox("Review PR #123", {
 });
 
 if (result.success) {
-  console.log("Created task:", result.data.taskId);
+  console.log("Created task:", result.data.id);
 } else {
   console.error("Error:", result.error.message);
 }
@@ -232,10 +232,10 @@ const updated = await updateTask("task-id-here", {
 
 ### Result Handling
 
-All SDK functions return a `Promise<AppleScriptResult<T>>`:
+All SDK functions return a `Promise<CliOutput<T>>`:
 
 ```typescript
-interface AppleScriptResult<T> {
+interface CliOutput<T> {
   success: boolean;
   data: T | null;
   error: CliError | null;
@@ -243,9 +243,11 @@ interface AppleScriptResult<T> {
 
 // Using type guards
 if (result.success) {
-  // result.data is T
+  // result.data is T (e.g., OFTask for addToInbox)
+  console.log("Task ID:", result.data.id);
 } else {
   // result.error contains code, message, details
+  console.error(result.error.message);
 }
 ```
 

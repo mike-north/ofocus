@@ -77,4 +77,4 @@ await completeTask("task-id-here");
 
 ## License
 
-UNLICENSED
+MIT

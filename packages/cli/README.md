@@ -10,27 +10,29 @@ pnpm add @ofocus/cli
 
 ## Usage
 
+> **Note:** The `@ofocus/cli` package installs as `ofocus-cli`. For the `ofocus` command, install the umbrella package: `pnpm add ofocus`
+
 ```bash
 # Add a task to the inbox
-ofocus inbox "Buy groceries" --note "Milk, eggs, bread" --due "tomorrow" --flag
+ofocus-cli inbox "Buy groceries" --note "Milk, eggs, bread" --due "tomorrow" --flag
 
 # Query tasks
-ofocus tasks --flagged --available
+ofocus-cli tasks --flagged --available
 
 # Query projects
-ofocus projects --status active
+ofocus-cli projects --status active
 
 # Query tags
-ofocus tags
+ofocus-cli tags
 
 # Complete a task
-ofocus complete <task-id>
+ofocus-cli complete <task-id>
 
 # Update a task
-ofocus update <task-id> --title "New title" --due "next week"
+ofocus-cli update <task-id> --title "New title" --due "next week"
 
 # List available commands
-ofocus list-commands
+ofocus-cli list-commands
 ```
 
 ## Output Formats
@@ -38,13 +40,13 @@ ofocus list-commands
 By default, output is JSON for machine parsing:
 
 ```bash
-ofocus tasks --flagged
+ofocus-cli tasks --flagged
 ```
 
 Use `--human` for human-readable output:
 
 ```bash
-ofocus tasks --flagged --human
+ofocus-cli tasks --flagged --human
 ```
 
 ## Commands
@@ -70,4 +72,4 @@ cli.parse(["node", "ofocus", "tasks", "--flagged"]);
 
 ## License
 
-UNLICENSED
+MIT

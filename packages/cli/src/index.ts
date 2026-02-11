@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import { pathToFileURL } from "node:url";
+import { resolve } from "node:path";
+
 // Re-export CLI utilities
 export { createCli, outputJson, outputHuman } from "./cli.js";
 export { output } from "./output.js";
@@ -12,7 +15,9 @@ import { createCli } from "./cli.js";
 // Only parse if this is the main module (CLI entry point)
 // Check if running as a script vs being imported as a module
 const scriptPath = process.argv[1];
-const isMainModule = scriptPath !== undefined && import.meta.url === `file://${scriptPath}`;
+const isMainModule =
+  scriptPath !== undefined &&
+  pathToFileURL(resolve(scriptPath)).href === import.meta.url;
 if (isMainModule) {
   createCli().parse();
 }

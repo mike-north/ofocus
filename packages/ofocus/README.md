@@ -67,4 +67,4 @@ This package re-exports:
 
 ## License
 
-UNLICENSED
+MIT

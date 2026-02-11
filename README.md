@@ -96,7 +96,7 @@ pnpm --filter @ofocus/sdk run docs
 ## Architecture
 
 ```
-of-cli/
+ofocus/
 ├── packages/
 │   ├── sdk/           # @ofocus/sdk - Core SDK
 │   │   ├── src/
