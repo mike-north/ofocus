@@ -1,22 +1,25 @@
 {
-  "name": "ofocus",
+  "name": "ofocus-monorepo",
+  "private": true,
   "version": "0.0.1",
-  "description": "OmniFocus CLI for AI agents",
+  "description": "OmniFocus CLI for AI agents - monorepo",
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "ofocus": "./dist/index.js"
-  },
   "scripts": {
-    "build": "tsc",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
+    "build": "tsc --build",
+    "build:clean": "tsc --build --clean && tsc --build",
+    "lint": "eslint packages/*/src",
+    "lint:fix": "eslint packages/*/src --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=unit",
-    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=integration",
-    "typecheck": "tsc --noEmit"
+    "test": "pnpm -r run test",
+    "test:unit": "pnpm -r run test:unit",
+    "typecheck": "tsc --build --noEmit",
+    "knip": "knip",
+    "syncpack:check": "syncpack lint",
+    "syncpack:fix": "syncpack fix-mismatches",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "keywords": [
     "omnifocus",
@@ -25,25 +28,35 @@
     "applescript"
   ],
   "author": "",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mnorth/ofocus.git"
+  },
+  "homepage": "https://github.com/mnorth/ofocus#readme",
+  "bugs": {
+    "url": "https://github.com/mnorth/ofocus/issues"
+  },
   "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@changesets/cli": "^2.29.8",
+    "@eslint/js": "^9.20.0",
     "@jest/globals": "^29.7.0",
+    "@microsoft/api-documenter": "^7.28.9",
+    "@microsoft/api-extractor": "^7.56.3",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.4",
     "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.0.1",
     "jest": "^29.7.0",
+    "knip": "^5.0.0",
     "prettier": "^3.5.1",
+    "syncpack": "^13.0.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.24.0"
-  },
-  "dependencies": {
-    "commander": "^14.0.3"
   }
 }

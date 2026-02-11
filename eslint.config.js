@@ -26,6 +26,13 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["dist/**", "node_modules/**", "*.config.js", "*.config.cjs"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "*.config.js",
+      "*.config.cjs",
+      "packages/*/dist/**",
+      "packages/*/temp/**",
+    ],
   }
 );

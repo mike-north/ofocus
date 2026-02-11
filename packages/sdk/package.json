@@ -1,0 +1,49 @@
+{
+  "name": "@ofocus/sdk",
+  "version": "0.0.1",
+  "description": "OmniFocus SDK - Core library for interacting with OmniFocus",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/ofocus-sdk.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/ofocus-sdk.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "api-report",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
+    "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --testPathPattern=unit",
+    "api-extractor": "api-extractor run --verbose",
+    "api-extractor:local": "api-extractor run --local --verbose",
+    "docs": "api-documenter markdown -i temp -o docs"
+  },
+  "keywords": [
+    "omnifocus",
+    "sdk",
+    "applescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mnorth/ofocus.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/mnorth/ofocus/tree/main/packages/sdk#readme",
+  "bugs": {
+    "url": "https://github.com/mnorth/ofocus/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
