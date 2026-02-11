@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "test": "pnpm -r run test",
     "test:unit": "pnpm -r run test:unit",
-    "typecheck": "tsc --build --noEmit",
+    "typecheck": "tsc --build --dry",
     "knip": "knip",
     "syncpack:check": "syncpack lint",
     "syncpack:fix": "syncpack fix-mismatches",
