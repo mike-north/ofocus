@@ -1,0 +1,51 @@
+{
+  "name": "ofocus",
+  "version": "0.0.1",
+  "description": "OmniFocus CLI for AI agents - SDK and CLI combined",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "ofocus": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "keywords": [
+    "omnifocus",
+    "cli",
+    "sdk",
+    "productivity",
+    "applescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mnorth/ofocus.git",
+    "directory": "packages/ofocus"
+  },
+  "homepage": "https://github.com/mnorth/ofocus#readme",
+  "bugs": {
+    "url": "https://github.com/mnorth/ofocus/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@ofocus/sdk": "workspace:*",
+    "@ofocus/cli": "workspace:*"
+  }
+}
