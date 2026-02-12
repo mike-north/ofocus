@@ -3,6 +3,7 @@ import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 import { escapeAppleScript } from "../escape.js";
+import { validateDateString } from "../validation.js";
 
 /**
  * Options for archiving tasks.
@@ -51,6 +52,20 @@ export async function archiveTasks(
   options: ArchiveOptions = {}
 ): Promise<CliOutput<ArchiveResult>> {
   const { completedBefore, droppedBefore, project, dryRun = false } = options;
+
+  // Validate date inputs
+  if (completedBefore) {
+    const completedBeforeError = validateDateString(completedBefore);
+    if (completedBeforeError) {
+      return failure(completedBeforeError);
+    }
+  }
+  if (droppedBefore) {
+    const droppedBeforeError = validateDateString(droppedBefore);
+    if (droppedBeforeError) {
+      return failure(droppedBeforeError);
+    }
+  }
 
   // Build date filter conditions
   const conditions: string[] = [];

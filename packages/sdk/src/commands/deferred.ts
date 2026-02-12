@@ -2,6 +2,8 @@ import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { validateDateString } from "../validation.js";
+import { escapeAppleScript } from "../escape.js";
 
 /**
  * Options for querying deferred tasks.
@@ -22,7 +24,27 @@ export interface DeferredQueryOptions {
 export async function queryDeferred(
   options: DeferredQueryOptions = {}
 ): Promise<CliOutput<OFTask[]>> {
+  // Validate date inputs
+  if (options.deferredAfter) {
+    const afterError = validateDateString(options.deferredAfter);
+    if (afterError) {
+      return failure(afterError);
+    }
+  }
+  if (options.deferredBefore) {
+    const beforeError = validateDateString(options.deferredBefore);
+    if (beforeError) {
+      return failure(beforeError);
+    }
+  }
+
   const blockedOnly = options.blockedOnly === true;
+  const escapedDeferredAfter = options.deferredAfter
+    ? escapeAppleScript(options.deferredAfter)
+    : null;
+  const escapedDeferredBefore = options.deferredBefore
+    ? escapeAppleScript(options.deferredBefore)
+    : null;
 
   const script = `
     set output to "["
@@ -52,10 +74,10 @@ export async function queryDeferred(
           }
 
           ${
-            options.deferredAfter
+            escapedDeferredAfter
               ? `
           -- Filter by deferred after
-          if shouldInclude and taskDefer < date "${options.deferredAfter}" then
+          if shouldInclude and taskDefer < date "${escapedDeferredAfter}" then
             set shouldInclude to false
           end if
           `
@@ -63,10 +85,10 @@ export async function queryDeferred(
           }
 
           ${
-            options.deferredBefore
+            escapedDeferredBefore
               ? `
           -- Filter by deferred before
-          if shouldInclude and taskDefer > date "${options.deferredBefore}" then
+          if shouldInclude and taskDefer > date "${escapedDeferredBefore}" then
             set shouldInclude to false
           end if
           `

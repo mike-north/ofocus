@@ -192,14 +192,16 @@ export async function exportTaskPaper(
 
     if (tasksResult.success && tasksResult.data) {
       for (const task of tasksResult.data) {
-        // Skip dropped tasks unless requested
-        if (
-          !options.includeDropped &&
-          task.completed &&
-          task.name.startsWith("[dropped]")
-        ) {
-          continue;
-        }
+        // TODO: Dropped task filtering is not yet implemented at the query layer.
+        // The OFTask type doesn't expose the `dropped` property, and queryTasks
+        // doesn't support filtering by dropped status. When includeDropped=false,
+        // dropped tasks may still appear in the export. To properly implement this,
+        // we would need to:
+        // 1. Add `dropped: boolean` to OFTask
+        // 2. Add `dropped?: boolean` to TaskQueryOptions
+        // 3. Filter by `effectively dropped` in the AppleScript query
+        void options.includeDropped; // Acknowledged but not yet functional
+
         lines.push(formatTaskAsTaskPaper(task, 1));
         taskCount++;
 
@@ -260,22 +262,37 @@ function parseTaskPaperLine(line: string): ParsedTaskPaperItem | null {
   content = content.trim();
   if (!content) return null;
 
-  // Check if it's a project (ends with : but not part of a tag)
-  if (content.endsWith(":") && !content.includes("@")) {
-    const name = content.slice(0, -1).trim();
-    return {
-      type: "project",
-      name,
-      indent,
-      tags: [],
-      due: null,
-      defer: null,
-      flagged: false,
-      completed: false,
-      dropped: false,
-      estimate: null,
-      note: null,
-    };
+  // Check if it's a project. We support:
+  // - "ProjectName:" (original behavior), and
+  // - "ProjectName: @tag ..." (exported project lines with trailing tags).
+  const colonIndex = content.indexOf(":");
+  if (colonIndex > 0) {
+    const namePart = content.slice(0, colonIndex).trim();
+    const trailing = content.slice(colonIndex + 1);
+    const trailingTrimmed = trailing.trim();
+
+    const looksLikeProject =
+      // Original behavior: just "ProjectName:" with no tags anywhere.
+      (!trailingTrimmed && !content.includes("@")) ||
+      // New behavior: "ProjectName: @tag ..." where the first non-space
+      // character after the colon starts a tag.
+      trailingTrimmed.startsWith("@");
+
+    if (namePart && looksLikeProject) {
+      return {
+        type: "project",
+        name: namePart,
+        indent,
+        tags: [],
+        due: null,
+        defer: null,
+        flagged: false,
+        completed: false,
+        dropped: false,
+        estimate: null,
+        note: null,
+      };
+    }
   }
 
   // Check if it's a task (starts with - or *)
@@ -312,8 +329,8 @@ function parseTaskPaperLine(line: string): ParsedTaskPaperItem | null {
     }
     content = content.replace(tagWithValueRegex, "");
 
-    // Extract simple tags like @flagged, @done
-    const simpleTagRegex = /@(\w+)/g;
+    // Extract simple tags like @flagged, @done, @on-hold (allow hyphens in tag names)
+    const simpleTagRegex = /@([\w-]+)/g;
     while ((match = simpleTagRegex.exec(content)) !== null) {
       const tagName = match[1]?.toLowerCase();
       if (tagName === "flagged") {

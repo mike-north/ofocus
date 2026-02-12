@@ -43,13 +43,14 @@ export async function getSyncStatus(): Promise<CliOutput<SyncStatus>> {
     end try
 
     -- OmniFocus doesn't expose detailed sync info via AppleScript
-    -- We can only check basic sync state
+    -- We can only check basic sync state; syncEnabled is always reported as false
+    -- because there's no reliable way to determine this via AppleScript
 
     return "{" & ¬
       "\\"syncing\\": " & (isSyncing as string) & "," & ¬
       "\\"lastSync\\": " & lastSyncStr & "," & ¬
       "\\"accountName\\": " & accountStr & "," & ¬
-      "\\"syncEnabled\\": true" & ¬
+      "\\"syncEnabled\\": " & (syncEnabled as string) & ¬
       "}"
   `;
 

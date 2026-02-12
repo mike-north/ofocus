@@ -1,7 +1,8 @@
 import type { CliOutput } from "../types.js";
-import { success, failureMessage } from "../result.js";
+import { success, failure, failureMessage } from "../result.js";
 import { queryTasks } from "./tasks.js";
 import { queryProjects } from "./projects.js";
+import { validateDateString } from "../validation.js";
 
 /**
  * Options for querying statistics.
@@ -171,6 +172,20 @@ function isOverdue(dueDate: string | null): boolean {
 export async function getStats(
   options: StatsOptions = {}
 ): Promise<CliOutput<StatsResult>> {
+  // Validate date inputs
+  if (options.since) {
+    const sinceError = validateDateString(options.since);
+    if (sinceError) {
+      return failure(sinceError);
+    }
+  }
+  if (options.until) {
+    const untilError = validateDateString(options.until);
+    if (untilError) {
+      return failure(untilError);
+    }
+  }
+
   const { start, end } = calculatePeriod(options);
 
   // Get all tasks (including completed for the stats)

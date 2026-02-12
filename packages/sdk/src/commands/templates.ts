@@ -387,7 +387,12 @@ export async function createFromTemplate(
 
   const newProjectName = projectName ?? template.name;
   const targetFolder = folder ?? template.defaultFolder ?? undefined;
+
+  // Validate and parse baseDate
   const baseDateObj = baseDate ? new Date(baseDate) : new Date();
+  if (baseDate && Number.isNaN(baseDateObj.getTime())) {
+    return failureMessage(`Invalid base date: ${baseDate}`);
+  }
 
   // Create the project
   const projectResult = await createProject(newProjectName, {
