@@ -9,6 +9,9 @@ export * from "@ofocus/sdk";
 // Re-export CLI utilities
 export { createCli, outputJson, outputHuman } from "@ofocus/cli";
 
+// Re-export MCP server utilities
+export { createServer, registerAllTools, formatResult } from "@ofocus/mcp";
+
 // Run CLI when executed directly
 import { createCli } from "@ofocus/cli";
 

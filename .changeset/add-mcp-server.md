@@ -1,5 +1,6 @@
 ---
 "@ofocus/mcp": minor
+"ofocus": minor
 ---
 
 Add MCP (Model Context Protocol) server package that enables AI assistants like Claude to interact with OmniFocus.
