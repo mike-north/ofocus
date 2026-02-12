@@ -1,23 +1,8 @@
-# AI Agent Instructions for OmniFocus CLI
+# OmniFocus CLI - Agent Instructions
 
-This document provides guidance for AI agents using the OmniFocus CLI and SDK.
-
-## Monorepo Structure
-
-```
-ofocus/
-├── packages/
-│   ├── sdk/           # @ofocus/sdk - Core SDK (zero runtime dependencies)
-│   ├── cli/           # @ofocus/cli - CLI using Commander.js
-│   └── ofocus/        # ofocus - Umbrella package re-exporting both
-```
-
-- **CLI Usage**: Use the `ofocus` command for shell-based interactions
-- **Programmatic Usage**: Import from `@ofocus/sdk` for Node.js scripts
+This document provides instructions for AI agents using the OmniFocus CLI.
 
 ## Quick Start
-
-The `ofocus` CLI provides commands to interact with OmniFocus. All commands output JSON by default for easy parsing.
 
 ```bash
 # List available commands
@@ -33,101 +18,9 @@ ofocus tasks --flagged --available
 ofocus complete <task-id>
 ```
 
-## Command Reference
-
-### list-commands
-
-List all available commands with descriptions and usage.
-
-```bash
-ofocus list-commands
-```
-
-### inbox
-
-Add a task to the OmniFocus inbox.
-
-```bash
-ofocus inbox <title> [options]
-
-Options:
-  -n, --note <text>     Task note
-  -d, --due <date>      Due date
-  --defer <date>        Defer date
-  -f, --flag            Flag the task
-  -t, --tag <name...>   Tags to apply
-```
-
-### tasks
-
-Query tasks from OmniFocus.
-
-```bash
-ofocus tasks [options]
-
-Options:
-  -p, --project <name>     Filter by project
-  -t, --tag <name>         Filter by tag
-  --due-before <date>      Tasks due before date
-  --due-after <date>       Tasks due after date
-  --flagged                Only flagged tasks
-  --completed              Only completed tasks
-  --available              Only available (actionable) tasks
-```
-
-### projects
-
-Query projects from OmniFocus.
-
-```bash
-ofocus projects [options]
-
-Options:
-  --folder <name>          Filter by folder
-  --status <status>        Filter by status (active, on-hold, completed, dropped)
-  --sequential             Only sequential projects
-```
-
-### tags
-
-Query tags from OmniFocus.
-
-```bash
-ofocus tags [options]
-
-Options:
-  --parent <name>          Filter by parent tag
-```
-
-### complete
-
-Mark a task as complete.
-
-```bash
-ofocus complete <task-id>
-```
-
-### update
-
-Update task properties.
-
-```bash
-ofocus update <task-id> [options]
-
-Options:
-  --title <text>           New title
-  -n, --note <text>        New note
-  -d, --due <date>         New due date (empty to clear)
-  --defer <date>           New defer date (empty to clear)
-  -f, --flag               Flag the task
-  --no-flag                Unflag the task
-  -p, --project <name>     Move to project (empty to remove)
-  -t, --tag <name...>      Replace tags
-```
-
 ## Output Format
 
-All commands return JSON with this structure:
+All commands output JSON by default for easy parsing. Use `--human` for human-readable output.
 
 ```json
 {
@@ -151,6 +44,113 @@ On error:
 }
 ```
 
+## Command Reference
+
+### inbox
+
+Add a task to the OmniFocus inbox.
+
+```bash
+ofocus inbox <title> [options]
+
+Options:
+  -n, --note <text>       Task note
+  -d, --due <date>        Due date
+  --defer <date>          Defer date
+  -f, --flag              Flag the task
+  -t, --tag <name...>     Tags to apply
+  -e, --estimate <min>    Estimated duration in minutes
+  --repeat <frequency>    daily, weekly, monthly, yearly
+  --every <n>             Repeat interval (default: 1)
+  --repeat-method <m>     due-again or defer-another
+```
+
+### tasks
+
+Query tasks from OmniFocus.
+
+```bash
+ofocus tasks [options]
+
+Options:
+  -p, --project <name>    Filter by project
+  -t, --tag <name>        Filter by tag
+  --due-before <date>     Tasks due before date
+  --due-after <date>      Tasks due after date
+  --flagged               Only flagged tasks
+  --completed             Only completed tasks
+  --available             Only available (actionable) tasks
+```
+
+### complete
+
+Mark a task as complete.
+
+```bash
+ofocus complete <task-id>
+```
+
+### update
+
+Update task properties.
+
+```bash
+ofocus update <task-id> [options]
+
+Options:
+  --title <text>          New title
+  -n, --note <text>       New note
+  -d, --due <date>        New due date (empty to clear)
+  --defer <date>          New defer date (empty to clear)
+  -f, --flag              Flag the task
+  --no-flag               Unflag the task
+  -p, --project <name>    Move to project (empty to remove)
+  -t, --tag <name...>     Replace tags
+  -e, --estimate <min>    Estimated duration
+  --clear-estimate        Clear estimate
+  --repeat <frequency>    Set repetition
+  --clear-repeat          Clear repetition
+```
+
+### projects
+
+Query projects from OmniFocus.
+
+```bash
+ofocus projects [options]
+
+Options:
+  --folder <name>         Filter by folder
+  --status <status>       Filter by status (active, on-hold, completed, dropped)
+  --sequential            Only sequential projects
+```
+
+### tags
+
+Query tags from OmniFocus.
+
+```bash
+ofocus tags [--parent <name>]
+```
+
+### Batch Operations
+
+```bash
+ofocus complete-batch <id>...    # Complete multiple tasks
+ofocus update-batch <id>... [options]
+ofocus delete-batch <id>...      # Permanently delete
+```
+
+### Other Commands
+
+```bash
+ofocus drop <task-id>            # Drop task (keeps history)
+ofocus delete <task-id>          # Permanently delete
+ofocus search <query>            # Search tasks
+ofocus perspectives              # List perspectives
+ofocus perspective <name>        # Query perspective tasks
+```
+
 ## Error Codes
 
 | Code | Description |
@@ -163,7 +163,6 @@ On error:
 | `INVALID_ID_FORMAT` | ID contains invalid characters |
 | `APPLESCRIPT_ERROR` | AppleScript execution failed |
 | `VALIDATION_ERROR` | Input validation failed |
-| `UNKNOWN_ERROR` | Unexpected error |
 
 ## Best Practices
 
@@ -189,120 +188,7 @@ ofocus complete abc123
 ofocus update def456 --due "tomorrow" --no-flag
 ```
 
-## SDK Programmatic Usage
+## Requirements
 
-For Node.js scripts, you can use the SDK directly:
-
-```typescript
-import {
-  addToInbox,
-  queryTasks,
-  completeTask,
-  updateTask,
-  queryProjects,
-  queryTags,
-} from "@ofocus/sdk";
-
-// Add a task to inbox
-const result = await addToInbox("Review PR #123", {
-  note: "Check security implications",
-  due: "today 5pm",
-  flag: true,
-  tags: ["work"],
-});
-
-if (result.success) {
-  console.log("Created task:", result.data.id);
-} else {
-  console.error("Error:", result.error.message);
-}
-
-// Query flagged, available tasks
-const tasks = await queryTasks({ flagged: true, available: true });
-
-// Complete a task
-const completed = await completeTask("task-id-here");
-
-// Update a task
-const updated = await updateTask("task-id-here", {
-  due: "tomorrow",
-  flag: false,
-});
-```
-
-### Result Handling
-
-All SDK functions return a `Promise<CliOutput<T>>`:
-
-```typescript
-interface CliOutput<T> {
-  success: boolean;
-  data: T | null;
-  error: CliError | null;
-}
-
-// Using type guards
-if (result.success) {
-  // result.data is T (e.g., OFTask for addToInbox)
-  console.log("Task ID:", result.data.id);
-} else {
-  // result.error contains code, message, details
-  console.error(result.error.message);
-}
-```
-
-### Available SDK Functions
-
-| Function | Description |
-|----------|-------------|
-| `addToInbox(title, options?)` | Add task to inbox |
-| `queryTasks(options?)` | Query tasks |
-| `queryProjects(options?)` | Query projects |
-| `queryTags(options?)` | Query tags |
-| `completeTask(taskId)` | Mark task complete |
-| `updateTask(taskId, options)` | Update task properties |
-
-## Troubleshooting
-
-### Common Issues
-
-**"OmniFocus is not running"**
-- Ensure OmniFocus is launched on macOS
-- The CLI communicates via AppleScript which requires OmniFocus to be running
-
-**"Permission denied"**
-- Grant terminal/script permission to control OmniFocus in System Preferences > Privacy & Security > Automation
-
-**"Task not found"**
-- Task IDs are internal OmniFocus identifiers
-- Use `queryTasks` to get valid task IDs before `completeTask` or `updateTask`
-
-**Date format errors**
-- AppleScript accepts various formats: "January 15, 2024", "1/15/2024", "today 5pm"
-- Avoid ISO 8601 format (e.g., "2024-01-15T17:00:00Z")
-
-### Error Handling Best Practices
-
-1. **Always check `success`** before accessing `data`
-2. **Handle specific error codes** for better user feedback
-3. **Log error details** for debugging
-
-```typescript
-const result = await queryTasks({ project: "Work" });
-
-if (!result.success) {
-  switch (result.error.code) {
-    case "PROJECT_NOT_FOUND":
-      console.error("Project does not exist:", result.error.details);
-      break;
-    case "OMNIFOCUS_NOT_RUNNING":
-      console.error("Please start OmniFocus first");
-      break;
-    default:
-      console.error("Unexpected error:", result.error.message);
-  }
-  return;
-}
-
-// Process result.data
-```
+- macOS with OmniFocus 3 or 4 installed
+- OmniFocus must be running for commands to work

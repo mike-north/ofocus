@@ -1,14 +1,14 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
 import { success, failure, createError, ErrorCode } from "@ofocus/sdk";
 import { output } from "../../src/output.js";
 
 describe("output", () => {
-  let consoleLogSpy: jest.SpiedFunction<typeof console.log>;
-  let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
+  let consoleLogSpy: MockInstance<typeof console.log>;
+  let consoleErrorSpy: MockInstance<typeof console.error>;
 
   beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
