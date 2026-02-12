@@ -1,9 +1,19 @@
 #!/usr/bin/env node
 import { pathToFileURL } from "node:url";
-import { resolve } from "node:path";
+import { resolve, dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerAllTools } from "./tools/index.js";
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = join(__dirname, "..", "package.json");
+const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as {
+  version: string;
+};
+const VERSION = packageJson.version;
 
 // Re-export for programmatic use
 export { registerAllTools } from "./tools/index.js";
@@ -15,7 +25,7 @@ export { formatResult } from "./utils.js";
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "ofocus",
-    version: "0.1.0",
+    version: VERSION,
   });
   registerAllTools(server);
   return server;

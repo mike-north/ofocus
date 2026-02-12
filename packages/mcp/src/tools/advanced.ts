@@ -138,6 +138,8 @@ export function registerAdvancedTools(server: McpServer): void {
         end: z.string().optional().describe("End date"),
         days: z
           .number()
+          .int()
+          .min(1)
           .optional()
           .describe(
             "Number of days from start (alternative to end, default: 7)"
