@@ -5,6 +5,7 @@
   "description": "OmniFocus CLI for AI agents - monorepo",
   "type": "module",
   "scripts": {
+    "clean": "rm -rf packages/*/dist packages/*/.tsbuildinfo",
     "build": "tsc --build",
     "build:clean": "tsc --build --clean && tsc --build",
     "lint": "eslint packages/*/src",
@@ -19,7 +20,8 @@
     "syncpack:fix": "syncpack fix-mismatches",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "prepare": "husky"
   },
   "keywords": [
     "omnifocus",
@@ -41,6 +43,9 @@
   "engines": {
     "node": ">=20"
   },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown"
+  },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
     "@eslint/js": "^9.20.0",
@@ -49,7 +54,9 @@
     "@types/node": "^22.13.4",
     "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.0.1",
+    "husky": "^9.1.7",
     "knip": "^5.0.0",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.5.1",
     "syncpack": "^13.0.0",
     "typescript": "^5.9.3",

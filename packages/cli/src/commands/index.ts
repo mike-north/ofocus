@@ -29,7 +29,8 @@ export const commandRegistry: CommandInfo[] = [
     name: "projects",
     description:
       "List and query projects from OmniFocus. Supports filtering by folder, status (active, on-hold, completed, dropped), and whether the project is sequential. Returns project details including ID, name, task counts, and folder hierarchy.",
-    usage: "ofocus projects [--folder <name>] [--status <status>] [--sequential]",
+    usage:
+      "ofocus projects [--folder <name>] [--status <status>] [--sequential]",
   },
   {
     name: "tags",
@@ -91,7 +92,8 @@ export const commandRegistry: CommandInfo[] = [
     name: "update-tag",
     description:
       "Update properties of an existing tag in OmniFocus. Supports renaming tags and moving them to different parent tags. Requires the tag ID which can be obtained from the tags command.",
-    usage: "ofocus update-tag <tag-id> [--name <new-name>] [--parent <tag-name>]",
+    usage:
+      "ofocus update-tag <tag-id> [--name <new-name>] [--parent <tag-name>]",
   },
   {
     name: "delete-tag",
@@ -167,5 +169,160 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "List projects that are due for review in OmniFocus. Returns projects whose review date has passed or is imminent. Use this to identify projects needing attention as part of the GTD weekly review process.",
     usage: "ofocus projects-for-review",
+  },
+  // Phase 5: Forecast, Focus, Deferred
+  {
+    name: "forecast",
+    description:
+      "Query tasks by date range, similar to OmniFocus Forecast view. Returns tasks due or deferred within a specified date range. Defaults to 7 days from today. Use for daily and weekly planning to see what's coming up.",
+    usage:
+      "ofocus forecast [--start <date>] [--end <date>] [--days <n>] [--include-deferred]",
+  },
+  {
+    name: "focus",
+    description:
+      "Focus on a specific project or folder in OmniFocus. Limits the view to show only items within the focused target. Matches the OmniFocus UI focus feature. Use for scoped work sessions on a particular area.",
+    usage: "ofocus focus <name> [--by-id]",
+  },
+  {
+    name: "unfocus",
+    description:
+      "Clear focus in OmniFocus to show all items. Removes any active focus set by the focus command. Returns to showing the full project/folder hierarchy. Use when done with a focused work session.",
+    usage: "ofocus unfocus",
+  },
+  {
+    name: "focused",
+    description:
+      "Show the current focus state in OmniFocus. Returns information about what project or folder is currently focused, or indicates no active focus. Use to check the current view scope before making queries.",
+    usage: "ofocus focused",
+  },
+  {
+    name: "deferred",
+    description:
+      "List all tasks that have defer dates set. Returns tasks that are scheduled to become available in the future. Use --blocked-only to see only tasks currently hidden by their defer date. Useful for reviewing upcoming work.",
+    usage:
+      "ofocus deferred [--deferred-after <date>] [--deferred-before <date>] [--blocked-only]",
+  },
+  // Phase 5b: Utility Commands
+  {
+    name: "url",
+    description:
+      "Generate an OmniFocus URL scheme deep link for any item. Accepts a task, project, folder, or tag ID and returns the omnifocus:/// URL that can be used to open that item. Useful for creating links in notes, scripts, or other apps.",
+    usage: "ofocus url <id>",
+  },
+  {
+    name: "defer",
+    description:
+      "Defer a single task by a number of days or to a specific date. Convenience wrapper around update that focuses on defer date changes. Use --days for relative deferral or --to for absolute date.",
+    usage: "ofocus defer <task-id> [--days <n>] [--to <date>]",
+  },
+  {
+    name: "defer-batch",
+    description:
+      "Defer multiple tasks by the same amount. Accepts multiple task IDs and defers them all by the specified days or to the same date. More efficient than deferring tasks individually. Returns batch results.",
+    usage: "ofocus defer-batch <task-id>... [--days <n>] [--to <date>]",
+  },
+  // Phase 6: Quick Capture
+  {
+    name: "quick",
+    description:
+      "Quick capture with natural language parsing. Supports @tag for tags, #project for project, ! for flag, ~30m for duration, due:tomorrow for due dates, defer:monday for defer dates, repeat:weekly for repetition. Everything else becomes the title.",
+    usage: 'ofocus quick "<input>" [--note <text>]',
+  },
+  // Phase 6: TaskPaper Import/Export
+  {
+    name: "export",
+    description:
+      "Export tasks and projects to TaskPaper format. TaskPaper is a plain text format compatible with OmniFocus and other task managers. Supports filtering by project and including completed/dropped tasks. Output is written to stdout.",
+    usage:
+      "ofocus export [--project <name>] [--include-completed] [--include-dropped]",
+  },
+  {
+    name: "import",
+    description:
+      "Import tasks from a TaskPaper format file. Creates tasks in the inbox and optionally creates projects that don't exist. TaskPaper format uses indentation and @tags for metadata like @due(date), @flagged, @done.",
+    usage:
+      "ofocus import <file> [--create-projects] [--default-project <name>]",
+  },
+  // Phase 6: Statistics
+  {
+    name: "stats",
+    description:
+      "Display productivity statistics from OmniFocus. Shows counts of completed tasks, overdue tasks, available tasks, flagged items, and project status. Supports filtering by project and time period (day, week, month, year).",
+    usage:
+      "ofocus stats [--project <name>] [--period <day|week|month|year>] [--since <date>] [--until <date>]",
+  },
+  // Phase 7: Project Templates
+  {
+    name: "template-save",
+    description:
+      "Save an existing project as a reusable template. Captures the project structure, task titles, notes, flags, tags, estimated durations, and relative date offsets. Templates are stored locally and can be instantiated to create new projects with the same structure.",
+    usage:
+      "ofocus template-save <name> <source-project> [--description <text>]",
+  },
+  {
+    name: "template-list",
+    description:
+      "List all available project templates stored locally. Shows template name, description, task count, creation date, and source project name. Use this to discover available templates before creating projects from them.",
+    usage: "ofocus template-list",
+  },
+  {
+    name: "template-create",
+    description:
+      "Create a new project from a saved template. Instantiates the template with all tasks, applying date offsets relative to the base date (defaults to today). Supports specifying a custom project name and target folder.",
+    usage:
+      "ofocus template-create <template-name> [--project-name <name>] [--folder <name>] [--base-date <date>]",
+  },
+  {
+    name: "template-delete",
+    description:
+      "Delete a project template from local storage. This action cannot be undone. The template file is permanently removed from ~/.config/ofocus/templates/.",
+    usage: "ofocus template-delete <name>",
+  },
+  // Phase 8: Attachments
+  {
+    name: "attach",
+    description:
+      "Add a file attachment to a task in OmniFocus. The file is copied into the OmniFocus database. Requires task ID and a valid file path. The original file remains unchanged.",
+    usage: "ofocus attach <task-id> <file>",
+  },
+  {
+    name: "attachments",
+    description:
+      "List all attachments of a task in OmniFocus. Returns attachment IDs, names, and metadata. Use the attachment ID or name with the detach command to remove attachments.",
+    usage: "ofocus attachments <task-id>",
+  },
+  {
+    name: "detach",
+    description:
+      "Remove an attachment from a task in OmniFocus. Accepts either attachment ID or name. This removes the file from the OmniFocus database. This action cannot be undone.",
+    usage: "ofocus detach <task-id> <attachment-id-or-name>",
+  },
+  // Phase 8: Archive & Cleanup
+  {
+    name: "archive",
+    description:
+      "Archive completed or dropped tasks and projects in OmniFocus. Supports filtering by completion date, drop date, and project. Use --dry-run to preview what would be archived without making changes. Helps maintain database performance.",
+    usage:
+      "ofocus archive [--completed-before <date>] [--dropped-before <date>] [--project <name>] [--dry-run]",
+  },
+  {
+    name: "compact",
+    description:
+      "Trigger database compaction in OmniFocus. Compaction removes deleted items and optimizes the database for better performance. Run periodically to maintain a healthy OmniFocus database.",
+    usage: "ofocus compact",
+  },
+  // Phase 8: Sync
+  {
+    name: "sync-status",
+    description:
+      "Get the current synchronization status in OmniFocus. Shows whether sync is in progress, when the last sync occurred, and whether sync is enabled. Useful for automation workflows.",
+    usage: "ofocus sync-status",
+  },
+  {
+    name: "sync",
+    description:
+      "Trigger a synchronization in OmniFocus. Syncs changes with the OmniFocus sync server (Omni Sync Server or custom WebDAV). Use after making changes to ensure they're uploaded.",
+    usage: "ofocus sync",
   },
 ];

@@ -5,6 +5,17 @@
 ```ts
 
 // @public
+export function addAttachment(taskId: string, filePath: string): Promise<CliOutput<AddAttachmentResult>>;
+
+// @public
+export interface AddAttachmentResult {
+    attached: boolean;
+    fileName: string;
+    taskId: string;
+    taskName: string;
+}
+
+// @public
 export function addToInbox(title: string, options?: InboxOptions): Promise<CliOutput<OFTask>>;
 
 // @public (undocumented)
@@ -18,7 +29,38 @@ export interface AppleScriptResult<T> {
 }
 
 // @public
+export interface ArchiveOptions {
+    completedBefore?: string | undefined;
+    droppedBefore?: string | undefined;
+    dryRun?: boolean | undefined;
+    project?: string | undefined;
+}
+
+// @public
+export interface ArchiveResult {
+    archivePath: string | null;
+    dryRun: boolean;
+    projectsArchived: number;
+    tasksArchived: number;
+}
+
+// @public
+export function archiveTasks(options?: ArchiveOptions): Promise<CliOutput<ArchiveResult>>;
+
+// @public
 export interface BatchCompleteItem {
+    // (undocumented)
+    taskId: string;
+    // (undocumented)
+    taskName: string;
+}
+
+// @public
+export interface BatchDeferItem {
+    // (undocumented)
+    newDeferDate: string;
+    // (undocumented)
+    previousDeferDate: string | null;
     // (undocumented)
     taskId: string;
     // (undocumented)
@@ -83,6 +125,15 @@ export interface CommandInfo {
 }
 
 // @public
+export function compactDatabase(): Promise<CliOutput<CompactResult>>;
+
+// @public
+export interface CompactResult {
+    compacted: boolean;
+    message: string;
+}
+
+// @public
 export interface CompleteResult {
     // (undocumented)
     completed: boolean;
@@ -110,6 +161,24 @@ export interface CreateFolderOptions {
     parentFolderId?: string | undefined;
     // (undocumented)
     parentFolderName?: string | undefined;
+}
+
+// @public
+export function createFromTemplate(options: CreateFromTemplateOptions): Promise<CliOutput<CreateFromTemplateResult>>;
+
+// @public
+export interface CreateFromTemplateOptions {
+    baseDate?: string | undefined;
+    folder?: string | undefined;
+    projectName?: string | undefined;
+    templateName: string;
+}
+
+// @public
+export interface CreateFromTemplateResult {
+    projectId: string;
+    projectName: string;
+    tasksCreated: number;
 }
 
 // @public
@@ -148,6 +217,37 @@ export interface CreateTagOptions {
 }
 
 // @public
+export interface DeferOptions {
+    days?: number | undefined;
+    to?: string | undefined;
+}
+
+// @public
+export interface DeferredQueryOptions {
+    blockedOnly?: boolean | undefined;
+    deferredAfter?: string | undefined;
+    deferredBefore?: string | undefined;
+}
+
+// @public
+export interface DeferResult {
+    // (undocumented)
+    newDeferDate: string;
+    // (undocumented)
+    previousDeferDate: string | null;
+    // (undocumented)
+    taskId: string;
+    // (undocumented)
+    taskName: string;
+}
+
+// @public
+export function deferTask(taskId: string, options?: DeferOptions): Promise<CliOutput<DeferResult>>;
+
+// @public
+export function deferTasks(taskIds: string[], options?: DeferOptions): Promise<CliOutput<BatchResult<BatchDeferItem>>>;
+
+// @public
 export interface DeleteResult {
     // (undocumented)
     deleted: true;
@@ -171,6 +271,15 @@ export function deleteTask(taskId: string): Promise<CliOutput<DeleteResult>>;
 
 // @public
 export function deleteTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchDeleteItem>>>;
+
+// @public
+export function deleteTemplate(name: string): CliOutput<DeleteTemplateResult>;
+
+// @public
+export interface DeleteTemplateResult {
+    deleted: boolean;
+    name: string;
+}
 
 // @public
 export interface DropResult {
@@ -212,16 +321,63 @@ export { ErrorCode as ErrorCodeType }
 export function escapeAppleScript(str: string): string;
 
 // @public
+export function exportTaskPaper(options?: TaskPaperExportOptions): Promise<CliOutput<TaskPaperExportResult>>;
+
+// @public
 export function failure<T = null>(error: CliError): CliOutput<T>;
 
 // @public
 export function failureMessage<T = null>(message: string): CliOutput<T>;
 
 // @public
+function focus_2(target: string, options?: {
+    byId?: boolean | undefined;
+}): Promise<CliOutput<FocusResult>>;
+export { focus_2 as focus }
+
+// @public
+export interface FocusResult {
+    // (undocumented)
+    focused: boolean;
+    // (undocumented)
+    targetId: string | null;
+    // (undocumented)
+    targetName: string | null;
+    // (undocumented)
+    targetType: "project" | "folder" | null;
+}
+
+// @public
 export interface FolderQueryOptions {
     // (undocumented)
     parent?: string | undefined;
 }
+
+// @public
+export interface ForecastOptions {
+    days?: number | undefined;
+    end?: string | undefined;
+    includeDeferred?: boolean | undefined;
+    start?: string | undefined;
+}
+
+// @public
+export function generateUrl(id: string): Promise<CliOutput<UrlResult>>;
+
+// @public
+export function getFocused(): Promise<CliOutput<FocusResult>>;
+
+// @public
+export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
+
+// @public
+export function getSyncStatus(): Promise<CliOutput<SyncStatus>>;
+
+// @public
+export function getTemplate(name: string): CliOutput<ProjectTemplate>;
+
+// @public
+export function importTaskPaper(content: string, options?: TaskPaperImportOptions): Promise<CliOutput<TaskPaperImportResult>>;
 
 // @public
 export interface InboxOptions {
@@ -245,10 +401,36 @@ export interface InboxOptions {
 export const jsonHelpers = "\non jsonString(val)\n  if val is \"\" or val is missing value or val is \"missing value\" then\n    return \"null\"\n  else\n    return \"\\\"\" & my escapeJson(val) & \"\\\"\"\n  end if\nend jsonString\n\non jsonArray(theList)\n  if (count of theList) is 0 then\n    return \"[]\"\n  end if\n  set output to \"[\"\n  repeat with i from 1 to count of theList\n    if i > 1 then set output to output & \",\"\n    set output to output & \"\\\"\" & (my escapeJson(item i of theList)) & \"\\\"\"\n  end repeat\n  return output & \"]\"\nend jsonArray\n\non escapeJson(str)\n  set output to \"\"\n  repeat with c in characters of (str as string)\n    if c is \"\\\"\" then\n      set output to output & \"\\\\\\\"\"\n    else if c is \"\\\\\" then\n      set output to output & \"\\\\\\\\\"\n    else if c is return then\n      set output to output & \"\\\\n\"\n    else if c is linefeed then\n      set output to output & \"\\\\n\"\n    else\n      set output to output & c\n    end if\n  end repeat\n  return output\nend escapeJson\n";
 
 // @public
+export function listAttachments(taskId: string): Promise<CliOutput<ListAttachmentsResult>>;
+
+// @public
+export interface ListAttachmentsResult {
+    attachments: OFAttachment[];
+    taskId: string;
+    taskName: string;
+}
+
+// @public
 export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
 
 // @public
+export function listTemplates(): CliOutput<ListTemplatesResult>;
+
+// @public
+export interface ListTemplatesResult {
+    templates: TemplateSummary[];
+}
+
+// @public
 export function moveTaskToParent(taskId: string, parentTaskId: string): Promise<CliOutput<OFTaskWithChildren>>;
+
+// @public
+export interface OFAttachment {
+    id: string;
+    name: string;
+    size: number | null;
+    type: string | null;
+}
 
 // @public
 export interface OFFolder {
@@ -362,6 +544,31 @@ export function omniFocusScriptWithHelpers(body: string): string;
 export function parseAppleScriptError(rawError: string): CliError;
 
 // @public
+export interface ParsedQuickInput {
+    // (undocumented)
+    defer: string | null;
+    // (undocumented)
+    due: string | null;
+    // (undocumented)
+    estimatedMinutes: number | null;
+    // (undocumented)
+    flagged: boolean;
+    // (undocumented)
+    note: string | null;
+    // (undocumented)
+    project: string | null;
+    // (undocumented)
+    repeat: RepetitionRule | null;
+    // (undocumented)
+    tags: string[];
+    // (undocumented)
+    title: string;
+}
+
+// @public
+export function parseQuickInput(input: string): ParsedQuickInput;
+
+// @public
 export interface PerspectiveQueryOptions {
     // (undocumented)
     limit?: number | undefined;
@@ -378,7 +585,25 @@ export interface ProjectQueryOptions {
 }
 
 // @public
+export interface ProjectTemplate {
+    createdAt: string;
+    defaultFolder: string | null;
+    description: string | null;
+    name: string;
+    note: string | null;
+    sequential: boolean;
+    sourceProject: string | null;
+    tasks: TemplateTask[];
+}
+
+// @public
+export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput<OFTask[]>>;
+
+// @public
 export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<OFFolder[]>>;
+
+// @public
+export function queryForecast(options?: ForecastOptions): Promise<CliOutput<OFTask[]>>;
 
 // @public
 export function queryPerspective(name: string, options?: PerspectiveQueryOptions): Promise<CliOutput<OFTask[]>>;
@@ -397,6 +622,24 @@ export function queryTags(options?: TagQueryOptions): Promise<CliOutput<OFTag[]>
 
 // @public
 export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<OFTask[]>>;
+
+// @public
+export function quickCapture(input: string, options?: QuickOptions): Promise<CliOutput<OFTask>>;
+
+// @public
+export interface QuickOptions {
+    note?: string | undefined;
+}
+
+// @public
+export function removeAttachment(taskId: string, attachmentIdOrName: string): Promise<CliOutput<RemoveAttachmentResult>>;
+
+// @public
+export interface RemoveAttachmentResult {
+    attachmentName: string;
+    removed: boolean;
+    taskId: string;
+}
 
 // @public
 export interface RepetitionRule {
@@ -434,6 +677,23 @@ export function runAppleScript<T>(script: string): Promise<AppleScriptResult<T>>
 export function runAppleScriptFile<T>(filePath: string, args?: string[]): Promise<AppleScriptResult<T>>;
 
 // @public
+export function saveTemplate(options: SaveTemplateOptions): Promise<CliOutput<SaveTemplateResult>>;
+
+// @public
+export interface SaveTemplateOptions {
+    description?: string | undefined;
+    name: string;
+    sourceProject: string;
+}
+
+// @public
+export interface SaveTemplateResult {
+    name: string;
+    path: string;
+    taskCount: number;
+}
+
+// @public
 export interface SearchOptions {
     // (undocumented)
     includeCompleted?: boolean | undefined;
@@ -447,6 +707,30 @@ export interface SearchOptions {
 export function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<OFTask[]>>;
 
 // @public
+export interface StatsOptions {
+    period?: "day" | "week" | "month" | "year" | undefined;
+    project?: string | undefined;
+    since?: string | undefined;
+    until?: string | undefined;
+}
+
+// @public
+export interface StatsResult {
+    periodEnd: string;
+    periodStart: string;
+    projectFilter: string | null;
+    projectsActive: number;
+    projectsOnHold: number;
+    tasksAvailable: number;
+    tasksCompleted: number;
+    tasksDueThisWeek: number;
+    tasksDueToday: number;
+    tasksFlagged: number;
+    tasksOverdue: number;
+    tasksRemaining: number;
+}
+
+// @public
 export interface SubtaskQueryOptions {
     // (undocumented)
     completed?: boolean | undefined;
@@ -458,9 +742,56 @@ export interface SubtaskQueryOptions {
 export function success<T>(data: T): CliOutput<T>;
 
 // @public
+export interface SyncResult {
+    message: string;
+    triggered: boolean;
+}
+
+// @public
+export interface SyncStatus {
+    accountName: string | null;
+    lastSync: string | null;
+    syncEnabled: boolean;
+    syncing: boolean;
+}
+
+// @public
 export interface TagQueryOptions {
     // (undocumented)
     parent?: string | undefined;
+}
+
+// @public
+export interface TaskPaperExportOptions {
+    includeCompleted?: boolean | undefined;
+    includeDropped?: boolean | undefined;
+    project?: string | undefined;
+}
+
+// @public
+export interface TaskPaperExportResult {
+    // (undocumented)
+    content: string;
+    // (undocumented)
+    projectCount: number;
+    // (undocumented)
+    taskCount: number;
+}
+
+// @public
+export interface TaskPaperImportOptions {
+    createProjects?: boolean | undefined;
+    defaultProject?: string | undefined;
+}
+
+// @public
+export interface TaskPaperImportResult {
+    // (undocumented)
+    errors: string[];
+    // (undocumented)
+    projectsCreated: number;
+    // (undocumented)
+    tasksCreated: number;
 }
 
 // @public
@@ -508,6 +839,37 @@ export interface TaskUpdateOptions {
 }
 
 // @public
+export interface TemplateSummary {
+    // (undocumented)
+    createdAt: string;
+    // (undocumented)
+    description: string | null;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    sourceProject: string | null;
+    // (undocumented)
+    taskCount: number;
+}
+
+// @public
+export interface TemplateTask {
+    deferOffsetDays: number | null;
+    dueOffsetDays: number | null;
+    estimatedMinutes: number | null;
+    flagged: boolean;
+    note: string | null;
+    tags: string[];
+    title: string;
+}
+
+// @public
+export function triggerSync(): Promise<CliOutput<SyncResult>>;
+
+// @public
+export function unfocus(): Promise<CliOutput<FocusResult>>;
+
+// @public
 export function updateTag(tagId: string, options: UpdateTagOptions): Promise<CliOutput<OFTag>>;
 
 // @public
@@ -525,6 +887,18 @@ export function updateTask(taskId: string, options: TaskUpdateOptions): Promise<
 
 // @public
 export function updateTasks(taskIds: string[], options: TaskUpdateOptions): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
+
+// @public
+export interface UrlResult {
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    type: "task" | "project" | "folder" | "tag";
+    // (undocumented)
+    url: string;
+}
 
 // @public
 export function validateDateString(dateStr: string): CliError | null;
