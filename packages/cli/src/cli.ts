@@ -1,4 +1,5 @@
 import { Command, Option } from "commander";
+import { isAgenticTui } from "is-agentic-tui";
 import {
   addToInbox,
   queryTasks,
@@ -151,6 +152,9 @@ interface PerspectiveOptions {
   limit?: number | undefined;
 }
 
+const AGENT_INSTRUCTIONS_URL =
+  "https://raw.githubusercontent.com/mike-north/ofocus/refs/heads/main/AGENT_INSTRUCTIONS.md";
+
 export function createCli(): Command {
   const program = new Command();
 
@@ -158,6 +162,29 @@ export function createCli(): Command {
     .name("ofocus")
     .description("OmniFocus CLI for AI agents")
     .version("0.0.1");
+
+  // Customize help for AI agents
+  program.configureHelp({
+    formatHelp: (cmd, helper) => {
+      if (isAgenticTui()) {
+        return `OmniFocus CLI - Agent Mode Detected
+
+For comprehensive agent instructions, read:
+${AGENT_INSTRUCTIONS_URL}
+
+Quick start:
+  ofocus list-commands    List all available commands
+  ofocus inbox <title>    Add a task to inbox
+  ofocus tasks            Query tasks
+  ofocus complete <id>    Complete a task
+
+Use --human flag for human-readable output (default is JSON).
+`;
+      }
+      // Default help for humans
+      return helper.formatHelp(cmd, helper);
+    },
+  });
 
   // Global options
   program.addOption(

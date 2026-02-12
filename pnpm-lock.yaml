@@ -56,6 +56,9 @@ importers:
       commander:
         specifier: ^14.0.3
         version: 14.0.3
+      is-agentic-tui:
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/ofocus:
     dependencies:
@@ -1210,6 +1213,10 @@ packages:
   imurmurhash@0.1.4:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
     engines: {node: '>=0.8.19'}
+
+  is-agentic-tui@0.1.0:
+    resolution: {integrity: sha512-RVOugsMChufAs+7K6wP2CjkpqSGhZiqDQp/MilofBSNt5iobATQEn9l+Tqle+RcVWwYoV7AGxF0iwSrDh61IWQ==}
+    engines: {node: '>=20'}
 
   is-arrayish@0.2.1:
     resolution: {integrity: sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg==}
@@ -3055,6 +3062,8 @@ snapshots:
   import-lazy@4.0.0: {}
 
   imurmurhash@0.1.4: {}
+
+  is-agentic-tui@0.1.0: {}
 
   is-arrayish@0.2.1: {}
 
