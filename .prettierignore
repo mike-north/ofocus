@@ -1,0 +1,9 @@
+# API Extractor generated files - must not be reformatted
+packages/*/api-report/*.md
+packages/*/temp/
+
+# Build outputs
+packages/*/dist/
+
+# Package manager
+pnpm-lock.yaml
