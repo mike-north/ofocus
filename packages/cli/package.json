@@ -1,6 +1,6 @@
 {
   "name": "@ofocus/cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "OmniFocus CLI - Command-line interface for OmniFocus",
   "type": "module",
   "main": "dist/index.js",
