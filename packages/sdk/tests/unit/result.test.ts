@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect } from "vitest";
 import { success, failure, failureMessage } from "../../src/result.js";
 import { ErrorCode, createError } from "../../src/errors.js";
 

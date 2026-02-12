@@ -1,26 +1,23 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
 import type { AppleScriptResult } from "../../../src/applescript.js";
 import type { CompleteResult } from "../../../src/commands/complete.js";
 
-// Create mock functions before mocking the module
-const mockRunAppleScript = jest.fn<
-  <T>(_script: string) => Promise<AppleScriptResult<T>>
->();
-const mockOmniFocusScriptWithHelpers = jest.fn((body: string) => body);
-
-// Mock the applescript module using unstable_mockModule for ESM
-jest.unstable_mockModule("../../../src/applescript.js", () => ({
-  runAppleScript: mockRunAppleScript,
-  omniFocusScriptWithHelpers: mockOmniFocusScriptWithHelpers,
+// Mock the applescript module
+vi.mock("../../../src/applescript.js", () => ({
+  runAppleScript: vi.fn(),
+  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
 }));
 
 // Import after mocking
-const { completeTask } = await import("../../../src/commands/complete.js");
+import { completeTask } from "../../../src/commands/complete.js";
+import { runAppleScript } from "../../../src/applescript.js";
+
+const mockRunAppleScript = vi.mocked(runAppleScript);
 
 describe("completeTask", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("validation", () => {

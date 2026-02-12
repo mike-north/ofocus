@@ -18,6 +18,41 @@ export interface AppleScriptResult<T> {
 }
 
 // @public
+export interface BatchCompleteItem {
+    // (undocumented)
+    taskId: string;
+    // (undocumented)
+    taskName: string;
+}
+
+// @public
+export interface BatchDeleteItem {
+    // (undocumented)
+    taskId: string;
+}
+
+// @public
+export interface BatchResult<T> {
+    // (undocumented)
+    failed: {
+        id: string;
+        error: string;
+    }[];
+    // (undocumented)
+    succeeded: T[];
+    // (undocumented)
+    totalFailed: number;
+    // (undocumented)
+    totalSucceeded: number;
+}
+
+// @public
+export function buildRepetitionRuleScript(taskVar: string, rule: RepetitionRule): string;
+
+// @public
+export function buildRRule(rule: RepetitionRule): string;
+
+// @public
 export interface CliError {
     // (undocumented)
     code: ErrorCode;
@@ -61,16 +96,107 @@ export interface CompleteResult {
 export function completeTask(taskId: string): Promise<CliOutput<CompleteResult>>;
 
 // @public
+export function completeTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
+
+// @public
 export function createError(code: ErrorCode, message: string, details?: string): CliError;
+
+// @public
+export function createFolder(name: string, options?: CreateFolderOptions): Promise<CliOutput<OFFolder>>;
+
+// @public
+export interface CreateFolderOptions {
+    // (undocumented)
+    parentFolderId?: string | undefined;
+    // (undocumented)
+    parentFolderName?: string | undefined;
+}
+
+// @public
+export function createProject(name: string, options?: CreateProjectOptions): Promise<CliOutput<OFProject>>;
+
+// @public
+export interface CreateProjectOptions {
+    // (undocumented)
+    deferDate?: string | undefined;
+    // (undocumented)
+    dueDate?: string | undefined;
+    // (undocumented)
+    folderId?: string | undefined;
+    // (undocumented)
+    folderName?: string | undefined;
+    // (undocumented)
+    note?: string | undefined;
+    // (undocumented)
+    sequential?: boolean | undefined;
+    // (undocumented)
+    status?: "active" | "on-hold" | undefined;
+}
+
+// @public
+export function createSubtask(title: string, parentTaskId: string, options?: InboxOptions): Promise<CliOutput<OFTaskWithChildren>>;
+
+// @public
+export function createTag(name: string, options?: CreateTagOptions): Promise<CliOutput<OFTag>>;
+
+// @public
+export interface CreateTagOptions {
+    // (undocumented)
+    parentTagId?: string | undefined;
+    // (undocumented)
+    parentTagName?: string | undefined;
+}
+
+// @public
+export interface DeleteResult {
+    // (undocumented)
+    deleted: true;
+    // (undocumented)
+    taskId: string;
+}
+
+// @public
+export function deleteTag(tagId: string): Promise<CliOutput<DeleteTagResult>>;
+
+// @public
+export interface DeleteTagResult {
+    // (undocumented)
+    deleted: true;
+    // (undocumented)
+    tagId: string;
+}
+
+// @public
+export function deleteTask(taskId: string): Promise<CliOutput<DeleteResult>>;
+
+// @public
+export function deleteTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchDeleteItem>>>;
+
+// @public
+export interface DropResult {
+    // (undocumented)
+    dropped: boolean;
+    // (undocumented)
+    taskId: string;
+    // (undocumented)
+    taskName: string;
+}
+
+// @public
+export function dropTask(taskId: string): Promise<CliOutput<DropResult>>;
 
 // @public
 const ErrorCode: {
     readonly TASK_NOT_FOUND: "TASK_NOT_FOUND";
     readonly PROJECT_NOT_FOUND: "PROJECT_NOT_FOUND";
     readonly TAG_NOT_FOUND: "TAG_NOT_FOUND";
+    readonly FOLDER_NOT_FOUND: "FOLDER_NOT_FOUND";
+    readonly PERSPECTIVE_NOT_FOUND: "PERSPECTIVE_NOT_FOUND";
+    readonly DUPLICATE_NAME: "DUPLICATE_NAME";
     readonly OMNIFOCUS_NOT_RUNNING: "OMNIFOCUS_NOT_RUNNING";
     readonly INVALID_DATE_FORMAT: "INVALID_DATE_FORMAT";
     readonly INVALID_ID_FORMAT: "INVALID_ID_FORMAT";
+    readonly INVALID_REPETITION_RULE: "INVALID_REPETITION_RULE";
     readonly APPLESCRIPT_ERROR: "APPLESCRIPT_ERROR";
     readonly JSON_PARSE_ERROR: "JSON_PARSE_ERROR";
     readonly VALIDATION_ERROR: "VALIDATION_ERROR";
@@ -92,15 +218,25 @@ export function failure<T = null>(error: CliError): CliOutput<T>;
 export function failureMessage<T = null>(message: string): CliOutput<T>;
 
 // @public
+export interface FolderQueryOptions {
+    // (undocumented)
+    parent?: string | undefined;
+}
+
+// @public
 export interface InboxOptions {
     // (undocumented)
     defer?: string | undefined;
     // (undocumented)
     due?: string | undefined;
     // (undocumented)
+    estimatedMinutes?: number | undefined;
+    // (undocumented)
     flag?: boolean | undefined;
     // (undocumented)
     note?: string | undefined;
+    // (undocumented)
+    repeat?: RepetitionRule | undefined;
     // (undocumented)
     tags?: string[] | undefined;
 }
@@ -109,7 +245,31 @@ export interface InboxOptions {
 export const jsonHelpers = "\non jsonString(val)\n  if val is \"\" or val is missing value or val is \"missing value\" then\n    return \"null\"\n  else\n    return \"\\\"\" & my escapeJson(val) & \"\\\"\"\n  end if\nend jsonString\n\non jsonArray(theList)\n  if (count of theList) is 0 then\n    return \"[]\"\n  end if\n  set output to \"[\"\n  repeat with i from 1 to count of theList\n    if i > 1 then set output to output & \",\"\n    set output to output & \"\\\"\" & (my escapeJson(item i of theList)) & \"\\\"\"\n  end repeat\n  return output & \"]\"\nend jsonArray\n\non escapeJson(str)\n  set output to \"\"\n  repeat with c in characters of (str as string)\n    if c is \"\\\"\" then\n      set output to output & \"\\\\\\\"\"\n    else if c is \"\\\\\" then\n      set output to output & \"\\\\\\\\\"\n    else if c is return then\n      set output to output & \"\\\\n\"\n    else if c is linefeed then\n      set output to output & \"\\\\n\"\n    else\n      set output to output & c\n    end if\n  end repeat\n  return output\nend escapeJson\n";
 
 // @public
+export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
+
+// @public
+export function moveTaskToParent(taskId: string, parentTaskId: string): Promise<CliOutput<OFTaskWithChildren>>;
+
+// @public
+export interface OFFolder {
+    // (undocumented)
+    folderCount: number;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    parentId: string | null;
+    // (undocumented)
+    parentName: string | null;
+    // (undocumented)
+    projectCount: number;
+}
+
+// @public
 export interface OFPerspective {
+    // (undocumented)
+    custom: boolean;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -163,6 +323,8 @@ export interface OFTask {
     // (undocumented)
     dueDate: string | null;
     // (undocumented)
+    estimatedMinutes: number | null;
+    // (undocumented)
     flagged: boolean;
     // (undocumented)
     id: string;
@@ -179,6 +341,18 @@ export interface OFTask {
 }
 
 // @public
+export interface OFTaskWithChildren extends OFTask {
+    // (undocumented)
+    childTaskCount: number;
+    // (undocumented)
+    isActionGroup: boolean;
+    // (undocumented)
+    parentTaskId: string | null;
+    // (undocumented)
+    parentTaskName: string | null;
+}
+
+// @public
 export function omniFocusScript(body: string): string;
 
 // @public
@@ -186,6 +360,12 @@ export function omniFocusScriptWithHelpers(body: string): string;
 
 // @public
 export function parseAppleScriptError(rawError: string): CliError;
+
+// @public
+export interface PerspectiveQueryOptions {
+    // (undocumented)
+    limit?: number | undefined;
+}
 
 // @public
 export interface ProjectQueryOptions {
@@ -198,7 +378,19 @@ export interface ProjectQueryOptions {
 }
 
 // @public
+export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<OFFolder[]>>;
+
+// @public
+export function queryPerspective(name: string, options?: PerspectiveQueryOptions): Promise<CliOutput<OFTask[]>>;
+
+// @public
 export function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<OFProject[]>>;
+
+// @public
+export function queryProjectsForReview(): Promise<CliOutput<OFProject[]>>;
+
+// @public
+export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<OFTaskWithChildren[]>>;
 
 // @public
 export function queryTags(options?: TagQueryOptions): Promise<CliOutput<OFTag[]>>;
@@ -207,10 +399,60 @@ export function queryTags(options?: TagQueryOptions): Promise<CliOutput<OFTag[]>
 export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<OFTask[]>>;
 
 // @public
+export interface RepetitionRule {
+    // (undocumented)
+    dayOfMonth?: number | undefined;
+    // (undocumented)
+    daysOfWeek?: number[] | undefined;
+    // (undocumented)
+    frequency: "daily" | "weekly" | "monthly" | "yearly";
+    // (undocumented)
+    interval: number;
+    // (undocumented)
+    repeatMethod: "due-again" | "defer-another";
+}
+
+// @public
+export function reviewProject(projectId: string): Promise<CliOutput<ReviewResult>>;
+
+// @public
+export interface ReviewResult {
+    // (undocumented)
+    lastReviewed: string;
+    // (undocumented)
+    nextReviewDate: string | null;
+    // (undocumented)
+    projectId: string;
+    // (undocumented)
+    projectName: string;
+}
+
+// @public
 export function runAppleScript<T>(script: string): Promise<AppleScriptResult<T>>;
 
 // @public
 export function runAppleScriptFile<T>(filePath: string, args?: string[]): Promise<AppleScriptResult<T>>;
+
+// @public
+export interface SearchOptions {
+    // (undocumented)
+    includeCompleted?: boolean | undefined;
+    // (undocumented)
+    limit?: number | undefined;
+    // (undocumented)
+    scope?: "name" | "note" | "both" | undefined;
+}
+
+// @public
+export function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<OFTask[]>>;
+
+// @public
+export interface SubtaskQueryOptions {
+    // (undocumented)
+    completed?: boolean | undefined;
+    // (undocumented)
+    flagged?: boolean | undefined;
+}
 
 // @public
 export function success<T>(data: T): CliOutput<T>;
@@ -242,9 +484,15 @@ export interface TaskQueryOptions {
 // @public
 export interface TaskUpdateOptions {
     // (undocumented)
+    clearEstimate?: boolean | undefined;
+    // (undocumented)
+    clearRepeat?: boolean | undefined;
+    // (undocumented)
     defer?: string | undefined;
     // (undocumented)
     due?: string | undefined;
+    // (undocumented)
+    estimatedMinutes?: number | undefined;
     // (undocumented)
     flag?: boolean | undefined;
     // (undocumented)
@@ -252,22 +500,61 @@ export interface TaskUpdateOptions {
     // (undocumented)
     project?: string | undefined;
     // (undocumented)
+    repeat?: RepetitionRule | undefined;
+    // (undocumented)
     tags?: string[] | undefined;
     // (undocumented)
     title?: string | undefined;
 }
 
 // @public
+export function updateTag(tagId: string, options: UpdateTagOptions): Promise<CliOutput<OFTag>>;
+
+// @public
+export interface UpdateTagOptions {
+    // (undocumented)
+    name?: string | undefined;
+    // (undocumented)
+    parentTagId?: string | undefined;
+    // (undocumented)
+    parentTagName?: string | undefined;
+}
+
+// @public
 export function updateTask(taskId: string, options: TaskUpdateOptions): Promise<CliOutput<OFTask>>;
 
 // @public
+export function updateTasks(taskIds: string[], options: TaskUpdateOptions): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
+
+// @public
 export function validateDateString(dateStr: string): CliError | null;
+
+// @public
+export function validateEstimatedMinutes(minutes: number | undefined): CliError | null;
+
+// @public
+export function validateFolderName(name: string | undefined): CliError | null;
 
 // @public
 export function validateId(id: string, type: "task" | "project" | "tag"): CliError | null;
 
 // @public
 export function validateProjectName(name: string | undefined): CliError | null;
+
+// @public
+export function validateRepetitionRule(rule: {
+    frequency: string;
+    interval: number;
+    repeatMethod: string;
+    daysOfWeek?: number[] | undefined;
+    dayOfMonth?: number | undefined;
+} | undefined): CliError | null;
+
+// @public
+export function validateSearchQuery(query: string): CliError | null;
+
+// @public
+export function validateTagName(name: string): CliError | null;
 
 // @public
 export function validateTags(tags: string[] | undefined): CliError | null;

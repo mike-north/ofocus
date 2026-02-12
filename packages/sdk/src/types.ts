@@ -36,6 +36,7 @@ export interface OFTask {
   projectId: string | null;
   projectName: string | null;
   tags: string[];
+  estimatedMinutes: number | null;
 }
 
 /**
@@ -70,6 +71,7 @@ export interface OFTag {
 export interface OFPerspective {
   id: string;
   name: string;
+  custom: boolean;
 }
 
 /**
@@ -81,6 +83,8 @@ export interface InboxOptions {
   defer?: string | undefined;
   flag?: boolean | undefined;
   tags?: string[] | undefined;
+  estimatedMinutes?: number | undefined;
+  repeat?: RepetitionRule | undefined;
 }
 
 /**
@@ -123,4 +127,123 @@ export interface TaskUpdateOptions {
   flag?: boolean | undefined;
   project?: string | undefined;
   tags?: string[] | undefined;
+  estimatedMinutes?: number | undefined;
+  clearEstimate?: boolean | undefined;
+  repeat?: RepetitionRule | undefined;
+  clearRepeat?: boolean | undefined;
+}
+
+/**
+ * OmniFocus folder representation.
+ */
+export interface OFFolder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  parentName: string | null;
+  projectCount: number;
+  folderCount: number;
+}
+
+/**
+ * Options for creating a project.
+ */
+export interface CreateProjectOptions {
+  note?: string | undefined;
+  folderId?: string | undefined;
+  folderName?: string | undefined;
+  sequential?: boolean | undefined;
+  status?: "active" | "on-hold" | undefined;
+  dueDate?: string | undefined;
+  deferDate?: string | undefined;
+}
+
+/**
+ * Options for creating a folder.
+ */
+export interface CreateFolderOptions {
+  parentFolderId?: string | undefined;
+  parentFolderName?: string | undefined;
+}
+
+/**
+ * Options for querying folders.
+ */
+export interface FolderQueryOptions {
+  parent?: string | undefined;
+}
+
+/**
+ * Options for creating a tag.
+ */
+export interface CreateTagOptions {
+  parentTagId?: string | undefined;
+  parentTagName?: string | undefined;
+}
+
+/**
+ * Options for updating a tag.
+ */
+export interface UpdateTagOptions {
+  name?: string | undefined;
+  parentTagId?: string | undefined;
+  parentTagName?: string | undefined;
+}
+
+/**
+ * OmniFocus task with hierarchy information.
+ */
+export interface OFTaskWithChildren extends OFTask {
+  parentTaskId: string | null;
+  parentTaskName: string | null;
+  childTaskCount: number;
+  isActionGroup: boolean;
+}
+
+/**
+ * Options for querying subtasks.
+ */
+export interface SubtaskQueryOptions {
+  completed?: boolean | undefined;
+  flagged?: boolean | undefined;
+}
+
+/**
+ * Result from a batch operation.
+ */
+export interface BatchResult<T> {
+  succeeded: T[];
+  failed: { id: string; error: string }[];
+  totalSucceeded: number;
+  totalFailed: number;
+}
+
+/**
+ * Repetition rule for recurring tasks.
+ */
+export interface RepetitionRule {
+  frequency: "daily" | "weekly" | "monthly" | "yearly";
+  interval: number;
+  repeatMethod: "due-again" | "defer-another";
+  daysOfWeek?: number[] | undefined;
+  dayOfMonth?: number | undefined;
+}
+
+/**
+ * Options for searching tasks.
+ */
+export interface SearchOptions {
+  scope?: "name" | "note" | "both" | undefined;
+  limit?: number | undefined;
+  includeCompleted?: boolean | undefined;
+}
+
+/**
+ * Result from a review operation.
+ */
+export interface ReviewResult {
+  projectId: string;
+  projectName: string;
+  lastReviewed: string;
+  nextReviewDate: string | null;
 }

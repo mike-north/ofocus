@@ -6,12 +6,18 @@ import {
   validateDateString,
   validateTags,
   validateProjectName,
+  validateEstimatedMinutes,
+  validateRepetitionRule,
 } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
 import {
   runAppleScript,
   omniFocusScriptWithHelpers,
 } from "../applescript.js";
+import {
+  buildRepetitionRuleScript,
+  buildClearRepetitionScript,
+} from "./repetition.js";
 
 /**
  * Update properties of an existing task in OmniFocus.
@@ -39,6 +45,12 @@ export async function updateTask(
 
   const projectError = validateProjectName(options.project);
   if (projectError) return failure(projectError);
+
+  const estimateError = validateEstimatedMinutes(options.estimatedMinutes);
+  if (estimateError) return failure(estimateError);
+
+  const repeatError = validateRepetitionRule(options.repeat);
+  if (repeatError) return failure(repeatError);
 
   // Build the update statements
   const updates: string[] = [];
@@ -84,7 +96,25 @@ export async function updateTask(
     }
   }
 
+  if (options.estimatedMinutes !== undefined) {
+    updates.push(
+      `set estimated minutes of theTask to ${String(options.estimatedMinutes)}`
+    );
+  }
+
+  if (options.clearEstimate === true) {
+    updates.push(`set estimated minutes of theTask to missing value`);
+  }
+
   const updateScript = updates.join("\n    ");
+
+  // Handle repetition rule
+  let repetitionScript = "";
+  if (options.clearRepeat === true) {
+    repetitionScript = buildClearRepetitionScript("theTask");
+  } else if (options.repeat !== undefined) {
+    repetitionScript = buildRepetitionRuleScript("theTask", options.repeat);
+  }
 
   // Handle tags - clear and re-add
   let tagScript = "";
@@ -111,6 +141,7 @@ export async function updateTask(
 
     ${updateScript}
     ${tagScript}
+    ${repetitionScript}
 
     -- Return updated task info
     set taskId to id of theTask
@@ -147,6 +178,12 @@ export async function updateTask(
       set end of tagNames to name of t
     end repeat
 
+    set estMinutes to 0
+    try
+      set estMinutes to estimated minutes of theTask
+      if estMinutes is missing value then set estMinutes to 0
+    end try
+
     return "{" & ¬
       "\\"id\\": \\"" & taskId & "\\"," & ¬
       "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
@@ -158,7 +195,8 @@ export async function updateTask(
       "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
       "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
       "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-      "\\"tags\\": " & (my jsonArray(tagNames)) & ¬
+      "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
+      "\\"estimatedMinutes\\": " & estMinutes & ¬
       "}"
   `;
 

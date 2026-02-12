@@ -118,6 +118,165 @@ export function validateProjectName(name: string | undefined): CliError | null {
   return null;
 }
 
+/**
+ * Validate a folder name.
+ * Returns null if valid (or empty), or a CliError if invalid.
+ */
+export function validateFolderName(name: string | undefined): CliError | null {
+  if (!name || name.trim() === "") {
+    return null;
+  }
+
+  // Folder names should not contain characters that could cause injection
+  if (name.includes('"') || name.includes("\\")) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      `Invalid characters in folder name: ${name}`,
+      "Folder names cannot contain quotes or backslashes"
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Validate a tag name for creation/update.
+ * Returns null if valid, or a CliError if invalid.
+ */
+export function validateTagName(name: string): CliError | null {
+  if (!name || name.trim() === "") {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      "Tag name cannot be empty"
+    );
+  }
+
+  // Tag names should not contain characters that could cause injection
+  if (name.includes('"') || name.includes("\\")) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      `Invalid characters in tag name: ${name}`,
+      "Tag names cannot contain quotes or backslashes"
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Validate a repetition rule.
+ * Returns null if valid (or undefined), or a CliError if invalid.
+ */
+export function validateRepetitionRule(
+  rule: { frequency: string; interval: number; repeatMethod: string; daysOfWeek?: number[] | undefined; dayOfMonth?: number | undefined } | undefined
+): CliError | null {
+  if (!rule) {
+    return null;
+  }
+
+  const validFrequencies = ["daily", "weekly", "monthly", "yearly"];
+  if (!validFrequencies.includes(rule.frequency)) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      `Invalid repetition frequency: ${rule.frequency}`,
+      "Valid frequencies are: daily, weekly, monthly, yearly"
+    );
+  }
+
+  if (rule.interval < 1 || !Number.isInteger(rule.interval)) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      `Invalid repetition interval: ${String(rule.interval)}`,
+      "Interval must be a positive integer"
+    );
+  }
+
+  const validMethods = ["due-again", "defer-another"];
+  if (!validMethods.includes(rule.repeatMethod)) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      `Invalid repeat method: ${rule.repeatMethod}`,
+      "Valid methods are: due-again, defer-another"
+    );
+  }
+
+  if (rule.daysOfWeek !== undefined) {
+    if (!Array.isArray(rule.daysOfWeek) || rule.daysOfWeek.length === 0) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "daysOfWeek must be a non-empty array"
+      );
+    }
+    for (const day of rule.daysOfWeek) {
+      if (day < 0 || day > 6 || !Number.isInteger(day)) {
+        return createError(
+          ErrorCode.VALIDATION_ERROR,
+          `Invalid day of week: ${String(day)}`,
+          "Days of week must be integers 0-6 (Sunday=0, Saturday=6)"
+        );
+      }
+    }
+  }
+
+  if (rule.dayOfMonth !== undefined) {
+    if (rule.dayOfMonth < 1 || rule.dayOfMonth > 31 || !Number.isInteger(rule.dayOfMonth)) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        `Invalid day of month: ${String(rule.dayOfMonth)}`,
+        "Day of month must be an integer 1-31"
+      );
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Validate an estimated minutes value.
+ * Returns null if valid (or undefined), or a CliError if invalid.
+ */
+export function validateEstimatedMinutes(
+  minutes: number | undefined
+): CliError | null {
+  if (minutes === undefined) {
+    return null;
+  }
+
+  if (!Number.isInteger(minutes) || minutes < 0) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      `Invalid estimated minutes: ${String(minutes)}`,
+      "Estimated minutes must be a non-negative integer"
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Validate a search query.
+ * Returns null if valid, or a CliError if invalid.
+ */
+export function validateSearchQuery(query: string): CliError | null {
+  if (!query || query.trim() === "") {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      "Search query cannot be empty"
+    );
+  }
+
+  // Search queries should not contain characters that could cause injection
+  if (query.includes('"') || query.includes("\\")) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      "Invalid characters in search query",
+      "Search queries cannot contain quotes or backslashes"
+    );
+  }
+
+  return null;
+}
+
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
