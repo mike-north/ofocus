@@ -26,6 +26,33 @@ import {
   queryPerspective,
   reviewProject,
   queryProjectsForReview,
+  // Phase 5
+  queryForecast,
+  focus,
+  unfocus,
+  getFocused,
+  queryDeferred,
+  generateUrl,
+  deferTask,
+  deferTasks,
+  // Phase 6
+  quickCapture,
+  exportTaskPaper,
+  importTaskPaper,
+  getStats,
+  // Phase 7
+  saveTemplate,
+  listTemplates,
+  createFromTemplate,
+  deleteTemplate,
+  // Phase 8
+  addAttachment,
+  listAttachments,
+  removeAttachment,
+  archiveTasks,
+  compactDatabase,
+  getSyncStatus,
+  triggerSync,
 } from "@ofocus/sdk";
 import type { RepetitionRule } from "@ofocus/sdk";
 import { listCommands } from "./commands/list-commands.js";
@@ -152,6 +179,67 @@ interface PerspectiveOptions {
   limit?: number | undefined;
 }
 
+interface ForecastCommandOptions {
+  start?: string | undefined;
+  end?: string | undefined;
+  days?: number | undefined;
+  includeDeferred?: boolean | undefined;
+}
+
+interface FocusCommandOptions {
+  byId?: boolean | undefined;
+}
+
+interface DeferredCommandOptions {
+  deferredAfter?: string | undefined;
+  deferredBefore?: string | undefined;
+  blockedOnly?: boolean | undefined;
+}
+
+interface DeferCommandOptions {
+  days?: number | undefined;
+  to?: string | undefined;
+}
+
+interface QuickCommandOptions {
+  note?: string | undefined;
+}
+
+interface ExportCommandOptions {
+  project?: string | undefined;
+  includeCompleted?: boolean | undefined;
+  includeDropped?: boolean | undefined;
+}
+
+interface ImportCommandOptions {
+  createProjects?: boolean | undefined;
+  defaultProject?: string | undefined;
+}
+
+interface StatsCommandOptions {
+  project?: string | undefined;
+  period?: "day" | "week" | "month" | "year" | undefined;
+  since?: string | undefined;
+  until?: string | undefined;
+}
+
+interface TemplateSaveOptions {
+  description?: string | undefined;
+}
+
+interface TemplateCreateOptions {
+  projectName?: string | undefined;
+  folder?: string | undefined;
+  baseDate?: string | undefined;
+}
+
+interface ArchiveCommandOptions {
+  completedBefore?: string | undefined;
+  droppedBefore?: string | undefined;
+  project?: string | undefined;
+  dryRun?: boolean | undefined;
+}
+
 const AGENT_INSTRUCTIONS_URL =
   "https://raw.githubusercontent.com/mike-north/ofocus/refs/heads/main/AGENT_INSTRUCTIONS.md";
 
@@ -219,7 +307,8 @@ Use --human flag for human-readable output (default is JSON).
     return {
       frequency,
       interval: every ?? 1,
-      repeatMethod: repeatMethod === "defer-another" ? "defer-another" : "due-again",
+      repeatMethod:
+        repeatMethod === "defer-another" ? "defer-another" : "due-again",
     };
   }
 
@@ -243,10 +332,20 @@ Use --human flag for human-readable output (default is JSON).
     .option("--defer <date>", "Defer date")
     .option("-f, --flag", "Flag the task")
     .option("-t, --tag <name...>", "Tags to apply")
-    .option("-e, --estimate <minutes>", "Estimated duration in minutes", parseInt)
-    .option("--repeat <frequency>", "Repeat frequency (daily, weekly, monthly, yearly)")
+    .option(
+      "-e, --estimate <minutes>",
+      "Estimated duration in minutes",
+      parseInt
+    )
+    .option(
+      "--repeat <frequency>",
+      "Repeat frequency (daily, weekly, monthly, yearly)"
+    )
     .option("--every <n>", "Repeat every N periods (default: 1)", parseInt)
-    .option("--repeat-method <method>", "Repeat method (due-again, defer-another)")
+    .option(
+      "--repeat-method <method>",
+      "Repeat method (due-again, defer-another)"
+    )
     .action(
       async (title: string, options: InboxCommandOptions, cmd: Command) => {
         const globalOpts = getGlobalOpts(cmd);
@@ -257,7 +356,11 @@ Use --human flag for human-readable output (default is JSON).
           flag: options.flag,
           tags: options.tag,
           estimatedMinutes: options.estimate,
-          repeat: parseRepetitionOptions(options.repeat, options.every, options.repeatMethod),
+          repeat: parseRepetitionOptions(
+            options.repeat,
+            options.every,
+            options.repeatMethod
+          ),
         });
         output(result, getOutputFormat(globalOpts));
         if (!result.success) process.exitCode = 1;
@@ -356,11 +459,21 @@ Use --human flag for human-readable output (default is JSON).
     .option("--no-flag", "Unflag the task")
     .option("-p, --project <name>", "Move to project (empty string to remove)")
     .option("-t, --tag <name...>", "Replace tags with these")
-    .option("-e, --estimate <minutes>", "Estimated duration in minutes", parseInt)
+    .option(
+      "-e, --estimate <minutes>",
+      "Estimated duration in minutes",
+      parseInt
+    )
     .option("--clear-estimate", "Clear estimated duration")
-    .option("--repeat <frequency>", "Repeat frequency (daily, weekly, monthly, yearly)")
+    .option(
+      "--repeat <frequency>",
+      "Repeat frequency (daily, weekly, monthly, yearly)"
+    )
     .option("--every <n>", "Repeat every N periods (default: 1)", parseInt)
-    .option("--repeat-method <method>", "Repeat method (due-again, defer-another)")
+    .option(
+      "--repeat-method <method>",
+      "Repeat method (due-again, defer-another)"
+    )
     .option("--clear-repeat", "Clear repetition rule")
     .action(
       async (taskId: string, options: UpdateCommandOptions, cmd: Command) => {
@@ -375,7 +488,11 @@ Use --human flag for human-readable output (default is JSON).
           tags: options.tag,
           estimatedMinutes: options.estimate,
           clearEstimate: options.clearEstimate,
-          repeat: parseRepetitionOptions(options.repeat, options.every, options.repeatMethod),
+          repeat: parseRepetitionOptions(
+            options.repeat,
+            options.every,
+            options.repeatMethod
+          ),
           clearRepeat: options.clearRepeat,
         });
         output(result, getOutputFormat(globalOpts));
@@ -489,17 +606,15 @@ Use --human flag for human-readable output (default is JSON).
     .argument("<name>", "Tag name")
     .option("--parent <name>", "Parent tag name")
     .option("--parent-id <id>", "Parent tag ID")
-    .action(
-      async (name: string, options: CreateTagOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await createTag(name, {
-          parentTagName: options.parent,
-          parentTagId: options.parentId,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+    .action(async (name: string, options: CreateTagOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await createTag(name, {
+        parentTagName: options.parent,
+        parentTagId: options.parentId,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
 
   // update-tag
   program
@@ -509,18 +624,16 @@ Use --human flag for human-readable output (default is JSON).
     .option("--name <name>", "New tag name")
     .option("--parent <name>", "Move to parent tag by name")
     .option("--parent-id <id>", "Move to parent tag by ID")
-    .action(
-      async (tagId: string, options: UpdateTagOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await updateTag(tagId, {
-          name: options.name,
-          parentTagName: options.parent,
-          parentTagId: options.parentId,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+    .action(async (tagId: string, options: UpdateTagOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await updateTag(tagId, {
+        name: options.name,
+        parentTagName: options.parent,
+        parentTagId: options.parentId,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
 
   // delete-tag
   program
@@ -549,22 +662,24 @@ Use --human flag for human-readable output (default is JSON).
     .option("--defer <date>", "Defer date")
     .option("-f, --flag", "Flag the task")
     .option("-t, --tag <name...>", "Tags to apply")
-    .option("-e, --estimate <minutes>", "Estimated duration in minutes", parseInt)
-    .action(
-      async (title: string, options: SubtaskOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await createSubtask(title, options.parent, {
-          note: options.note,
-          due: options.due,
-          defer: options.defer,
-          flag: options.flag,
-          tags: options.tag,
-          estimatedMinutes: options.estimate,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+    .option(
+      "-e, --estimate <minutes>",
+      "Estimated duration in minutes",
+      parseInt
+    )
+    .action(async (title: string, options: SubtaskOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await createSubtask(title, options.parent, {
+        note: options.note,
+        due: options.due,
+        defer: options.defer,
+        flag: options.flag,
+        tags: options.tag,
+        estimatedMinutes: options.estimate,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
 
   // subtasks
   program
@@ -574,7 +689,11 @@ Use --human flag for human-readable output (default is JSON).
     .option("--completed", "Show only completed subtasks")
     .option("--flagged", "Show only flagged subtasks")
     .action(
-      async (parentTaskId: string, options: SubtasksQueryOptions, cmd: Command) => {
+      async (
+        parentTaskId: string,
+        options: SubtasksQueryOptions,
+        cmd: Command
+      ) => {
         const globalOpts = getGlobalOpts(cmd);
         const result = await querySubtasks(parentTaskId, {
           completed: options.completed,
@@ -668,19 +787,17 @@ Use --human flag for human-readable output (default is JSON).
     .option("--scope <scope>", "Search scope (name, note, both)", "both")
     .option("--limit <n>", "Maximum results to return", parseInt, 100)
     .option("--include-completed", "Include completed tasks in results")
-    .action(
-      async (query: string, options: SearchOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const scope = options.scope as "name" | "note" | "both" | undefined;
-        const result = await searchTasks(query, {
-          scope,
-          limit: options.limit,
-          includeCompleted: options.includeCompleted,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+    .action(async (query: string, options: SearchOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const scope = options.scope as "name" | "note" | "both" | undefined;
+      const result = await searchTasks(query, {
+        scope,
+        limit: options.limit,
+        includeCompleted: options.includeCompleted,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
 
   // ===========================================
   // Phase 4: Perspectives
@@ -703,16 +820,14 @@ Use --human flag for human-readable output (default is JSON).
     .description("Query tasks from a perspective")
     .argument("<name>", "Perspective name")
     .option("--limit <n>", "Maximum results to return", parseInt, 100)
-    .action(
-      async (name: string, options: PerspectiveOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await queryPerspective(name, {
-          limit: options.limit,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+    .action(async (name: string, options: PerspectiveOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await queryPerspective(name, {
+        limit: options.limit,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
 
   // ===========================================
   // Phase 4: Review
@@ -737,6 +852,438 @@ Use --human flag for human-readable output (default is JSON).
     .action(async (_opts: unknown, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = await queryProjectsForReview();
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // ===========================================
+  // Phase 5: Forecast, Focus, Deferred
+  // ===========================================
+
+  // forecast
+  program
+    .command("forecast")
+    .description("Query tasks by date range (like OmniFocus Forecast view)")
+    .option("--start <date>", "Start date for forecast range (default: today)")
+    .option("--end <date>", "End date for forecast range")
+    .option("--days <n>", "Number of days from start (default: 7)", parseInt)
+    .option("--include-deferred", "Include tasks deferred to the date range")
+    .action(async (options: ForecastCommandOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await queryForecast({
+        start: options.start,
+        end: options.end,
+        days: options.days,
+        includeDeferred: options.includeDeferred,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // focus
+  program
+    .command("focus")
+    .description("Focus on a specific project or folder")
+    .argument("<target>", "Project or folder name (or ID with --by-id)")
+    .option("--by-id", "Interpret target as an ID instead of name")
+    .action(
+      async (target: string, options: FocusCommandOptions, cmd: Command) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await focus(target, { byId: options.byId });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // unfocus
+  program
+    .command("unfocus")
+    .description("Clear focus (show all items)")
+    .action(async (_opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await unfocus();
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // focused
+  program
+    .command("focused")
+    .description("Show current focus state")
+    .action(async (_opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await getFocused();
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // deferred
+  program
+    .command("deferred")
+    .description("List tasks with defer dates")
+    .option("--deferred-after <date>", "Only tasks deferred after this date")
+    .option("--deferred-before <date>", "Only tasks deferred before this date")
+    .option("--blocked-only", "Only show tasks currently blocked by defer date")
+    .action(async (options: DeferredCommandOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await queryDeferred({
+        deferredAfter: options.deferredAfter,
+        deferredBefore: options.deferredBefore,
+        blockedOnly: options.blockedOnly,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // ===========================================
+  // Phase 5b: Utility Commands
+  // ===========================================
+
+  // url
+  program
+    .command("url")
+    .description("Generate OmniFocus URL scheme deep link for an item")
+    .argument("<id>", "Task, project, folder, or tag ID")
+    .action(async (id: string, _opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await generateUrl(id);
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // defer
+  program
+    .command("defer")
+    .description("Defer a task by days or to a specific date")
+    .argument("<task-id>", "Task ID to defer")
+    .option("--days <n>", "Defer by N days from today", parseInt)
+    .option("--to <date>", "Defer to a specific date")
+    .action(
+      async (taskId: string, options: DeferCommandOptions, cmd: Command) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await deferTask(taskId, {
+          days: options.days,
+          to: options.to,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // defer-batch
+  program
+    .command("defer-batch")
+    .description("Defer multiple tasks by days or to a specific date")
+    .argument("<task-ids...>", "Task IDs to defer")
+    .option("--days <n>", "Defer by N days from today", parseInt)
+    .option("--to <date>", "Defer to a specific date")
+    .action(
+      async (taskIds: string[], options: DeferCommandOptions, cmd: Command) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await deferTasks(taskIds, {
+          days: options.days,
+          to: options.to,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // ===========================================
+  // Phase 6: Quick Capture
+  // ===========================================
+
+  // quick
+  program
+    .command("quick")
+    .description("Quick capture with natural language parsing")
+    .argument("<input>", "Natural language task input (use quotes)")
+    .option("-n, --note <text>", "Additional note text")
+    .action(
+      async (input: string, options: QuickCommandOptions, cmd: Command) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await quickCapture(input, {
+          note: options.note,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // ===========================================
+  // Phase 6: TaskPaper Import/Export
+  // ===========================================
+
+  // export
+  program
+    .command("export")
+    .description("Export tasks and projects to TaskPaper format")
+    .option("-p, --project <name>", "Export only a specific project")
+    .option("--include-completed", "Include completed tasks")
+    .option("--include-dropped", "Include dropped tasks")
+    .action(async (options: ExportCommandOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await exportTaskPaper({
+        project: options.project,
+        includeCompleted: options.includeCompleted,
+        includeDropped: options.includeDropped,
+      });
+      // For export, output raw TaskPaper content unless JSON is requested
+      if (getOutputFormat(globalOpts)) {
+        output(result, true);
+      } else if (result.success && result.data) {
+        console.log(result.data.content);
+        console.error(
+          `\nExported ${String(result.data.taskCount)} tasks from ${String(result.data.projectCount)} projects`
+        );
+      } else {
+        output(result, false);
+        process.exitCode = 1;
+      }
+    });
+
+  // import
+  program
+    .command("import")
+    .description("Import tasks from a TaskPaper format file")
+    .argument("<file>", "Path to TaskPaper file")
+    .option("--create-projects", "Create projects that don't exist")
+    .option("--default-project <name>", "Default project for tasks without one")
+    .action(
+      async (file: string, options: ImportCommandOptions, cmd: Command) => {
+        const globalOpts = getGlobalOpts(cmd);
+        // Read file content
+        const fs = await import("node:fs/promises");
+        let content: string;
+        try {
+          content = await fs.readFile(file, "utf-8");
+        } catch (err) {
+          const errorMessage =
+            err instanceof Error ? err.message : "Unknown error";
+          console.error(`Error reading file: ${errorMessage}`);
+          process.exitCode = 1;
+          return;
+        }
+        const result = await importTaskPaper(content, {
+          createProjects: options.createProjects,
+          defaultProject: options.defaultProject,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // ===========================================
+  // Phase 6: Statistics
+  // ===========================================
+
+  // stats
+  program
+    .command("stats")
+    .description("Display productivity statistics")
+    .option("-p, --project <name>", "Filter by project name")
+    .option("--period <period>", "Time period: day, week, month, year")
+    .option("--since <date>", "Start date (ISO format)")
+    .option("--until <date>", "End date (ISO format)")
+    .action(async (options: StatsCommandOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await getStats({
+        project: options.project,
+        period: options.period,
+        since: options.since,
+        until: options.until,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // ===========================================
+  // Phase 7: Project Templates
+  // ===========================================
+
+  // template save
+  program
+    .command("template-save")
+    .description("Save a project as a reusable template")
+    .argument("<name>", "Template name")
+    .argument("<source-project>", "Source project ID or name")
+    .option("-d, --description <text>", "Template description")
+    .action(
+      async (
+        name: string,
+        sourceProject: string,
+        options: TemplateSaveOptions,
+        cmd: Command
+      ) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await saveTemplate({
+          name,
+          sourceProject,
+          description: options.description,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // template list
+  program
+    .command("template-list")
+    .description("List all available project templates")
+    .action((_opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = listTemplates();
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // template create
+  program
+    .command("template-create")
+    .description("Create a new project from a template")
+    .argument("<template-name>", "Template name to instantiate")
+    .option(
+      "-p, --project-name <name>",
+      "New project name (defaults to template name)"
+    )
+    .option("-f, --folder <name>", "Folder to create the project in")
+    .option(
+      "--base-date <date>",
+      "Base date for calculating date offsets (defaults to today)"
+    )
+    .action(
+      async (
+        templateName: string,
+        options: TemplateCreateOptions,
+        cmd: Command
+      ) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await createFromTemplate({
+          templateName,
+          projectName: options.projectName,
+          folder: options.folder,
+          baseDate: options.baseDate,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // template delete
+  program
+    .command("template-delete")
+    .description("Delete a project template")
+    .argument("<name>", "Template name to delete")
+    .action((name: string, _opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = deleteTemplate(name);
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // ===========================================
+  // Phase 8: Attachments
+  // ===========================================
+
+  // attach
+  program
+    .command("attach")
+    .description("Add a file attachment to a task")
+    .argument("<task-id>", "Task ID to attach file to")
+    .argument("<file>", "Path to the file to attach")
+    .action(
+      async (taskId: string, file: string, _opts: unknown, cmd: Command) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await addAttachment(taskId, file);
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // attachments
+  program
+    .command("attachments")
+    .description("List attachments of a task")
+    .argument("<task-id>", "Task ID to list attachments for")
+    .action(async (taskId: string, _opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await listAttachments(taskId);
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // detach
+  program
+    .command("detach")
+    .description("Remove an attachment from a task")
+    .argument("<task-id>", "Task ID to remove attachment from")
+    .argument("<attachment>", "Attachment ID or name to remove")
+    .action(
+      async (
+        taskId: string,
+        attachment: string,
+        _opts: unknown,
+        cmd: Command
+      ) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await removeAttachment(taskId, attachment);
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // archive
+  program
+    .command("archive")
+    .description("Archive completed/dropped tasks and projects")
+    .option(
+      "--completed-before <date>",
+      "Archive tasks completed before this date"
+    )
+    .option("--dropped-before <date>", "Archive tasks dropped before this date")
+    .option("--project <name>", "Only archive tasks from this project")
+    .option("--dry-run", "Preview what would be archived without archiving")
+    .action(async (opts: ArchiveCommandOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await archiveTasks({
+        completedBefore: opts.completedBefore,
+        droppedBefore: opts.droppedBefore,
+        project: opts.project,
+        dryRun: opts.dryRun,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // compact
+  program
+    .command("compact")
+    .description("Trigger database compaction to optimize storage")
+    .action(async (_opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await compactDatabase();
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // sync-status
+  program
+    .command("sync-status")
+    .description("Get the current sync status")
+    .action(async (_opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await getSyncStatus();
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // sync
+  program
+    .command("sync")
+    .description("Trigger a sync operation")
+    .action(async (_opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await triggerSync();
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;
     });
