@@ -20,6 +20,11 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # workflow_run checks out default branch by default, we need the head commit
+          ref: ${{ github.event.workflow_run.head_sha }}
+          # Fetch all history for changesets to work properly
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
