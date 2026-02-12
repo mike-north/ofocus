@@ -1,6 +1,6 @@
 # OmniFocus CLI Monorepo
 
-[![CI](https://github.com/mnorth/ofocus/actions/workflows/ci.yml/badge.svg)](https://github.com/mnorth/ofocus/actions/workflows/ci.yml)
+[![CI](https://github.com/mike-north/ofocus/actions/workflows/ci.yml/badge.svg)](https://github.com/mike-north/ofocus/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A monorepo containing the OmniFocus CLI and SDK for AI agents.
