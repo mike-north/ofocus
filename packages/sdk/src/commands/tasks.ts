@@ -141,6 +141,12 @@ export async function queryTasks(
           set end of tagNames to name of tg
         end repeat
 
+        set estMinutes to 0
+        try
+          set estMinutes to estimated minutes of t
+          if estMinutes is missing value then set estMinutes to 0
+        end try
+
         set output to output & "{" & ¬
           "\\"id\\": \\"" & taskId & "\\"," & ¬
           "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
@@ -152,7 +158,8 @@ export async function queryTasks(
           "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
           "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
           "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-          "\\"tags\\": " & (my jsonArray(tagNames)) & ¬
+          "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
+          "\\"estimatedMinutes\\": " & estMinutes & ¬
           "}"
       end if
     end repeat

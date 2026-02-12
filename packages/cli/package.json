@@ -19,8 +19,9 @@
   ],
   "scripts": {
     "build": "tsc --build",
-    "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
-    "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --testPathPattern=unit"
+    "test": "vitest run",
+    "test:unit": "vitest run --dir tests/unit",
+    "test:watch": "vitest"
   },
   "keywords": [
     "omnifocus",

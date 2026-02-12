@@ -1,26 +1,23 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
 import type { AppleScriptResult } from "../../../src/applescript.js";
 import type { OFTask } from "../../../src/types.js";
 
-// Create mock functions before mocking the module
-const mockRunAppleScript = jest.fn<
-  <T>(_script: string) => Promise<AppleScriptResult<T>>
->();
-const mockOmniFocusScriptWithHelpers = jest.fn((body: string) => body);
-
-// Mock the applescript module using unstable_mockModule for ESM
-jest.unstable_mockModule("../../../src/applescript.js", () => ({
-  runAppleScript: mockRunAppleScript,
-  omniFocusScriptWithHelpers: mockOmniFocusScriptWithHelpers,
+// Mock the applescript module
+vi.mock("../../../src/applescript.js", () => ({
+  runAppleScript: vi.fn(),
+  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
 }));
 
 // Import after mocking
-const { addToInbox } = await import("../../../src/commands/inbox.js");
+import { addToInbox } from "../../../src/commands/inbox.js";
+import { runAppleScript } from "../../../src/applescript.js";
+
+const mockRunAppleScript = vi.mocked(runAppleScript);
 
 describe("addToInbox", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("validation", () => {
@@ -62,6 +59,7 @@ describe("addToInbox", () => {
         projectId: null,
         projectName: null,
         tags: [],
+        estimatedMinutes: null,
       };
 
       mockRunAppleScript.mockResolvedValue({
@@ -90,6 +88,7 @@ describe("addToInbox", () => {
         projectId: null,
         projectName: null,
         tags: [],
+        estimatedMinutes: null,
       };
 
       mockRunAppleScript.mockResolvedValue({
@@ -117,6 +116,7 @@ describe("addToInbox", () => {
         projectId: null,
         projectName: null,
         tags: ["work", "urgent"],
+        estimatedMinutes: null,
       };
 
       mockRunAppleScript.mockResolvedValue({

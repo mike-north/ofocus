@@ -5,9 +5,13 @@ export const ErrorCode = {
   TASK_NOT_FOUND: "TASK_NOT_FOUND",
   PROJECT_NOT_FOUND: "PROJECT_NOT_FOUND",
   TAG_NOT_FOUND: "TAG_NOT_FOUND",
+  FOLDER_NOT_FOUND: "FOLDER_NOT_FOUND",
+  PERSPECTIVE_NOT_FOUND: "PERSPECTIVE_NOT_FOUND",
+  DUPLICATE_NAME: "DUPLICATE_NAME",
   OMNIFOCUS_NOT_RUNNING: "OMNIFOCUS_NOT_RUNNING",
   INVALID_DATE_FORMAT: "INVALID_DATE_FORMAT",
   INVALID_ID_FORMAT: "INVALID_ID_FORMAT",
+  INVALID_REPETITION_RULE: "INVALID_REPETITION_RULE",
   APPLESCRIPT_ERROR: "APPLESCRIPT_ERROR",
   JSON_PARSE_ERROR: "JSON_PARSE_ERROR",
   VALIDATION_ERROR: "VALIDATION_ERROR",
@@ -91,6 +95,33 @@ export function parseAppleScriptError(rawError: string): CliError {
     return createError(
       ErrorCode.TAG_NOT_FOUND,
       "Tag not found",
+      rawError
+    );
+  }
+
+  // Folder not found
+  if (
+    errorLower.includes("can't get first flattened folder") ||
+    errorLower.includes("can't get folder") ||
+    errorLower.includes("no folder") ||
+    (errorLower.includes("folder") && errorLower.includes("doesn't exist"))
+  ) {
+    return createError(
+      ErrorCode.FOLDER_NOT_FOUND,
+      "Folder not found",
+      rawError
+    );
+  }
+
+  // Perspective not found
+  if (
+    errorLower.includes("can't get perspective") ||
+    errorLower.includes("no perspective") ||
+    (errorLower.includes("perspective") && errorLower.includes("doesn't exist"))
+  ) {
+    return createError(
+      ErrorCode.PERSPECTIVE_NOT_FOUND,
+      "Perspective not found",
       rawError
     );
   }
