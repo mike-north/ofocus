@@ -87,6 +87,9 @@ importers:
       '@ofocus/cli':
         specifier: workspace:*
         version: link:../cli
+      '@ofocus/mcp':
+        specifier: workspace:*
+        version: link:../mcp
       '@ofocus/sdk':
         specifier: workspace:*
         version: link:../sdk
