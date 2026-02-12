@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@ofocus/sdk": "workspace:*",
-    "@ofocus/cli": "workspace:*"
+    "@ofocus/cli": "workspace:*",
+    "@ofocus/mcp": "workspace:*"
   }
 }
