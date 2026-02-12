@@ -1,4 +1,5 @@
-# OmniFocus CLI Monorepo
+# OFocus
+A SDK and CLI for integrating with OmniFocus on macOS
 
 [![CI](https://github.com/mike-north/ofocus/actions/workflows/ci.yml/badge.svg)](https://github.com/mike-north/ofocus/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
