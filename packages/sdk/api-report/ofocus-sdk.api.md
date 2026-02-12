@@ -4,6 +4,20 @@
 
 ```ts
 // @public
+export function addAttachment(
+  taskId: string,
+  filePath: string
+): Promise<CliOutput<AddAttachmentResult>>;
+
+// @public
+export interface AddAttachmentResult {
+  attached: boolean;
+  fileName: string;
+  taskId: string;
+  taskName: string;
+}
+
+// @public
 export function addToInbox(
   title: string,
   options?: InboxOptions
@@ -18,6 +32,27 @@ export interface AppleScriptResult<T> {
   // (undocumented)
   success: boolean;
 }
+
+// @public
+export interface ArchiveOptions {
+  completedBefore?: string | undefined;
+  droppedBefore?: string | undefined;
+  dryRun?: boolean | undefined;
+  project?: string | undefined;
+}
+
+// @public
+export interface ArchiveResult {
+  archivePath: string | null;
+  dryRun: boolean;
+  projectsArchived: number;
+  tasksArchived: number;
+}
+
+// @public
+export function archiveTasks(
+  options?: ArchiveOptions
+): Promise<CliOutput<ArchiveResult>>;
 
 // @public
 export interface BatchCompleteItem {
@@ -97,6 +132,15 @@ export interface CommandInfo {
   name: string;
   // (undocumented)
   usage: string;
+}
+
+// @public
+export function compactDatabase(): Promise<CliOutput<CompactResult>>;
+
+// @public
+export interface CompactResult {
+  compacted: boolean;
+  message: string;
 }
 
 // @public
@@ -375,6 +419,9 @@ export function getStats(
 ): Promise<CliOutput<StatsResult>>;
 
 // @public
+export function getSyncStatus(): Promise<CliOutput<SyncStatus>>;
+
+// @public
 export function getTemplate(name: string): CliOutput<ProjectTemplate>;
 
 // @public
@@ -406,6 +453,18 @@ export const jsonHelpers =
   '\non jsonString(val)\n  if val is "" or val is missing value or val is "missing value" then\n    return "null"\n  else\n    return "\\"" & my escapeJson(val) & "\\""\n  end if\nend jsonString\n\non jsonArray(theList)\n  if (count of theList) is 0 then\n    return "[]"\n  end if\n  set output to "["\n  repeat with i from 1 to count of theList\n    if i > 1 then set output to output & ","\n    set output to output & "\\"" & (my escapeJson(item i of theList)) & "\\""\n  end repeat\n  return output & "]"\nend jsonArray\n\non escapeJson(str)\n  set output to ""\n  repeat with c in characters of (str as string)\n    if c is "\\"" then\n      set output to output & "\\\\\\""\n    else if c is "\\\\" then\n      set output to output & "\\\\\\\\"\n    else if c is return then\n      set output to output & "\\\\n"\n    else if c is linefeed then\n      set output to output & "\\\\n"\n    else\n      set output to output & c\n    end if\n  end repeat\n  return output\nend escapeJson\n';
 
 // @public
+export function listAttachments(
+  taskId: string
+): Promise<CliOutput<ListAttachmentsResult>>;
+
+// @public
+export interface ListAttachmentsResult {
+  attachments: OFAttachment[];
+  taskId: string;
+  taskName: string;
+}
+
+// @public
 export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
 
 // @public
@@ -421,6 +480,14 @@ export function moveTaskToParent(
   taskId: string,
   parentTaskId: string
 ): Promise<CliOutput<OFTaskWithChildren>>;
+
+// @public
+export interface OFAttachment {
+  id: string;
+  name: string;
+  size: number | null;
+  type: string | null;
+}
 
 // @public
 export interface OFFolder {
@@ -643,6 +710,19 @@ export interface QuickOptions {
 }
 
 // @public
+export function removeAttachment(
+  taskId: string,
+  attachmentIdOrName: string
+): Promise<CliOutput<RemoveAttachmentResult>>;
+
+// @public
+export interface RemoveAttachmentResult {
+  attachmentName: string;
+  removed: boolean;
+  taskId: string;
+}
+
+// @public
 export interface RepetitionRule {
   // (undocumented)
   dayOfMonth?: number | undefined;
@@ -755,6 +835,20 @@ export interface SubtaskQueryOptions {
 export function success<T>(data: T): CliOutput<T>;
 
 // @public
+export interface SyncResult {
+  message: string;
+  triggered: boolean;
+}
+
+// @public
+export interface SyncStatus {
+  accountName: string | null;
+  lastSync: string | null;
+  syncEnabled: boolean;
+  syncing: boolean;
+}
+
+// @public
 export interface TagQueryOptions {
   // (undocumented)
   parent?: string | undefined;
@@ -861,6 +955,9 @@ export interface TemplateTask {
   tags: string[];
   title: string;
 }
+
+// @public
+export function triggerSync(): Promise<CliOutput<SyncResult>>;
 
 // @public
 export function unfocus(): Promise<CliOutput<FocusResult>>;
