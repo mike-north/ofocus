@@ -83,6 +83,10 @@ out
 dist
 .output
 
+# API Extractor temp files (keep .gitkeep)
+packages/*/temp/*
+!packages/*/temp/.gitkeep
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js
@@ -141,3 +145,5 @@ vite.config.ts.timestamp-*
 .vite/
 
 .claude/settings.local.json
+# Claude Code local configuration (auto-added)
+.claude/*.local.*
