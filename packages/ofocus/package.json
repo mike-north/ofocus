@@ -1,6 +1,6 @@
 {
   "name": "ofocus",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "OmniFocus CLI for AI agents - SDK and CLI combined",
   "type": "module",
   "main": "dist/index.js",
