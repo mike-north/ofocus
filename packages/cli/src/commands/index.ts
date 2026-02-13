@@ -331,4 +331,55 @@ export const commandRegistry: CommandInfo[] = [
       "Trigger a synchronization in OmniFocus. Syncs changes with the OmniFocus sync server (Omni Sync Server or custom WebDAV). Use after making changes to ensure they're uploaded.",
     usage: "ofocus sync",
   },
+  // Phase 9: Project/Folder CRUD & Utilities
+  {
+    name: "update-project",
+    description:
+      "Update properties of an existing project in OmniFocus. Supports renaming, changing notes, status (active, on-hold, completed, dropped), moving to different folder, switching between sequential/parallel, and setting due/defer dates. Only specified properties are updated.",
+    usage:
+      "ofocus update-project <project-id> [--name <name>] [--note <text>] [--status <status>] [--folder <name>] [--sequential] [--due <date>] [--defer <date>]",
+  },
+  {
+    name: "delete-project",
+    description:
+      "Permanently delete a project from OmniFocus. This removes the project and all its tasks from the database. This action cannot be undone. Use 'drop-project' instead to preserve history.",
+    usage: "ofocus delete-project <project-id>",
+  },
+  {
+    name: "drop-project",
+    description:
+      "Mark a project as dropped in OmniFocus. Dropped projects are removed from active lists but preserved in the database for historical reference. This is the recommended way to remove projects you won't complete.",
+    usage: "ofocus drop-project <project-id>",
+  },
+  {
+    name: "update-folder",
+    description:
+      "Update properties of an existing folder in OmniFocus. Supports renaming folders and moving them to different parent folders. Folders organize projects into hierarchies. Only specified properties are updated.",
+    usage:
+      "ofocus update-folder <folder-id> [--name <name>] [--parent <name>] [--parent-id <id>]",
+  },
+  {
+    name: "delete-folder",
+    description:
+      "Permanently delete a folder from OmniFocus. This removes the folder from the database. Projects inside will become top-level. This action cannot be undone. Consider moving projects first.",
+    usage: "ofocus delete-folder <folder-id>",
+  },
+  {
+    name: "duplicate",
+    description:
+      "Create a copy of an existing task in OmniFocus. The duplicated task inherits all properties: title, note, due/defer dates, flags, tags, and estimated duration. By default includes subtasks; use --no-include-subtasks to exclude them.",
+    usage: "ofocus duplicate <task-id> [--no-include-subtasks]",
+  },
+  {
+    name: "open",
+    description:
+      "Open an item in the OmniFocus user interface. Accepts any ID (task, project, folder, or tag) and automatically detects the item type. Activates OmniFocus and navigates to the item using the URL scheme.",
+    usage: "ofocus open <id>",
+  },
+  {
+    name: "review-interval",
+    description:
+      "Get or set the review interval for a project. Review intervals determine how often projects appear in the Review perspective. Omit --set to get current interval; use --set <days> to change it.",
+    usage: "ofocus review-interval <project-id> [--set <days>]",
+  },
 ];

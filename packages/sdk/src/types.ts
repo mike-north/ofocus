@@ -247,3 +247,33 @@ export interface ReviewResult {
   lastReviewed: string;
   nextReviewDate: string | null;
 }
+
+/**
+ * Options for updating a project.
+ */
+export interface UpdateProjectOptions {
+  name?: string | undefined;
+  note?: string | undefined;
+  status?: "active" | "on-hold" | "completed" | "dropped" | undefined;
+  folderId?: string | undefined;
+  folderName?: string | undefined;
+  sequential?: boolean | undefined;
+  dueDate?: string | undefined;
+  deferDate?: string | undefined;
+}
+
+/**
+ * Options for updating a folder.
+ */
+export interface UpdateFolderOptions {
+  name?: string | undefined;
+  parentFolderId?: string | undefined;
+  parentFolderName?: string | undefined;
+}
+
+/**
+ * Options for duplicating a task.
+ */
+export interface DuplicateTaskOptions {
+  includeSubtasks?: boolean | undefined;
+}
