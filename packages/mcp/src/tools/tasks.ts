@@ -18,10 +18,10 @@ import { formatResult } from "../utils.js";
 
 const RepetitionRuleSchema = z.object({
   frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
-  interval: z.number(),
+  interval: z.number().int().min(1),
   repeatMethod: z.enum(["due-again", "defer-another"]),
-  daysOfWeek: z.array(z.number()).optional(),
-  dayOfMonth: z.number().optional(),
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).min(1).optional(),
+  dayOfMonth: z.number().int().min(1).max(31).optional(),
 });
 
 export function registerTaskTools(server: McpServer): void {
@@ -230,6 +230,8 @@ export function registerTaskTools(server: McpServer): void {
         taskId: z.string().describe("The ID of the task to defer"),
         days: z
           .number()
+          .int()
+          .min(1)
           .optional()
           .describe("Defer for this many days from today"),
         to: z.string().optional().describe("Defer to a specific date"),
@@ -321,6 +323,8 @@ export function registerTaskTools(server: McpServer): void {
         taskIds: z.array(z.string()).describe("Array of task IDs to defer"),
         days: z
           .number()
+          .int()
+          .min(1)
           .optional()
           .describe("Defer for this many days from today"),
         to: z.string().optional().describe("Defer to a specific date"),
