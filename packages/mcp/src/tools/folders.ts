@@ -1,6 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { queryFolders, createFolder } from "@ofocus/sdk";
+import {
+  queryFolders,
+  createFolder,
+  updateFolder,
+  deleteFolder,
+} from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
 
 export function registerFolderTools(server: McpServer): void {
@@ -40,6 +45,49 @@ export function registerFolderTools(server: McpServer): void {
         parentFolderId: params.parentFolderId,
         parentFolderName: params.parentFolderName,
       });
+      return formatResult(result);
+    }
+  );
+
+  // folder_update - Update folder properties
+  server.registerTool(
+    "folder_update",
+    {
+      description: "Update properties of an existing folder",
+      inputSchema: {
+        folderId: z.string().describe("The ID of the folder to update"),
+        name: z.string().optional().describe("New folder name"),
+        parentFolderId: z
+          .string()
+          .optional()
+          .describe("Move to parent folder by ID"),
+        parentFolderName: z
+          .string()
+          .optional()
+          .describe("Move to parent folder by name"),
+      },
+    },
+    async (params) => {
+      const result = await updateFolder(params.folderId, {
+        name: params.name,
+        parentFolderId: params.parentFolderId,
+        parentFolderName: params.parentFolderName,
+      });
+      return formatResult(result);
+    }
+  );
+
+  // folder_delete - Delete a folder permanently
+  server.registerTool(
+    "folder_delete",
+    {
+      description: "Permanently delete a folder from OmniFocus",
+      inputSchema: {
+        folderId: z.string().describe("The ID of the folder to delete"),
+      },
+    },
+    async (params) => {
+      const result = await deleteFolder(params.folderId);
       return formatResult(result);
     }
   );

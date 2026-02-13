@@ -7,7 +7,7 @@ import { type CliError, ErrorCode, createError } from "./errors.js";
  */
 export function validateId(
   id: string,
-  type: "task" | "project" | "tag"
+  type: "task" | "project" | "tag" | "folder" | "item"
 ): CliError | null {
   if (!id || id.trim() === "") {
     return createError(
@@ -145,10 +145,7 @@ export function validateFolderName(name: string | undefined): CliError | null {
  */
 export function validateTagName(name: string): CliError | null {
   if (!name || name.trim() === "") {
-    return createError(
-      ErrorCode.VALIDATION_ERROR,
-      "Tag name cannot be empty"
-    );
+    return createError(ErrorCode.VALIDATION_ERROR, "Tag name cannot be empty");
   }
 
   // Tag names should not contain characters that could cause injection
@@ -168,7 +165,15 @@ export function validateTagName(name: string): CliError | null {
  * Returns null if valid (or undefined), or a CliError if invalid.
  */
 export function validateRepetitionRule(
-  rule: { frequency: string; interval: number; repeatMethod: string; daysOfWeek?: number[] | undefined; dayOfMonth?: number | undefined } | undefined
+  rule:
+    | {
+        frequency: string;
+        interval: number;
+        repeatMethod: string;
+        daysOfWeek?: number[] | undefined;
+        dayOfMonth?: number | undefined;
+      }
+    | undefined
 ): CliError | null {
   if (!rule) {
     return null;
@@ -219,7 +224,11 @@ export function validateRepetitionRule(
   }
 
   if (rule.dayOfMonth !== undefined) {
-    if (rule.dayOfMonth < 1 || rule.dayOfMonth > 31 || !Number.isInteger(rule.dayOfMonth)) {
+    if (
+      rule.dayOfMonth < 1 ||
+      rule.dayOfMonth > 31 ||
+      !Number.isInteger(rule.dayOfMonth)
+    ) {
       return createError(
         ErrorCode.VALIDATION_ERROR,
         `Invalid day of month: ${String(rule.dayOfMonth)}`,

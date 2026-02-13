@@ -13,6 +13,8 @@ import {
   deleteTasks,
   deferTask,
   deferTasks,
+  duplicateTask,
+  openItem,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
 
@@ -335,6 +337,45 @@ export function registerTaskTools(server: McpServer): void {
         days: params.days,
         to: params.to,
       });
+      return formatResult(result);
+    }
+  );
+
+  // task_duplicate - Duplicate a task
+  server.registerTool(
+    "task_duplicate",
+    {
+      description: "Create a copy of an existing task with all its properties",
+      inputSchema: {
+        taskId: z.string().describe("The ID of the task to duplicate"),
+        includeSubtasks: z
+          .boolean()
+          .optional()
+          .describe("Include subtasks in the duplicate (default: true)"),
+      },
+    },
+    async (params) => {
+      const result = await duplicateTask(params.taskId, {
+        includeSubtasks: params.includeSubtasks,
+      });
+      return formatResult(result);
+    }
+  );
+
+  // open - Open an item in OmniFocus UI
+  server.registerTool(
+    "open",
+    {
+      description:
+        "Open an item in the OmniFocus user interface (task, project, folder, or tag)",
+      inputSchema: {
+        id: z
+          .string()
+          .describe("The ID of the item to open (auto-detects type)"),
+      },
+    },
+    async (params) => {
+      const result = await openItem(params.id);
       return formatResult(result);
     }
   );

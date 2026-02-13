@@ -54,6 +54,16 @@ import {
   compactDatabase,
   getSyncStatus,
   triggerSync,
+  // Phase 9: Project/Folder CRUD & Utilities
+  updateProject,
+  deleteProject,
+  dropProject,
+  updateFolder,
+  deleteFolder,
+  duplicateTask,
+  openItem,
+  getReviewInterval,
+  setReviewInterval,
 } from "@ofocus/sdk";
 import type { RepetitionRule } from "@ofocus/sdk";
 import { listCommands } from "./commands/list-commands.js";
@@ -1300,6 +1310,184 @@ Use --human flag for human-readable output (default is JSON).
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;
     });
+
+  // ===========================================
+  // Phase 9: Project/Folder CRUD & Utilities
+  // ===========================================
+
+  // update-project
+  program
+    .command("update-project")
+    .description("Update project properties")
+    .argument("<project-id>", "Project ID to update")
+    .option("--name <name>", "New project name")
+    .option("-n, --note <text>", "New project note")
+    .option(
+      "--status <status>",
+      "New status (active, on-hold, completed, dropped)"
+    )
+    .option("--folder <name>", "Move to folder by name")
+    .option("--folder-id <id>", "Move to folder by ID")
+    .option("--sequential", "Make the project sequential")
+    .option("--no-sequential", "Make the project parallel")
+    .option("-d, --due <date>", "New due date (empty string to clear)")
+    .option("--defer <date>", "New defer date (empty string to clear)")
+    .action(
+      async (
+        projectId: string,
+        options: {
+          name?: string;
+          note?: string;
+          status?: string;
+          folder?: string;
+          folderId?: string;
+          sequential?: boolean;
+          due?: string;
+          defer?: string;
+        },
+        cmd: Command
+      ) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const status = options.status as
+          | "active"
+          | "on-hold"
+          | "completed"
+          | "dropped"
+          | undefined;
+        const result = await updateProject(projectId, {
+          name: options.name,
+          note: options.note,
+          status,
+          folderName: options.folder,
+          folderId: options.folderId,
+          sequential: options.sequential,
+          dueDate: options.due,
+          deferDate: options.defer,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // delete-project
+  program
+    .command("delete-project")
+    .description("Delete a project permanently (cannot be undone)")
+    .argument("<project-id>", "Project ID to delete")
+    .action(async (projectId: string, _opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await deleteProject(projectId);
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // drop-project
+  program
+    .command("drop-project")
+    .description("Drop a project (marks as dropped but keeps history)")
+    .argument("<project-id>", "Project ID to drop")
+    .action(async (projectId: string, _opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await dropProject(projectId);
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // update-folder
+  program
+    .command("update-folder")
+    .description("Update folder properties")
+    .argument("<folder-id>", "Folder ID to update")
+    .option("--name <name>", "New folder name")
+    .option("--parent <name>", "Move to parent folder by name")
+    .option("--parent-id <id>", "Move to parent folder by ID")
+    .action(
+      async (
+        folderId: string,
+        options: {
+          name?: string;
+          parent?: string;
+          parentId?: string;
+        },
+        cmd: Command
+      ) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await updateFolder(folderId, {
+          name: options.name,
+          parentFolderName: options.parent,
+          parentFolderId: options.parentId,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // delete-folder
+  program
+    .command("delete-folder")
+    .description("Delete a folder permanently (cannot be undone)")
+    .argument("<folder-id>", "Folder ID to delete")
+    .action(async (folderId: string, _opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await deleteFolder(folderId);
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // duplicate
+  program
+    .command("duplicate")
+    .description("Duplicate a task with all its properties")
+    .argument("<task-id>", "Task ID to duplicate")
+    .option("--include-subtasks", "Include subtasks in duplicate (default)")
+    .option("--no-include-subtasks", "Exclude subtasks from duplicate")
+    .action(
+      async (
+        taskId: string,
+        options: { includeSubtasks?: boolean },
+        cmd: Command
+      ) => {
+        const globalOpts = getGlobalOpts(cmd);
+        const result = await duplicateTask(taskId, {
+          includeSubtasks: options.includeSubtasks,
+        });
+        output(result, getOutputFormat(globalOpts));
+        if (!result.success) process.exitCode = 1;
+      }
+    );
+
+  // open
+  program
+    .command("open")
+    .description("Open an item in the OmniFocus UI")
+    .argument("<id>", "Task, project, folder, or tag ID to open")
+    .action(async (id: string, _opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await openItem(id);
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // review-interval
+  program
+    .command("review-interval")
+    .description("Get or set the review interval for a project")
+    .argument("<project-id>", "Project ID")
+    .option("--set <days>", "Set review interval in days", parseInt)
+    .action(
+      async (projectId: string, options: { set?: number }, cmd: Command) => {
+        const globalOpts = getGlobalOpts(cmd);
+        if (options.set !== undefined) {
+          const result = await setReviewInterval(projectId, options.set);
+          output(result, getOutputFormat(globalOpts));
+          if (!result.success) process.exitCode = 1;
+        } else {
+          const result = await getReviewInterval(projectId);
+          output(result, getOutputFormat(globalOpts));
+          if (!result.success) process.exitCode = 1;
+        }
+      }
+    );
 
   return program;
 }
