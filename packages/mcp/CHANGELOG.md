@@ -1,5 +1,14 @@
 # @ofocus/mcp
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [cb84bb1]
+- Updated dependencies [cb84bb1]
+- Updated dependencies [b822dea]
+  - @ofocus/sdk@0.4.0
+
 ## 0.4.0
 
 ### Minor Changes
