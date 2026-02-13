@@ -3,10 +3,7 @@ import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
  * Result from completing a task.
@@ -29,7 +26,7 @@ export async function completeTask(
 
   const script = `
     set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-    set completed of theTask to true
+    mark complete theTask
 
     set taskName to name of theTask
     set taskCompleted to completed of theTask

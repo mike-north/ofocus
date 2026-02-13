@@ -2,21 +2,27 @@ import type {
   CliOutput,
   ProjectQueryOptions,
   OFProject,
+  PaginatedResult,
 } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
+import { validatePaginationParams } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
- * Query projects from OmniFocus with optional filters.
+ * Query projects from OmniFocus with optional filters and pagination.
  */
 export async function queryProjects(
   options: ProjectQueryOptions = {}
-): Promise<CliOutput<OFProject[]>> {
+): Promise<CliOutput<PaginatedResult<OFProject>>> {
+  // Validate pagination parameters
+  const paginationError = validatePaginationParams(
+    options.limit,
+    options.offset
+  );
+  if (paginationError) return failure(paginationError);
+
   // Build filter conditions for properties that work in where clauses
   const conditions: string[] = [];
 
@@ -48,24 +54,31 @@ export async function queryProjects(
     }
   }
 
+  // Pagination defaults
+  const limit = options.limit ?? 100;
+  const offset = options.offset ?? 0;
+
   const script = `
-    set output to "["
+    set output to "{\\"items\\": ["
     set isFirst to true
+    set totalCount to 0
+    set returnedCount to 0
+    set currentIndex to 0
 
     set allProjects to flattened projects ${whereClause}
 
     repeat with p in allProjects
       set shouldInclude to true
 
-      -- Safely determine project status (OmniFocus has issues with direct status comparisons)
+      -- Safely determine project status (OmniFocus requires "X status" syntax)
       set projStatus to "active"
       try
         set theStatus to status of p
-        if theStatus is on hold then
+        if theStatus is on hold status then
           set projStatus to "on-hold"
-        else if theStatus is done then
+        else if theStatus is done status then
           set projStatus to "completed"
-        else if theStatus is dropped then
+        else if theStatus is dropped status then
           set projStatus to "dropped"
         end if
       end try
@@ -83,43 +96,61 @@ export async function queryProjects(
       ${options.folder ? `end try` : ""}
 
       if shouldInclude then
-        if not isFirst then set output to output & ","
-        set isFirst to false
+        set totalCount to totalCount + 1
 
-        set projId to id of p
-        set projName to name of p
-        set projNote to note of p
-        set projSeq to sequential of p
+        -- Check if within pagination range
+        if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
+          if not isFirst then set output to output & ","
+          set isFirst to false
+          set returnedCount to returnedCount + 1
 
-        set folderId to ""
-        set folderName to ""
-        try
-          set f to folder of p
-          set folderId to id of f
-          set folderName to name of f
-        end try
+          set projId to id of p
+          set projName to name of p
+          set projNote to note of p
+          set projSeq to sequential of p
 
-        set taskCount to count of tasks of p
-        set remainingCount to count of (tasks of p where completed is false)
+          set folderId to ""
+          set folderName to ""
+          try
+            set f to folder of p
+            set folderId to id of f
+            set folderName to name of f
+          end try
 
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & projId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-          "\\"note\\": " & (my jsonString(projNote)) & "," & ¬
-          "\\"status\\": \\"" & projStatus & "\\"," & ¬
-          "\\"sequential\\": " & projSeq & "," & ¬
-          "\\"folderId\\": " & (my jsonString(folderId)) & "," & ¬
-          "\\"folderName\\": " & (my jsonString(folderName)) & "," & ¬
-          "\\"taskCount\\": " & taskCount & "," & ¬
-          "\\"remainingTaskCount\\": " & remainingCount & ¬
-          "}"
+          set taskCount to count of tasks of p
+          set remainingCount to count of (tasks of p where completed is false)
+
+          set output to output & "{" & ¬
+            "\\"id\\": \\"" & projId & "\\"," & ¬
+            "\\"name\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
+            "\\"note\\": " & (my jsonString(projNote)) & "," & ¬
+            "\\"status\\": \\"" & projStatus & "\\"," & ¬
+            "\\"sequential\\": " & projSeq & "," & ¬
+            "\\"folderId\\": " & (my jsonString(folderId)) & "," & ¬
+            "\\"folderName\\": " & (my jsonString(folderName)) & "," & ¬
+            "\\"taskCount\\": " & taskCount & "," & ¬
+            "\\"remainingTaskCount\\": " & remainingCount & ¬
+            "}"
+        end if
+
+        set currentIndex to currentIndex + 1
       end if
     end repeat
 
-    return output & "]"
+    set hasMore to (totalCount > (${String(offset)} + returnedCount))
+
+    set output to output & "]," & ¬
+      "\\"totalCount\\": " & totalCount & "," & ¬
+      "\\"returnedCount\\": " & returnedCount & "," & ¬
+      "\\"hasMore\\": " & hasMore & "," & ¬
+      "\\"offset\\": ${String(offset)}," & ¬
+      "\\"limit\\": ${String(limit)}" & ¬
+      "}"
+
+    return output
   `;
 
-  const result = await runAppleScript<OFProject[]>(
+  const result = await runAppleScript<PaginatedResult<OFProject>>(
     omniFocusScriptWithHelpers(script)
   );
 
@@ -130,5 +161,14 @@ export async function queryProjects(
     );
   }
 
-  return success(result.data ?? []);
+  return success(
+    result.data ?? {
+      items: [],
+      totalCount: 0,
+      returnedCount: 0,
+      hasMore: false,
+      offset,
+      limit,
+    }
+  );
 }

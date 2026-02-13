@@ -146,17 +146,29 @@ end jsonArray
 
 on escapeJson(str)
   set output to ""
+  set quoteChar to "\\""
+  set bslashChar to "\\\\"
+  set tabChar to tab
   repeat with c in characters of (str as string)
-    if c is "\\"" then
+    set ch to c as string
+    if ch is quoteChar then
       set output to output & "\\\\\\""
-    else if c is "\\\\" then
+    else if ch is bslashChar then
       set output to output & "\\\\\\\\"
-    else if c is return then
+    else if ch is return then
       set output to output & "\\\\n"
-    else if c is linefeed then
+    else if ch is linefeed then
       set output to output & "\\\\n"
+    else if ch is tabChar then
+      set output to output & "\\\\t"
     else
-      set output to output & c
+      -- Check for other control characters (ASCII 0-31) and skip them
+      set charCode to id of ch
+      if charCode < 32 then
+        -- Skip control characters
+      else
+        set output to output & ch
+      end if
     end if
   end repeat
   return output

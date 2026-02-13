@@ -200,10 +200,48 @@ Errors return structured JSON:
 
 Common codes: `INVALID_ID_FORMAT`, `NOT_FOUND`, `VALIDATION_ERROR`, `APPLESCRIPT_ERROR`, `OMNIFOCUS_NOT_RUNNING`
 
+## Large Response Commands ⚠️
+
+These commands can return large amounts of data. **Always use filters** to narrow results:
+
+| Command       | Risk                        | Mitigation                                                           |
+| ------------- | --------------------------- | -------------------------------------------------------------------- |
+| `tasks`       | High - can return thousands | Use `--flagged`, `--project`, `--tag`, `--available`, `--due-before` |
+| `projects`    | Medium                      | Use `--folder`, `--status`                                           |
+| `tags`        | Medium                      | Use `--parent`                                                       |
+| `folders`     | Low-Medium                  | Use `--parent`                                                       |
+| `subtasks`    | Medium                      | Already scoped to parent task                                        |
+| `forecast`    | Medium                      | Use `--days` to limit range                                          |
+| `deferred`    | Medium                      | Use `--blocked-only`                                                 |
+| `export`      | High                        | Use `--project` to limit scope                                       |
+| `perspective` | Varies                      | Depends on perspective definition                                    |
+
+### Pagination
+
+All query commands support `--limit` and `--offset`:
+
+```bash
+# Default returns up to 100 items
+ofocus tasks --flagged
+
+# Get next page if needed
+ofocus tasks --flagged --limit 100 --offset 100
+```
+
+The response includes pagination metadata:
+
+- `totalCount`: Total matching items
+- `hasMore`: Whether more pages exist
+- `returnedCount`: Items in this response
+
+**Best practice**: Start with filters, use default limit (100), paginate only if `hasMore` is true.
+
 ## Best Practices
 
-1. **Get IDs from queries**: Use `tasks`, `projects`, etc. to obtain valid IDs
-2. **Prefer drop over delete**: Use `drop` to preserve history
-3. **Use batch operations**: More efficient for multiple items
-4. **Check focus state**: Run `focused` to understand current scope
-5. **Sync after changes**: Run `sync` if immediate synchronization needed
+1. **Filter first**: Always use filters (`--flagged`, `--project`, `--tag`, etc.) before fetching
+2. **Get IDs from filtered queries**: Use filtered `tasks`, `projects`, etc. to obtain valid IDs
+3. **Prefer drop over delete**: Use `drop` to preserve history
+4. **Use batch operations**: More efficient for multiple items
+5. **Check focus state**: Run `focused` to understand current scope
+6. **Sync after changes**: Run `sync` if immediate synchronization needed
+7. **Paginate large results**: Check `hasMore` and use `--offset` for additional pages

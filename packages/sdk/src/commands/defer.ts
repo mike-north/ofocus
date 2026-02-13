@@ -2,7 +2,7 @@ import type { CliOutput, BatchResult } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId, validateDateString } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
+import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
 import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
@@ -79,7 +79,7 @@ export async function deferTask(
   if (options.days !== undefined) {
     deferLogic = `set newDefer to (current date) + (${String(options.days)} * days)`;
   } else {
-    deferLogic = `set newDefer to date "${escapeAppleScript(options.to ?? "")}"`;
+    deferLogic = `set newDefer to date "${toAppleScriptDate(options.to ?? "")}"`;
   }
 
   const script = `
@@ -179,7 +179,7 @@ export async function deferTasks(
   if (options.days !== undefined) {
     deferLogic = `set newDefer to rightNow + (${String(options.days)} * days)`;
   } else {
-    deferLogic = `set newDefer to date "${escapeAppleScript(options.to ?? "")}"`;
+    deferLogic = `set newDefer to date "${toAppleScriptDate(options.to ?? "")}"`;
   }
 
   for (const chunk of chunks) {

@@ -9,8 +9,10 @@ Options for querying projects.
 **Signature:**
 
 ```typescript
-export interface ProjectQueryOptions 
+export interface ProjectQueryOptions extends PaginationOptions
 ```
+
+**Extends:** [PaginationOptions](./sdk.paginationoptions.md)
 
 ## Properties
 
@@ -18,79 +20,62 @@ export interface ProjectQueryOptions
 
 Property
 
-
 </th><th>
 
 Modifiers
-
 
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [folder?](./sdk.projectqueryoptions.folder.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [sequential?](./sdk.projectqueryoptions.sequential.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [status?](./sdk.projectqueryoptions.status.md)
 
-
 </td><td>
-
 
 </td><td>
 
 "active" \| "on-hold" \| "completed" \| "dropped" \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
-
 </td></tr>
 </tbody></table>
-

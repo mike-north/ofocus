@@ -9,7 +9,7 @@ Options for updating a task.
 **Signature:**
 
 ```typescript
-export interface TaskUpdateOptions 
+export interface TaskUpdateOptions
 ```
 
 ## Properties
@@ -18,155 +18,182 @@ export interface TaskUpdateOptions
 
 Property
 
-
 </th><th>
 
 Modifiers
-
 
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
 
-
 </th></tr></thead>
 <tbody><tr><td>
 
-[defer?](./sdk.taskupdateoptions.defer.md)
-
-
-</td><td>
-
+[clearEstimate?](./sdk.taskupdateoptions.clearestimate.md)
 
 </td><td>
 
-string \| undefined
+</td><td>
 
+boolean \| undefined
 
 </td><td>
 
 _(Optional)_
 
+</td></tr>
+<tr><td>
+
+[clearRepeat?](./sdk.taskupdateoptions.clearrepeat.md)
+
+</td><td>
+
+</td><td>
+
+boolean \| undefined
+
+</td><td>
+
+_(Optional)_
+
+</td></tr>
+<tr><td>
+
+[defer?](./sdk.taskupdateoptions.defer.md)
+
+</td><td>
+
+</td><td>
+
+string \| undefined
+
+</td><td>
+
+_(Optional)_
 
 </td></tr>
 <tr><td>
 
 [due?](./sdk.taskupdateoptions.due.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
+</td></tr>
+<tr><td>
+
+[estimatedMinutes?](./sdk.taskupdateoptions.estimatedminutes.md)
+
+</td><td>
+
+</td><td>
+
+number \| undefined
+
+</td><td>
+
+_(Optional)_
 
 </td></tr>
 <tr><td>
 
 [flag?](./sdk.taskupdateoptions.flag.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [note?](./sdk.taskupdateoptions.note.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [project?](./sdk.taskupdateoptions.project.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
+</td></tr>
+<tr><td>
+
+[repeat?](./sdk.taskupdateoptions.repeat.md)
+
+</td><td>
+
+</td><td>
+
+[RepetitionRule](./sdk.repetitionrule.md) \| undefined
+
+</td><td>
+
+_(Optional)_
 
 </td></tr>
 <tr><td>
 
 [tags?](./sdk.taskupdateoptions.tags.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string\[\] \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [title?](./sdk.taskupdateoptions.title.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
-
 </td></tr>
 </tbody></table>
-

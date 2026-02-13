@@ -88,9 +88,37 @@ export interface InboxOptions {
 }
 
 /**
+ * Common pagination options for query functions.
+ */
+export interface PaginationOptions {
+  /** Maximum number of results to return. Defaults to 100. */
+  limit?: number | undefined;
+  /** Number of results to skip (for pagination). Defaults to 0. */
+  offset?: number | undefined;
+}
+
+/**
+ * Paginated result wrapper with metadata.
+ */
+export interface PaginatedResult<T> {
+  /** The items for this page */
+  items: T[];
+  /** Total number of items matching the query (before pagination) */
+  totalCount: number;
+  /** Number of items returned in this page */
+  returnedCount: number;
+  /** Whether there are more items after this page */
+  hasMore: boolean;
+  /** The offset used for this query */
+  offset: number;
+  /** The limit used for this query */
+  limit: number;
+}
+
+/**
  * Options for querying tasks.
  */
-export interface TaskQueryOptions {
+export interface TaskQueryOptions extends PaginationOptions {
   project?: string | undefined;
   tag?: string | undefined;
   dueBefore?: string | undefined;
@@ -103,7 +131,7 @@ export interface TaskQueryOptions {
 /**
  * Options for querying projects.
  */
-export interface ProjectQueryOptions {
+export interface ProjectQueryOptions extends PaginationOptions {
   folder?: string | undefined;
   status?: "active" | "on-hold" | "completed" | "dropped" | undefined;
   sequential?: boolean | undefined;
@@ -112,7 +140,7 @@ export interface ProjectQueryOptions {
 /**
  * Options for querying tags.
  */
-export interface TagQueryOptions {
+export interface TagQueryOptions extends PaginationOptions {
   parent?: string | undefined;
 }
 
@@ -169,7 +197,7 @@ export interface CreateFolderOptions {
 /**
  * Options for querying folders.
  */
-export interface FolderQueryOptions {
+export interface FolderQueryOptions extends PaginationOptions {
   parent?: string | undefined;
 }
 
@@ -203,7 +231,7 @@ export interface OFTaskWithChildren extends OFTask {
 /**
  * Options for querying subtasks.
  */
-export interface SubtaskQueryOptions {
+export interface SubtaskQueryOptions extends PaginationOptions {
   completed?: boolean | undefined;
   flagged?: boolean | undefined;
 }

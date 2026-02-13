@@ -7,11 +7,8 @@ import {
   validateEstimatedMinutes,
   validateRepetitionRule,
 } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 import { buildRepetitionRuleScript } from "./repetition.js";
 
 /**
@@ -52,11 +49,11 @@ export async function addToInbox(
   }
 
   if (options.due !== undefined) {
-    properties.push(`due date:date "${options.due}"`);
+    properties.push(`due date:date "${toAppleScriptDate(options.due)}"`);
   }
 
   if (options.defer !== undefined) {
-    properties.push(`defer date:date "${options.defer}"`);
+    properties.push(`defer date:date "${toAppleScriptDate(options.defer)}"`);
   }
 
   if (options.estimatedMinutes !== undefined) {
@@ -135,7 +132,9 @@ export async function addToInbox(
       "}"
   `;
 
-  const result = await runAppleScript<OFTask>(omniFocusScriptWithHelpers(script));
+  const result = await runAppleScript<OFTask>(
+    omniFocusScriptWithHelpers(script)
+  );
 
   if (!result.success) {
     return failure(

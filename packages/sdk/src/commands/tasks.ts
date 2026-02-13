@@ -1,22 +1,25 @@
-import type { CliOutput, TaskQueryOptions, OFTask } from "../types.js";
+import type {
+  CliOutput,
+  TaskQueryOptions,
+  OFTask,
+  PaginatedResult,
+} from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import {
   validateDateString,
   validateProjectName,
+  validatePaginationParams,
 } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
- * Query tasks from OmniFocus with optional filters.
+ * Query tasks from OmniFocus with optional filters and pagination.
  */
 export async function queryTasks(
   options: TaskQueryOptions = {}
-): Promise<CliOutput<OFTask[]>> {
+): Promise<CliOutput<PaginatedResult<OFTask>>> {
   // Validate inputs
   if (options.dueBefore !== undefined) {
     const dateError = validateDateString(options.dueBefore);
@@ -30,6 +33,13 @@ export async function queryTasks(
 
   const projectError = validateProjectName(options.project);
   if (projectError) return failure(projectError);
+
+  // Validate pagination parameters
+  const paginationError = validatePaginationParams(
+    options.limit,
+    options.offset
+  );
+  if (paginationError) return failure(paginationError);
 
   // Build filter conditions
   const conditions: string[] = [];
@@ -57,12 +67,20 @@ export async function queryTasks(
   const whereClause =
     conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
 
+  // Pagination defaults
+  const limit = options.limit ?? 100;
+  const offset = options.offset ?? 0;
+
   const script = `
-    set output to "["
+    set output to "{\\"items\\": ["
     set isFirst to true
+    set totalCount to 0
+    set returnedCount to 0
+    set currentIndex to 0
 
     set allTasks to flattened tasks ${whereClause}
 
+    -- First pass: count matching items and collect within pagination range
     repeat with t in allTasks
       -- Apply additional filters
       set shouldInclude to true
@@ -104,70 +122,88 @@ export async function queryTasks(
       ${options.dueAfter ? `end if` : ""}
 
       if shouldInclude then
-        if not isFirst then set output to output & ","
-        set isFirst to false
+        set totalCount to totalCount + 1
 
-        set taskId to id of t
-        set taskName to name of t
-        set taskNote to note of t
-        set taskFlagged to flagged of t
-        set taskCompleted to completed of t
+        -- Check if within pagination range
+        if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
+          if not isFirst then set output to output & ","
+          set isFirst to false
+          set returnedCount to returnedCount + 1
 
-        set dueStr to ""
-        try
-          set dueStr to (due date of t) as string
-        end try
+          set taskId to id of t
+          set taskName to name of t
+          set taskNote to note of t
+          set taskFlagged to flagged of t
+          set taskCompleted to completed of t
 
-        set deferStr to ""
-        try
-          set deferStr to (defer date of t) as string
-        end try
+          set dueStr to ""
+          try
+            set dueStr to (due date of t) as string
+          end try
 
-        set completionStr to ""
-        try
-          set completionStr to (completion date of t) as string
-        end try
+          set deferStr to ""
+          try
+            set deferStr to (defer date of t) as string
+          end try
 
-        set projId to ""
-        set projName to ""
-        try
-          set proj to containing project of t
-          set projId to id of proj
-          set projName to name of proj
-        end try
+          set completionStr to ""
+          try
+            set completionStr to (completion date of t) as string
+          end try
 
-        set tagNames to {}
-        repeat with tg in tags of t
-          set end of tagNames to name of tg
-        end repeat
+          set projId to ""
+          set projName to ""
+          try
+            set proj to containing project of t
+            set projId to id of proj
+            set projName to name of proj
+          end try
 
-        set estMinutes to 0
-        try
-          set estMinutes to estimated minutes of t
-          if estMinutes is missing value then set estMinutes to 0
-        end try
+          set tagNames to {}
+          repeat with tg in tags of t
+            set end of tagNames to name of tg
+          end repeat
 
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & taskId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-          "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-          "\\"flagged\\": " & taskFlagged & "," & ¬
-          "\\"completed\\": " & taskCompleted & "," & ¬
-          "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-          "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-          "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-          "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-          "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-          "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-          "\\"estimatedMinutes\\": " & estMinutes & ¬
-          "}"
+          set estMinutes to 0
+          try
+            set estMinutes to estimated minutes of t
+            if estMinutes is missing value then set estMinutes to 0
+          end try
+
+          set output to output & "{" & ¬
+            "\\"id\\": \\"" & taskId & "\\"," & ¬
+            "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
+            "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
+            "\\"flagged\\": " & taskFlagged & "," & ¬
+            "\\"completed\\": " & taskCompleted & "," & ¬
+            "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
+            "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
+            "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
+            "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
+            "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
+            "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
+            "\\"estimatedMinutes\\": " & estMinutes & ¬
+            "}"
+        end if
+
+        set currentIndex to currentIndex + 1
       end if
     end repeat
 
-    return output & "]"
+    set hasMore to (totalCount > (${String(offset)} + returnedCount))
+
+    set output to output & "]," & ¬
+      "\\"totalCount\\": " & totalCount & "," & ¬
+      "\\"returnedCount\\": " & returnedCount & "," & ¬
+      "\\"hasMore\\": " & hasMore & "," & ¬
+      "\\"offset\\": ${String(offset)}," & ¬
+      "\\"limit\\": ${String(limit)}" & ¬
+      "}"
+
+    return output
   `;
 
-  const result = await runAppleScript<OFTask[]>(
+  const result = await runAppleScript<PaginatedResult<OFTask>>(
     omniFocusScriptWithHelpers(script)
   );
 
@@ -178,5 +214,14 @@ export async function queryTasks(
     );
   }
 
-  return success(result.data ?? []);
+  return success(
+    result.data ?? {
+      items: [],
+      totalCount: 0,
+      returnedCount: 0,
+      hasMore: false,
+      offset,
+      limit,
+    }
+  );
 }

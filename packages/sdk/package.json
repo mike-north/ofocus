@@ -20,8 +20,11 @@
     "build": "tsc --build && api-extractor run --local --verbose",
     "build:tsc": "tsc --build",
     "test": "vitest run",
-    "test:unit": "vitest run --dir tests/unit",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration:watch": "vitest --config vitest.integration.config.ts",
     "test:watch": "vitest",
+    "cleanup:integration": "tsx tests/integration/cleanup.ts",
     "api-extractor": "api-extractor run --verbose",
     "api-extractor:local": "api-extractor run --local --verbose",
     "docs": "api-documenter markdown -i temp -o docs"

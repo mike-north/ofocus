@@ -286,6 +286,50 @@ export function validateSearchQuery(query: string): CliError | null {
   return null;
 }
 
+/**
+ * Maximum allowed limit for pagination queries.
+ * Set high enough for legitimate use cases but low enough to prevent abuse.
+ */
+export const MAX_PAGINATION_LIMIT = 10000;
+
+/**
+ * Validate pagination parameters (limit and offset).
+ * Returns null if valid, or a CliError if invalid.
+ */
+export function validatePaginationParams(
+  limit: number | undefined,
+  offset: number | undefined
+): CliError | null {
+  if (limit !== undefined) {
+    if (!Number.isInteger(limit) || limit < 1) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        `Invalid limit: ${String(limit)}`,
+        "Limit must be a positive integer"
+      );
+    }
+    if (limit > MAX_PAGINATION_LIMIT) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        `Limit exceeds maximum allowed value: ${String(limit)}`,
+        `Maximum limit is ${String(MAX_PAGINATION_LIMIT)}`
+      );
+    }
+  }
+
+  if (offset !== undefined) {
+    if (!Number.isInteger(offset) || offset < 0) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        `Invalid offset: ${String(offset)}`,
+        "Offset must be a non-negative integer"
+      );
+    }
+  }
+
+  return null;
+}
+
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }

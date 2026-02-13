@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { completeTasks, updateTasks, deleteTasks } from "../../../src/commands/batch.js";
+import {
+  completeTasks,
+  updateTasks,
+  deleteTasks,
+} from "../../../src/commands/batch.js";
 import { ErrorCode } from "../../../src/errors.js";
 
 // Mock the applescript module
@@ -52,7 +56,9 @@ describe("completeTasks", () => {
       mockRunAppleScript.mockResolvedValue({
         success: true,
         data: {
-          succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test Task" }],
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test Task" },
+          ],
           failed: [],
         },
       });
@@ -61,7 +67,9 @@ describe("completeTasks", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.succeeded).toHaveLength(1);
-      expect(result.data?.succeeded[0].taskId).toBe("abc123ABC-xyz789XYZ-12345678");
+      expect(result.data?.succeeded[0].taskId).toBe(
+        "abc123ABC-xyz789XYZ-12345678"
+      );
       expect(result.data?.succeeded[0].taskName).toBe("Test Task");
       expect(result.data?.totalSucceeded).toBe(1);
       expect(result.data?.totalFailed).toBe(0);
@@ -94,8 +102,12 @@ describe("completeTasks", () => {
       mockRunAppleScript.mockResolvedValue({
         success: true,
         data: {
-          succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Task 1" }],
-          failed: [{ id: "def456DEF-uvw012UVW-87654321", error: "Task not found" }],
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Task 1" },
+          ],
+          failed: [
+            { id: "def456DEF-uvw012UVW-87654321", error: "Task not found" },
+          ],
         },
       });
 
@@ -117,15 +129,18 @@ describe("completeTasks", () => {
   describe("chunking", () => {
     it("should process large batches in chunks of 50", async () => {
       // Create 75 task IDs
-      const taskIds = Array.from({ length: 75 }, (_, i) =>
-        `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
+      const taskIds = Array.from(
+        { length: 75 },
+        (_, i) => `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
       );
 
       // First chunk returns 50 succeeded
       mockRunAppleScript.mockResolvedValueOnce({
         success: true,
         data: {
-          succeeded: taskIds.slice(0, 50).map((id) => ({ taskId: id, taskName: `Task ${id}` })),
+          succeeded: taskIds
+            .slice(0, 50)
+            .map((id) => ({ taskId: id, taskName: `Task ${id}` })),
           failed: [],
         },
       });
@@ -134,7 +149,9 @@ describe("completeTasks", () => {
       mockRunAppleScript.mockResolvedValueOnce({
         success: true,
         data: {
-          succeeded: taskIds.slice(50, 75).map((id) => ({ taskId: id, taskName: `Task ${id}` })),
+          succeeded: taskIds
+            .slice(50, 75)
+            .map((id) => ({ taskId: id, taskName: `Task ${id}` })),
           failed: [],
         },
       });
@@ -232,7 +249,9 @@ describe("updateTasks", () => {
       mockRunAppleScript.mockResolvedValue({
         success: true,
         data: {
-          succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test Task" }],
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test Task" },
+          ],
           failed: [],
         },
       });
@@ -249,7 +268,9 @@ describe("updateTasks", () => {
       mockRunAppleScript.mockResolvedValue({
         success: true,
         data: {
-          succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "New Title" }],
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "New Title" },
+          ],
           failed: [],
         },
       });
@@ -287,7 +308,9 @@ describe("updateTasks", () => {
       mockRunAppleScript.mockResolvedValue({
         success: true,
         data: {
-          succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" }],
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" },
+          ],
           failed: [],
         },
       });
@@ -305,7 +328,9 @@ describe("updateTasks", () => {
       mockRunAppleScript.mockResolvedValue({
         success: true,
         data: {
-          succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" }],
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" },
+          ],
           failed: [],
         },
       });
@@ -325,7 +350,9 @@ describe("updateTasks", () => {
       mockRunAppleScript.mockResolvedValue({
         success: true,
         data: {
-          succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" }],
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" },
+          ],
           failed: [],
         },
       });
@@ -340,22 +367,27 @@ describe("updateTasks", () => {
 
   describe("chunking", () => {
     it("should process large batches in chunks", async () => {
-      const taskIds = Array.from({ length: 60 }, (_, i) =>
-        `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
+      const taskIds = Array.from(
+        { length: 60 },
+        (_, i) => `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
       );
 
       mockRunAppleScript
         .mockResolvedValueOnce({
           success: true,
           data: {
-            succeeded: taskIds.slice(0, 50).map((id) => ({ taskId: id, taskName: "Test" })),
+            succeeded: taskIds
+              .slice(0, 50)
+              .map((id) => ({ taskId: id, taskName: "Test" })),
             failed: [],
           },
         })
         .mockResolvedValueOnce({
           success: true,
           data: {
-            succeeded: taskIds.slice(50, 60).map((id) => ({ taskId: id, taskName: "Test" })),
+            succeeded: taskIds
+              .slice(50, 60)
+              .map((id) => ({ taskId: id, taskName: "Test" })),
             failed: [],
           },
         });
@@ -404,7 +436,9 @@ describe("deleteTasks", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.succeeded).toHaveLength(1);
-      expect(result.data?.succeeded[0].taskId).toBe("abc123ABC-xyz789XYZ-12345678");
+      expect(result.data?.succeeded[0].taskId).toBe(
+        "abc123ABC-xyz789XYZ-12345678"
+      );
       expect(result.data?.totalSucceeded).toBe(1);
       expect(result.data?.totalFailed).toBe(0);
     });
@@ -436,7 +470,9 @@ describe("deleteTasks", () => {
         success: true,
         data: {
           succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678" }],
-          failed: [{ id: "def456DEF-uvw012UVW-87654321", error: "Task not found" }],
+          failed: [
+            { id: "def456DEF-uvw012UVW-87654321", error: "Task not found" },
+          ],
         },
       });
 
@@ -455,8 +491,9 @@ describe("deleteTasks", () => {
 
   describe("chunking", () => {
     it("should process large batches in chunks of 50", async () => {
-      const taskIds = Array.from({ length: 100 }, (_, i) =>
-        `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
+      const taskIds = Array.from(
+        { length: 100 },
+        (_, i) => `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
       );
 
       mockRunAppleScript

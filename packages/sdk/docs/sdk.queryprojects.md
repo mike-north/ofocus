@@ -4,12 +4,14 @@
 
 ## queryProjects() function
 
-Query projects from OmniFocus with optional filters.
+Query projects from OmniFocus with optional filters and pagination.
 
 **Signature:**
 
 ```typescript
-export declare function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<OFProject[]>>;
+export declare function queryProjects(
+  options?: ProjectQueryOptions
+): Promise<CliOutput<PaginatedResult<OFProject>>>;
 ```
 
 ## Parameters
@@ -18,37 +20,30 @@ export declare function queryProjects(options?: ProjectQueryOptions): Promise<Cl
 
 Parameter
 
-
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
-
 </td><td>
 
 [ProjectQueryOptions](./sdk.projectqueryoptions.md)
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFProject](./sdk.ofproject.md)<!-- -->\[\]&gt;&gt;
-
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[PaginatedResult](./sdk.paginatedresult.md)<!-- -->&lt;[OFProject](./sdk.ofproject.md)<!-- -->&gt;&gt;&gt;

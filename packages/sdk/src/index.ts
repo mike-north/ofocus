@@ -10,6 +10,8 @@ export type {
   OFFolder,
   OFTaskWithChildren,
   InboxOptions,
+  PaginationOptions,
+  PaginatedResult,
   TaskQueryOptions,
   ProjectQueryOptions,
   TagQueryOptions,
@@ -48,6 +50,8 @@ export {
   validateRepetitionRule,
   validateEstimatedMinutes,
   validateSearchQuery,
+  validatePaginationParams,
+  MAX_PAGINATION_LIMIT,
 } from "./validation.js";
 
 // AppleScript utilities

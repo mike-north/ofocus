@@ -103,13 +103,15 @@ export async function focus(
   const script = `
     ${findScript}
 
-    -- Set focus
-    set focused of document window 1 to {targetItem}
-
-    -- Return result
+    -- Get info while still in document context
     set targetId to id of targetItem
     set targetName to name of targetItem
+  end tell
 
+  -- Set focus (document window is on application, not document)
+  set focused of document window 1 to {targetItem}
+
+  tell default document
     return "{" & ¬
       "\\"focused\\": true," & ¬
       "\\"targetId\\": \\"" & targetId & "\\"," & ¬
@@ -141,9 +143,12 @@ export async function focus(
  */
 export async function unfocus(): Promise<CliOutput<FocusResult>> {
   const script = `
-    -- Clear focus by setting to empty list
-    set focused of document window 1 to {}
+  end tell
 
+  -- Clear focus by setting to empty list (document window is on application, not document)
+  set focused of document window 1 to {}
+
+  tell default document
     return "{" & ¬
       "\\"focused\\": false," & ¬
       "\\"targetId\\": null," & ¬
@@ -175,30 +180,36 @@ export async function unfocus(): Promise<CliOutput<FocusResult>> {
  */
 export async function getFocused(): Promise<CliOutput<FocusResult>> {
   const script = `
-    set focusedItems to focused of document window 1
+  end tell
 
-    if (count of focusedItems) is 0 then
+  -- Get focused items (document window is on application, not document)
+  set focusedItems to focused of document window 1
+
+  if (count of focusedItems) is 0 then
+    tell default document
       return "{" & ¬
         "\\"focused\\": false," & ¬
         "\\"targetId\\": null," & ¬
         "\\"targetName\\": null," & ¬
         "\\"targetType\\": null" & ¬
         "}"
-    end if
+    end tell
+  end if
 
-    -- Get first focused item (typically only one)
-    set focusedItem to item 1 of focusedItems
+  -- Get first focused item (typically only one)
+  set focusedItem to item 1 of focusedItems
 
-    set targetId to id of focusedItem
-    set targetName to name of focusedItem
+  set targetId to id of focusedItem
+  set targetName to name of focusedItem
 
-    -- Determine type
-    set targetType to "folder"
-    try
-      set testStatus to status of focusedItem
-      set targetType to "project"
-    end try
+  -- Determine type
+  set targetType to "folder"
+  try
+    set testStatus to status of focusedItem
+    set targetType to "project"
+  end try
 
+  tell default document
     return "{" & ¬
       "\\"focused\\": true," & ¬
       "\\"targetId\\": \\"" & targetId & "\\"," & ¬
