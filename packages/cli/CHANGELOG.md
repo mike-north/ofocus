@@ -1,5 +1,79 @@
 # @ofocus/cli
 
+## 0.5.0
+
+### Minor Changes
+
+- cb84bb1: Add pagination support to query functions
+
+  **Breaking Change**: Query functions now return `PaginatedResult<T>` instead of raw arrays.
+
+  Before:
+
+  ```typescript
+  const result = await queryTasks({ flagged: true });
+  // result.data was OFTask[]
+  ```
+
+  After:
+
+  ```typescript
+  const result = await queryTasks({ flagged: true });
+  // result.data is now PaginatedResult<OFTask>
+  // Access items via result.data.items
+  ```
+
+  **New Features**:
+  - The following query functions support `limit` and `offset` parameters: `queryTasks`, `queryProjects`, `queryTags`, `queryFolders`
+  - Note: `queryPerspective` and `listPerspectives` support only `limit` (no offset) due to OmniFocus AppleScript limitations
+  - Default limit is 100 items
+  - Results include `totalCount`, `returnedCount`, `hasMore`, `offset`, and `limit` metadata
+  - CLI commands support `--limit` and `--offset` flags
+  - New `validatePaginationParams()` function and `MAX_PAGINATION_LIMIT` constant exported from SDK
+
+  **Improved Error Handling**:
+  - Delete functions (`deleteTask`, `deleteProject`, `deleteTag`, `deleteFolder`) now return proper `NOT_FOUND` errors instead of crashing when items don't exist
+  - Pagination parameters are validated (limit: 1-10000, offset: >= 0)
+
+### Patch Changes
+
+- cb84bb1: Add AppleScript composition utilities, rename `focus` to `focusOn`, and fix CLI pagination output
+
+  **Breaking Change**: The `focus()` function has been renamed to `focusOn()` to avoid naming collision with the DOM global `focus()` function. This fixes API Extractor's `focus_2` artifact in the generated declaration file.
+
+  Before:
+
+  ```typescript
+  import { focus } from "@ofocus/sdk";
+  await focus("My Project");
+  ```
+
+  After:
+
+  ```typescript
+  import { focusOn } from "@ofocus/sdk";
+  await focusOn("My Project");
+  ```
+
+  **New AppleScript Utilities**:
+
+  Refactors AppleScript code organization by extracting inline AppleScript strings into dedicated `.applescript` files for better maintainability and editor syntax highlighting. This refactoring also exposes new public utilities for advanced script composition:
+  - `composeScript()`: Compose AppleScript handlers and body into a single script
+  - `runComposedScript()`: Execute composed scripts with proper error handling
+  - `loadScriptContent()`: Load external AppleScript files from the bundled scripts directory
+  - `loadScriptContentCached()`: Load with caching for performance
+  - `getScriptPath()`: Get absolute paths to bundled AppleScript files
+  - `clearScriptCache()`: Clear the script cache (useful for testing)
+
+  These utilities enable advanced users to compose custom AppleScript operations while reusing the library's built-in helpers and serializers.
+
+  **Bug Fix (CLI)**: Fixed missing `PaginatedResult` handling in CLI output. Paginated query results (from `queryTasks`, `queryProjects`, etc.) now display formatted items with pagination metadata showing "Showing X-Y of Z items" and instructions for fetching the next page. Previously, paginated results would fall through to raw JSON output.
+
+- Updated dependencies [cb84bb1]
+- Updated dependencies [cb84bb1]
+- Updated dependencies [b822dea]
+  - @ofocus/sdk@0.4.0
+
 ## 0.4.1
 
 ### Patch Changes
