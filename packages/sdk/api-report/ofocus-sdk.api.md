@@ -248,6 +248,28 @@ export function deferTask(taskId: string, options?: DeferOptions): Promise<CliOu
 export function deferTasks(taskIds: string[], options?: DeferOptions): Promise<CliOutput<BatchResult<BatchDeferItem>>>;
 
 // @public
+export function deleteFolder(folderId: string): Promise<CliOutput<DeleteFolderResult>>;
+
+// @public
+export interface DeleteFolderResult {
+    // (undocumented)
+    deleted: true;
+    // (undocumented)
+    folderId: string;
+}
+
+// @public
+export function deleteProject(projectId: string): Promise<CliOutput<DeleteProjectResult>>;
+
+// @public
+export interface DeleteProjectResult {
+    // (undocumented)
+    deleted: true;
+    // (undocumented)
+    projectId: string;
+}
+
+// @public
 export interface DeleteResult {
     // (undocumented)
     deleted: true;
@@ -282,6 +304,19 @@ export interface DeleteTemplateResult {
 }
 
 // @public
+export function dropProject(projectId: string): Promise<CliOutput<DropProjectResult>>;
+
+// @public
+export interface DropProjectResult {
+    // (undocumented)
+    dropped: boolean;
+    // (undocumented)
+    projectId: string;
+    // (undocumented)
+    projectName: string;
+}
+
+// @public
 export interface DropResult {
     // (undocumented)
     dropped: boolean;
@@ -293,6 +328,25 @@ export interface DropResult {
 
 // @public
 export function dropTask(taskId: string): Promise<CliOutput<DropResult>>;
+
+// @public
+export function duplicateTask(taskId: string, options?: DuplicateTaskOptions): Promise<CliOutput<DuplicateTaskResult>>;
+
+// @public
+export interface DuplicateTaskOptions {
+    // (undocumented)
+    includeSubtasks?: boolean | undefined;
+}
+
+// @public
+export interface DuplicateTaskResult {
+    // (undocumented)
+    newTaskId: string;
+    // (undocumented)
+    newTaskName: string;
+    // (undocumented)
+    originalTaskId: string;
+}
 
 // @public
 const ErrorCode: {
@@ -366,6 +420,9 @@ export function generateUrl(id: string): Promise<CliOutput<UrlResult>>;
 
 // @public
 export function getFocused(): Promise<CliOutput<FocusResult>>;
+
+// @public
+export function getReviewInterval(projectId: string): Promise<CliOutput<ReviewIntervalResult>>;
 
 // @public
 export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
@@ -541,6 +598,21 @@ export function omniFocusScript(body: string): string;
 export function omniFocusScriptWithHelpers(body: string): string;
 
 // @public
+export function openItem(id: string): Promise<CliOutput<OpenResult>>;
+
+// @public
+export interface OpenResult {
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    opened: true;
+    // (undocumented)
+    type: "task" | "project" | "folder" | "tag";
+}
+
+// @public
 export function parseAppleScriptError(rawError: string): CliError;
 
 // @public
@@ -656,6 +728,16 @@ export interface RepetitionRule {
 }
 
 // @public
+export interface ReviewIntervalResult {
+    // (undocumented)
+    projectId: string;
+    // (undocumented)
+    projectName: string;
+    // (undocumented)
+    reviewIntervalDays: number;
+}
+
+// @public
 export function reviewProject(projectId: string): Promise<CliOutput<ReviewResult>>;
 
 // @public
@@ -705,6 +787,9 @@ export interface SearchOptions {
 
 // @public
 export function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<OFTask[]>>;
+
+// @public
+export function setReviewInterval(projectId: string, days: number): Promise<CliOutput<ReviewIntervalResult>>;
 
 // @public
 export interface StatsOptions {
@@ -870,6 +955,42 @@ export function triggerSync(): Promise<CliOutput<SyncResult>>;
 export function unfocus(): Promise<CliOutput<FocusResult>>;
 
 // @public
+export function updateFolder(folderId: string, options: UpdateFolderOptions): Promise<CliOutput<OFFolder>>;
+
+// @public
+export interface UpdateFolderOptions {
+    // (undocumented)
+    name?: string | undefined;
+    // (undocumented)
+    parentFolderId?: string | undefined;
+    // (undocumented)
+    parentFolderName?: string | undefined;
+}
+
+// @public
+export function updateProject(projectId: string, options: UpdateProjectOptions): Promise<CliOutput<OFProject>>;
+
+// @public
+export interface UpdateProjectOptions {
+    // (undocumented)
+    deferDate?: string | undefined;
+    // (undocumented)
+    dueDate?: string | undefined;
+    // (undocumented)
+    folderId?: string | undefined;
+    // (undocumented)
+    folderName?: string | undefined;
+    // (undocumented)
+    name?: string | undefined;
+    // (undocumented)
+    note?: string | undefined;
+    // (undocumented)
+    sequential?: boolean | undefined;
+    // (undocumented)
+    status?: "active" | "on-hold" | "completed" | "dropped" | undefined;
+}
+
+// @public
 export function updateTag(tagId: string, options: UpdateTagOptions): Promise<CliOutput<OFTag>>;
 
 // @public
@@ -910,7 +1031,7 @@ export function validateEstimatedMinutes(minutes: number | undefined): CliError 
 export function validateFolderName(name: string | undefined): CliError | null;
 
 // @public
-export function validateId(id: string, type: "task" | "project" | "tag"): CliError | null;
+export function validateId(id: string, type: "task" | "project" | "tag" | "folder" | "item"): CliError | null;
 
 // @public
 export function validateProjectName(name: string | undefined): CliError | null;
