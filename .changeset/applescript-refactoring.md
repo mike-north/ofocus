@@ -1,9 +1,10 @@
 ---
 "@ofocus/sdk": minor
+"@ofocus/cli": patch
 "ofocus": minor
 ---
 
-Add AppleScript composition utilities and rename `focus` to `focusOn`
+Add AppleScript composition utilities, rename `focus` to `focusOn`, and fix CLI pagination output
 
 **Breaking Change**: The `focus()` function has been renamed to `focusOn()` to avoid naming collision with the DOM global `focus()` function. This fixes API Extractor's `focus_2` artifact in the generated declaration file.
 
@@ -33,3 +34,5 @@ Refactors AppleScript code organization by extracting inline AppleScript strings
 - `clearScriptCache()`: Clear the script cache (useful for testing)
 
 These utilities enable advanced users to compose custom AppleScript operations while reusing the library's built-in helpers and serializers.
+
+**Bug Fix (CLI)**: Fixed missing `PaginatedResult` handling in CLI output. Paginated query results (from `queryTasks`, `queryProjects`, etc.) now display formatted items with pagination metadata showing "Showing X-Y of Z items" and instructions for fetching the next page. Previously, paginated results would fall through to raw JSON output.
