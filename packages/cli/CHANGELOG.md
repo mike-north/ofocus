@@ -1,5 +1,11 @@
 # @ofocus/cli
 
+## 0.4.1
+
+### Patch Changes
+
+- 8b6de75: Upgrade is-agentic-tui to 0.2.0 for built-in caching, fixing CLI hang when running outside agentic contexts
+
 ## 0.4.0
 
 ### Minor Changes
