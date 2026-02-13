@@ -1,4 +1,9 @@
 import type { CliOutput, OFProject, ReviewResult } from "../types.js";
+import { success, failure } from "../result.js";
+import { ErrorCode, createError } from "../errors.js";
+import { validateId } from "../validation.js";
+import { escapeAppleScript } from "../escape.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
  * Result from getting or setting review interval.
@@ -8,11 +13,6 @@ export interface ReviewIntervalResult {
   projectName: string;
   reviewIntervalDays: number;
 }
-import { success, failure } from "../result.js";
-import { ErrorCode, createError } from "../errors.js";
-import { validateId } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
  * Mark a project as reviewed in OmniFocus.

@@ -77,18 +77,7 @@ export async function openItem(id: string): Promise<CliOutput<OpenResult>> {
 
     -- Use URL scheme to navigate to the item
     -- OmniFocus URL scheme: omnifocus:///task/ID, omnifocus:///project/ID, etc.
-    set urlType to itemType
-    if urlType is "task" then
-      set urlType to "task"
-    else if urlType is "project" then
-      set urlType to "project"
-    else if urlType is "folder" then
-      set urlType to "folder"
-    else if urlType is "tag" then
-      set urlType to "tag"
-    end if
-
-    set theUrl to "omnifocus:///" & urlType & "/" & itemId
+    set theUrl to "omnifocus:///" & itemType & "/" & itemId
     do shell script "open " & quoted form of theUrl
 
     return "{" & ¬

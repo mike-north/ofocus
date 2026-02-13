@@ -34,9 +34,9 @@ export async function duplicateTask(
   const duplicateScript = includeSubtasks
     ? `set newTask to duplicate theTask`
     : `set newTask to duplicate theTask
-       -- Remove subtasks if not including them
-       repeat with subtask in (tasks of newTask)
-         delete subtask
+       -- Remove subtasks if not including them (iterate in reverse to avoid skipping)
+       repeat with i from (count of tasks of newTask) to 1 by -1
+         delete task i of newTask
        end repeat`;
 
   const script = `
