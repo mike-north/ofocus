@@ -26,6 +26,7 @@ import type {
   CompactResult,
   SyncStatus,
   SyncResult,
+  PaginatedResult,
 } from "@ofocus/sdk";
 
 /**
@@ -90,7 +91,10 @@ export function outputHuman<T>(result: CliOutput<T>): void {
 
   // Handle single objects
   if (typeof data === "object") {
-    if (isTask(data)) {
+    // Check paginated results first (before other type checks)
+    if (isPaginatedResult(data)) {
+      formatPaginatedResult(data);
+    } else if (isTask(data)) {
       formatTask(data);
     } else if (isTaskWithChildren(data)) {
       formatTaskWithChildren(data);
@@ -854,6 +858,20 @@ function isSyncResult(obj: unknown): obj is SyncResult {
   );
 }
 
+function isPaginatedResult(obj: unknown): obj is PaginatedResult<unknown> {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "items" in obj &&
+    "totalCount" in obj &&
+    "returnedCount" in obj &&
+    "hasMore" in obj &&
+    "offset" in obj &&
+    "limit" in obj &&
+    Array.isArray((obj as { items: unknown }).items)
+  );
+}
+
 // Sync result formatters
 function formatSyncStatus(result: SyncStatus): void {
   console.log("Sync Status:");
@@ -873,5 +891,53 @@ function formatSyncResult(result: SyncResult): void {
     console.log(`  ${result.message}`);
   } else {
     console.log(`Sync failed: ${result.message}`);
+  }
+}
+
+// Paginated result formatter
+function formatPaginatedResult(result: PaginatedResult<unknown>): void {
+  const items = result.items;
+  const start = result.offset + 1;
+  const end = result.offset + result.returnedCount;
+
+  // Format the items based on their type
+  if (items.length === 0) {
+    console.log("No results found.");
+  } else {
+    const first: unknown = items[0];
+    if (isTask(first)) {
+      formatTasks(items as OFTask[]);
+    } else if (isTaskWithChildren(first)) {
+      formatTasksWithChildren(items as OFTaskWithChildren[]);
+    } else if (isProject(first)) {
+      formatProjects(items as OFProject[]);
+    } else if (isTag(first)) {
+      formatTags(items as OFTag[]);
+    } else if (isFolder(first)) {
+      formatFolders(items as OFFolder[]);
+    } else if (isPerspective(first)) {
+      formatPerspectives(items as OFPerspective[]);
+    } else {
+      // Generic array output
+      for (const item of items) {
+        console.log(JSON.stringify(item));
+      }
+    }
+  }
+
+  // Show pagination info
+  console.log();
+  if (result.totalCount === 0) {
+    console.log("Total: 0 items");
+  } else {
+    console.log(
+      `Showing ${String(start)}-${String(end)} of ${String(result.totalCount)} items`
+    );
+    if (result.hasMore) {
+      const remaining = result.totalCount - end;
+      console.log(
+        `(${String(remaining)} more available, use --offset ${String(end)} to see next page)`
+      );
+    }
   }
 }
