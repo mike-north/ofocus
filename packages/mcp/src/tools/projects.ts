@@ -5,6 +5,11 @@ import {
   createProject,
   reviewProject,
   queryProjectsForReview,
+  updateProject,
+  deleteProject,
+  dropProject,
+  getReviewInterval,
+  setReviewInterval,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
 
@@ -96,6 +101,118 @@ export function registerProjectTools(server: McpServer): void {
     },
     async () => {
       const result = await queryProjectsForReview();
+      return formatResult(result);
+    }
+  );
+
+  // project_update - Update project properties
+  server.registerTool(
+    "project_update",
+    {
+      description: "Update properties of an existing project",
+      inputSchema: {
+        projectId: z.string().describe("The ID of the project to update"),
+        name: z.string().optional().describe("New project name"),
+        note: z.string().optional().describe("New project note"),
+        status: z
+          .enum(["active", "on-hold", "completed", "dropped"])
+          .optional()
+          .describe("New project status"),
+        folderId: z.string().optional().describe("Move to folder by ID"),
+        folderName: z.string().optional().describe("Move to folder by name"),
+        sequential: z
+          .boolean()
+          .optional()
+          .describe("Make project sequential (true) or parallel (false)"),
+        dueDate: z
+          .string()
+          .optional()
+          .describe("New due date (empty string to clear)"),
+        deferDate: z
+          .string()
+          .optional()
+          .describe("New defer date (empty string to clear)"),
+      },
+    },
+    async (params) => {
+      const result = await updateProject(params.projectId, {
+        name: params.name,
+        note: params.note,
+        status: params.status,
+        folderId: params.folderId,
+        folderName: params.folderName,
+        sequential: params.sequential,
+        dueDate: params.dueDate,
+        deferDate: params.deferDate,
+      });
+      return formatResult(result);
+    }
+  );
+
+  // project_delete - Delete a project permanently
+  server.registerTool(
+    "project_delete",
+    {
+      description: "Permanently delete a project from OmniFocus",
+      inputSchema: {
+        projectId: z.string().describe("The ID of the project to delete"),
+      },
+    },
+    async (params) => {
+      const result = await deleteProject(params.projectId);
+      return formatResult(result);
+    }
+  );
+
+  // project_drop - Drop a project
+  server.registerTool(
+    "project_drop",
+    {
+      description: "Drop (cancel) a project in OmniFocus",
+      inputSchema: {
+        projectId: z.string().describe("The ID of the project to drop"),
+      },
+    },
+    async (params) => {
+      const result = await dropProject(params.projectId);
+      return formatResult(result);
+    }
+  );
+
+  // project_review_interval_get - Get review interval
+  server.registerTool(
+    "project_review_interval_get",
+    {
+      description: "Get the review interval for a project in days",
+      inputSchema: {
+        projectId: z.string().describe("The ID of the project"),
+      },
+    },
+    async (params) => {
+      const result = await getReviewInterval(params.projectId);
+      return formatResult(result);
+    }
+  );
+
+  // project_review_interval_set - Set review interval
+  server.registerTool(
+    "project_review_interval_set",
+    {
+      description: "Set the review interval for a project in days",
+      inputSchema: {
+        projectId: z.string().describe("The ID of the project"),
+        intervalDays: z
+          .number()
+          .int()
+          .min(1)
+          .describe("Review interval in days"),
+      },
+    },
+    async (params) => {
+      const result = await setReviewInterval(
+        params.projectId,
+        params.intervalDays
+      );
       return formatResult(result);
     }
   );

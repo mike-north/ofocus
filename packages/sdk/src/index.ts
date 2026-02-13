@@ -24,6 +24,9 @@ export type {
   RepetitionRule,
   SearchOptions,
   ReviewResult,
+  UpdateProjectOptions,
+  UpdateFolderOptions,
+  DuplicateTaskOptions,
 } from "./types.js";
 
 // Error handling
@@ -70,6 +73,21 @@ export { updateTask } from "./commands/update.js";
 export { createProject } from "./commands/create-project.js";
 export { createFolder, queryFolders } from "./commands/folders.js";
 
+// Phase 1: Project CRUD
+export {
+  updateProject,
+  deleteProject,
+  dropProject,
+} from "./commands/projects-crud.js";
+export type {
+  DeleteProjectResult,
+  DropProjectResult,
+} from "./commands/projects-crud.js";
+
+// Phase 1: Folder CRUD
+export { updateFolder, deleteFolder } from "./commands/folders-crud.js";
+export type { DeleteFolderResult } from "./commands/folders-crud.js";
+
 // Phase 1: Drop/Delete Tasks
 export { dropTask, deleteTask } from "./commands/drop.js";
 export type { DropResult, DeleteResult } from "./commands/drop.js";
@@ -103,7 +121,13 @@ export { listPerspectives, queryPerspective } from "./commands/perspectives.js";
 export type { PerspectiveQueryOptions } from "./commands/perspectives.js";
 
 // Phase 4: Review
-export { reviewProject, queryProjectsForReview } from "./commands/review.js";
+export {
+  reviewProject,
+  queryProjectsForReview,
+  getReviewInterval,
+  setReviewInterval,
+} from "./commands/review.js";
+export type { ReviewIntervalResult } from "./commands/review.js";
 
 // Phase 5: Forecast, Focus, Deferred
 export { queryForecast } from "./commands/forecast.js";
@@ -186,3 +210,10 @@ export type {
 // Phase 8: Sync
 export { getSyncStatus, triggerSync } from "./commands/sync.js";
 export type { SyncStatus, SyncResult } from "./commands/sync.js";
+
+// Phase 9: Task Utilities
+export { duplicateTask } from "./commands/duplicate.js";
+export type { DuplicateTaskResult } from "./commands/duplicate.js";
+
+export { openItem } from "./commands/open.js";
+export type { OpenResult } from "./commands/open.js";

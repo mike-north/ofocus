@@ -16,6 +16,8 @@ const EXPECTED_TASK_TOOLS = [
   "tasks_update_batch",
   "tasks_delete_batch",
   "tasks_defer_batch",
+  "task_duplicate",
+  "open",
 ];
 
 const EXPECTED_PROJECT_TOOLS = [
@@ -23,6 +25,11 @@ const EXPECTED_PROJECT_TOOLS = [
   "project_create",
   "project_review",
   "projects_for_review",
+  "project_update",
+  "project_delete",
+  "project_drop",
+  "project_review_interval_get",
+  "project_review_interval_set",
 ];
 
 const EXPECTED_TAG_TOOLS = [
@@ -32,7 +39,12 @@ const EXPECTED_TAG_TOOLS = [
   "tag_delete",
 ];
 
-const EXPECTED_FOLDER_TOOLS = ["folders_list", "folder_create"];
+const EXPECTED_FOLDER_TOOLS = [
+  "folders_list",
+  "folder_create",
+  "folder_update",
+  "folder_delete",
+];
 
 const EXPECTED_ADVANCED_TOOLS = [
   "subtask_create",
@@ -87,14 +99,14 @@ describe("Tool Registration", () => {
     expect(registeredTools.sort()).toEqual(ALL_EXPECTED_TOOLS.sort());
   });
 
-  it("should register exactly 49 tools", () => {
+  it("should register exactly 58 tools", () => {
     const mockServer = {
       registerTool: vi.fn(),
     } as unknown as McpServer;
 
     registerAllTools(mockServer);
 
-    expect(mockServer.registerTool).toHaveBeenCalledTimes(49);
+    expect(mockServer.registerTool).toHaveBeenCalledTimes(58);
   });
 
   describe("task tools", () => {
