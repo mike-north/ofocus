@@ -1,5 +1,51 @@
 # @ofocus/cli
 
+## 0.4.0
+
+### Minor Changes
+
+- 39da3ee: Add CRUD operations for projects and folders, plus utility commands
+
+  **SDK Functions:**
+  - `updateProject` - Update project name, note, status, folder, sequential, due/defer dates
+  - `deleteProject` - Permanently delete a project
+  - `dropProject` - Mark project as dropped (preserves history)
+  - `updateFolder` - Rename folder or move to new parent
+  - `deleteFolder` - Permanently delete a folder
+  - `duplicateTask` - Clone a task with all properties
+  - `openItem` - Open any item in OmniFocus UI (auto-detects type)
+  - `getReviewInterval` / `setReviewInterval` - Get/set project review interval in days
+
+  **CLI Commands:**
+  - `update-project <id>` with options for all project properties
+  - `delete-project <id>` - Permanently delete
+  - `drop-project <id>` - Mark as dropped
+  - `update-folder <id>` with `--name` and `--parent` options
+  - `delete-folder <id>` - Permanently delete
+  - `duplicate <task-id>` with `--include-subtasks` option
+  - `open <id>` - Open item in OmniFocus UI
+  - `review-interval <project-id>` with `--set <days>` option
+
+  **MCP Tools:**
+  - `project_update`, `project_delete`, `project_drop`
+  - `project_review_interval_get`, `project_review_interval_set`
+  - `folder_update`, `folder_delete`
+  - `task_duplicate`, `open`
+
+  Includes comprehensive unit tests (194 new tests) covering validation, success paths, and error handling.
+
+- 39da3ee: Add `template-get` CLI command to retrieve full details of project templates
+  - Added `template-get <name>` command to CLI for parity with MCP `template_get` tool
+  - Returns complete template structure including all tasks, metadata, and relative date offsets
+  - Added comprehensive unit tests for template system (getTemplate, listTemplates, deleteTemplate)
+  - Updated AGENT_INSTRUCTIONS.md with template management documentation
+
+### Patch Changes
+
+- Updated dependencies [39da3ee]
+- Updated dependencies [39da3ee]
+  - @ofocus/sdk@0.3.0
+
 ## 0.3.0
 
 ### Minor Changes
