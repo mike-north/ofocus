@@ -9,9 +9,19 @@ import {
 
 const execAsync = promisify(exec);
 
+/**
+ * Result of executing an AppleScript.
+ *
+ * @typeParam T - The expected type of the parsed result data
+ *
+ * @public
+ */
 export interface AppleScriptResult<T> {
+  /** Indicates whether the script executed successfully */
   success: boolean;
+  /** The parsed result data if successful */
   data?: T;
+  /** Error details if the script failed */
   error?: CliError;
 }
 
@@ -146,17 +156,29 @@ end jsonArray
 
 on escapeJson(str)
   set output to ""
+  set quoteChar to "\\""
+  set bslashChar to "\\\\"
+  set tabChar to tab
   repeat with c in characters of (str as string)
-    if c is "\\"" then
+    set ch to c as string
+    if ch is quoteChar then
       set output to output & "\\\\\\""
-    else if c is "\\\\" then
+    else if ch is bslashChar then
       set output to output & "\\\\\\\\"
-    else if c is return then
+    else if ch is return then
       set output to output & "\\\\n"
-    else if c is linefeed then
+    else if ch is linefeed then
       set output to output & "\\\\n"
+    else if ch is tabChar then
+      set output to output & "\\\\t"
     else
-      set output to output & c
+      -- Check for other control characters (ASCII 0-31) and skip them
+      set charCode to id of ch
+      if charCode < 32 then
+        -- Skip control characters
+      else
+        set output to output & ch
+      end if
     end if
   end repeat
   return output
@@ -175,4 +197,60 @@ tell application "OmniFocus"
     ${body}
   end tell
 end tell`;
+}
+
+/**
+ * Compose multiple script parts and wrap in OmniFocus tell block.
+ * Handlers (on...end) go at the top level, body goes in the tell block.
+ *
+ * @param handlers - Array of handler code (on...end blocks)
+ * @param body - The main script body to execute within the tell block
+ * @returns Complete AppleScript string ready for execution
+ *
+ * @example
+ * ```typescript
+ * const jsonHelpers = await loadScriptContent("helpers/json.applescript");
+ * const script = composeScript([jsonHelpers], 'return my jsonString("test")');
+ * ```
+ *
+ * @public
+ */
+export function composeScript(handlers: string[], body: string): string {
+  const handlersCode = handlers.join("\n\n");
+  return `${handlersCode}
+
+tell application "OmniFocus"
+  tell default document
+    ${body}
+  end tell
+end tell`;
+}
+
+/**
+ * Execute a composed AppleScript with handlers and body.
+ * Composes the script using {@link composeScript} and executes it.
+ *
+ * @param handlers - Array of handler code (on...end blocks)
+ * @param body - The main script body to execute within the tell block
+ * @returns Result object with success status and parsed data or error
+ *
+ * @example
+ * ```typescript
+ * const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
+ * const taskSerializer = await loadScriptContentCached("serializers/task.applescript");
+ *
+ * const result = await runComposedScript<OFTask>(
+ *   [jsonHelpers, taskSerializer],
+ *   'return my serializeTask(first task of inbox tasks)'
+ * );
+ * ```
+ *
+ * @public
+ */
+export async function runComposedScript<T>(
+  handlers: string[],
+  body: string
+): Promise<AppleScriptResult<T>> {
+  const script = composeScript(handlers, body);
+  return runAppleScript<T>(script);
 }

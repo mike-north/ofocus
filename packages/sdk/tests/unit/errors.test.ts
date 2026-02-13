@@ -66,9 +66,7 @@ describe("parseAppleScriptError", () => {
     });
 
     it("should detect 'not running' error", () => {
-      const error = parseAppleScriptError(
-        "OmniFocus is not running"
-      );
+      const error = parseAppleScriptError("OmniFocus is not running");
       expect(error.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
   });
@@ -76,7 +74,7 @@ describe("parseAppleScriptError", () => {
   describe("task not found", () => {
     it("should detect 'can't get first flattened task' error", () => {
       const error = parseAppleScriptError(
-        "OmniFocus got an error: Can't get first flattened task whose id is \"invalid-id\"."
+        'OmniFocus got an error: Can\'t get first flattened task whose id is "invalid-id".'
       );
       expect(error.code).toBe(ErrorCode.TASK_NOT_FOUND);
       expect(error.message).toBe("Task not found");
@@ -96,7 +94,7 @@ describe("parseAppleScriptError", () => {
   describe("project not found", () => {
     it("should detect 'can't get first flattened project' error", () => {
       const error = parseAppleScriptError(
-        "OmniFocus got an error: Can't get first flattened project whose name is \"NonExistent\"."
+        'OmniFocus got an error: Can\'t get first flattened project whose name is "NonExistent".'
       );
       expect(error.code).toBe(ErrorCode.PROJECT_NOT_FOUND);
       expect(error.message).toBe("Project not found");
@@ -111,7 +109,7 @@ describe("parseAppleScriptError", () => {
   describe("tag not found", () => {
     it("should detect 'can't get first flattened tag' error", () => {
       const error = parseAppleScriptError(
-        "OmniFocus got an error: Can't get first flattened tag whose name is \"NonExistent\"."
+        'OmniFocus got an error: Can\'t get first flattened tag whose name is "NonExistent".'
       );
       expect(error.code).toBe(ErrorCode.TAG_NOT_FOUND);
       expect(error.message).toBe("Tag not found");
@@ -126,7 +124,7 @@ describe("parseAppleScriptError", () => {
   describe("invalid date format", () => {
     it("should detect date conversion error", () => {
       const error = parseAppleScriptError(
-        "OmniFocus got an error: Can't make \"not-a-date\" into type date."
+        'OmniFocus got an error: Can\'t make "not-a-date" into type date.'
       );
       expect(error.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
       expect(error.message).toBe("Invalid date format");
@@ -144,16 +142,12 @@ describe("parseAppleScriptError", () => {
 
   describe("case insensitivity", () => {
     it("should handle uppercase error messages", () => {
-      const error = parseAppleScriptError(
-        "CAN'T GET FIRST FLATTENED TASK"
-      );
+      const error = parseAppleScriptError("CAN'T GET FIRST FLATTENED TASK");
       expect(error.code).toBe(ErrorCode.TASK_NOT_FOUND);
     });
 
     it("should handle mixed case error messages", () => {
-      const error = parseAppleScriptError(
-        "Application Isn't Running"
-      );
+      const error = parseAppleScriptError("Application Isn't Running");
       expect(error.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
   });

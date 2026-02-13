@@ -9,8 +9,10 @@ Options for querying tasks.
 **Signature:**
 
 ```typescript
-export interface TaskQueryOptions 
+export interface TaskQueryOptions extends PaginationOptions
 ```
+
+**Extends:** [PaginationOptions](./sdk.paginationoptions.md)
 
 ## Properties
 
@@ -18,155 +20,122 @@ export interface TaskQueryOptions
 
 Property
 
-
 </th><th>
 
 Modifiers
-
 
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [available?](./sdk.taskqueryoptions.available.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [completed?](./sdk.taskqueryoptions.completed.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [dueAfter?](./sdk.taskqueryoptions.dueafter.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [dueBefore?](./sdk.taskqueryoptions.duebefore.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [flagged?](./sdk.taskqueryoptions.flagged.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [project?](./sdk.taskqueryoptions.project.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [tag?](./sdk.taskqueryoptions.tag.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
-
 </td></tr>
 </tbody></table>
-

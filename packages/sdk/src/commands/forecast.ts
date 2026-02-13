@@ -2,6 +2,7 @@ import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateDateString } from "../validation.js";
+import { toAppleScriptDate } from "../escape.js";
 import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
@@ -47,13 +48,16 @@ export async function queryForecast(
   }
 
   // Build date range logic in AppleScript
-  const startDate = options.start ?? "today";
+  const startDateRaw = options.start ?? "today";
+  // Convert start date (could be "today" or ISO date)
+  const startDate =
+    startDateRaw === "today" ? startDateRaw : toAppleScriptDate(startDateRaw);
   const includeDeferred = options.includeDeferred === true;
 
   // Calculate end date based on days or explicit end
   let endDateLogic: string;
   if (options.end !== undefined) {
-    endDateLogic = `set endDate to date "${options.end}"`;
+    endDateLogic = `set endDate to date "${toAppleScriptDate(options.end)}"`;
   } else if (options.days !== undefined) {
     endDateLogic = `set endDate to startDate + (${String(options.days)} * days)`;
   } else {

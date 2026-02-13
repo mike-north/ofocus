@@ -3,10 +3,7 @@ import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateSearchQuery } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
  * Options for querying a perspective.

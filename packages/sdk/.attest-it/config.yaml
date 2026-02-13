@@ -1,0 +1,117 @@
+version: 1
+minVersion: "0.9.0"
+
+# Team members authorized to sign test attestations
+team:
+  mike-north:
+    name: Mike North
+    publicKey: 5L1qHe86pTHIEscURLVL7pUdK+Px74tDF11gBHPDOAE=
+    email: michael.l.north@gmail.com
+    github: mike-north
+
+gates:
+  integration-tasks:
+    name: Task Integration Tests
+    description: Tests for inbox, task CRUD, and task queries against live OmniFocus
+    authorizedSigners: [mike-north]
+    fingerprint:
+      paths:
+        - tests/integration/task.integration.test.ts
+        - tests/integration/setup.ts
+        - src/commands/inbox.ts
+        - src/commands/tasks.ts
+        - src/commands/complete.ts
+        - src/commands/update.ts
+        - src/commands/drop.ts
+        - src/commands/defer.ts
+        - src/commands/duplicate.ts
+    maxAge: 30d
+
+  integration-projects:
+    name: Project Integration Tests
+    description: Tests for project CRUD and project queries against live OmniFocus
+    authorizedSigners: [mike-north]
+    fingerprint:
+      paths:
+        - tests/integration/project.integration.test.ts
+        - tests/integration/setup.ts
+        - src/commands/projects.ts
+        - src/commands/create-project.ts
+        - src/commands/projects-crud.ts
+        - src/commands/review.ts
+    maxAge: 30d
+
+  integration-folders:
+    name: Folder Integration Tests
+    description: Tests for folder CRUD and folder queries against live OmniFocus
+    authorizedSigners: [mike-north]
+    fingerprint:
+      paths:
+        - tests/integration/folder.integration.test.ts
+        - tests/integration/setup.ts
+        - src/commands/folders.ts
+        - src/commands/folders-crud.ts
+    maxAge: 30d
+
+  integration-tags:
+    name: Tag Integration Tests
+    description: Tests for tag CRUD and tag queries against live OmniFocus
+    authorizedSigners: [mike-north]
+    fingerprint:
+      paths:
+        - tests/integration/tag.integration.test.ts
+        - tests/integration/setup.ts
+        - src/commands/tags.ts
+        - src/commands/tags-crud.ts
+    maxAge: 30d
+
+  integration-relationships:
+    name: Relationship Integration Tests
+    description: Tests for complex relationships between tasks, projects, folders, and tags
+    authorizedSigners: [mike-north]
+    fingerprint:
+      paths:
+        - tests/integration/relationships.integration.test.ts
+        - tests/integration/setup.ts
+        - src/commands/subtasks.ts
+    maxAge: 30d
+
+  integration-batch:
+    name: Batch Operation Integration Tests
+    description: Tests for batch operations against live OmniFocus
+    authorizedSigners: [mike-north]
+    fingerprint:
+      paths:
+        - tests/integration/batch.integration.test.ts
+        - tests/integration/setup.ts
+        - src/commands/batch.ts
+    maxAge: 30d
+
+  integration-advanced:
+    name: Advanced Feature Integration Tests
+    description: Tests for advanced features like focus, forecast, perspectives, and sync
+    authorizedSigners: [mike-north]
+    fingerprint:
+      paths:
+        - tests/integration/advanced.integration.test.ts
+        - tests/integration/setup.ts
+        - src/commands/focus.ts
+        - src/commands/forecast.ts
+        - src/commands/deferred.ts
+        - src/commands/perspectives.ts
+        - src/commands/sync.ts
+        - src/commands/url.ts
+        - src/commands/search.ts
+    maxAge: 30d
+
+suites:
+  integration:
+    command: pnpm test:integration
+    gates:
+      - integration-tasks
+      - integration-projects
+      - integration-folders
+      - integration-tags
+      - integration-relationships
+      - integration-batch
+      - integration-advanced

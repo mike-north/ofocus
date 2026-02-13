@@ -66,11 +66,7 @@ export function parseAppleScriptError(rawError: string): CliError {
     errorLower.includes("no task") ||
     (errorLower.includes("task") && errorLower.includes("doesn't exist"))
   ) {
-    return createError(
-      ErrorCode.TASK_NOT_FOUND,
-      "Task not found",
-      rawError
-    );
+    return createError(ErrorCode.TASK_NOT_FOUND, "Task not found", rawError);
   }
 
   // Project not found
@@ -92,11 +88,7 @@ export function parseAppleScriptError(rawError: string): CliError {
     errorLower.includes("no tag") ||
     (errorLower.includes("tag") && errorLower.includes("doesn't exist"))
   ) {
-    return createError(
-      ErrorCode.TAG_NOT_FOUND,
-      "Tag not found",
-      rawError
-    );
+    return createError(ErrorCode.TAG_NOT_FOUND, "Tag not found", rawError);
   }
 
   // Folder not found

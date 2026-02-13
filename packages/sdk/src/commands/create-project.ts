@@ -7,11 +7,8 @@ import {
   validateDateString,
   validateId,
 } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
  * Create a new project in OmniFocus.
@@ -66,11 +63,13 @@ export async function createProject(
   // "active" is the default status, no need to set it explicitly
 
   if (options.dueDate !== undefined) {
-    properties.push(`due date:date "${options.dueDate}"`);
+    properties.push(`due date:date "${toAppleScriptDate(options.dueDate)}"`);
   }
 
   if (options.deferDate !== undefined) {
-    properties.push(`defer date:date "${options.deferDate}"`);
+    properties.push(
+      `defer date:date "${toAppleScriptDate(options.deferDate)}"`
+    );
   }
 
   // Build script based on whether we're placing in a folder
@@ -101,11 +100,11 @@ export async function createProject(
     set projStatus to "active"
     try
       set theStatus to status of newProject
-      if theStatus is on hold then
+      if theStatus is on hold status then
         set projStatus to "on-hold"
-      else if theStatus is done then
+      else if theStatus is done status then
         set projStatus to "completed"
-      else if theStatus is dropped then
+      else if theStatus is dropped status then
         set projStatus to "dropped"
       end if
     end try

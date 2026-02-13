@@ -4,12 +4,14 @@
 
 ## queryTasks() function
 
-Query tasks from OmniFocus with optional filters.
+Query tasks from OmniFocus with optional filters and pagination.
 
 **Signature:**
 
 ```typescript
-export declare function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<OFTask[]>>;
+export declare function queryTasks(
+  options?: TaskQueryOptions
+): Promise<CliOutput<PaginatedResult<OFTask>>>;
 ```
 
 ## Parameters
@@ -18,37 +20,30 @@ export declare function queryTasks(options?: TaskQueryOptions): Promise<CliOutpu
 
 Parameter
 
-
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
-
 </td><td>
 
 [TaskQueryOptions](./sdk.taskqueryoptions.md)
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->\[\]&gt;&gt;
-
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[PaginatedResult](./sdk.paginatedresult.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->&gt;&gt;&gt;

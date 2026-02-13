@@ -3,15 +3,18 @@ import type {
   CreateFolderOptions,
   FolderQueryOptions,
   OFFolder,
+  PaginatedResult,
 } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { validateFolderName, validateId } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
 import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+  validateFolderName,
+  validateId,
+  validatePaginationParams,
+} from "../validation.js";
+import { escapeAppleScript } from "../escape.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 
 /**
  * Create a new folder in OmniFocus.
@@ -54,39 +57,22 @@ export async function createFolder(
     makeFolder = `set newFolder to make new folder with properties {name:"${escapeAppleScript(name)}"}`;
   }
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, folderSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/folder.applescript"),
+  ]);
+
+  const body = `
     ${findParent}
     ${makeFolder}
 
-    -- Return the created folder info
-    set folderId to id of newFolder
-    set folderName to name of newFolder
-
-    set parentId to ""
-    set parentName to ""
-    try
-      set p to container of newFolder
-      if class of p is folder then
-        set parentId to id of p
-        set parentName to name of p
-      end if
-    end try
-
-    set projCount to count of projects of newFolder
-    set subFolderCount to count of folders of newFolder
-
-    return "{" & ¬
-      "\\"id\\": \\"" & folderId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(folderName)) & "\\"," & ¬
-      "\\"parentId\\": " & (my jsonString(parentId)) & "," & ¬
-      "\\"parentName\\": " & (my jsonString(parentName)) & "," & ¬
-      "\\"projectCount\\": " & projCount & "," & ¬
-      "\\"folderCount\\": " & subFolderCount & ¬
-      "}"
+    return my serializeFolder(newFolder)
   `;
 
-  const result = await runAppleScript<OFFolder>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<OFFolder>(
+    [jsonHelpers, folderSerializer],
+    body
   );
 
   if (!result.success) {
@@ -106,72 +92,90 @@ export async function createFolder(
 }
 
 /**
- * Query folders from OmniFocus with optional filters.
+ * Query folders from OmniFocus with optional filters and pagination.
  */
 export async function queryFolders(
   options: FolderQueryOptions = {}
-): Promise<CliOutput<OFFolder[]>> {
+): Promise<CliOutput<PaginatedResult<OFFolder>>> {
   // Validate parent filter
   const parentError = validateFolderName(options.parent);
   if (parentError) return failure(parentError);
 
-  const script = `
-    set output to "["
+  // Validate pagination parameters
+  const paginationError = validatePaginationParams(
+    options.limit,
+    options.offset
+  );
+  if (paginationError) return failure(paginationError);
+
+  // Pagination defaults
+  const limit = options.limit ?? 100;
+  const offset = options.offset ?? 0;
+
+  // Load external AppleScript helpers
+  const [jsonHelpers, folderSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/folder.applescript"),
+  ]);
+
+  const body = `
+    set output to "{\\"items\\": ["
     set isFirst to true
+    set totalCount to 0
+    set returnedCount to 0
+    set currentIndex to 0
 
     set allFolders to flattened folders
 
     repeat with f in allFolders
       set shouldInclude to true
 
+      -- Get parent info first (we need this for filtering)
+      set parentId to ""
+      set parentName to ""
+      try
+        set p to container of f
+        if class of p is folder then
+          set parentId to id of p
+          set parentName to name of p
+        end if
+      end try
+
       ${options.parent ? `-- Filter by parent folder` : ""}
-      ${options.parent ? `try` : ""}
-      ${options.parent ? `  set c to container of f` : ""}
-      ${options.parent ? `  if class of c is folder then` : ""}
-      ${options.parent ? `    if name of c is not "${escapeAppleScript(options.parent)}" then set shouldInclude to false` : ""}
-      ${options.parent ? `  else` : ""}
-      ${options.parent ? `    set shouldInclude to false` : ""}
-      ${options.parent ? `  end if` : ""}
-      ${options.parent ? `on error` : ""}
-      ${options.parent ? `  set shouldInclude to false` : ""}
-      ${options.parent ? `end try` : ""}
+      ${options.parent ? `if parentName is not "${escapeAppleScript(options.parent)}" then set shouldInclude to false` : ""}
 
       if shouldInclude then
-        if not isFirst then set output to output & ","
-        set isFirst to false
+        set totalCount to totalCount + 1
 
-        set folderId to id of f
-        set folderName to name of f
+        -- Check if within pagination range
+        if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
+          if not isFirst then set output to output & ","
+          set isFirst to false
+          set returnedCount to returnedCount + 1
 
-        set parentId to ""
-        set parentName to ""
-        try
-          set p to container of f
-          if class of p is folder then
-            set parentId to id of p
-            set parentName to name of p
-          end if
-        end try
+          set output to output & (my serializeFolder(f))
+        end if
 
-        set projCount to count of projects of f
-        set subFolderCount to count of folders of f
-
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & folderId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(folderName)) & "\\"," & ¬
-          "\\"parentId\\": " & (my jsonString(parentId)) & "," & ¬
-          "\\"parentName\\": " & (my jsonString(parentName)) & "," & ¬
-          "\\"projectCount\\": " & projCount & "," & ¬
-          "\\"folderCount\\": " & subFolderCount & ¬
-          "}"
+        set currentIndex to currentIndex + 1
       end if
     end repeat
 
-    return output & "]"
+    set hasMore to (totalCount > (${String(offset)} + returnedCount))
+
+    set output to output & "]," & ¬
+      "\\"totalCount\\": " & totalCount & "," & ¬
+      "\\"returnedCount\\": " & returnedCount & "," & ¬
+      "\\"hasMore\\": " & hasMore & "," & ¬
+      "\\"offset\\": ${String(offset)}," & ¬
+      "\\"limit\\": ${String(limit)}" & ¬
+      "}"
+
+    return output
   `;
 
-  const result = await runAppleScript<OFFolder[]>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<PaginatedResult<OFFolder>>(
+    [jsonHelpers, folderSerializer],
+    body
   );
 
   if (!result.success) {
@@ -181,5 +185,14 @@ export async function queryFolders(
     );
   }
 
-  return success(result.data ?? []);
+  return success(
+    result.data ?? {
+      items: [],
+      totalCount: 0,
+      returnedCount: 0,
+      hasMore: false,
+      offset,
+      limit,
+    }
+  );
 }

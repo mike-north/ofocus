@@ -3,10 +3,8 @@ import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 
 /**
  * Result from completing a task.
@@ -27,9 +25,12 @@ export async function completeTask(
   const idError = validateId(taskId, "task");
   if (idError) return failure(idError);
 
-  const script = `
+  // Load external AppleScript helpers
+  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
+
+  const body = `
     set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-    set completed of theTask to true
+    mark complete theTask
 
     set taskName to name of theTask
     set taskCompleted to completed of theTask
@@ -41,9 +42,7 @@ export async function completeTask(
       "}"
   `;
 
-  const result = await runAppleScript<CompleteResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runComposedScript<CompleteResult>([jsonHelpers], body);
 
   if (!result.success) {
     return failure(

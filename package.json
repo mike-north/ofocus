@@ -52,6 +52,7 @@
     "@microsoft/api-documenter": "^7.28.9",
     "@microsoft/api-extractor": "^7.56.3",
     "@types/node": "^22.13.4",
+    "attest-it": "^0.10.0",
     "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.0.1",
     "husky": "^9.1.7",
@@ -59,6 +60,7 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.5.1",
     "syncpack": "^13.0.0",
+    "tsx": "^4.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.24.0",
     "vitest": "^3.0.5"

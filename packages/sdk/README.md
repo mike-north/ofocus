@@ -44,6 +44,79 @@ const tasks = await queryTasks({
 await completeTask("task-id-here");
 ```
 
+## Querying Tasks
+
+### Use Filters First
+
+Always prefer filtering to fetching everything. The SDK supports many filters:
+
+```typescript
+// Get flagged tasks only
+const flagged = await queryTasks({ flagged: true });
+
+// Get tasks in a specific project
+const projectTasks = await queryTasks({ project: "Project Name" });
+
+// Get tasks with a specific tag
+const tagged = await queryTasks({ tag: "urgent" });
+
+// Get tasks due soon
+const dueSoon = await queryTasks({ dueBefore: "2024-12-31" });
+
+// Get available (actionable) tasks
+const available = await queryTasks({ available: true });
+
+// Combine filters
+const urgentAvailable = await queryTasks({ flagged: true, available: true });
+```
+
+### Inbox vs Project Tasks
+
+`queryTasks()` returns both inbox tasks and project tasks:
+
+- **Inbox tasks**: `projectId === null` (not assigned to any project)
+- **Project tasks**: `projectId` is set
+
+```typescript
+const result = await queryTasks({ flagged: true });
+if (result.success) {
+  const inboxTasks = result.data.items.filter((t) => t.projectId === null);
+  const projectTasks = result.data.items.filter((t) => t.projectId !== null);
+}
+```
+
+### Pagination
+
+All query functions return paginated results (default limit: 100 items):
+
+```typescript
+// First page (default)
+const page1 = await queryTasks({ flagged: true });
+
+// Check if there are more results
+if (page1.data.hasMore) {
+  const page2 = await queryTasks({ flagged: true, offset: 100 });
+}
+
+// Smaller pages for efficiency
+const smallPage = await queryTasks({ limit: 20, offset: 0 });
+```
+
+**Result format**:
+
+```typescript
+interface PaginatedResult<T> {
+  items: T[]; // The items for this page
+  totalCount: number; // Total items matching the query (before pagination)
+  returnedCount: number; // Items in this page
+  hasMore: boolean; // Whether more items exist
+  offset: number; // The offset used
+  limit: number; // The limit used
+}
+```
+
+**Note**: Only increase the limit beyond 100 when you specifically need all matching items. For most agent tasks, filters and pagination are more efficient.
+
 ## API
 
 ### Commands
@@ -52,8 +125,13 @@ await completeTask("task-id-here");
 - `queryTasks(options?)` - Query tasks with optional filters
 - `queryProjects(options?)` - Query projects with optional filters
 - `queryTags(options?)` - Query tags with optional filters
+- `queryFolders(options?)` - Query folders with optional filters
 - `completeTask(taskId)` - Mark a task as complete
 - `updateTask(taskId, options)` - Update task properties
+- `deleteTask(taskId)` - Permanently delete a task
+- `deleteProject(projectId)` - Permanently delete a project
+- `deleteTag(tagId)` - Permanently delete a tag
+- `deleteFolder(folderId)` - Permanently delete a folder
 
 ### Result Helpers
 

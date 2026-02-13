@@ -10,193 +10,657 @@
 
 Function
 
-
 </th><th>
 
 Description
 
-
 </th></tr></thead>
 <tbody><tr><td>
 
-[addToInbox(title, options)](./sdk.addtoinbox.md)
+[addAttachment(taskId, filePath)](./sdk.addattachment.md)
 
+</td><td>
+
+Add an attachment to a task.
+
+</td></tr>
+<tr><td>
+
+[addToInbox(title, options)](./sdk.addtoinbox.md)
 
 </td><td>
 
 Add a task to the OmniFocus inbox.
 
+</td></tr>
+<tr><td>
+
+[archiveTasks(options)](./sdk.archivetasks.md)
+
+</td><td>
+
+Archive completed/dropped tasks and projects. Note: OmniFocus archives are stored in \~/Library/Containers/com.omnigroup.OmniFocus3/Data/Library/Application Support/OmniFocus/Archive/
+
+</td></tr>
+<tr><td>
+
+[buildRepetitionRuleScript(taskVar, rule)](./sdk.buildrepetitionrulescript.md)
+
+</td><td>
+
+Build AppleScript to set a repetition rule on a task.
+
+</td></tr>
+<tr><td>
+
+[buildRRule(rule)](./sdk.buildrrule.md)
+
+</td><td>
+
+Build iCalendar RRULE string from a RepetitionRule.
+
+</td></tr>
+<tr><td>
+
+[compactDatabase()](./sdk.compactdatabase.md)
+
+</td><td>
+
+Trigger database compaction in OmniFocus. Compaction removes deleted items and optimizes the database.
 
 </td></tr>
 <tr><td>
 
 [completeTask(taskId)](./sdk.completetask.md)
 
-
 </td><td>
 
 Mark a task as complete in OmniFocus.
 
+</td></tr>
+<tr><td>
+
+[completeTasks(taskIds)](./sdk.completetasks.md)
+
+</td><td>
+
+Complete multiple tasks in a single operation.
 
 </td></tr>
 <tr><td>
 
 [createError(code, message, details)](./sdk.createerror.md)
 
-
 </td><td>
 
 Create a CliError with the given code and message.
 
+</td></tr>
+<tr><td>
+
+[createFolder(name, options)](./sdk.createfolder.md)
+
+</td><td>
+
+Create a new folder in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[createFromTemplate(options)](./sdk.createfromtemplate.md)
+
+</td><td>
+
+Create a new project from a template.
+
+</td></tr>
+<tr><td>
+
+[createProject(name, options)](./sdk.createproject.md)
+
+</td><td>
+
+Create a new project in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[createSubtask(title, parentTaskId, options)](./sdk.createsubtask.md)
+
+</td><td>
+
+Create a subtask under a parent task in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[createTag(name, options)](./sdk.createtag.md)
+
+</td><td>
+
+Create a new tag in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[deferTask(taskId, options)](./sdk.defertask.md)
+
+</td><td>
+
+Defer a task by a number of days or to a specific date.
+
+</td></tr>
+<tr><td>
+
+[deferTasks(taskIds, options)](./sdk.defertasks.md)
+
+</td><td>
+
+Defer multiple tasks by a number of days or to a specific date.
+
+</td></tr>
+<tr><td>
+
+[deleteFolder(folderId)](./sdk.deletefolder.md)
+
+</td><td>
+
+Delete a folder permanently from OmniFocus. Note: This cannot be undone.
+
+</td></tr>
+<tr><td>
+
+[deleteProject(projectId)](./sdk.deleteproject.md)
+
+</td><td>
+
+Delete a project permanently from OmniFocus. Note: This cannot be undone.
+
+</td></tr>
+<tr><td>
+
+[deleteTag(tagId)](./sdk.deletetag.md)
+
+</td><td>
+
+Delete a tag from OmniFocus. Note: This cannot be undone.
+
+</td></tr>
+<tr><td>
+
+[deleteTask(taskId)](./sdk.deletetask.md)
+
+</td><td>
+
+Delete a task permanently from OmniFocus. Note: This cannot be undone.
+
+</td></tr>
+<tr><td>
+
+[deleteTasks(taskIds)](./sdk.deletetasks.md)
+
+</td><td>
+
+Delete multiple tasks permanently in a single operation.
+
+</td></tr>
+<tr><td>
+
+[deleteTemplate(name)](./sdk.deletetemplate.md)
+
+</td><td>
+
+Delete a template.
+
+</td></tr>
+<tr><td>
+
+[dropProject(projectId)](./sdk.dropproject.md)
+
+</td><td>
+
+Drop a project in OmniFocus (marks as dropped but keeps history).
+
+</td></tr>
+<tr><td>
+
+[dropTask(taskId)](./sdk.droptask.md)
+
+</td><td>
+
+Drop a task in OmniFocus (marks as dropped but keeps history).
+
+</td></tr>
+<tr><td>
+
+[duplicateTask(taskId, options)](./sdk.duplicatetask.md)
+
+</td><td>
+
+Duplicate a task in OmniFocus. Creates a copy of the task with all its properties.
 
 </td></tr>
 <tr><td>
 
 [escapeAppleScript(str)](./sdk.escapeapplescript.md)
 
-
 </td><td>
 
 Escape a string for safe use in AppleScript double-quoted strings. Handles backslashes and double quotes.
 
+</td></tr>
+<tr><td>
+
+[exportTaskPaper(options)](./sdk.exporttaskpaper.md)
+
+</td><td>
+
+Export tasks and projects to TaskPaper format.
 
 </td></tr>
 <tr><td>
 
 [failure(error)](./sdk.failure.md)
 
-
 </td><td>
 
 Create a failed CLI output with a structured error.
-
 
 </td></tr>
 <tr><td>
 
 [failureMessage(message)](./sdk.failuremessage.md)
 
+</td><td>
+
+Create a failed CLI output with a simple string message. This is a convenience function that wraps the message in an UNKNOWN_ERROR.
+
+</td></tr>
+<tr><td>
+
+[focus_2(target, options)](./sdk.focus_2.md)
 
 </td><td>
 
-Create a failed CLI output with a simple string message. This is a convenience function that wraps the message in an UNKNOWN\_ERROR.
+Focus on a specific project or folder in OmniFocus. This matches the OmniFocus UI focus feature.
 
+</td></tr>
+<tr><td>
+
+[generateUrl(id)](./sdk.generateurl.md)
+
+</td><td>
+
+Generate an OmniFocus URL scheme deep link for a task, project, folder, or tag. Returns the omnifocus:/// URL that can be used to open the item in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[getFocused()](./sdk.getfocused.md)
+
+</td><td>
+
+Get the current focus state in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[getReviewInterval(projectId)](./sdk.getreviewinterval.md)
+
+</td><td>
+
+Get the review interval for a project in OmniFocus. Returns the interval in days.
+
+</td></tr>
+<tr><td>
+
+[getStats(options)](./sdk.getstats.md)
+
+</td><td>
+
+Get productivity statistics from OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[getSyncStatus()](./sdk.getsyncstatus.md)
+
+</td><td>
+
+Get the current sync status.
+
+</td></tr>
+<tr><td>
+
+[getTemplate(name)](./sdk.gettemplate.md)
+
+</td><td>
+
+Get a template by name.
+
+</td></tr>
+<tr><td>
+
+[importTaskPaper(content, options)](./sdk.importtaskpaper.md)
+
+</td><td>
+
+Import tasks from TaskPaper format.
+
+</td></tr>
+<tr><td>
+
+[listAttachments(taskId)](./sdk.listattachments.md)
+
+</td><td>
+
+List attachments of a task.
+
+</td></tr>
+<tr><td>
+
+[listPerspectives()](./sdk.listperspectives.md)
+
+</td><td>
+
+List all perspectives in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[listTemplates()](./sdk.listtemplates.md)
+
+</td><td>
+
+List all available templates.
+
+</td></tr>
+<tr><td>
+
+[moveTaskToParent(taskId, parentTaskId)](./sdk.movetasktoparent.md)
+
+</td><td>
+
+Move a task to become a subtask of another task.
 
 </td></tr>
 <tr><td>
 
 [omniFocusScript(body)](./sdk.omnifocusscript.md)
 
-
 </td><td>
 
 Build an AppleScript that tells OmniFocus to do something.
-
 
 </td></tr>
 <tr><td>
 
 [omniFocusScriptWithHelpers(body)](./sdk.omnifocusscriptwithhelpers.md)
 
-
 </td><td>
 
 Build an AppleScript that tells OmniFocus to do something, with JSON helper functions defined at the top level.
 
+</td></tr>
+<tr><td>
+
+[openItem(id)](./sdk.openitem.md)
+
+</td><td>
+
+Open an item in the OmniFocus UI. The item can be a task, project, folder, or tag. Auto-detects the item type based on the ID.
 
 </td></tr>
 <tr><td>
 
 [parseAppleScriptError(rawError)](./sdk.parseapplescripterror.md)
 
-
 </td><td>
 
 Parse an AppleScript error message into a structured CliError. Detects common error patterns and maps them to appropriate error codes.
 
+</td></tr>
+<tr><td>
+
+[parseQuickInput(input)](./sdk.parsequickinput.md)
+
+</td><td>
+
+Parse natural language quick capture input.
+
+Syntax: - `@tagname` - Add a tag - `#projectname` - Set project - `!` or `!!` - Flag the task - `~30m` or `~1h` - Set estimated duration - `due:tomorrow` or `due:monday` - Set due date - `defer:tomorrow` - Set defer date - `repeat:daily` or `repeat:weekly` - Set repetition - Everything else is the title
+
+</td></tr>
+<tr><td>
+
+[queryDeferred(options)](./sdk.querydeferred.md)
+
+</td><td>
+
+Query all deferred tasks from OmniFocus. Returns tasks that have a defer date set.
+
+</td></tr>
+<tr><td>
+
+[queryFolders(options)](./sdk.queryfolders.md)
+
+</td><td>
+
+Query folders from OmniFocus with optional filters and pagination.
+
+</td></tr>
+<tr><td>
+
+[queryForecast(options)](./sdk.queryforecast.md)
+
+</td><td>
+
+Query tasks by date range, similar to OmniFocus Forecast view. Returns tasks that are due or deferred within the specified date range.
+
+</td></tr>
+<tr><td>
+
+[queryPerspective(name, options)](./sdk.queryperspective.md)
+
+</td><td>
+
+Query tasks from a specific perspective in OmniFocus.
+
+Note: This function retrieves tasks based on the perspective's filtering rules. Some perspectives may require UI interaction in OmniFocus to be properly evaluated. Built-in perspectives like "Flagged", "Forecast", and "Projects" work best.
 
 </td></tr>
 <tr><td>
 
 [queryProjects(options)](./sdk.queryprojects.md)
 
+</td><td>
+
+Query projects from OmniFocus with optional filters and pagination.
+
+</td></tr>
+<tr><td>
+
+[queryProjectsForReview()](./sdk.queryprojectsforreview.md)
 
 </td><td>
 
-Query projects from OmniFocus with optional filters.
+Query projects that are due for review in OmniFocus.
 
+</td></tr>
+<tr><td>
+
+[querySubtasks(parentTaskId, options)](./sdk.querysubtasks.md)
+
+</td><td>
+
+Query subtasks of a parent task in OmniFocus with pagination.
 
 </td></tr>
 <tr><td>
 
 [queryTags(options)](./sdk.querytags.md)
 
-
 </td><td>
 
-Query tags from OmniFocus with optional filters.
-
+Query tags from OmniFocus with optional filters and pagination.
 
 </td></tr>
 <tr><td>
 
 [queryTasks(options)](./sdk.querytasks.md)
 
+</td><td>
+
+Query tasks from OmniFocus with optional filters and pagination.
+
+</td></tr>
+<tr><td>
+
+[quickCapture(input, options)](./sdk.quickcapture.md)
 
 </td><td>
 
-Query tasks from OmniFocus with optional filters.
+Quick capture - parse natural language input and add task to inbox.
 
+</td></tr>
+<tr><td>
+
+[removeAttachment(taskId, attachmentIdOrName)](./sdk.removeattachment.md)
+
+</td><td>
+
+Remove an attachment from a task.
+
+</td></tr>
+<tr><td>
+
+[reviewProject(projectId)](./sdk.reviewproject.md)
+
+</td><td>
+
+Mark a project as reviewed in OmniFocus.
 
 </td></tr>
 <tr><td>
 
 [runAppleScript(script)](./sdk.runapplescript.md)
 
-
 </td><td>
 
 Execute an AppleScript and return the result. The script should return a value that can be parsed as JSON for structured data.
-
 
 </td></tr>
 <tr><td>
 
 [runAppleScriptFile(filePath, args)](./sdk.runapplescriptfile.md)
 
-
 </td><td>
 
 Execute an AppleScript file.
 
+</td></tr>
+<tr><td>
+
+[saveTemplate(options)](./sdk.savetemplate.md)
+
+</td><td>
+
+Save a project as a template.
+
+</td></tr>
+<tr><td>
+
+[searchTasks(query, options)](./sdk.searchtasks.md)
+
+</td><td>
+
+Search tasks in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[setReviewInterval(projectId, days)](./sdk.setreviewinterval.md)
+
+</td><td>
+
+Set the review interval for a project in OmniFocus. The interval is specified in days.
 
 </td></tr>
 <tr><td>
 
 [success(data)](./sdk.success.md)
 
-
 </td><td>
 
 Create a successful CLI output.
 
+</td></tr>
+<tr><td>
+
+[triggerSync()](./sdk.triggersync.md)
+
+</td><td>
+
+Trigger a sync operation.
+
+</td></tr>
+<tr><td>
+
+[unfocus()](./sdk.unfocus.md)
+
+</td><td>
+
+Clear focus in OmniFocus (show all items).
+
+</td></tr>
+<tr><td>
+
+[updateFolder(folderId, options)](./sdk.updatefolder.md)
+
+</td><td>
+
+Update an existing folder in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[updateProject(projectId, options)](./sdk.updateproject.md)
+
+</td><td>
+
+Update an existing project in OmniFocus.
+
+</td></tr>
+<tr><td>
+
+[updateTag(tagId, options)](./sdk.updatetag.md)
+
+</td><td>
+
+Update an existing tag in OmniFocus.
 
 </td></tr>
 <tr><td>
 
 [updateTask(taskId, options)](./sdk.updatetask.md)
 
-
 </td><td>
 
 Update properties of an existing task in OmniFocus.
 
+</td></tr>
+<tr><td>
+
+[updateTasks(taskIds, options)](./sdk.updatetasks.md)
+
+</td><td>
+
+Update multiple tasks with the same properties in a single operation.
 
 </td></tr>
 <tr><td>
 
 [validateDateString(dateStr)](./sdk.validatedatestring.md)
-
 
 </td><td>
 
@@ -204,39 +668,86 @@ Validate a date string for use with AppleScript. Returns null if valid (or empty
 
 Note: We do basic validation here; the actual date parsing is done by AppleScript and more detailed errors come from there.
 
+</td></tr>
+<tr><td>
+
+[validateEstimatedMinutes(minutes)](./sdk.validateestimatedminutes.md)
+
+</td><td>
+
+Validate an estimated minutes value. Returns null if valid (or undefined), or a CliError if invalid.
+
+</td></tr>
+<tr><td>
+
+[validateFolderName(name)](./sdk.validatefoldername.md)
+
+</td><td>
+
+Validate a folder name. Returns null if valid (or empty), or a CliError if invalid.
 
 </td></tr>
 <tr><td>
 
 [validateId(id, type)](./sdk.validateid.md)
 
-
 </td><td>
 
 Validate an OmniFocus ID string. IDs are alphanumeric with possible dashes/underscores. Returns null if valid, or a CliError if invalid.
 
+</td></tr>
+<tr><td>
+
+[validatePaginationParams(limit, offset)](./sdk.validatepaginationparams.md)
+
+</td><td>
+
+Validate pagination parameters (limit and offset). Returns null if valid, or a CliError if invalid.
 
 </td></tr>
 <tr><td>
 
 [validateProjectName(name)](./sdk.validateprojectname.md)
 
-
 </td><td>
 
 Validate a project name. Returns null if valid (or empty), or a CliError if invalid.
 
+</td></tr>
+<tr><td>
+
+[validateRepetitionRule(rule)](./sdk.validaterepetitionrule.md)
+
+</td><td>
+
+Validate a repetition rule. Returns null if valid (or undefined), or a CliError if invalid.
+
+</td></tr>
+<tr><td>
+
+[validateSearchQuery(query)](./sdk.validatesearchquery.md)
+
+</td><td>
+
+Validate a search query. Returns null if valid, or a CliError if invalid.
+
+</td></tr>
+<tr><td>
+
+[validateTagName(name)](./sdk.validatetagname.md)
+
+</td><td>
+
+Validate a tag name for creation/update. Returns null if valid, or a CliError if invalid.
 
 </td></tr>
 <tr><td>
 
 [validateTags(tags)](./sdk.validatetags.md)
 
-
 </td><td>
 
 Validate a list of tag names. Returns null if valid, or a CliError if any tag is invalid.
-
 
 </td></tr>
 </tbody></table>
@@ -247,163 +758,691 @@ Validate a list of tag names. Returns null if valid, or a CliError if any tag is
 
 Interface
 
-
 </th><th>
 
 Description
 
-
 </th></tr></thead>
 <tbody><tr><td>
 
-[AppleScriptResult](./sdk.applescriptresult.md)
-
+[AddAttachmentResult](./sdk.addattachmentresult.md)
 
 </td><td>
 
+Result of adding an attachment.
+
+</td></tr>
+<tr><td>
+
+[AppleScriptResult](./sdk.applescriptresult.md)
+
+</td><td>
+
+</td></tr>
+<tr><td>
+
+[ArchiveOptions](./sdk.archiveoptions.md)
+
+</td><td>
+
+Options for archiving tasks.
+
+</td></tr>
+<tr><td>
+
+[ArchiveResult](./sdk.archiveresult.md)
+
+</td><td>
+
+Result of archive operation.
+
+</td></tr>
+<tr><td>
+
+[BatchCompleteItem](./sdk.batchcompleteitem.md)
+
+</td><td>
+
+Batch complete result item
+
+</td></tr>
+<tr><td>
+
+[BatchDeferItem](./sdk.batchdeferitem.md)
+
+</td><td>
+
+Item in batch defer result.
+
+</td></tr>
+<tr><td>
+
+[BatchDeleteItem](./sdk.batchdeleteitem.md)
+
+</td><td>
+
+Batch delete result item
+
+</td></tr>
+<tr><td>
+
+[BatchResult](./sdk.batchresult.md)
+
+</td><td>
+
+Result from a batch operation.
 
 </td></tr>
 <tr><td>
 
 [CliError](./sdk.clierror.md)
 
-
 </td><td>
 
 Structured error representation for CLI output.
-
 
 </td></tr>
 <tr><td>
 
 [CliOutput](./sdk.clioutput.md)
 
-
 </td><td>
 
 Standard CLI output format for all commands.
-
 
 </td></tr>
 <tr><td>
 
 [CommandInfo](./sdk.commandinfo.md)
 
-
 </td><td>
 
 Metadata about a CLI command for semantic activation by AI agents.
 
+</td></tr>
+<tr><td>
+
+[CompactResult](./sdk.compactresult.md)
+
+</td><td>
+
+Result of compact operation.
 
 </td></tr>
 <tr><td>
 
 [CompleteResult](./sdk.completeresult.md)
 
-
 </td><td>
 
 Result from completing a task.
 
+</td></tr>
+<tr><td>
+
+[CreateFolderOptions](./sdk.createfolderoptions.md)
+
+</td><td>
+
+Options for creating a folder.
+
+</td></tr>
+<tr><td>
+
+[CreateFromTemplateOptions](./sdk.createfromtemplateoptions.md)
+
+</td><td>
+
+Options for creating from a template.
+
+</td></tr>
+<tr><td>
+
+[CreateFromTemplateResult](./sdk.createfromtemplateresult.md)
+
+</td><td>
+
+Result of creating from a template.
+
+</td></tr>
+<tr><td>
+
+[CreateProjectOptions](./sdk.createprojectoptions.md)
+
+</td><td>
+
+Options for creating a project.
+
+</td></tr>
+<tr><td>
+
+[CreateTagOptions](./sdk.createtagoptions.md)
+
+</td><td>
+
+Options for creating a tag.
+
+</td></tr>
+<tr><td>
+
+[DeferOptions](./sdk.deferoptions.md)
+
+</td><td>
+
+Options for deferring a task.
+
+</td></tr>
+<tr><td>
+
+[DeferredQueryOptions](./sdk.deferredqueryoptions.md)
+
+</td><td>
+
+Options for querying deferred tasks.
+
+</td></tr>
+<tr><td>
+
+[DeferResult](./sdk.deferresult.md)
+
+</td><td>
+
+Result from deferring a task.
+
+</td></tr>
+<tr><td>
+
+[DeleteFolderResult](./sdk.deletefolderresult.md)
+
+</td><td>
+
+Result from deleting a folder.
+
+</td></tr>
+<tr><td>
+
+[DeleteProjectResult](./sdk.deleteprojectresult.md)
+
+</td><td>
+
+Result from deleting a project.
+
+</td></tr>
+<tr><td>
+
+[DeleteResult](./sdk.deleteresult.md)
+
+</td><td>
+
+Result from deleting a task.
+
+</td></tr>
+<tr><td>
+
+[DeleteTagResult](./sdk.deletetagresult.md)
+
+</td><td>
+
+Result from deleting a tag.
+
+</td></tr>
+<tr><td>
+
+[DeleteTemplateResult](./sdk.deletetemplateresult.md)
+
+</td><td>
+
+Result of deleting a template.
+
+</td></tr>
+<tr><td>
+
+[DropProjectResult](./sdk.dropprojectresult.md)
+
+</td><td>
+
+Result from dropping a project.
+
+</td></tr>
+<tr><td>
+
+[DropResult](./sdk.dropresult.md)
+
+</td><td>
+
+Result from dropping a task.
+
+</td></tr>
+<tr><td>
+
+[DuplicateTaskOptions](./sdk.duplicatetaskoptions.md)
+
+</td><td>
+
+Options for duplicating a task.
+
+</td></tr>
+<tr><td>
+
+[DuplicateTaskResult](./sdk.duplicatetaskresult.md)
+
+</td><td>
+
+Result from duplicating a task.
+
+</td></tr>
+<tr><td>
+
+[FocusResult](./sdk.focusresult.md)
+
+</td><td>
+
+Result from focus operations.
+
+</td></tr>
+<tr><td>
+
+[FolderQueryOptions](./sdk.folderqueryoptions.md)
+
+</td><td>
+
+Options for querying folders.
+
+</td></tr>
+<tr><td>
+
+[ForecastOptions](./sdk.forecastoptions.md)
+
+</td><td>
+
+Options for querying forecast tasks.
 
 </td></tr>
 <tr><td>
 
 [InboxOptions](./sdk.inboxoptions.md)
 
-
 </td><td>
 
 Options for adding a task to the inbox.
 
+</td></tr>
+<tr><td>
+
+[ListAttachmentsResult](./sdk.listattachmentsresult.md)
+
+</td><td>
+
+Result of listing attachments.
+
+</td></tr>
+<tr><td>
+
+[ListTemplatesResult](./sdk.listtemplatesresult.md)
+
+</td><td>
+
+Result of listing templates.
+
+</td></tr>
+<tr><td>
+
+[OFAttachment](./sdk.ofattachment.md)
+
+</td><td>
+
+Attachment information.
+
+</td></tr>
+<tr><td>
+
+[OFFolder](./sdk.offolder.md)
+
+</td><td>
+
+OmniFocus folder representation.
 
 </td></tr>
 <tr><td>
 
 [OFPerspective](./sdk.ofperspective.md)
 
-
 </td><td>
 
 OmniFocus perspective representation.
-
 
 </td></tr>
 <tr><td>
 
 [OFProject](./sdk.ofproject.md)
 
-
 </td><td>
 
 OmniFocus project representation.
-
 
 </td></tr>
 <tr><td>
 
 [OFTag](./sdk.oftag.md)
 
-
 </td><td>
 
 OmniFocus tag representation.
-
 
 </td></tr>
 <tr><td>
 
 [OFTask](./sdk.oftask.md)
 
-
 </td><td>
 
 OmniFocus task representation.
 
+</td></tr>
+<tr><td>
+
+[OFTaskWithChildren](./sdk.oftaskwithchildren.md)
+
+</td><td>
+
+OmniFocus task with hierarchy information.
+
+</td></tr>
+<tr><td>
+
+[OpenResult](./sdk.openresult.md)
+
+</td><td>
+
+Result from opening an item.
+
+</td></tr>
+<tr><td>
+
+[PaginatedResult](./sdk.paginatedresult.md)
+
+</td><td>
+
+Paginated result wrapper with metadata.
+
+</td></tr>
+<tr><td>
+
+[PaginationOptions](./sdk.paginationoptions.md)
+
+</td><td>
+
+Common pagination options for query functions.
+
+</td></tr>
+<tr><td>
+
+[ParsedQuickInput](./sdk.parsedquickinput.md)
+
+</td><td>
+
+Parsed result from quick capture input.
+
+</td></tr>
+<tr><td>
+
+[PerspectiveQueryOptions](./sdk.perspectivequeryoptions.md)
+
+</td><td>
+
+Options for querying a perspective.
 
 </td></tr>
 <tr><td>
 
 [ProjectQueryOptions](./sdk.projectqueryoptions.md)
 
-
 </td><td>
 
 Options for querying projects.
 
+</td></tr>
+<tr><td>
+
+[ProjectTemplate](./sdk.projecttemplate.md)
+
+</td><td>
+
+A project template definition.
+
+</td></tr>
+<tr><td>
+
+[QuickOptions](./sdk.quickoptions.md)
+
+</td><td>
+
+Quick capture options.
+
+</td></tr>
+<tr><td>
+
+[RemoveAttachmentResult](./sdk.removeattachmentresult.md)
+
+</td><td>
+
+Result of removing an attachment.
+
+</td></tr>
+<tr><td>
+
+[RepetitionRule](./sdk.repetitionrule.md)
+
+</td><td>
+
+Repetition rule for recurring tasks.
+
+</td></tr>
+<tr><td>
+
+[ReviewIntervalResult](./sdk.reviewintervalresult.md)
+
+</td><td>
+
+Result from getting or setting review interval.
+
+</td></tr>
+<tr><td>
+
+[ReviewResult](./sdk.reviewresult.md)
+
+</td><td>
+
+Result from a review operation.
+
+</td></tr>
+<tr><td>
+
+[SaveTemplateOptions](./sdk.savetemplateoptions.md)
+
+</td><td>
+
+Options for saving a template.
+
+</td></tr>
+<tr><td>
+
+[SaveTemplateResult](./sdk.savetemplateresult.md)
+
+</td><td>
+
+Result of saving a template.
+
+</td></tr>
+<tr><td>
+
+[SearchOptions](./sdk.searchoptions.md)
+
+</td><td>
+
+Options for searching tasks.
+
+</td></tr>
+<tr><td>
+
+[StatsOptions](./sdk.statsoptions.md)
+
+</td><td>
+
+Options for querying statistics.
+
+</td></tr>
+<tr><td>
+
+[StatsResult](./sdk.statsresult.md)
+
+</td><td>
+
+Statistics result.
+
+</td></tr>
+<tr><td>
+
+[SubtaskQueryOptions](./sdk.subtaskqueryoptions.md)
+
+</td><td>
+
+Options for querying subtasks.
+
+</td></tr>
+<tr><td>
+
+[SyncResult](./sdk.syncresult.md)
+
+</td><td>
+
+Result of sync operation.
+
+</td></tr>
+<tr><td>
+
+[SyncStatus](./sdk.syncstatus.md)
+
+</td><td>
+
+Sync status information.
 
 </td></tr>
 <tr><td>
 
 [TagQueryOptions](./sdk.tagqueryoptions.md)
 
-
 </td><td>
 
 Options for querying tags.
 
+</td></tr>
+<tr><td>
+
+[TaskPaperExportOptions](./sdk.taskpaperexportoptions.md)
+
+</td><td>
+
+Options for exporting to TaskPaper format.
+
+</td></tr>
+<tr><td>
+
+[TaskPaperExportResult](./sdk.taskpaperexportresult.md)
+
+</td><td>
+
+Result of a TaskPaper export.
+
+</td></tr>
+<tr><td>
+
+[TaskPaperImportOptions](./sdk.taskpaperimportoptions.md)
+
+</td><td>
+
+Options for importing from TaskPaper format.
+
+</td></tr>
+<tr><td>
+
+[TaskPaperImportResult](./sdk.taskpaperimportresult.md)
+
+</td><td>
+
+Result of a TaskPaper import.
 
 </td></tr>
 <tr><td>
 
 [TaskQueryOptions](./sdk.taskqueryoptions.md)
 
-
 </td><td>
 
 Options for querying tasks.
-
 
 </td></tr>
 <tr><td>
 
 [TaskUpdateOptions](./sdk.taskupdateoptions.md)
 
-
 </td><td>
 
 Options for updating a task.
 
+</td></tr>
+<tr><td>
+
+[TemplateSummary](./sdk.templatesummary.md)
+
+</td><td>
+
+Template summary info for listing.
+
+</td></tr>
+<tr><td>
+
+[TemplateTask](./sdk.templatetask.md)
+
+</td><td>
+
+A task within a template (without OmniFocus-specific IDs).
+
+</td></tr>
+<tr><td>
+
+[UpdateFolderOptions](./sdk.updatefolderoptions.md)
+
+</td><td>
+
+Options for updating a folder.
+
+</td></tr>
+<tr><td>
+
+[UpdateProjectOptions](./sdk.updateprojectoptions.md)
+
+</td><td>
+
+Options for updating a project.
+
+</td></tr>
+<tr><td>
+
+[UpdateTagOptions](./sdk.updatetagoptions.md)
+
+</td><td>
+
+Options for updating a tag.
+
+</td></tr>
+<tr><td>
+
+[UrlResult](./sdk.urlresult.md)
+
+</td><td>
+
+Result from URL generation.
 
 </td></tr>
 </tbody></table>
@@ -414,33 +1453,36 @@ Options for updating a task.
 
 Variable
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [ErrorCode](./sdk.errorcode.md)
 
-
 </td><td>
 
 Error codes for semantic error handling.
-
 
 </td></tr>
 <tr><td>
 
 [jsonHelpers](./sdk.jsonhelpers.md)
 
-
 </td><td>
 
 AppleScript helper functions for JSON serialization. These must be defined at the top level (outside tell blocks).
 
+</td></tr>
+<tr><td>
+
+[MAX_PAGINATION_LIMIT](./sdk.max_pagination_limit.md)
+
+</td><td>
+
+Maximum allowed limit for pagination queries. Set high enough for legitimate use cases but low enough to prevent abuse.
 
 </td></tr>
 </tbody></table>
@@ -451,21 +1493,16 @@ AppleScript helper functions for JSON serialization. These must be defined at th
 
 Type Alias
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [ErrorCode](./sdk.errorcode.md)
 
-
 </td><td>
-
 
 </td></tr>
 </tbody></table>
-

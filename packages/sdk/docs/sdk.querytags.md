@@ -4,12 +4,14 @@
 
 ## queryTags() function
 
-Query tags from OmniFocus with optional filters.
+Query tags from OmniFocus with optional filters and pagination.
 
 **Signature:**
 
 ```typescript
-export declare function queryTags(options?: TagQueryOptions): Promise<CliOutput<OFTag[]>>;
+export declare function queryTags(
+  options?: TagQueryOptions
+): Promise<CliOutput<PaginatedResult<OFTag>>>;
 ```
 
 ## Parameters
@@ -18,37 +20,30 @@ export declare function queryTags(options?: TagQueryOptions): Promise<CliOutput<
 
 Parameter
 
-
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
-
 </td><td>
 
 [TagQueryOptions](./sdk.tagqueryoptions.md)
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTag](./sdk.oftag.md)<!-- -->\[\]&gt;&gt;
-
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[PaginatedResult](./sdk.paginatedresult.md)<!-- -->&lt;[OFTag](./sdk.oftag.md)<!-- -->&gt;&gt;&gt;

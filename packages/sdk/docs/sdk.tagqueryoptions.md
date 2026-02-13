@@ -9,8 +9,10 @@ Options for querying tags.
 **Signature:**
 
 ```typescript
-export interface TagQueryOptions 
+export interface TagQueryOptions extends PaginationOptions
 ```
+
+**Extends:** [PaginationOptions](./sdk.paginationoptions.md)
 
 ## Properties
 
@@ -18,41 +20,32 @@ export interface TagQueryOptions
 
 Property
 
-
 </th><th>
 
 Modifiers
-
 
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [parent?](./sdk.tagqueryoptions.parent.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
-
 </td></tr>
 </tbody></table>
-

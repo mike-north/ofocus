@@ -6,7 +6,7 @@ import {
   validateProjectName,
   validateFolderName,
 } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
+import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
 import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
@@ -75,24 +75,24 @@ export async function updateProject(
   }
 
   // Handle status changes
-  // OmniFocus status values: active, on hold, done, dropped
+  // OmniFocus status values: active status, on hold status, done status, dropped status
   if (options.status !== undefined) {
     let statusValue: string;
     switch (options.status) {
       case "active":
-        statusValue = "active";
+        statusValue = "active status";
         break;
       case "on-hold":
-        statusValue = "on hold";
+        statusValue = "on hold status";
         break;
       case "completed":
-        statusValue = "done";
+        statusValue = "done status";
         break;
       case "dropped":
-        statusValue = "dropped";
+        statusValue = "dropped status";
         break;
       default:
-        statusValue = "active";
+        statusValue = "active status";
     }
     updates.push(`set status of theProject to ${statusValue}`);
   }
@@ -103,7 +103,7 @@ export async function updateProject(
       updates.push(`set due date of theProject to missing value`);
     } else {
       updates.push(
-        `set due date of theProject to date "${escapeAppleScript(options.dueDate)}"`
+        `set due date of theProject to date "${toAppleScriptDate(options.dueDate)}"`
       );
     }
   }
@@ -114,7 +114,7 @@ export async function updateProject(
       updates.push(`set defer date of theProject to missing value`);
     } else {
       updates.push(
-        `set defer date of theProject to date "${escapeAppleScript(options.deferDate)}"`
+        `set defer date of theProject to date "${toAppleScriptDate(options.deferDate)}"`
       );
     }
   }
@@ -150,11 +150,11 @@ export async function updateProject(
     set projStatus to "active"
     try
       set theStatus to status of theProject
-      if theStatus is on hold then
+      if theStatus is on hold status then
         set projStatus to "on-hold"
-      else if theStatus is done then
+      else if theStatus is done status then
         set projStatus to "completed"
-      else if theStatus is dropped then
+      else if theStatus is dropped status then
         set projStatus to "dropped"
       end if
     end try
@@ -215,15 +215,22 @@ export async function deleteProject(
   if (idError) return failure(idError);
 
   const script = `
-    set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
-    delete theProject
-
-    return "{\\"projectId\\": \\"${escapeAppleScript(projectId)}\\", \\"deleted\\": true}"
+    try
+      set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
+      delete theProject
+      return "{\\"projectId\\": \\"${escapeAppleScript(projectId)}\\", \\"deleted\\": true}"
+    on error errMsg
+      if errMsg contains "Can't get" or errMsg contains "not found" then
+        return "{\\"error\\": \\"not found\\", \\"projectId\\": \\"${escapeAppleScript(projectId)}\\"}"
+      else
+        error errMsg
+      end if
+    end try
   `;
 
-  const result = await runAppleScript<DeleteProjectResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runAppleScript<
+    DeleteProjectResult | { error: string; projectId: string }
+  >(omniFocusScriptWithHelpers(script));
 
   if (!result.success) {
     return failure(
@@ -236,7 +243,17 @@ export async function deleteProject(
     return failure(createError(ErrorCode.UNKNOWN_ERROR, "No result returned"));
   }
 
-  return success(result.data);
+  // Check if we got a "not found" response
+  if ("error" in result.data && result.data.error === "not found") {
+    return failure(
+      createError(
+        ErrorCode.PROJECT_NOT_FOUND,
+        `Project not found: ${projectId}`
+      )
+    );
+  }
+
+  return success(result.data as DeleteProjectResult);
 }
 
 /**
@@ -251,10 +268,10 @@ export async function dropProject(
 
   const script = `
     set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
-    set status of theProject to dropped
+    mark dropped theProject
 
     set projName to name of theProject
-    set projDropped to (status of theProject is dropped)
+    set projDropped to (status of theProject is dropped status)
 
     return "{" & ¬
       "\\"projectId\\": \\"${escapeAppleScript(projectId)}\\"," & ¬
