@@ -7,7 +7,7 @@ import {
   listPerspectives,
   queryPerspective,
   queryForecast,
-  focus,
+  focusOn,
   unfocus,
   getFocused,
   queryDeferred,
@@ -175,7 +175,7 @@ export function registerAdvancedTools(server: McpServer): void {
       },
     },
     async (params) => {
-      const result = await focus(params.target, { byId: params.byId });
+      const result = await focusOn(params.target, { byId: params.byId });
       return formatResult(result);
     }
   );
