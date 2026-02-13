@@ -8,10 +8,7 @@ import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId, validateTagName } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
  * Result from deleting a tag.
@@ -220,15 +217,22 @@ export async function deleteTag(
   if (idError) return failure(idError);
 
   const script = `
-    set theTag to first flattened tag whose id is "${escapeAppleScript(tagId)}"
-    delete theTag
-
-    return "{\\"tagId\\": \\"${escapeAppleScript(tagId)}\\", \\"deleted\\": true}"
+    try
+      set theTag to first flattened tag whose id is "${escapeAppleScript(tagId)}"
+      delete theTag
+      return "{\\"tagId\\": \\"${escapeAppleScript(tagId)}\\", \\"deleted\\": true}"
+    on error errMsg
+      if errMsg contains "Can't get" or errMsg contains "not found" then
+        return "{\\"error\\": \\"not found\\", \\"tagId\\": \\"${escapeAppleScript(tagId)}\\"}"
+      else
+        error errMsg
+      end if
+    end try
   `;
 
-  const result = await runAppleScript<DeleteTagResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runAppleScript<
+    DeleteTagResult | { error: string; tagId: string }
+  >(omniFocusScriptWithHelpers(script));
 
   if (!result.success) {
     return failure(
@@ -241,5 +245,12 @@ export async function deleteTag(
     return failure(createError(ErrorCode.UNKNOWN_ERROR, "No result returned"));
   }
 
-  return success(result.data);
+  // Check if we got a "not found" response
+  if ("error" in result.data && result.data.error === "not found") {
+    return failure(
+      createError(ErrorCode.TAG_NOT_FOUND, `Tag not found: ${tagId}`)
+    );
+  }
+
+  return success(result.data as DeleteTagResult);
 }

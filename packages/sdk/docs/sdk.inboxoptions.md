@@ -9,7 +9,7 @@ Options for adding a task to the inbox.
 **Signature:**
 
 ```typescript
-export interface InboxOptions 
+export interface InboxOptions
 ```
 
 ## Properties
@@ -18,117 +18,122 @@ export interface InboxOptions
 
 Property
 
-
 </th><th>
 
 Modifiers
-
 
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [defer?](./sdk.inboxoptions.defer.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [due?](./sdk.inboxoptions.due.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
+</td></tr>
+<tr><td>
+
+[estimatedMinutes?](./sdk.inboxoptions.estimatedminutes.md)
+
+</td><td>
+
+</td><td>
+
+number \| undefined
+
+</td><td>
+
+_(Optional)_
 
 </td></tr>
 <tr><td>
 
 [flag?](./sdk.inboxoptions.flag.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean \| undefined
 
-
 </td><td>
 
 _(Optional)_
-
 
 </td></tr>
 <tr><td>
 
 [note?](./sdk.inboxoptions.note.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
+</td></tr>
+<tr><td>
+
+[repeat?](./sdk.inboxoptions.repeat.md)
+
+</td><td>
+
+</td><td>
+
+[RepetitionRule](./sdk.repetitionrule.md) \| undefined
+
+</td><td>
+
+_(Optional)_
 
 </td></tr>
 <tr><td>
 
 [tags?](./sdk.inboxoptions.tags.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string\[\] \| undefined
 
-
 </td><td>
 
 _(Optional)_
 
-
 </td></tr>
 </tbody></table>
-

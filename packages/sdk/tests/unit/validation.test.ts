@@ -9,6 +9,8 @@ import {
   validateRepetitionRule,
   validateEstimatedMinutes,
   validateSearchQuery,
+  validatePaginationParams,
+  MAX_PAGINATION_LIMIT,
 } from "../../src/validation.js";
 import { ErrorCode } from "../../src/errors.js";
 
@@ -584,6 +586,88 @@ describe("validateSearchQuery", () => {
       const error = validateSearchQuery("search\\injection");
       expect(error).not.toBeNull();
       expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
+  });
+});
+
+describe("validatePaginationParams", () => {
+  describe("valid parameters", () => {
+    it("should accept undefined limit and offset", () => {
+      expect(validatePaginationParams(undefined, undefined)).toBeNull();
+    });
+
+    it("should accept valid limit with undefined offset", () => {
+      expect(validatePaginationParams(50, undefined)).toBeNull();
+    });
+
+    it("should accept undefined limit with valid offset", () => {
+      expect(validatePaginationParams(undefined, 100)).toBeNull();
+    });
+
+    it("should accept valid limit and offset", () => {
+      expect(validatePaginationParams(100, 200)).toBeNull();
+    });
+
+    it("should accept minimum limit of 1", () => {
+      expect(validatePaginationParams(1, 0)).toBeNull();
+    });
+
+    it("should accept zero offset", () => {
+      expect(validatePaginationParams(100, 0)).toBeNull();
+    });
+
+    it("should accept maximum allowed limit", () => {
+      expect(validatePaginationParams(MAX_PAGINATION_LIMIT, 0)).toBeNull();
+    });
+
+    it("should accept large offset", () => {
+      expect(validatePaginationParams(100, 10000)).toBeNull();
+    });
+  });
+
+  describe("invalid limit", () => {
+    it("should reject zero limit", () => {
+      const error = validatePaginationParams(0, 0);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("limit");
+    });
+
+    it("should reject negative limit", () => {
+      const error = validatePaginationParams(-10, 0);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("limit");
+    });
+
+    it("should reject non-integer limit", () => {
+      const error = validatePaginationParams(10.5, 0);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("limit");
+    });
+
+    it("should reject limit exceeding maximum", () => {
+      const error = validatePaginationParams(MAX_PAGINATION_LIMIT + 1, 0);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("exceeds maximum");
+    });
+  });
+
+  describe("invalid offset", () => {
+    it("should reject negative offset", () => {
+      const error = validatePaginationParams(100, -1);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("offset");
+    });
+
+    it("should reject non-integer offset", () => {
+      const error = validatePaginationParams(100, 10.5);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("offset");
     });
   });
 });

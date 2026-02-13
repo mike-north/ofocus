@@ -130,15 +130,22 @@ export async function deleteFolder(
   if (idError) return failure(idError);
 
   const script = `
-    set theFolder to first flattened folder whose id is "${escapeAppleScript(folderId)}"
-    delete theFolder
-
-    return "{\\"folderId\\": \\"${escapeAppleScript(folderId)}\\", \\"deleted\\": true}"
+    try
+      set theFolder to first flattened folder whose id is "${escapeAppleScript(folderId)}"
+      delete theFolder
+      return "{\\"folderId\\": \\"${escapeAppleScript(folderId)}\\", \\"deleted\\": true}"
+    on error errMsg
+      if errMsg contains "Can't get" or errMsg contains "not found" then
+        return "{\\"error\\": \\"not found\\", \\"folderId\\": \\"${escapeAppleScript(folderId)}\\"}"
+      else
+        error errMsg
+      end if
+    end try
   `;
 
-  const result = await runAppleScript<DeleteFolderResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runAppleScript<
+    DeleteFolderResult | { error: string; folderId: string }
+  >(omniFocusScriptWithHelpers(script));
 
   if (!result.success) {
     return failure(
@@ -151,5 +158,12 @@ export async function deleteFolder(
     return failure(createError(ErrorCode.UNKNOWN_ERROR, "No result returned"));
   }
 
-  return success(result.data);
+  // Check if we got a "not found" response
+  if ("error" in result.data && result.data.error === "not found") {
+    return failure(
+      createError(ErrorCode.FOLDER_NOT_FOUND, `Folder not found: ${folderId}`)
+    );
+  }
+
+  return success(result.data as DeleteFolderResult);
 }

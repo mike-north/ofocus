@@ -10,6 +10,8 @@ export type {
   OFFolder,
   OFTaskWithChildren,
   InboxOptions,
+  PaginationOptions,
+  PaginatedResult,
   TaskQueryOptions,
   ProjectQueryOptions,
   TagQueryOptions,
@@ -48,6 +50,8 @@ export {
   validateRepetitionRule,
   validateEstimatedMinutes,
   validateSearchQuery,
+  validatePaginationParams,
+  MAX_PAGINATION_LIMIT,
 } from "./validation.js";
 
 // AppleScript utilities
@@ -56,9 +60,19 @@ export {
   runAppleScriptFile,
   omniFocusScript,
   omniFocusScriptWithHelpers,
+  composeScript,
+  runComposedScript,
   jsonHelpers,
 } from "./applescript.js";
 export type { AppleScriptResult } from "./applescript.js";
+
+// Asset loading utilities
+export {
+  getScriptPath,
+  loadScriptContent,
+  loadScriptContentCached,
+  clearScriptCache,
+} from "./asset-loader.js";
 
 // Commands
 export { addToInbox } from "./commands/inbox.js";
@@ -133,7 +147,7 @@ export type { ReviewIntervalResult } from "./commands/review.js";
 export { queryForecast } from "./commands/forecast.js";
 export type { ForecastOptions } from "./commands/forecast.js";
 
-export { focus, unfocus, getFocused } from "./commands/focus.js";
+export { focusOn, unfocus, getFocused } from "./commands/focus.js";
 export type { FocusResult } from "./commands/focus.js";
 
 export { queryDeferred } from "./commands/deferred.js";

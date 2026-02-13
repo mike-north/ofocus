@@ -9,11 +9,9 @@ import {
   validateEstimatedMinutes,
   validateRepetitionRule,
 } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 import {
   buildRepetitionRuleScript,
   buildClearRepetitionScript,
@@ -60,18 +58,22 @@ export async function completeTasks(
   const allSucceeded: BatchCompleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
+  // Load external AppleScript helpers
+  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
+
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
-    const script = `
+    const body = `
       set taskIdList to ${idsJson}
       set succeededList to {}
       set failedList to {}
 
-      repeat with taskIdStr in taskIdList
+      repeat with i from 1 to count of taskIdList
+        set taskIdStr to item i of taskIdList
         try
           set theTask to first flattened task whose id is taskIdStr
-          set completed of theTask to true
+          mark complete theTask
           set taskName to name of theTask
           set end of succeededList to {taskIdStr, taskName}
         on error errMsg
@@ -81,27 +83,29 @@ export async function completeTasks(
 
       set output to "{\\"succeeded\\": ["
       set isFirst to true
-      repeat with item in succeededList
+      repeat with i from 1 to count of succeededList
+        set listItem to item i of succeededList
         if not isFirst then set output to output & ","
         set isFirst to false
-        set output to output & "{\\"taskId\\": \\"" & (item 1) & "\\", \\"taskName\\": \\"" & (my escapeJson(item 2 as string)) & "\\"}"
+        set output to output & "{\\"taskId\\": \\"" & (item 1 of listItem) & "\\", \\"taskName\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
       end repeat
       set output to output & "], \\"failed\\": ["
       set isFirst to true
-      repeat with item in failedList
+      repeat with i from 1 to count of failedList
+        set listItem to item i of failedList
         if not isFirst then set output to output & ","
         set isFirst to false
-        set output to output & "{\\"id\\": \\"" & (item 1) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 as string)) & "\\"}"
+        set output to output & "{\\"id\\": \\"" & (item 1 of listItem) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
       end repeat
       set output to output & "]}"
 
       return output
     `;
 
-    const result = await runAppleScript<{
+    const result = await runComposedScript<{
       succeeded: BatchCompleteItem[];
       failed: { id: string; error: string }[];
-    }>(omniFocusScriptWithHelpers(script));
+    }>([jsonHelpers], body);
 
     if (!result.success) {
       return failure(
@@ -111,8 +115,12 @@ export async function completeTasks(
     }
 
     if (result.data) {
-      allSucceeded.push(...result.data.succeeded);
-      allFailed.push(...result.data.failed);
+      if (Array.isArray(result.data.succeeded)) {
+        allSucceeded.push(...result.data.succeeded);
+      }
+      if (Array.isArray(result.data.failed)) {
+        allFailed.push(...result.data.failed);
+      }
     }
   }
 
@@ -175,9 +183,7 @@ export async function updateTasks(
   }
 
   if (options.note !== undefined) {
-    updates.push(
-      `set note of theTask to "${escapeAppleScript(options.note)}"`
-    );
+    updates.push(`set note of theTask to "${escapeAppleScript(options.note)}"`);
   }
 
   if (options.flag !== undefined) {
@@ -188,7 +194,9 @@ export async function updateTasks(
     if (options.due === "") {
       updates.push(`set due date of theTask to missing value`);
     } else {
-      updates.push(`set due date of theTask to date "${options.due}"`);
+      updates.push(
+        `set due date of theTask to date "${toAppleScriptDate(options.due)}"`
+      );
     }
   }
 
@@ -196,7 +204,9 @@ export async function updateTasks(
     if (options.defer === "") {
       updates.push(`set defer date of theTask to missing value`);
     } else {
-      updates.push(`set defer date of theTask to date "${options.defer}"`);
+      updates.push(
+        `set defer date of theTask to date "${toAppleScriptDate(options.defer)}"`
+      );
     }
   }
 
@@ -261,15 +271,19 @@ export async function updateTasks(
   const allSucceeded: BatchCompleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
+  // Load external AppleScript helpers
+  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
+
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
-    const script = `
+    const body = `
       set taskIdList to ${idsJson}
       set succeededList to {}
       set failedList to {}
 
-      repeat with taskIdStr in taskIdList
+      repeat with i from 1 to count of taskIdList
+        set taskIdStr to item i of taskIdList
         try
           set theTask to first flattened task whose id is taskIdStr
           ${updateScript}
@@ -285,27 +299,29 @@ export async function updateTasks(
 
       set output to "{\\"succeeded\\": ["
       set isFirst to true
-      repeat with item in succeededList
+      repeat with i from 1 to count of succeededList
+        set listItem to item i of succeededList
         if not isFirst then set output to output & ","
         set isFirst to false
-        set output to output & "{\\"taskId\\": \\"" & (item 1) & "\\", \\"taskName\\": \\"" & (my escapeJson(item 2 as string)) & "\\"}"
+        set output to output & "{\\"taskId\\": \\"" & (item 1 of listItem) & "\\", \\"taskName\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
       end repeat
       set output to output & "], \\"failed\\": ["
       set isFirst to true
-      repeat with item in failedList
+      repeat with i from 1 to count of failedList
+        set listItem to item i of failedList
         if not isFirst then set output to output & ","
         set isFirst to false
-        set output to output & "{\\"id\\": \\"" & (item 1) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 as string)) & "\\"}"
+        set output to output & "{\\"id\\": \\"" & (item 1 of listItem) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
       end repeat
       set output to output & "]}"
 
       return output
     `;
 
-    const result = await runAppleScript<{
+    const result = await runComposedScript<{
       succeeded: BatchCompleteItem[];
       failed: { id: string; error: string }[];
-    }>(omniFocusScriptWithHelpers(script));
+    }>([jsonHelpers], body);
 
     if (!result.success) {
       return failure(
@@ -315,8 +331,12 @@ export async function updateTasks(
     }
 
     if (result.data) {
-      allSucceeded.push(...result.data.succeeded);
-      allFailed.push(...result.data.failed);
+      if (Array.isArray(result.data.succeeded)) {
+        allSucceeded.push(...result.data.succeeded);
+      }
+      if (Array.isArray(result.data.failed)) {
+        allFailed.push(...result.data.failed);
+      }
     }
   }
 
@@ -355,15 +375,19 @@ export async function deleteTasks(
   const allSucceeded: BatchDeleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
+  // Load external AppleScript helpers
+  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
+
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
-    const script = `
+    const body = `
       set taskIdList to ${idsJson}
       set succeededList to {}
       set failedList to {}
 
-      repeat with taskIdStr in taskIdList
+      repeat with i from 1 to count of taskIdList
+        set taskIdStr to item i of taskIdList
         try
           set theTask to first flattened task whose id is taskIdStr
           delete theTask
@@ -375,27 +399,28 @@ export async function deleteTasks(
 
       set output to "{\\"succeeded\\": ["
       set isFirst to true
-      repeat with item in succeededList
+      repeat with i from 1 to count of succeededList
         if not isFirst then set output to output & ","
         set isFirst to false
-        set output to output & "{\\"taskId\\": \\"" & item & "\\"}"
+        set output to output & "{\\"taskId\\": \\"" & (item i of succeededList) & "\\"}"
       end repeat
       set output to output & "], \\"failed\\": ["
       set isFirst to true
-      repeat with item in failedList
+      repeat with i from 1 to count of failedList
+        set listItem to item i of failedList
         if not isFirst then set output to output & ","
         set isFirst to false
-        set output to output & "{\\"id\\": \\"" & (item 1) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 as string)) & "\\"}"
+        set output to output & "{\\"id\\": \\"" & (item 1 of listItem) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
       end repeat
       set output to output & "]}"
 
       return output
     `;
 
-    const result = await runAppleScript<{
+    const result = await runComposedScript<{
       succeeded: BatchDeleteItem[];
       failed: { id: string; error: string }[];
-    }>(omniFocusScriptWithHelpers(script));
+    }>([jsonHelpers], body);
 
     if (!result.success) {
       return failure(
@@ -405,8 +430,12 @@ export async function deleteTasks(
     }
 
     if (result.data) {
-      allSucceeded.push(...result.data.succeeded);
-      allFailed.push(...result.data.failed);
+      if (Array.isArray(result.data.succeeded)) {
+        allSucceeded.push(...result.data.succeeded);
+      }
+      if (Array.isArray(result.data.failed)) {
+        allFailed.push(...result.data.failed);
+      }
     }
   }
 

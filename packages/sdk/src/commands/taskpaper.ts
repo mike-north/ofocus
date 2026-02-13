@@ -76,8 +76,9 @@ function formatTaskPaperDate(dateStr: string | null): string | null {
 /**
  * Escape a string for TaskPaper format.
  */
-function escapeTaskPaper(str: string): string {
+function escapeTaskPaper(str: string | null | undefined): string {
   // TaskPaper doesn't have much escaping, but we should handle newlines
+  if (str == null) return "";
   return str.replace(/\n/g, " ").replace(/\t/g, " ");
 }
 
@@ -112,7 +113,7 @@ function formatTaskAsTaskPaper(task: OFTask, indent: number): string {
   }
 
   // Add estimate
-  if (task.estimatedMinutes !== null && task.estimatedMinutes > 0) {
+  if (task.estimatedMinutes != null && task.estimatedMinutes > 0) {
     line += ` @estimate(${String(task.estimatedMinutes)}m)`;
   }
 
@@ -164,7 +165,7 @@ export async function exportTaskPaper(
     );
   }
 
-  const projects = projectsResult.data ?? [];
+  const projects = projectsResult.data?.items ?? [];
 
   // Filter to specific project if requested
   const filteredProjects = options.project
@@ -191,7 +192,12 @@ export async function exportTaskPaper(
     });
 
     if (tasksResult.success && tasksResult.data) {
-      for (const task of tasksResult.data) {
+      // Filter out the project's root task (queryTasks returns it with same ID as projectId)
+      const projectTasks = tasksResult.data.items.filter(
+        (t) => t.id !== project.id
+      );
+
+      for (const task of projectTasks) {
         // TODO: Dropped task filtering is not yet implemented at the query layer.
         // The OFTask type doesn't expose the `dropped` property, and queryTasks
         // doesn't support filtering by dropped status. When includeDropped=false,
@@ -215,20 +221,25 @@ export async function exportTaskPaper(
     lines.push(""); // Blank line between projects
   }
 
-  // Get inbox tasks (tasks without a project)
-  const inboxResult = await queryTasks({
-    completed: options.includeCompleted ? true : undefined,
-  });
+  // Get inbox tasks (tasks without a project) - skip if filtering by specific project
+  if (!options.project) {
+    // Note: This query can be slow with many tasks. We filter by projectName after
+    // to get only inbox tasks, but the initial query still retrieves all tasks.
+    // For large databases, consider using a dedicated inbox query if available.
+    const inboxResult = await queryTasks({
+      completed: options.includeCompleted ? true : undefined,
+    });
 
-  if (inboxResult.success && inboxResult.data) {
-    const inboxTasks = inboxResult.data.filter((t) => !t.projectName);
-    if (inboxTasks.length > 0) {
-      lines.push("Inbox:");
-      for (const task of inboxTasks) {
-        lines.push(formatTaskAsTaskPaper(task, 1));
-        taskCount++;
-        if (task.note) {
-          lines.push("\t\t" + escapeTaskPaper(task.note));
+    if (inboxResult.success && inboxResult.data) {
+      const inboxTasks = inboxResult.data.items.filter((t) => !t.projectName);
+      if (inboxTasks.length > 0) {
+        lines.push("Inbox:");
+        for (const task of inboxTasks) {
+          lines.push(formatTaskAsTaskPaper(task, 1));
+          taskCount++;
+          if (task.note) {
+            lines.push("\t\t" + escapeTaskPaper(task.note));
+          }
         }
       }
     }

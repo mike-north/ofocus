@@ -6,7 +6,7 @@ import { success, failureMessage } from "../result.js";
 import { queryTasks } from "./tasks.js";
 import { queryProjects } from "./projects.js";
 import { createProject } from "./create-project.js";
-import { escapeAppleScript } from "../escape.js";
+import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
 import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 
 /**
@@ -212,7 +212,7 @@ export async function saveTemplate(
     );
   }
 
-  const projects = projectsResult.data ?? [];
+  const projects = projectsResult.data?.items ?? [];
   const project = projects.find(
     (p: OFProject) => p.id === sourceProject || p.name === sourceProject
   );
@@ -229,7 +229,7 @@ export async function saveTemplate(
     );
   }
 
-  const allTasks = tasksResult.data ?? [];
+  const allTasks = tasksResult.data?.items ?? [];
   const referenceDate = new Date();
 
   // Convert tasks to template format (flat structure for simplicity)
@@ -328,11 +328,11 @@ async function createTaskInProject(
   }
 
   if (dueDate) {
-    properties.push(`due date:date "${dueDate}"`);
+    properties.push(`due date:date "${toAppleScriptDate(dueDate)}"`);
   }
 
   if (deferDate) {
-    properties.push(`defer date:date "${deferDate}"`);
+    properties.push(`defer date:date "${toAppleScriptDate(deferDate)}"`);
   }
 
   if (task.estimatedMinutes !== null) {

@@ -200,7 +200,7 @@ export async function getStats(
     );
   }
 
-  const allTasks = allTasksResult.data ?? [];
+  const allTasks = allTasksResult.data?.items ?? [];
 
   // Get available tasks
   const availableTasksResult = await queryTasks({
@@ -209,13 +209,15 @@ export async function getStats(
   });
 
   const availableTasks = availableTasksResult.success
-    ? (availableTasksResult.data ?? [])
+    ? (availableTasksResult.data?.items ?? [])
     : [];
 
   // Get projects
   const projectsResult = await queryProjects({});
 
-  const projects = projectsResult.success ? (projectsResult.data ?? []) : [];
+  const projects = projectsResult.success
+    ? (projectsResult.data?.items ?? [])
+    : [];
 
   // Calculate statistics
   let tasksCompleted = 0;

@@ -9,7 +9,7 @@ OmniFocus task representation.
 **Signature:**
 
 ```typescript
-export interface OFTask 
+export interface OFTask
 ```
 
 ## Properties
@@ -18,209 +18,173 @@ export interface OFTask
 
 Property
 
-
 </th><th>
 
 Modifiers
-
 
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [completed](./sdk.oftask.completed.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [completionDate](./sdk.oftask.completiondate.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| null
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [deferDate](./sdk.oftask.deferdate.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| null
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [dueDate](./sdk.oftask.duedate.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| null
 
+</td><td>
+
+</td></tr>
+<tr><td>
+
+[estimatedMinutes](./sdk.oftask.estimatedminutes.md)
 
 </td><td>
 
+</td><td>
+
+number \| null
+
+</td><td>
 
 </td></tr>
 <tr><td>
 
 [flagged](./sdk.oftask.flagged.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [id](./sdk.oftask.id.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.oftask.name.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [note](./sdk.oftask.note.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| null
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [projectId](./sdk.oftask.projectid.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| null
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [projectName](./sdk.oftask.projectname.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string \| null
 
-
 </td><td>
-
 
 </td></tr>
 <tr><td>
 
 [tags](./sdk.oftask.tags.md)
 
-
 </td><td>
-
 
 </td><td>
 
 string\[\]
 
-
 </td><td>
-
 
 </td></tr>
 </tbody></table>
-

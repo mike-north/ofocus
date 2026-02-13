@@ -18,13 +18,10 @@ export interface AddAttachmentResult {
 // @public
 export function addToInbox(title: string, options?: InboxOptions): Promise<CliOutput<OFTask>>;
 
-// @public (undocumented)
+// @public
 export interface AppleScriptResult<T> {
-    // (undocumented)
     data?: T;
-    // (undocumented)
     error?: CliError;
-    // (undocumented)
     success: boolean;
 }
 
@@ -95,6 +92,9 @@ export function buildRepetitionRuleScript(taskVar: string, rule: RepetitionRule)
 export function buildRRule(rule: RepetitionRule): string;
 
 // @public
+export function clearScriptCache(): void;
+
+// @public
 export interface CliError {
     // (undocumented)
     code: ErrorCode;
@@ -148,6 +148,9 @@ export function completeTask(taskId: string): Promise<CliOutput<CompleteResult>>
 
 // @public
 export function completeTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
+
+// @public
+export function composeScript(handlers: string[], body: string): string;
 
 // @public
 export function createError(code: ErrorCode, message: string, details?: string): CliError;
@@ -384,10 +387,9 @@ export function failure<T = null>(error: CliError): CliOutput<T>;
 export function failureMessage<T = null>(message: string): CliOutput<T>;
 
 // @public
-function focus_2(target: string, options?: {
+export function focusOn(target: string, options?: {
     byId?: boolean | undefined;
 }): Promise<CliOutput<FocusResult>>;
-export { focus_2 as focus }
 
 // @public
 export interface FocusResult {
@@ -402,7 +404,7 @@ export interface FocusResult {
 }
 
 // @public
-export interface FolderQueryOptions {
+export interface FolderQueryOptions extends PaginationOptions {
     // (undocumented)
     parent?: string | undefined;
 }
@@ -423,6 +425,9 @@ export function getFocused(): Promise<CliOutput<FocusResult>>;
 
 // @public
 export function getReviewInterval(projectId: string): Promise<CliOutput<ReviewIntervalResult>>;
+
+// @public
+export function getScriptPath(relativePath: string): string;
 
 // @public
 export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
@@ -455,7 +460,7 @@ export interface InboxOptions {
 }
 
 // @public
-export const jsonHelpers = "\non jsonString(val)\n  if val is \"\" or val is missing value or val is \"missing value\" then\n    return \"null\"\n  else\n    return \"\\\"\" & my escapeJson(val) & \"\\\"\"\n  end if\nend jsonString\n\non jsonArray(theList)\n  if (count of theList) is 0 then\n    return \"[]\"\n  end if\n  set output to \"[\"\n  repeat with i from 1 to count of theList\n    if i > 1 then set output to output & \",\"\n    set output to output & \"\\\"\" & (my escapeJson(item i of theList)) & \"\\\"\"\n  end repeat\n  return output & \"]\"\nend jsonArray\n\non escapeJson(str)\n  set output to \"\"\n  repeat with c in characters of (str as string)\n    if c is \"\\\"\" then\n      set output to output & \"\\\\\\\"\"\n    else if c is \"\\\\\" then\n      set output to output & \"\\\\\\\\\"\n    else if c is return then\n      set output to output & \"\\\\n\"\n    else if c is linefeed then\n      set output to output & \"\\\\n\"\n    else\n      set output to output & c\n    end if\n  end repeat\n  return output\nend escapeJson\n";
+export const jsonHelpers = "\non jsonString(val)\n  if val is \"\" or val is missing value or val is \"missing value\" then\n    return \"null\"\n  else\n    return \"\\\"\" & my escapeJson(val) & \"\\\"\"\n  end if\nend jsonString\n\non jsonArray(theList)\n  if (count of theList) is 0 then\n    return \"[]\"\n  end if\n  set output to \"[\"\n  repeat with i from 1 to count of theList\n    if i > 1 then set output to output & \",\"\n    set output to output & \"\\\"\" & (my escapeJson(item i of theList)) & \"\\\"\"\n  end repeat\n  return output & \"]\"\nend jsonArray\n\non escapeJson(str)\n  set output to \"\"\n  set quoteChar to \"\\\"\"\n  set bslashChar to \"\\\\\"\n  set tabChar to tab\n  repeat with c in characters of (str as string)\n    set ch to c as string\n    if ch is quoteChar then\n      set output to output & \"\\\\\\\"\"\n    else if ch is bslashChar then\n      set output to output & \"\\\\\\\\\"\n    else if ch is return then\n      set output to output & \"\\\\n\"\n    else if ch is linefeed then\n      set output to output & \"\\\\n\"\n    else if ch is tabChar then\n      set output to output & \"\\\\t\"\n    else\n      -- Check for other control characters (ASCII 0-31) and skip them\n      set charCode to id of ch\n      if charCode < 32 then\n        -- Skip control characters\n      else\n        set output to output & ch\n      end if\n    end if\n  end repeat\n  return output\nend escapeJson\n";
 
 // @public
 export function listAttachments(taskId: string): Promise<CliOutput<ListAttachmentsResult>>;
@@ -477,6 +482,15 @@ export function listTemplates(): CliOutput<ListTemplatesResult>;
 export interface ListTemplatesResult {
     templates: TemplateSummary[];
 }
+
+// @public
+export function loadScriptContent(relativePath: string): Promise<string>;
+
+// @public
+export function loadScriptContentCached(relativePath: string): Promise<string>;
+
+// @public
+export const MAX_PAGINATION_LIMIT = 10000;
 
 // @public
 export function moveTaskToParent(taskId: string, parentTaskId: string): Promise<CliOutput<OFTaskWithChildren>>;
@@ -613,6 +627,22 @@ export interface OpenResult {
 }
 
 // @public
+export interface PaginatedResult<T> {
+    hasMore: boolean;
+    items: T[];
+    limit: number;
+    offset: number;
+    returnedCount: number;
+    totalCount: number;
+}
+
+// @public
+export interface PaginationOptions {
+    limit?: number | undefined;
+    offset?: number | undefined;
+}
+
+// @public
 export function parseAppleScriptError(rawError: string): CliError;
 
 // @public
@@ -647,7 +677,7 @@ export interface PerspectiveQueryOptions {
 }
 
 // @public
-export interface ProjectQueryOptions {
+export interface ProjectQueryOptions extends PaginationOptions {
     // (undocumented)
     folder?: string | undefined;
     // (undocumented)
@@ -672,7 +702,7 @@ export interface ProjectTemplate {
 export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput<OFTask[]>>;
 
 // @public
-export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<OFFolder[]>>;
+export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<PaginatedResult<OFFolder>>>;
 
 // @public
 export function queryForecast(options?: ForecastOptions): Promise<CliOutput<OFTask[]>>;
@@ -681,19 +711,19 @@ export function queryForecast(options?: ForecastOptions): Promise<CliOutput<OFTa
 export function queryPerspective(name: string, options?: PerspectiveQueryOptions): Promise<CliOutput<OFTask[]>>;
 
 // @public
-export function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<OFProject[]>>;
+export function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<PaginatedResult<OFProject>>>;
 
 // @public
 export function queryProjectsForReview(): Promise<CliOutput<OFProject[]>>;
 
 // @public
-export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<OFTaskWithChildren[]>>;
+export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<PaginatedResult<OFTaskWithChildren>>>;
 
 // @public
-export function queryTags(options?: TagQueryOptions): Promise<CliOutput<OFTag[]>>;
+export function queryTags(options?: TagQueryOptions): Promise<CliOutput<PaginatedResult<OFTag>>>;
 
 // @public
-export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<OFTask[]>>;
+export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<PaginatedResult<OFTask>>>;
 
 // @public
 export function quickCapture(input: string, options?: QuickOptions): Promise<CliOutput<OFTask>>;
@@ -759,6 +789,9 @@ export function runAppleScript<T>(script: string): Promise<AppleScriptResult<T>>
 export function runAppleScriptFile<T>(filePath: string, args?: string[]): Promise<AppleScriptResult<T>>;
 
 // @public
+export function runComposedScript<T>(handlers: string[], body: string): Promise<AppleScriptResult<T>>;
+
+// @public
 export function saveTemplate(options: SaveTemplateOptions): Promise<CliOutput<SaveTemplateResult>>;
 
 // @public
@@ -816,7 +849,7 @@ export interface StatsResult {
 }
 
 // @public
-export interface SubtaskQueryOptions {
+export interface SubtaskQueryOptions extends PaginationOptions {
     // (undocumented)
     completed?: boolean | undefined;
     // (undocumented)
@@ -841,7 +874,7 @@ export interface SyncStatus {
 }
 
 // @public
-export interface TagQueryOptions {
+export interface TagQueryOptions extends PaginationOptions {
     // (undocumented)
     parent?: string | undefined;
 }
@@ -880,7 +913,7 @@ export interface TaskPaperImportResult {
 }
 
 // @public
-export interface TaskQueryOptions {
+export interface TaskQueryOptions extends PaginationOptions {
     // (undocumented)
     available?: boolean | undefined;
     // (undocumented)
@@ -1032,6 +1065,9 @@ export function validateFolderName(name: string | undefined): CliError | null;
 
 // @public
 export function validateId(id: string, type: "task" | "project" | "tag" | "folder" | "item"): CliError | null;
+
+// @public
+export function validatePaginationParams(limit: number | undefined, offset: number | undefined): CliError | null;
 
 // @public
 export function validateProjectName(name: string | undefined): CliError | null;

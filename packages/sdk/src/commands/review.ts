@@ -110,11 +110,11 @@ export async function queryProjectsForReview(): Promise<
         set projStatus to "active"
         try
           set theStatus to status of p
-          if theStatus is on hold then
+          if theStatus is on hold status then
             set projStatus to "on-hold"
-          else if theStatus is done then
+          else if theStatus is done status then
             set projStatus to "completed"
-          else if theStatus is dropped then
+          else if theStatus is dropped status then
             set projStatus to "dropped"
           end if
         end try

@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { buildRRule, buildRepetitionRuleScript } from "../../../src/commands/repetition.js";
+import {
+  buildRRule,
+  buildRepetitionRuleScript,
+} from "../../../src/commands/repetition.js";
 import type { RepetitionRule } from "../../../src/types.js";
 
 describe("buildRRule", () => {
@@ -218,6 +221,8 @@ describe("buildRepetitionRuleScript", () => {
       daysOfWeek: [1, 3, 5],
     };
     const script = buildRepetitionRuleScript("theTask", rule);
-    expect(script).toContain('recurrence:"FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"');
+    expect(script).toContain(
+      'recurrence:"FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"'
+    );
   });
 });

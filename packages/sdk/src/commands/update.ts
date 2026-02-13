@@ -9,11 +9,8 @@ import {
   validateEstimatedMinutes,
   validateRepetitionRule,
 } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import {
-  runAppleScript,
-  omniFocusScriptWithHelpers,
-} from "../applescript.js";
+import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
+import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
 import {
   buildRepetitionRuleScript,
   buildClearRepetitionScript,
@@ -73,7 +70,9 @@ export async function updateTask(
     if (options.due === "") {
       updates.push(`set due date of theTask to missing value`);
     } else {
-      updates.push(`set due date of theTask to date "${options.due}"`);
+      updates.push(
+        `set due date of theTask to date "${toAppleScriptDate(options.due)}"`
+      );
     }
   }
 
@@ -81,7 +80,9 @@ export async function updateTask(
     if (options.defer === "") {
       updates.push(`set defer date of theTask to missing value`);
     } else {
-      updates.push(`set defer date of theTask to date "${options.defer}"`);
+      updates.push(
+        `set defer date of theTask to date "${toAppleScriptDate(options.defer)}"`
+      );
     }
   }
 
