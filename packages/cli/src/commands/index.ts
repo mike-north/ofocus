@@ -267,6 +267,12 @@ export const commandRegistry: CommandInfo[] = [
     usage: "ofocus template-list",
   },
   {
+    name: "template-get",
+    description:
+      "Get full details of a specific project template by name. Returns the complete template structure including all tasks with their titles, notes, flags, tags, estimated durations, and relative date offsets. Use this to inspect a template before creating a project from it.",
+    usage: "ofocus template-get <name>",
+  },
+  {
     name: "template-create",
     description:
       "Create a new project from a saved template. Instantiates the template with all tasks, applying date offsets relative to the base date (defaults to today). Supports specifying a custom project name and target folder.",
