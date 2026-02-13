@@ -20,7 +20,7 @@ const RepetitionRuleSchema = z.object({
   frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
   interval: z.number().int().min(1),
   repeatMethod: z.enum(["due-again", "defer-another"]),
-  daysOfWeek: z.array(z.number().int().min(0).max(6)).optional(),
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).min(1).optional(),
   dayOfMonth: z.number().int().min(1).max(31).optional(),
 });
 

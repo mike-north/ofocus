@@ -7,13 +7,22 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerAllTools } from "./tools/index.js";
 
-// Read version from package.json
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const packageJsonPath = join(__dirname, "..", "package.json");
-const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as {
-  version: string;
-};
-const VERSION = packageJson.version;
+// Read version from package.json with safe fallback
+const DEFAULT_VERSION = "0.0.0";
+
+function getVersionSafely(): string {
+  try {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const packageJsonPath = join(__dirname, "..", "package.json");
+    const raw = readFileSync(packageJsonPath, "utf-8");
+    const pkg = JSON.parse(raw) as { version?: string };
+    return typeof pkg.version === "string" ? pkg.version : DEFAULT_VERSION;
+  } catch {
+    return DEFAULT_VERSION;
+  }
+}
+
+const VERSION = getVersionSafely();
 
 // Re-export for programmatic use
 export { registerAllTools } from "./tools/index.js";

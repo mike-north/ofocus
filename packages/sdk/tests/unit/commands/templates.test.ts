@@ -24,7 +24,6 @@ import {
   listTemplates,
   deleteTemplate,
   type ProjectTemplate,
-  type TemplateSummary,
 } from "../../../src/commands/templates.js";
 
 const mockExistsSync = vi.mocked(fs.existsSync);
