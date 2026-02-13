@@ -254,14 +254,6 @@ interface ArchiveCommandOptions {
 const AGENT_INSTRUCTIONS_URL =
   "https://raw.githubusercontent.com/mike-north/ofocus/refs/heads/main/AGENT_INSTRUCTIONS.md";
 
-// Cache the agentic TUI detection result to avoid repeated expensive checks
-// (the detection involves process ancestry lookups via execFileSync)
-let cachedIsAgenticTui: boolean | undefined;
-function getIsAgenticTui(): boolean {
-  cachedIsAgenticTui ??= isAgenticTui();
-  return cachedIsAgenticTui;
-}
-
 export function createCli(): Command {
   const program = new Command();
 
@@ -275,7 +267,8 @@ export function createCli(): Command {
   const defaultHelp = new Help();
   program.configureHelp({
     formatHelp: (cmd, helper) => {
-      if (getIsAgenticTui()) {
+      // is-agentic-tui@0.2.0+ has built-in caching, so repeated calls are fast
+      if (isAgenticTui()) {
         return `OmniFocus CLI - Agent Mode Detected
 
 For comprehensive agent instructions, read:
