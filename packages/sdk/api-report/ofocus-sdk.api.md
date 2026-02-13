@@ -387,10 +387,9 @@ export function failure<T = null>(error: CliError): CliOutput<T>;
 export function failureMessage<T = null>(message: string): CliOutput<T>;
 
 // @public
-function focus_2(target: string, options?: {
+export function focusOn(target: string, options?: {
     byId?: boolean | undefined;
 }): Promise<CliOutput<FocusResult>>;
-export { focus_2 as focus }
 
 // @public
 export interface FocusResult {

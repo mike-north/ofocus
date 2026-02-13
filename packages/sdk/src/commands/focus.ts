@@ -39,7 +39,7 @@ function validateFocusId(id: string): { code: string; message: string } | null {
  * Focus on a specific project or folder in OmniFocus.
  * This matches the OmniFocus UI focus feature.
  */
-export async function focus(
+export async function focusOn(
   target: string,
   options: { byId?: boolean | undefined } = {}
 ): Promise<CliOutput<FocusResult>> {

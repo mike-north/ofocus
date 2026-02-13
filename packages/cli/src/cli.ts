@@ -28,7 +28,7 @@ import {
   queryProjectsForReview,
   // Phase 5
   queryForecast,
-  focus,
+  focusOn,
   unfocus,
   getFocused,
   queryDeferred,
@@ -903,7 +903,7 @@ Use --human flag for human-readable output (default is JSON).
     .action(
       async (target: string, options: FocusCommandOptions, cmd: Command) => {
         const globalOpts = getGlobalOpts(cmd);
-        const result = await focus(target, { byId: options.byId });
+        const result = await focusOn(target, { byId: options.byId });
         output(result, getOutputFormat(globalOpts));
         if (!result.success) process.exitCode = 1;
       }

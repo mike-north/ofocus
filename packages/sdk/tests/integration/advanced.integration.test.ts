@@ -9,7 +9,7 @@ import { IntegrationTestContext, sleep } from "./setup.js";
 import {
   addToInbox,
   createProject,
-  focus,
+  focusOn,
   unfocus,
   getFocused,
   queryForecast,
@@ -44,7 +44,7 @@ describe("Advanced Integration", () => {
 
       // Focus the project (by name)
       // Note: Focus operations require OmniFocus window to be open
-      const focusResult = await focus(projectName);
+      const focusResult = await focusOn(projectName);
       if (!focusResult.success) {
         // Focus requires OmniFocus window to be open - skip test gracefully
         const errorDetails = focusResult.error?.details ?? "";

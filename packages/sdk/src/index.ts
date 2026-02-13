@@ -147,7 +147,7 @@ export type { ReviewIntervalResult } from "./commands/review.js";
 export { queryForecast } from "./commands/forecast.js";
 export type { ForecastOptions } from "./commands/forecast.js";
 
-export { focus, unfocus, getFocused } from "./commands/focus.js";
+export { focusOn, unfocus, getFocused } from "./commands/focus.js";
 export type { FocusResult } from "./commands/focus.js";
 
 export { queryDeferred } from "./commands/deferred.js";
