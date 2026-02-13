@@ -43,6 +43,7 @@ import {
   // Phase 7
   saveTemplate,
   listTemplates,
+  getTemplate,
   createFromTemplate,
   deleteTemplate,
   // Phase 8
@@ -1133,6 +1134,18 @@ Use --human flag for human-readable output (default is JSON).
     .action((_opts: unknown, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = listTemplates();
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
+
+  // template get
+  program
+    .command("template-get")
+    .description("Get details of a specific template")
+    .argument("<name>", "Template name")
+    .action((name: string, _opts: unknown, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = getTemplate(name);
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;
     });

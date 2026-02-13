@@ -151,18 +151,52 @@ ofocus perspectives              # List perspectives
 ofocus perspective <name>        # Query perspective tasks
 ```
 
+### Template Management
+
+Save projects as reusable templates and create new projects from them.
+
+```bash
+# Save a project as a template
+ofocus template-save <name> <source-project> [--description <text>]
+
+# List all templates
+ofocus template-list
+
+# Get template details
+ofocus template-get <name>
+
+# Create a project from a template
+ofocus template-create <template-name> [--project-name <name>] [--folder <name>] [--base-date <date>]
+
+# Delete a template
+ofocus template-delete <name>
+```
+
+**Examples**:
+
+```bash
+# Save a project as a template
+ofocus template-save "Sprint Template" "Current Sprint" --description "Two-week sprint structure"
+
+# Inspect a template
+ofocus template-get "Sprint Template"
+
+# Create a new project from the template
+ofocus template-create "Sprint Template" --project-name "Sprint 42" --base-date "2024-02-01"
+```
+
 ## Error Codes
 
-| Code | Description |
-|------|-------------|
-| `TASK_NOT_FOUND` | Task with given ID not found |
-| `PROJECT_NOT_FOUND` | Project with given name not found |
-| `TAG_NOT_FOUND` | Tag with given name not found |
-| `OMNIFOCUS_NOT_RUNNING` | OmniFocus is not running |
-| `INVALID_DATE_FORMAT` | Date string is invalid |
-| `INVALID_ID_FORMAT` | ID contains invalid characters |
-| `APPLESCRIPT_ERROR` | AppleScript execution failed |
-| `VALIDATION_ERROR` | Input validation failed |
+| Code                    | Description                       |
+| ----------------------- | --------------------------------- |
+| `TASK_NOT_FOUND`        | Task with given ID not found      |
+| `PROJECT_NOT_FOUND`     | Project with given name not found |
+| `TAG_NOT_FOUND`         | Tag with given name not found     |
+| `OMNIFOCUS_NOT_RUNNING` | OmniFocus is not running          |
+| `INVALID_DATE_FORMAT`   | Date string is invalid            |
+| `INVALID_ID_FORMAT`     | ID contains invalid characters    |
+| `APPLESCRIPT_ERROR`     | AppleScript execution failed      |
+| `VALIDATION_ERROR`      | Input validation failed           |
 
 ## Best Practices
 
