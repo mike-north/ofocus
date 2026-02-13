@@ -1,5 +1,12 @@
 # ofocus
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [8b6de75]
+  - @ofocus/cli@0.4.1
+
 ## 0.4.0
 
 ### Minor Changes
