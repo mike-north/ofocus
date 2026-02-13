@@ -62,6 +62,15 @@ Build iCalendar RRULE string from a RepetitionRule.
 </td></tr>
 <tr><td>
 
+[clearScriptCache()](./sdk.clearscriptcache.md)
+
+</td><td>
+
+Clear the script cache. Useful for testing or when scripts may have been modified.
+
+</td></tr>
+<tr><td>
+
 [compactDatabase()](./sdk.compactdatabase.md)
 
 </td><td>
@@ -85,6 +94,15 @@ Mark a task as complete in OmniFocus.
 </td><td>
 
 Complete multiple tasks in a single operation.
+
+</td></tr>
+<tr><td>
+
+[composeScript(handlers, body)](./sdk.composescript.md)
+
+</td><td>
+
+Compose multiple script parts and wrap in OmniFocus tell block. Handlers (on...end) go at the top level, body goes in the tell block.
 
 </td></tr>
 <tr><td>
@@ -278,7 +296,7 @@ Create a failed CLI output with a simple string message. This is a convenience f
 </td></tr>
 <tr><td>
 
-[focus_2(target, options)](./sdk.focus_2.md)
+[focusOn(target, options)](./sdk.focuson.md)
 
 </td><td>
 
@@ -310,6 +328,15 @@ Get the current focus state in OmniFocus.
 </td><td>
 
 Get the review interval for a project in OmniFocus. Returns the interval in days.
+
+</td></tr>
+<tr><td>
+
+[getScriptPath(relativePath)](./sdk.getscriptpath.md)
+
+</td><td>
+
+Get the absolute path to a script file.
 
 </td></tr>
 <tr><td>
@@ -373,6 +400,24 @@ List all perspectives in OmniFocus.
 </td><td>
 
 List all available templates.
+
+</td></tr>
+<tr><td>
+
+[loadScriptContent(relativePath)](./sdk.loadscriptcontent.md)
+
+</td><td>
+
+Load the content of a script file.
+
+</td></tr>
+<tr><td>
+
+[loadScriptContentCached(relativePath)](./sdk.loadscriptcontentcached.md)
+
+</td><td>
+
+Load the content of a script file, with caching. Subsequent calls with the same path return cached content.
 
 </td></tr>
 <tr><td>
@@ -557,6 +602,15 @@ Execute an AppleScript and return the result. The script should return a value t
 </td><td>
 
 Execute an AppleScript file.
+
+</td></tr>
+<tr><td>
+
+[runComposedScript(handlers, body)](./sdk.runcomposedscript.md)
+
+</td><td>
+
+Execute a composed AppleScript with handlers and body. Composes the script using [composeScript()](./sdk.composescript.md) and executes it.
 
 </td></tr>
 <tr><td>
@@ -777,6 +831,8 @@ Result of adding an attachment.
 [AppleScriptResult](./sdk.applescriptresult.md)
 
 </td><td>
+
+Result of executing an AppleScript.
 
 </td></tr>
 <tr><td>

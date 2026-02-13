@@ -4,6 +4,8 @@
 
 ## AppleScriptResult.data property
 
+The parsed result data if successful
+
 **Signature:**
 
 ```typescript
