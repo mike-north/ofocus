@@ -258,9 +258,7 @@ const AGENT_INSTRUCTIONS_URL =
 // (the detection involves process ancestry lookups via execFileSync)
 let cachedIsAgenticTui: boolean | undefined;
 function getIsAgenticTui(): boolean {
-  if (cachedIsAgenticTui === undefined) {
-    cachedIsAgenticTui = isAgenticTui();
-  }
+  cachedIsAgenticTui ??= isAgenticTui();
   return cachedIsAgenticTui;
 }
 
