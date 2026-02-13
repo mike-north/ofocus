@@ -4,7 +4,7 @@
 "ofocus": minor
 ---
 
-Add pagination support to all query functions
+Add pagination support to query functions
 
 **Breaking Change**: Query functions now return `PaginatedResult<T>` instead of raw arrays.
 
@@ -25,7 +25,8 @@ const result = await queryTasks({ flagged: true });
 
 **New Features**:
 
-- All query functions (`queryTasks`, `queryProjects`, `queryTags`, `queryFolders`) support `limit` and `offset` parameters
+- The following query functions support `limit` and `offset` parameters: `queryTasks`, `queryProjects`, `queryTags`, `queryFolders`
+- Note: `queryPerspective` and `listPerspectives` support only `limit` (no offset) due to OmniFocus AppleScript limitations
 - Default limit is 100 items
 - Results include `totalCount`, `returnedCount`, `hasMore`, `offset`, and `limit` metadata
 - CLI commands support `--limit` and `--offset` flags

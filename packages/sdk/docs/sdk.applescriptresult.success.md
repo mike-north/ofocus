@@ -4,6 +4,8 @@
 
 ## AppleScriptResult.success property
 
+Indicates whether the script executed successfully
+
 **Signature:**
 
 ```typescript

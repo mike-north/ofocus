@@ -4,6 +4,8 @@
 
 ## AppleScriptResult.error property
 
+Error details if the script failed
+
 **Signature:**
 
 ```typescript

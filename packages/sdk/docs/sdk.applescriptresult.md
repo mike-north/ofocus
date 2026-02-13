@@ -4,10 +4,12 @@
 
 ## AppleScriptResult interface
 
+Result of executing an AppleScript.
+
 **Signature:**
 
 ```typescript
-export interface AppleScriptResult<T> 
+export interface AppleScriptResult<T>
 ```
 
 ## Properties
@@ -16,77 +18,62 @@ export interface AppleScriptResult<T>
 
 Property
 
-
 </th><th>
 
 Modifiers
-
 
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [data?](./sdk.applescriptresult.data.md)
 
-
 </td><td>
-
 
 </td><td>
 
 T
 
-
 </td><td>
 
-_(Optional)_
-
+_(Optional)_ The parsed result data if successful
 
 </td></tr>
 <tr><td>
 
 [error?](./sdk.applescriptresult.error.md)
 
-
 </td><td>
-
 
 </td><td>
 
 [CliError](./sdk.clierror.md)
 
-
 </td><td>
 
-_(Optional)_
-
+_(Optional)_ Error details if the script failed
 
 </td></tr>
 <tr><td>
 
 [success](./sdk.applescriptresult.success.md)
 
-
 </td><td>
-
 
 </td><td>
 
 boolean
 
-
 </td><td>
 
+Indicates whether the script executed successfully
 
 </td></tr>
 </tbody></table>
-

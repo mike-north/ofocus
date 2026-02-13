@@ -1,5 +1,20 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
-import { success, failure, createError, ErrorCode } from "@ofocus/sdk";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type MockInstance,
+} from "vitest";
+import {
+  success,
+  failure,
+  createError,
+  ErrorCode,
+  type OFTask,
+  type PaginatedResult,
+} from "@ofocus/sdk";
 import { output } from "../../src/output.js";
 
 describe("output", () => {
@@ -7,8 +22,12 @@ describe("output", () => {
   let consoleErrorSpy: MockInstance<typeof console.error>;
 
   beforeEach(() => {
-    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    consoleLogSpy = vi
+      .spyOn(console, "log")
+      .mockImplementation(() => undefined);
+    consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -86,6 +105,143 @@ describe("output", () => {
       const result = success([]);
       output(result, false);
       expect(consoleLogSpy).toHaveBeenCalledWith("No results found.");
+    });
+  });
+
+  describe("Paginated results", () => {
+    const createMockTask = (id: string, name: string): OFTask => ({
+      id,
+      name,
+      note: null,
+      flagged: false,
+      completed: false,
+      dueDate: null,
+      deferDate: null,
+      completionDate: null,
+      projectId: null,
+      projectName: null,
+      tags: [],
+      estimatedMinutes: null,
+    });
+
+    it("should format paginated tasks with pagination info", () => {
+      const paginatedResult: PaginatedResult<OFTask> = {
+        items: [createMockTask("task-1", "Task One")],
+        totalCount: 10,
+        returnedCount: 1,
+        hasMore: true,
+        offset: 0,
+        limit: 1,
+      };
+      const result = success(paginatedResult);
+      output(result, false);
+
+      // Should show task
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Task One")
+      );
+      // Should show pagination info
+      expect(consoleLogSpy).toHaveBeenCalledWith("Showing 1-1 of 10 items");
+      // Should show "more available" message
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        "(9 more available, use --offset 1 to see next page)"
+      );
+    });
+
+    it("should format paginated results without hasMore message when no more results", () => {
+      const paginatedResult: PaginatedResult<OFTask> = {
+        items: [createMockTask("task-1", "Task One")],
+        totalCount: 1,
+        returnedCount: 1,
+        hasMore: false,
+        offset: 0,
+        limit: 10,
+      };
+      const result = success(paginatedResult);
+      output(result, false);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith("Showing 1-1 of 1 items");
+      // Should NOT show "more available" message
+      expect(consoleLogSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining("more available")
+      );
+    });
+
+    it("should show 'No results found' for empty paginated results", () => {
+      const paginatedResult: PaginatedResult<OFTask> = {
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset: 0,
+        limit: 10,
+      };
+      const result = success(paginatedResult);
+      output(result, false);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith("No results found.");
+      expect(consoleLogSpy).toHaveBeenCalledWith("Total: 0 items");
+    });
+
+    it("should show correct offset when paginating", () => {
+      const paginatedResult: PaginatedResult<OFTask> = {
+        items: [
+          createMockTask("task-11", "Task Eleven"),
+          createMockTask("task-12", "Task Twelve"),
+        ],
+        totalCount: 50,
+        returnedCount: 2,
+        hasMore: true,
+        offset: 10,
+        limit: 2,
+      };
+      const result = success(paginatedResult);
+      output(result, false);
+
+      // Should show correct range (offset+1 to offset+returnedCount)
+      expect(consoleLogSpy).toHaveBeenCalledWith("Showing 11-12 of 50 items");
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        "(38 more available, use --offset 12 to see next page)"
+      );
+    });
+
+    it("should output paginated result as JSON when json=true", () => {
+      const paginatedResult: PaginatedResult<OFTask> = {
+        items: [createMockTask("task-1", "Task One")],
+        totalCount: 1,
+        returnedCount: 1,
+        hasMore: false,
+        offset: 0,
+        limit: 10,
+      };
+      const result = success(paginatedResult);
+      output(result, true);
+
+      const outputStr = consoleLogSpy.mock.calls[0]?.[0] as string;
+      const parsed = JSON.parse(outputStr) as {
+        success: boolean;
+        data: PaginatedResult<OFTask>;
+      };
+      expect(parsed.success).toBe(true);
+      expect(parsed.data.items).toHaveLength(1);
+      expect(parsed.data.totalCount).toBe(1);
+      expect(parsed.data.hasMore).toBe(false);
+    });
+
+    it("should not detect objects missing required paginated fields", () => {
+      // Object that looks similar but isn't a PaginatedResult
+      const notPaginated = {
+        items: [{ id: "123" }],
+        totalCount: 1,
+        // Missing: returnedCount, hasMore, offset, limit
+      };
+      const result = success(notPaginated);
+      output(result, false);
+
+      // Should fall through to generic JSON output, not pagination formatter
+      expect(consoleLogSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining("Showing")
+      );
     });
   });
 });
