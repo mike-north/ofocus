@@ -8,13 +8,17 @@ import { ErrorCode } from "../../../src/errors.js";
 
 // Mock the applescript module
 vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((script: string) => script),
+  runComposedScript: vi.fn(),
+}));
+
+// Mock the asset-loader module
+vi.mock("../../../src/asset-loader.js", () => ({
+  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked json helpers"),
 }));
 
 // Import the mocked function
-import { runAppleScript } from "../../../src/applescript.js";
-const mockRunAppleScript = vi.mocked(runAppleScript);
+import { runComposedScript } from "../../../src/applescript.js";
+const mockRunComposedScript = vi.mocked(runComposedScript);
 
 describe("completeTasks", () => {
   beforeEach(() => {
@@ -28,7 +32,7 @@ describe("completeTasks", () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(result.error?.message).toBe("No task IDs provided");
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunComposedScript).not.toHaveBeenCalled();
     });
 
     it("should return error for invalid task ID format", async () => {
@@ -36,7 +40,7 @@ describe("completeTasks", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunComposedScript).not.toHaveBeenCalled();
     });
 
     it("should return error if any task ID is invalid", async () => {
@@ -47,13 +51,13 @@ describe("completeTasks", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunComposedScript).not.toHaveBeenCalled();
     });
   });
 
   describe("success cases", () => {
     it("should complete a single task", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -76,7 +80,7 @@ describe("completeTasks", () => {
     });
 
     it("should complete multiple tasks", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -99,7 +103,7 @@ describe("completeTasks", () => {
     });
 
     it("should handle partial failures", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -135,7 +139,7 @@ describe("completeTasks", () => {
       );
 
       // First chunk returns 50 succeeded
-      mockRunAppleScript.mockResolvedValueOnce({
+      mockRunComposedScript.mockResolvedValueOnce({
         success: true,
         data: {
           succeeded: taskIds
@@ -146,7 +150,7 @@ describe("completeTasks", () => {
       });
 
       // Second chunk returns 25 succeeded
-      mockRunAppleScript.mockResolvedValueOnce({
+      mockRunComposedScript.mockResolvedValueOnce({
         success: true,
         data: {
           succeeded: taskIds
@@ -158,7 +162,7 @@ describe("completeTasks", () => {
 
       const result = await completeTasks(taskIds);
 
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(2);
+      expect(mockRunComposedScript).toHaveBeenCalledTimes(2);
       expect(result.success).toBe(true);
       expect(result.data?.totalSucceeded).toBe(75);
     });
@@ -166,7 +170,7 @@ describe("completeTasks", () => {
 
   describe("error cases", () => {
     it("should return failure if AppleScript fails", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
@@ -246,7 +250,7 @@ describe("updateTasks", () => {
 
   describe("success cases", () => {
     it("should update task flag", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -265,7 +269,7 @@ describe("updateTasks", () => {
     });
 
     it("should update task title", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -284,7 +288,7 @@ describe("updateTasks", () => {
     });
 
     it("should update multiple tasks with same options", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -305,7 +309,7 @@ describe("updateTasks", () => {
     });
 
     it("should allow clearing due date with empty string", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -321,11 +325,11 @@ describe("updateTasks", () => {
 
       expect(result.success).toBe(true);
       // The script should contain "missing value" for clearing
-      expect(mockRunAppleScript).toHaveBeenCalled();
+      expect(mockRunComposedScript).toHaveBeenCalled();
     });
 
     it("should handle repetition rule updates", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -347,7 +351,7 @@ describe("updateTasks", () => {
     });
 
     it("should handle clear repetition", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -372,7 +376,7 @@ describe("updateTasks", () => {
         (_, i) => `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
       );
 
-      mockRunAppleScript
+      mockRunComposedScript
         .mockResolvedValueOnce({
           success: true,
           data: {
@@ -394,7 +398,7 @@ describe("updateTasks", () => {
 
       const result = await updateTasks(taskIds, { flag: true });
 
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(2);
+      expect(mockRunComposedScript).toHaveBeenCalledTimes(2);
       expect(result.data?.totalSucceeded).toBe(60);
     });
   });
@@ -424,7 +428,7 @@ describe("deleteTasks", () => {
 
   describe("success cases", () => {
     it("should delete a single task", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678" }],
@@ -444,7 +448,7 @@ describe("deleteTasks", () => {
     });
 
     it("should delete multiple tasks", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -466,7 +470,7 @@ describe("deleteTasks", () => {
     });
 
     it("should handle partial failures", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: {
           succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678" }],
@@ -496,7 +500,7 @@ describe("deleteTasks", () => {
         (_, i) => `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
       );
 
-      mockRunAppleScript
+      mockRunComposedScript
         .mockResolvedValueOnce({
           success: true,
           data: {
@@ -514,14 +518,14 @@ describe("deleteTasks", () => {
 
       const result = await deleteTasks(taskIds);
 
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(2);
+      expect(mockRunComposedScript).toHaveBeenCalledTimes(2);
       expect(result.data?.totalSucceeded).toBe(100);
     });
   });
 
   describe("error cases", () => {
     it("should return failure if AppleScript fails", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,

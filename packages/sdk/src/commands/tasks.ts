@@ -12,7 +12,8 @@ import {
   validatePaginationParams,
 } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 
 /**
  * Query tasks from OmniFocus with optional filters and pagination.
@@ -71,7 +72,13 @@ export async function queryTasks(
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, taskSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/task.applescript"),
+  ]);
+
+  const body = `
     set output to "{\\"items\\": ["
     set isFirst to true
     set totalCount to 0
@@ -130,60 +137,7 @@ export async function queryTasks(
           set isFirst to false
           set returnedCount to returnedCount + 1
 
-          set taskId to id of t
-          set taskName to name of t
-          set taskNote to note of t
-          set taskFlagged to flagged of t
-          set taskCompleted to completed of t
-
-          set dueStr to ""
-          try
-            set dueStr to (due date of t) as string
-          end try
-
-          set deferStr to ""
-          try
-            set deferStr to (defer date of t) as string
-          end try
-
-          set completionStr to ""
-          try
-            set completionStr to (completion date of t) as string
-          end try
-
-          set projId to ""
-          set projName to ""
-          try
-            set proj to containing project of t
-            set projId to id of proj
-            set projName to name of proj
-          end try
-
-          set tagNames to {}
-          repeat with tg in tags of t
-            set end of tagNames to name of tg
-          end repeat
-
-          set estMinutes to 0
-          try
-            set estMinutes to estimated minutes of t
-            if estMinutes is missing value then set estMinutes to 0
-          end try
-
-          set output to output & "{" & ¬
-            "\\"id\\": \\"" & taskId & "\\"," & ¬
-            "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-            "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-            "\\"flagged\\": " & taskFlagged & "," & ¬
-            "\\"completed\\": " & taskCompleted & "," & ¬
-            "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-            "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-            "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-            "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-            "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-            "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-            "\\"estimatedMinutes\\": " & estMinutes & ¬
-            "}"
+          set output to output & (my serializeTask(t))
         end if
 
         set currentIndex to currentIndex + 1
@@ -203,8 +157,9 @@ export async function queryTasks(
     return output
   `;
 
-  const result = await runAppleScript<PaginatedResult<OFTask>>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<PaginatedResult<OFTask>>(
+    [jsonHelpers, taskSerializer],
+    body
   );
 
   if (!result.success) {

@@ -60,9 +60,19 @@ export {
   runAppleScriptFile,
   omniFocusScript,
   omniFocusScriptWithHelpers,
+  composeScript,
+  runComposedScript,
   jsonHelpers,
 } from "./applescript.js";
 export type { AppleScriptResult } from "./applescript.js";
+
+// Asset loading utilities
+export {
+  getScriptPath,
+  loadScriptContent,
+  loadScriptContentCached,
+  clearScriptCache,
+} from "./asset-loader.js";
 
 // Commands
 export { addToInbox } from "./commands/inbox.js";

@@ -5,15 +5,19 @@ import type { CompleteResult } from "../../../src/commands/complete.js";
 
 // Mock the applescript module
 vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+  runComposedScript: vi.fn(),
+}));
+
+// Mock the asset-loader module
+vi.mock("../../../src/asset-loader.js", () => ({
+  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked json helpers"),
 }));
 
 // Import after mocking
 import { completeTask } from "../../../src/commands/complete.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runComposedScript } from "../../../src/applescript.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunComposedScript = vi.mocked(runComposedScript);
 
 describe("completeTask", () => {
   beforeEach(() => {
@@ -26,7 +30,7 @@ describe("completeTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunComposedScript).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with dangerous characters", async () => {
@@ -34,7 +38,7 @@ describe("completeTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunComposedScript).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with newlines", async () => {
@@ -42,7 +46,7 @@ describe("completeTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunComposedScript).not.toHaveBeenCalled();
     });
 
     it("should accept valid task ID", async () => {
@@ -52,7 +56,7 @@ describe("completeTask", () => {
         completed: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: mockResult,
       } as AppleScriptResult<CompleteResult>);
@@ -60,7 +64,7 @@ describe("completeTask", () => {
       const result = await completeTask("abc-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -72,7 +76,7 @@ describe("completeTask", () => {
         completed: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: mockResult,
       } as AppleScriptResult<CompleteResult>);
@@ -95,7 +99,7 @@ describe("completeTask", () => {
         completed: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: mockResult,
       } as AppleScriptResult<CompleteResult>);
@@ -112,7 +116,7 @@ describe("completeTask", () => {
         completed: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: mockResult,
       } as AppleScriptResult<CompleteResult>);
@@ -125,7 +129,7 @@ describe("completeTask", () => {
 
   describe("error handling", () => {
     it("should handle task not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
@@ -141,7 +145,7 @@ describe("completeTask", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
@@ -156,7 +160,7 @@ describe("completeTask", () => {
     });
 
     it("should handle AppleScript execution error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
@@ -173,7 +177,7 @@ describe("completeTask", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: true,
         data: undefined,
       } as AppleScriptResult<CompleteResult>);
@@ -186,7 +190,7 @@ describe("completeTask", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunComposedScript.mockResolvedValue({
         success: false,
         error: undefined,
       } as AppleScriptResult<CompleteResult>);

@@ -18,13 +18,10 @@ export interface AddAttachmentResult {
 // @public
 export function addToInbox(title: string, options?: InboxOptions): Promise<CliOutput<OFTask>>;
 
-// @public (undocumented)
+// @public
 export interface AppleScriptResult<T> {
-    // (undocumented)
     data?: T;
-    // (undocumented)
     error?: CliError;
-    // (undocumented)
     success: boolean;
 }
 
@@ -95,6 +92,9 @@ export function buildRepetitionRuleScript(taskVar: string, rule: RepetitionRule)
 export function buildRRule(rule: RepetitionRule): string;
 
 // @public
+export function clearScriptCache(): void;
+
+// @public
 export interface CliError {
     // (undocumented)
     code: ErrorCode;
@@ -148,6 +148,9 @@ export function completeTask(taskId: string): Promise<CliOutput<CompleteResult>>
 
 // @public
 export function completeTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
+
+// @public
+export function composeScript(handlers: string[], body: string): string;
 
 // @public
 export function createError(code: ErrorCode, message: string, details?: string): CliError;
@@ -425,6 +428,9 @@ export function getFocused(): Promise<CliOutput<FocusResult>>;
 export function getReviewInterval(projectId: string): Promise<CliOutput<ReviewIntervalResult>>;
 
 // @public
+export function getScriptPath(relativePath: string): string;
+
+// @public
 export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
 
 // @public
@@ -477,6 +483,12 @@ export function listTemplates(): CliOutput<ListTemplatesResult>;
 export interface ListTemplatesResult {
     templates: TemplateSummary[];
 }
+
+// @public
+export function loadScriptContent(relativePath: string): Promise<string>;
+
+// @public
+export function loadScriptContentCached(relativePath: string): Promise<string>;
 
 // @public
 export const MAX_PAGINATION_LIMIT = 10000;
@@ -776,6 +788,9 @@ export function runAppleScript<T>(script: string): Promise<AppleScriptResult<T>>
 
 // @public
 export function runAppleScriptFile<T>(filePath: string, args?: string[]): Promise<AppleScriptResult<T>>;
+
+// @public
+export function runComposedScript<T>(handlers: string[], body: string): Promise<AppleScriptResult<T>>;
 
 // @public
 export function saveTemplate(options: SaveTemplateOptions): Promise<CliOutput<SaveTemplateResult>>;

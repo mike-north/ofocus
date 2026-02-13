@@ -15,7 +15,8 @@ import {
   validateRepetitionRule,
 } from "../validation.js";
 import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 import { buildRepetitionRuleScript } from "./repetition.js";
 
 /**
@@ -95,81 +96,25 @@ export async function createSubtask(
     }
   }
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, taskWithChildrenSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/task-with-children.applescript"),
+  ]);
+
+  const body = `
     set parentTask to first flattened task whose id is "${escapeAppleScript(parentTaskId)}"
     set newTask to make new task at end of tasks of parentTask with properties {${properties.join(", ")}}
 
     ${tagScript}
     ${repetitionScript}
 
-    -- Return the created task info
-    set taskId to id of newTask
-    set taskName to name of newTask
-    set taskNote to note of newTask
-    set taskFlagged to flagged of newTask
-    set taskCompleted to completed of newTask
-
-    set dueStr to ""
-    try
-      set dueStr to (due date of newTask) as string
-    end try
-
-    set deferStr to ""
-    try
-      set deferStr to (defer date of newTask) as string
-    end try
-
-    set projId to ""
-    set projName to ""
-    try
-      set proj to containing project of newTask
-      set projId to id of proj
-      set projName to name of proj
-    end try
-
-    set tagNames to {}
-    repeat with t in tags of newTask
-      set end of tagNames to name of t
-    end repeat
-
-    set estMinutes to 0
-    try
-      set estMinutes to estimated minutes of newTask
-      if estMinutes is missing value then set estMinutes to 0
-    end try
-
-    -- Use the known parent task ID since we just created this subtask under it
-    set parentId to "${escapeAppleScript(parentTaskId)}"
-    set parentName to ""
-    try
-      set parentName to name of parentTask
-    end try
-
-    set childCount to count of tasks of newTask
-    set isGroup to childCount > 0
-
-    return "{" & ¬
-      "\\"id\\": \\"" & taskId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-      "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-      "\\"flagged\\": " & taskFlagged & "," & ¬
-      "\\"completed\\": " & taskCompleted & "," & ¬
-      "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-      "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-      "\\"completionDate\\": null," & ¬
-      "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-      "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-      "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-      "\\"estimatedMinutes\\": " & estMinutes & "," & ¬
-      "\\"parentTaskId\\": " & (my jsonString(parentId)) & "," & ¬
-      "\\"parentTaskName\\": " & (my jsonString(parentName)) & "," & ¬
-      "\\"childTaskCount\\": " & childCount & "," & ¬
-      "\\"isActionGroup\\": " & isGroup & ¬
-      "}"
+    return my serializeTaskWithChildren(newTask, parentTask)
   `;
 
-  const result = await runAppleScript<OFTaskWithChildren>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<OFTaskWithChildren>(
+    [jsonHelpers, taskWithChildrenSerializer],
+    body
   );
 
   if (!result.success) {
@@ -221,7 +166,13 @@ export async function querySubtasks(
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, taskWithChildrenSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/task-with-children.applescript"),
+  ]);
+
+  const body = `
     set parentTask to first flattened task whose id is "${escapeAppleScript(parentTaskId)}"
     set output to "{\\"items\\": ["
     set isFirst to true
@@ -240,71 +191,7 @@ export async function querySubtasks(
         set isFirst to false
         set returnedCount to returnedCount + 1
 
-        set taskId to id of t
-        set taskName to name of t
-        set taskNote to note of t
-        set taskFlagged to flagged of t
-        set taskCompleted to completed of t
-
-        set dueStr to ""
-        try
-          set dueStr to (due date of t) as string
-        end try
-
-        set deferStr to ""
-        try
-          set deferStr to (defer date of t) as string
-        end try
-
-        set completionStr to ""
-        try
-          set completionStr to (completion date of t) as string
-        end try
-
-        set projId to ""
-        set projName to ""
-        try
-          set proj to containing project of t
-          set projId to id of proj
-          set projName to name of proj
-        end try
-
-        set tagNames to {}
-        repeat with tg in tags of t
-          set end of tagNames to name of tg
-        end repeat
-
-        set estMinutes to 0
-        try
-          set estMinutes to estimated minutes of t
-          if estMinutes is missing value then set estMinutes to 0
-        end try
-
-        -- We know the parent task since we're querying its children
-        set pTaskId to id of parentTask
-        set pTaskName to name of parentTask
-
-        set childCount to count of tasks of t
-        set isGroup to childCount > 0
-
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & taskId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-          "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-          "\\"flagged\\": " & taskFlagged & "," & ¬
-          "\\"completed\\": " & taskCompleted & "," & ¬
-          "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-          "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-          "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-          "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-          "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-          "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-          "\\"estimatedMinutes\\": " & estMinutes & "," & ¬
-          "\\"parentTaskId\\": \\"" & pTaskId & "\\"," & ¬
-          "\\"parentTaskName\\": \\"" & (my escapeJson(pTaskName)) & "\\"," & ¬
-          "\\"childTaskCount\\": " & childCount & "," & ¬
-          "\\"isActionGroup\\": " & isGroup & ¬
-          "}"
+        set output to output & (my serializeTaskWithChildren(t, parentTask))
       end if
 
       set currentIndex to currentIndex + 1
@@ -323,8 +210,9 @@ export async function querySubtasks(
     return output
   `;
 
-  const result = await runAppleScript<PaginatedResult<OFTaskWithChildren>>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<PaginatedResult<OFTaskWithChildren>>(
+    [jsonHelpers, taskWithChildrenSerializer],
+    body
   );
 
   if (!result.success) {
@@ -360,82 +248,24 @@ export async function moveTaskToParent(
   const parentIdError = validateId(parentTaskId, "task");
   if (parentIdError) return failure(parentIdError);
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, taskWithChildrenSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/task-with-children.applescript"),
+  ]);
+
+  const body = `
     set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
     set parentTask to first flattened task whose id is "${escapeAppleScript(parentTaskId)}"
 
     move theTask to end of tasks of parentTask
 
-    -- Return updated task info
-    set taskId to id of theTask
-    set taskName to name of theTask
-    set taskNote to note of theTask
-    set taskFlagged to flagged of theTask
-    set taskCompleted to completed of theTask
-
-    set dueStr to ""
-    try
-      set dueStr to (due date of theTask) as string
-    end try
-
-    set deferStr to ""
-    try
-      set deferStr to (defer date of theTask) as string
-    end try
-
-    set completionStr to ""
-    try
-      set completionStr to (completion date of theTask) as string
-    end try
-
-    set projId to ""
-    set projName to ""
-    try
-      set proj to containing project of theTask
-      set projId to id of proj
-      set projName to name of proj
-    end try
-
-    set tagNames to {}
-    repeat with t in tags of theTask
-      set end of tagNames to name of t
-    end repeat
-
-    set estMinutes to 0
-    try
-      set estMinutes to estimated minutes of theTask
-      if estMinutes is missing value then set estMinutes to 0
-    end try
-
-    -- We know the parent since we just moved this task there
-    set pTaskId to id of parentTask
-    set pTaskName to name of parentTask
-
-    set childCount to count of tasks of theTask
-    set isGroup to childCount > 0
-
-    return "{" & ¬
-      "\\"id\\": \\"" & taskId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-      "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-      "\\"flagged\\": " & taskFlagged & "," & ¬
-      "\\"completed\\": " & taskCompleted & "," & ¬
-      "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-      "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-      "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-      "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-      "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-      "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-      "\\"estimatedMinutes\\": " & estMinutes & "," & ¬
-      "\\"parentTaskId\\": \\"" & pTaskId & "\\"," & ¬
-      "\\"parentTaskName\\": \\"" & (my escapeJson(pTaskName)) & "\\"," & ¬
-      "\\"childTaskCount\\": " & childCount & "," & ¬
-      "\\"isActionGroup\\": " & isGroup & ¬
-      "}"
+    return my serializeTaskWithChildren(theTask, parentTask)
   `;
 
-  const result = await runAppleScript<OFTaskWithChildren>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<OFTaskWithChildren>(
+    [jsonHelpers, taskWithChildrenSerializer],
+    body
   );
 
   if (!result.success) {

@@ -10,7 +10,8 @@ import {
   validateRepetitionRule,
 } from "../validation.js";
 import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 import {
   buildRepetitionRuleScript,
   buildClearRepetitionScript,
@@ -57,10 +58,13 @@ export async function completeTasks(
   const allSucceeded: BatchCompleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
+  // Load external AppleScript helpers
+  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
+
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
-    const script = `
+    const body = `
       set taskIdList to ${idsJson}
       set succeededList to {}
       set failedList to {}
@@ -98,10 +102,10 @@ export async function completeTasks(
       return output
     `;
 
-    const result = await runAppleScript<{
+    const result = await runComposedScript<{
       succeeded: BatchCompleteItem[];
       failed: { id: string; error: string }[];
-    }>(omniFocusScriptWithHelpers(script));
+    }>([jsonHelpers], body);
 
     if (!result.success) {
       return failure(
@@ -267,10 +271,13 @@ export async function updateTasks(
   const allSucceeded: BatchCompleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
+  // Load external AppleScript helpers
+  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
+
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
-    const script = `
+    const body = `
       set taskIdList to ${idsJson}
       set succeededList to {}
       set failedList to {}
@@ -311,10 +318,10 @@ export async function updateTasks(
       return output
     `;
 
-    const result = await runAppleScript<{
+    const result = await runComposedScript<{
       succeeded: BatchCompleteItem[];
       failed: { id: string; error: string }[];
-    }>(omniFocusScriptWithHelpers(script));
+    }>([jsonHelpers], body);
 
     if (!result.success) {
       return failure(
@@ -368,10 +375,13 @@ export async function deleteTasks(
   const allSucceeded: BatchDeleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
+  // Load external AppleScript helpers
+  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
+
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
-    const script = `
+    const body = `
       set taskIdList to ${idsJson}
       set succeededList to {}
       set failedList to {}
@@ -407,10 +417,10 @@ export async function deleteTasks(
       return output
     `;
 
-    const result = await runAppleScript<{
+    const result = await runComposedScript<{
       succeeded: BatchDeleteItem[];
       failed: { id: string; error: string }[];
-    }>(omniFocusScriptWithHelpers(script));
+    }>([jsonHelpers], body);
 
     if (!result.success) {
       return failure(

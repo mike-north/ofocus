@@ -8,7 +8,8 @@ import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validatePaginationParams } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 
 /**
  * Query tags from OmniFocus with optional filters and pagination.
@@ -27,7 +28,13 @@ export async function queryTags(
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, tagSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/tag.applescript"),
+  ]);
+
+  const body = `
     set output to "{\\"items\\": ["
     set isFirst to true
     set totalCount to 0
@@ -56,28 +63,7 @@ export async function queryTags(
           set isFirst to false
           set returnedCount to returnedCount + 1
 
-          set tagId to id of theTag
-          set tagName to name of theTag
-
-          set parentId to ""
-          set parentName to ""
-          try
-            set theContainer to container of theTag
-            set parentId to id of theContainer
-            set parentName to name of theContainer
-          on error
-            -- No parent or container is not a tag
-          end try
-
-          set availCount to count of (available tasks of theTag)
-
-          set output to output & "{" & ¬
-            "\\"id\\": \\"" & tagId & "\\"," & ¬
-            "\\"name\\": \\"" & (my escapeJson(tagName)) & "\\"," & ¬
-            "\\"parentId\\": " & (my jsonString(parentId)) & "," & ¬
-            "\\"parentName\\": " & (my jsonString(parentName)) & "," & ¬
-            "\\"availableTaskCount\\": " & availCount & ¬
-            "}"
+          set output to output & (my serializeTag(theTag))
         end if
 
         set currentIndex to currentIndex + 1
@@ -97,8 +83,9 @@ export async function queryTags(
     return output
   `;
 
-  const result = await runAppleScript<PaginatedResult<OFTag>>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<PaginatedResult<OFTag>>(
+    [jsonHelpers, tagSerializer],
+    body
   );
 
   if (!result.success) {

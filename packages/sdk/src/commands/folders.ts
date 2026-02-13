@@ -13,7 +13,8 @@ import {
   validatePaginationParams,
 } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 
 /**
  * Create a new folder in OmniFocus.
@@ -56,39 +57,22 @@ export async function createFolder(
     makeFolder = `set newFolder to make new folder with properties {name:"${escapeAppleScript(name)}"}`;
   }
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, folderSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/folder.applescript"),
+  ]);
+
+  const body = `
     ${findParent}
     ${makeFolder}
 
-    -- Return the created folder info
-    set folderId to id of newFolder
-    set folderName to name of newFolder
-
-    set parentId to ""
-    set parentName to ""
-    try
-      set p to container of newFolder
-      if class of p is folder then
-        set parentId to id of p
-        set parentName to name of p
-      end if
-    end try
-
-    set projCount to count of projects of newFolder
-    set subFolderCount to count of folders of newFolder
-
-    return "{" & ¬
-      "\\"id\\": \\"" & folderId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(folderName)) & "\\"," & ¬
-      "\\"parentId\\": " & (my jsonString(parentId)) & "," & ¬
-      "\\"parentName\\": " & (my jsonString(parentName)) & "," & ¬
-      "\\"projectCount\\": " & projCount & "," & ¬
-      "\\"folderCount\\": " & subFolderCount & ¬
-      "}"
+    return my serializeFolder(newFolder)
   `;
 
-  const result = await runAppleScript<OFFolder>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<OFFolder>(
+    [jsonHelpers, folderSerializer],
+    body
   );
 
   if (!result.success) {
@@ -128,7 +112,13 @@ export async function queryFolders(
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, folderSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/folder.applescript"),
+  ]);
+
+  const body = `
     set output to "{\\"items\\": ["
     set isFirst to true
     set totalCount to 0
@@ -140,7 +130,7 @@ export async function queryFolders(
     repeat with f in allFolders
       set shouldInclude to true
 
-      -- Get parent info first (we need this for both filtering and returning)
+      -- Get parent info first (we need this for filtering)
       set parentId to ""
       set parentName to ""
       try
@@ -163,22 +153,7 @@ export async function queryFolders(
           set isFirst to false
           set returnedCount to returnedCount + 1
 
-          set folderId to id of f
-          set folderName to name of f
-
-          -- parentId and parentName already set above
-
-          set projCount to count of projects of f
-          set subFolderCount to count of folders of f
-
-          set output to output & "{" & ¬
-            "\\"id\\": \\"" & folderId & "\\"," & ¬
-            "\\"name\\": \\"" & (my escapeJson(folderName)) & "\\"," & ¬
-            "\\"parentId\\": " & (my jsonString(parentId)) & "," & ¬
-            "\\"parentName\\": " & (my jsonString(parentName)) & "," & ¬
-            "\\"projectCount\\": " & projCount & "," & ¬
-            "\\"folderCount\\": " & subFolderCount & ¬
-            "}"
+          set output to output & (my serializeFolder(f))
         end if
 
         set currentIndex to currentIndex + 1
@@ -198,8 +173,9 @@ export async function queryFolders(
     return output
   `;
 
-  const result = await runAppleScript<PaginatedResult<OFFolder>>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<PaginatedResult<OFFolder>>(
+    [jsonHelpers, folderSerializer],
+    body
   );
 
   if (!result.success) {

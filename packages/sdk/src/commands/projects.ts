@@ -8,7 +8,8 @@ import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validatePaginationParams } from "../validation.js";
 import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runComposedScript } from "../applescript.js";
+import { loadScriptContentCached } from "../asset-loader.js";
 
 /**
  * Query projects from OmniFocus with optional filters and pagination.
@@ -58,7 +59,13 @@ export async function queryProjects(
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  const script = `
+  // Load external AppleScript helpers
+  const [jsonHelpers, projectSerializer] = await Promise.all([
+    loadScriptContentCached("helpers/json.applescript"),
+    loadScriptContentCached("serializers/project.applescript"),
+  ]);
+
+  const body = `
     set output to "{\\"items\\": ["
     set isFirst to true
     set totalCount to 0
@@ -104,33 +111,7 @@ export async function queryProjects(
           set isFirst to false
           set returnedCount to returnedCount + 1
 
-          set projId to id of p
-          set projName to name of p
-          set projNote to note of p
-          set projSeq to sequential of p
-
-          set folderId to ""
-          set folderName to ""
-          try
-            set f to folder of p
-            set folderId to id of f
-            set folderName to name of f
-          end try
-
-          set taskCount to count of tasks of p
-          set remainingCount to count of (tasks of p where completed is false)
-
-          set output to output & "{" & ¬
-            "\\"id\\": \\"" & projId & "\\"," & ¬
-            "\\"name\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-            "\\"note\\": " & (my jsonString(projNote)) & "," & ¬
-            "\\"status\\": \\"" & projStatus & "\\"," & ¬
-            "\\"sequential\\": " & projSeq & "," & ¬
-            "\\"folderId\\": " & (my jsonString(folderId)) & "," & ¬
-            "\\"folderName\\": " & (my jsonString(folderName)) & "," & ¬
-            "\\"taskCount\\": " & taskCount & "," & ¬
-            "\\"remainingTaskCount\\": " & remainingCount & ¬
-            "}"
+          set output to output & (my serializeProject(p))
         end if
 
         set currentIndex to currentIndex + 1
@@ -150,8 +131,9 @@ export async function queryProjects(
     return output
   `;
 
-  const result = await runAppleScript<PaginatedResult<OFProject>>(
-    omniFocusScriptWithHelpers(script)
+  const result = await runComposedScript<PaginatedResult<OFProject>>(
+    [jsonHelpers, projectSerializer],
+    body
   );
 
   if (!result.success) {
