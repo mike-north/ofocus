@@ -1,4 +1,4 @@
-import { Command, Option } from "commander";
+import { Command, Option, Help } from "commander";
 import { isAgenticTui } from "is-agentic-tui";
 import {
   addToInbox,
@@ -254,6 +254,16 @@ interface ArchiveCommandOptions {
 const AGENT_INSTRUCTIONS_URL =
   "https://raw.githubusercontent.com/mike-north/ofocus/refs/heads/main/AGENT_INSTRUCTIONS.md";
 
+// Cache the agentic TUI detection result to avoid repeated expensive checks
+// (the detection involves process ancestry lookups via execFileSync)
+let cachedIsAgenticTui: boolean | undefined;
+function getIsAgenticTui(): boolean {
+  if (cachedIsAgenticTui === undefined) {
+    cachedIsAgenticTui = isAgenticTui();
+  }
+  return cachedIsAgenticTui;
+}
+
 export function createCli(): Command {
   const program = new Command();
 
@@ -263,9 +273,11 @@ export function createCli(): Command {
     .version("0.0.1");
 
   // Customize help for AI agents
+  // Use the default Help.formatHelp method to avoid recursion when falling through
+  const defaultHelp = new Help();
   program.configureHelp({
     formatHelp: (cmd, helper) => {
-      if (isAgenticTui()) {
+      if (getIsAgenticTui()) {
         return `OmniFocus CLI - Agent Mode Detected
 
 For comprehensive agent instructions, read:
@@ -280,8 +292,8 @@ Quick start:
 Use --human flag for human-readable output (default is JSON).
 `;
       }
-      // Default help for humans
-      return helper.formatHelp(cmd, helper);
+      // Default help for humans - use the base Help class to avoid recursion
+      return defaultHelp.formatHelp(cmd, helper);
     },
   });
 
