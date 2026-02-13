@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { ErrorCode } from "../../../src/errors.js";
 
 // Mock fs module
 vi.mock("node:fs", () => ({
@@ -25,12 +24,10 @@ import {
   listTemplates,
   deleteTemplate,
   type ProjectTemplate,
-  type TemplateSummary,
 } from "../../../src/commands/templates.js";
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
-const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 const mockUnlinkSync = vi.mocked(fs.unlinkSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockMkdirSync = vi.mocked(fs.mkdirSync);
