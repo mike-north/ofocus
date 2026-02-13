@@ -63,8 +63,8 @@ importers:
         specifier: ^14.0.3
         version: 14.0.3
       is-agentic-tui:
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.2.0
+        version: 0.2.0
 
   packages/mcp:
     dependencies:
@@ -1427,8 +1427,8 @@ packages:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
     engines: {node: '>= 0.10'}
 
-  is-agentic-tui@0.1.0:
-    resolution: {integrity: sha512-RVOugsMChufAs+7K6wP2CjkpqSGhZiqDQp/MilofBSNt5iobATQEn9l+Tqle+RcVWwYoV7AGxF0iwSrDh61IWQ==}
+  is-agentic-tui@0.2.0:
+    resolution: {integrity: sha512-fgzns7pBWl7hczWlbR4qG4iskMC9t2a9d904EZlxwYwY7H9m6LTprp2wQiI77x4oZ14RrxH57A4I8SdExsCLjg==}
     engines: {node: '>=20'}
 
   is-arrayish@0.2.1:
@@ -3682,7 +3682,7 @@ snapshots:
 
   ipaddr.js@1.9.1: {}
 
-  is-agentic-tui@0.1.0: {}
+  is-agentic-tui@0.2.0: {}
 
   is-arrayish@0.2.1: {}
 
