@@ -12,14 +12,14 @@ Before:
 
 ```typescript
 const result = await queryTasks({ flagged: true });
-// result.data was Task[]
+// result.data was OFTask[]
 ```
 
 After:
 
 ```typescript
 const result = await queryTasks({ flagged: true });
-// result.data is now PaginatedResult<Task>
+// result.data is now PaginatedResult<OFTask>
 // Access items via result.data.items
 ```
 
