@@ -94,16 +94,22 @@ interface TasksCommandOptions {
   flagged?: boolean | undefined;
   completed?: boolean | undefined;
   available?: boolean | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
 }
 
 interface ProjectsCommandOptions {
   folder?: string | undefined;
   status?: string | undefined;
   sequential?: boolean | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
 }
 
 interface TagsCommandOptions {
   parent?: string | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
 }
 
 interface UpdateCommandOptions {
@@ -139,6 +145,8 @@ interface CreateFolderOptions {
 
 interface FoldersQueryOptions {
   parent?: string | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
 }
 
 interface CreateTagOptions {
@@ -392,6 +400,8 @@ Use --human flag for human-readable output (default is JSON).
     .option("--flagged", "Show only flagged tasks")
     .option("--completed", "Show only completed tasks")
     .option("--available", "Show only available (actionable) tasks")
+    .option("--limit <n>", "Maximum results to return", parseInt)
+    .option("--offset <n>", "Number of results to skip", parseInt)
     .action(async (options: TasksCommandOptions, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = await queryTasks({
@@ -402,6 +412,8 @@ Use --human flag for human-readable output (default is JSON).
         flagged: options.flagged,
         completed: options.completed,
         available: options.available,
+        limit: options.limit,
+        offset: options.offset,
       });
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;
@@ -417,6 +429,8 @@ Use --human flag for human-readable output (default is JSON).
       "Filter by status (active, on-hold, completed, dropped)"
     )
     .option("--sequential", "Show only sequential projects")
+    .option("--limit <n>", "Maximum results to return", parseInt)
+    .option("--offset <n>", "Number of results to skip", parseInt)
     .action(async (options: ProjectsCommandOptions, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const status = options.status as
@@ -429,6 +443,8 @@ Use --human flag for human-readable output (default is JSON).
         folder: options.folder,
         status,
         sequential: options.sequential,
+        limit: options.limit,
+        offset: options.offset,
       });
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;
@@ -439,10 +455,14 @@ Use --human flag for human-readable output (default is JSON).
     .command("tags")
     .description("Query tags from OmniFocus")
     .option("--parent <name>", "Filter by parent tag name")
+    .option("--limit <n>", "Maximum results to return", parseInt)
+    .option("--offset <n>", "Number of results to skip", parseInt)
     .action(async (options: TagsCommandOptions, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = await queryTags({
         parent: options.parent,
+        limit: options.limit,
+        offset: options.offset,
       });
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;
@@ -572,10 +592,14 @@ Use --human flag for human-readable output (default is JSON).
     .command("folders")
     .description("Query folders from OmniFocus")
     .option("--parent <name>", "Filter by parent folder name")
+    .option("--limit <n>", "Maximum results to return", parseInt)
+    .option("--offset <n>", "Number of results to skip", parseInt)
     .action(async (options: FoldersQueryOptions, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = await queryFolders({
         parent: options.parent,
+        limit: options.limit,
+        offset: options.offset,
       });
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;
