@@ -1,19 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFTask } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
 }));
 
 // Import after mocking
 import { updateTask } from "../../../src/commands/update.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 const createMockTask = (overrides: Partial<OFTask> = {}): OFTask => ({
   id: "task-123",
@@ -42,7 +43,7 @@ describe("updateTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with injection characters", async () => {
@@ -99,15 +100,15 @@ describe("updateTask", () => {
     it("should accept valid update options", async () => {
       const mockTask = createMockTask({ name: "Updated Task" });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { title: "Updated Task" });
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -115,10 +116,10 @@ describe("updateTask", () => {
     it("should update task title", async () => {
       const mockTask = createMockTask({ name: "New Title" });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { title: "New Title" });
 
@@ -129,10 +130,10 @@ describe("updateTask", () => {
     it("should update task note", async () => {
       const mockTask = createMockTask({ note: "New note content" });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { note: "New note content" });
 
@@ -143,10 +144,10 @@ describe("updateTask", () => {
     it("should update flag status", async () => {
       const mockTask = createMockTask({ flagged: true });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { flag: true });
 
@@ -157,10 +158,10 @@ describe("updateTask", () => {
     it("should update due date", async () => {
       const mockTask = createMockTask({ dueDate: "2024-12-31" });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { due: "December 31, 2024" });
 
@@ -171,10 +172,10 @@ describe("updateTask", () => {
     it("should clear due date with empty string", async () => {
       const mockTask = createMockTask({ dueDate: null });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { due: "" });
 
@@ -185,10 +186,10 @@ describe("updateTask", () => {
     it("should update tags", async () => {
       const mockTask = createMockTask({ tags: ["work", "urgent"] });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { tags: ["work", "urgent"] });
 
@@ -199,10 +200,10 @@ describe("updateTask", () => {
     it("should update estimated minutes", async () => {
       const mockTask = createMockTask({ estimatedMinutes: 30 });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { estimatedMinutes: 30 });
 
@@ -218,10 +219,10 @@ describe("updateTask", () => {
         tags: ["updated"],
       });
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", {
         title: "Updated",
@@ -236,13 +237,13 @@ describe("updateTask", () => {
 
   describe("error handling", () => {
     it("should handle task not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("nonexistent", { title: "Test" });
 
@@ -251,13 +252,13 @@ describe("updateTask", () => {
     });
 
     it("should handle project not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.PROJECT_NOT_FOUND,
           message: "Project not found",
         },
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", {
         project: "Nonexistent Project",
@@ -268,10 +269,10 @@ describe("updateTask", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { title: "Test" });
 
@@ -280,10 +281,10 @@ describe("updateTask", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await updateTask("task-123", { title: "Test" });
 

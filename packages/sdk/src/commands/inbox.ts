@@ -7,9 +7,8 @@ import {
   validateEstimatedMinutes,
   validateRepetitionRule,
 } from "../validation.js";
-import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
-import { buildRepetitionRuleScript } from "./repetition.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+import { buildRRule } from "./repetition.js";
 
 /**
  * Add a task to the OmniFocus inbox.
@@ -38,103 +37,78 @@ export async function addToInbox(
   const repeatError = validateRepetitionRule(options.repeat);
   if (repeatError) return failure(repeatError);
 
-  const properties: string[] = [`name:"${escapeAppleScript(title)}"`];
+  // Build the OmniJS script
+  const scriptParts: string[] = [];
+
+  scriptParts.push(
+    `var task = new Task("${escapeJSString(title)}", inbox.beginning);`
+  );
 
   if (options.note !== undefined) {
-    properties.push(`note:"${escapeAppleScript(options.note)}"`);
+    scriptParts.push(`task.note = "${escapeJSString(options.note)}";`);
   }
 
   if (options.flag === true) {
-    properties.push("flagged:true");
+    scriptParts.push(`task.flagged = true;`);
   }
 
   if (options.due !== undefined) {
-    properties.push(`due date:date "${toAppleScriptDate(options.due)}"`);
+    scriptParts.push(`task.dueDate = ${toOmniJSDate(options.due)};`);
   }
 
   if (options.defer !== undefined) {
-    properties.push(`defer date:date "${toAppleScriptDate(options.defer)}"`);
+    scriptParts.push(`task.deferDate = ${toOmniJSDate(options.defer)};`);
   }
 
   if (options.estimatedMinutes !== undefined) {
-    properties.push(`estimated minutes:${String(options.estimatedMinutes)}`);
+    scriptParts.push(
+      `task.estimatedMinutes = ${String(options.estimatedMinutes)};`
+    );
   }
 
-  // Build repetition rule script if provided
-  const repetitionScript = options.repeat
-    ? buildRepetitionRuleScript("newTask", options.repeat)
-    : "";
-
-  // Build the AppleScript
-  let script = `
-    set newTask to make new inbox task with properties {${properties.join(", ")}}
-  `;
-
-  // Handle tags separately (requires looking them up)
+  // Handle tags
   if (options.tags && options.tags.length > 0) {
     for (const tagName of options.tags) {
-      script += `
-    try
-      set theTag to first flattened tag whose name is "${escapeAppleScript(tagName)}"
-      add theTag to tags of newTask
-    end try
-      `;
+      const varName = `tag_${sanitizeVarName(tagName)}`;
+      scriptParts.push(
+        `var ${varName} = flattenedTags.byName("${escapeJSString(tagName)}");`
+      );
+      scriptParts.push(`if (${varName}) { task.addTag(${varName}); }`);
     }
   }
 
-  // Add repetition rule if provided
-  if (repetitionScript) {
-    script += repetitionScript;
+  // Handle repetition rule
+  if (options.repeat) {
+    const rrule = buildRRule(options.repeat);
+    const method =
+      options.repeat.repeatMethod === "due-again"
+        ? "Task.RepetitionMethod.DueDate"
+        : "Task.RepetitionMethod.DeferDate";
+    scriptParts.push(
+      `task.repetitionRule = new Task.RepetitionRule("${escapeJSString(rrule)}", ${method});`
+    );
   }
 
-  // Return the created task info
-  script += `
-    set taskId to id of newTask
-    set taskName to name of newTask
-    set taskNote to note of newTask
-    set taskFlagged to flagged of newTask
-    set taskCompleted to completed of newTask
+  // Serialize and return
+  scriptParts.push(`
+var tagNames = task.tags.map(function(t) { return t.name; });
+return JSON.stringify({
+  id: task.id.primaryKey,
+  name: task.name,
+  note: task.note || null,
+  flagged: task.flagged,
+  completed: task.completed,
+  dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+  deferDate: task.deferDate ? task.deferDate.toISOString() : null,
+  completionDate: null,
+  projectId: null,
+  projectName: null,
+  tags: tagNames,
+  estimatedMinutes: task.estimatedMinutes || null
+});`);
 
-    set dueStr to ""
-    try
-      set dueStr to (due date of newTask) as string
-    end try
-
-    set deferStr to ""
-    try
-      set deferStr to (defer date of newTask) as string
-    end try
-
-    set tagNames to {}
-    repeat with t in tags of newTask
-      set end of tagNames to name of t
-    end repeat
-
-    set estMinutes to 0
-    try
-      set estMinutes to estimated minutes of newTask
-      if estMinutes is missing value then set estMinutes to 0
-    end try
-
-    return "{" & ¬
-      "\\"id\\": \\"" & taskId & "\\"," & ¬
-      "\\"name\\": \\"" & taskName & "\\"," & ¬
-      "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-      "\\"flagged\\": " & taskFlagged & "," & ¬
-      "\\"completed\\": " & taskCompleted & "," & ¬
-      "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-      "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-      "\\"completionDate\\": null," & ¬
-      "\\"projectId\\": null," & ¬
-      "\\"projectName\\": null," & ¬
-      "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-      "\\"estimatedMinutes\\": " & estMinutes & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<OFTask>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<OFTask>(body);
 
   if (!result.success) {
     return failure(
@@ -150,4 +124,11 @@ export async function addToInbox(
   }
 
   return success(result.data);
+}
+
+/**
+ * Sanitize a string for use as a JavaScript variable name suffix.
+ */
+function sanitizeVarName(str: string): string {
+  return str.replace(/[^a-zA-Z0-9]/g, "_");
 }

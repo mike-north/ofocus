@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { DropResult, DeleteResult } from "../../../src/commands/drop.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { dropTask, deleteTask } from "../../../src/commands/drop.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("dropTask", () => {
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe("dropTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with dangerous characters", async () => {
@@ -34,7 +34,7 @@ describe("dropTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid task ID", async () => {
@@ -44,15 +44,15 @@ describe("dropTask", () => {
         dropped: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DropResult>);
+      } as OmniJSResult<DropResult>);
 
       const result = await dropTask("abc-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -64,10 +64,10 @@ describe("dropTask", () => {
         dropped: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DropResult>);
+      } as OmniJSResult<DropResult>);
 
       const result = await dropTask("task-789");
 
@@ -83,13 +83,13 @@ describe("dropTask", () => {
 
   describe("error handling", () => {
     it("should handle task not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<DropResult>);
+      } as OmniJSResult<DropResult>);
 
       const result = await dropTask("nonexistent-task");
 
@@ -98,10 +98,10 @@ describe("dropTask", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<DropResult>);
+      } as OmniJSResult<DropResult>);
 
       const result = await dropTask("task-123");
 
@@ -110,10 +110,10 @@ describe("dropTask", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<DropResult>);
+      } as OmniJSResult<DropResult>);
 
       const result = await dropTask("task-123");
 
@@ -134,7 +134,7 @@ describe("deleteTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with injection characters", async () => {
@@ -152,10 +152,10 @@ describe("deleteTask", () => {
         deleted: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeleteResult>);
+      } as OmniJSResult<DeleteResult>);
 
       const result = await deleteTask("task-456");
 
@@ -169,10 +169,10 @@ describe("deleteTask", () => {
 
   describe("error handling", () => {
     it("should handle not found error from script", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: { error: "not found", taskId: "missing-task" },
-      } as AppleScriptResult<{ error: string; taskId: string }>);
+      } as OmniJSResult<{ error: string; taskId: string }>);
 
       const result = await deleteTask("missing-task");
 
@@ -181,10 +181,10 @@ describe("deleteTask", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<DeleteResult>);
+      } as OmniJSResult<DeleteResult>);
 
       const result = await deleteTask("task-123");
 

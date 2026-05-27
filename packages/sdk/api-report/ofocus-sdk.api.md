@@ -85,7 +85,7 @@ export interface BatchResult<T> {
     totalSucceeded: number;
 }
 
-// @public
+// @public @deprecated
 export function buildRepetitionRuleScript(taskVar: string, rule: RepetitionRule): string;
 
 // @public
@@ -378,6 +378,9 @@ export { ErrorCode as ErrorCodeType }
 export function escapeAppleScript(str: string): string;
 
 // @public
+export function escapeJSString(str: string): string;
+
+// @public
 export function exportTaskPaper(options?: TaskPaperExportOptions): Promise<CliOutput<TaskPaperExportResult>>;
 
 // @public
@@ -612,6 +615,13 @@ export function omniFocusScript(body: string): string;
 export function omniFocusScriptWithHelpers(body: string): string;
 
 // @public
+export interface OmniJSResult<T> {
+    data?: T;
+    error?: CliError;
+    success: boolean;
+}
+
+// @public
 export function openItem(id: string): Promise<CliOutput<OpenResult>>;
 
 // @public
@@ -790,6 +800,12 @@ export function runAppleScriptFile<T>(filePath: string, args?: string[]): Promis
 
 // @public
 export function runComposedScript<T>(handlers: string[], body: string): Promise<AppleScriptResult<T>>;
+
+// @public
+export function runOmniJS<T>(script: string): Promise<OmniJSResult<T>>;
+
+// @public
+export function runOmniJSWrapped<T>(body: string): Promise<OmniJSResult<T>>;
 
 // @public
 export function saveTemplate(options: SaveTemplateOptions): Promise<CliOutput<SaveTemplateResult>>;
@@ -982,6 +998,9 @@ export interface TemplateTask {
 }
 
 // @public
+export function toOmniJSDate(dateStr: string): string;
+
+// @public
 export function triggerSync(): Promise<CliOutput<SyncResult>>;
 
 // @public
@@ -1089,6 +1108,9 @@ export function validateTagName(name: string): CliError | null;
 
 // @public
 export function validateTags(tags: string[] | undefined): CliError | null;
+
+// @public
+export function wrapOmniJS(body: string): string;
 
 // (No @packageDocumentation comment for this package)
 

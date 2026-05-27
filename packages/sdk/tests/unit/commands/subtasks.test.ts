@@ -1,19 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type {
   OFTaskWithChildren,
   PaginatedResult,
 } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
-}));
-
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked script"),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
 }));
 
 // Import after mocking
@@ -22,9 +19,9 @@ import {
   querySubtasks,
   moveTaskToParent,
 } from "../../../src/commands/subtasks.js";
-import { runComposedScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 const createMockTaskWithChildren = (
   overrides: Partial<OFTaskWithChildren> = {}
@@ -43,7 +40,8 @@ const createMockTaskWithChildren = (
   estimatedMinutes: null,
   parentTaskId: "parent-123",
   parentTaskName: "Parent Task",
-  subtasks: [],
+  childTaskCount: 0,
+  isActionGroup: false,
   ...overrides,
 });
 
@@ -71,7 +69,7 @@ describe("createSubtask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject invalid parent task ID format", async () => {
@@ -135,15 +133,15 @@ describe("createSubtask", () => {
     it("should accept valid subtask creation", async () => {
       const mockTask = createMockTaskWithChildren({ name: "New Subtask" });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await createSubtask("New Subtask", "parent-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -157,10 +155,10 @@ describe("createSubtask", () => {
         estimatedMinutes: 30,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await createSubtask("New Subtask", "parent-123", {
         note: "Test note",
@@ -176,13 +174,13 @@ describe("createSubtask", () => {
 
   describe("error handling", () => {
     it("should handle parent task not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Parent task not found",
         },
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await createSubtask("New Subtask", "nonexistent");
 
@@ -191,10 +189,10 @@ describe("createSubtask", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await createSubtask("New Subtask", "parent-123");
 
@@ -233,10 +231,10 @@ describe("querySubtasks", () => {
       ];
       const mockResult = createMockPaginatedResult(mockSubtasks);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+      } as OmniJSResult<PaginatedResult<OFTaskWithChildren>>);
 
       const result = await querySubtasks("parent-123");
 
@@ -248,10 +246,10 @@ describe("querySubtasks", () => {
       const mockSubtasks = [createMockTaskWithChildren({ completed: true })];
       const mockResult = createMockPaginatedResult(mockSubtasks);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+      } as OmniJSResult<PaginatedResult<OFTaskWithChildren>>);
 
       const result = await querySubtasks("parent-123", { completed: true });
 
@@ -262,10 +260,10 @@ describe("querySubtasks", () => {
       const mockSubtasks = [createMockTaskWithChildren({ flagged: true })];
       const mockResult = createMockPaginatedResult(mockSubtasks);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+      } as OmniJSResult<PaginatedResult<OFTaskWithChildren>>);
 
       const result = await querySubtasks("parent-123", { flagged: true });
 
@@ -281,10 +279,10 @@ describe("querySubtasks", () => {
         limit: 5,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+      } as OmniJSResult<PaginatedResult<OFTaskWithChildren>>);
 
       const result = await querySubtasks("parent-123", {
         offset: 10,
@@ -297,10 +295,10 @@ describe("querySubtasks", () => {
     });
 
     it("should return default empty result on undefined data", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+      } as OmniJSResult<PaginatedResult<OFTaskWithChildren>>);
 
       const result = await querySubtasks("parent-123");
 
@@ -312,13 +310,13 @@ describe("querySubtasks", () => {
 
   describe("error handling", () => {
     it("should handle parent task not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Parent task not found",
         },
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+      } as OmniJSResult<PaginatedResult<OFTaskWithChildren>>);
 
       const result = await querySubtasks("nonexistent");
 
@@ -370,10 +368,10 @@ describe("moveTaskToParent", () => {
         parentTaskId: "new-parent-456",
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await moveTaskToParent("task-123", "new-parent-456");
 
@@ -384,13 +382,13 @@ describe("moveTaskToParent", () => {
 
   describe("error handling", () => {
     it("should handle task not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await moveTaskToParent("nonexistent", "parent-123");
 
@@ -399,10 +397,10 @@ describe("moveTaskToParent", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await moveTaskToParent("task-123", "parent-123");
 

@@ -2,8 +2,7 @@ import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from dropping a task.
@@ -30,23 +29,20 @@ export async function dropTask(taskId: string): Promise<CliOutput<DropResult>> {
   const idError = validateId(taskId, "task");
   if (idError) return failure(idError);
 
-  const script = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-    mark dropped theTask
+  const body = `
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}
+task.drop(true);
 
-    set taskName to name of theTask
-    set taskDropped to dropped of theTask
+return JSON.stringify({
+  taskId: task.id.primaryKey,
+  taskName: task.name,
+  dropped: task.dropped
+});`;
 
-    return "{" & ¬
-      "\\"taskId\\": \\"${escapeAppleScript(taskId)}\\"," & ¬
-      "\\"taskName\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-      "\\"dropped\\": " & taskDropped & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<DropResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<DropResult>(body);
 
   if (!result.success) {
     return failure(
@@ -73,23 +69,17 @@ export async function deleteTask(
   const idError = validateId(taskId, "task");
   if (idError) return failure(idError);
 
-  const script = `
-    try
-      set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-      delete theTask
-      return "{\\"taskId\\": \\"${escapeAppleScript(taskId)}\\", \\"deleted\\": true}"
-    on error errMsg
-      if errMsg contains "Can't get" or errMsg contains "not found" then
-        return "{\\"error\\": \\"not found\\", \\"taskId\\": \\"${escapeAppleScript(taskId)}\\"}"
-      else
-        error errMsg
-      end if
-    end try
-  `;
+  const body = `
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  return JSON.stringify({ error: "not found", taskId: "${escapeJSString(taskId)}" });
+}
+deleteObject(task);
+return JSON.stringify({ taskId: "${escapeJSString(taskId)}", deleted: true });`;
 
-  const result = await runAppleScript<
+  const result = await runOmniJSWrapped<
     DeleteResult | { error: string; taskId: string }
-  >(omniFocusScriptWithHelpers(script));
+  >(body);
 
   if (!result.success) {
     return failure(

@@ -47,6 +47,8 @@ export function buildRRule(rule: RepetitionRule): string {
  * Build AppleScript to set a repetition rule on a task.
  * @param taskVar - The AppleScript variable name for the task
  * @param rule - The repetition rule to apply
+ *
+ * @deprecated Use OmniJS repetition rule API instead
  */
 export function buildRepetitionRuleScript(
   taskVar: string,
@@ -64,6 +66,8 @@ export function buildRepetitionRuleScript(
 /**
  * Build AppleScript to clear a repetition rule from a task.
  * @param taskVar - The AppleScript variable name for the task
+ *
+ * @deprecated Use OmniJS repetition rule API instead
  */
 export function buildClearRepetitionScript(taskVar: string): string {
   return `

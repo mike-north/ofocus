@@ -54,7 +54,7 @@ export {
   MAX_PAGINATION_LIMIT,
 } from "./validation.js";
 
-// AppleScript utilities
+// AppleScript utilities (legacy — kept for backward compatibility)
 export {
   runAppleScript,
   runAppleScriptFile,
@@ -65,6 +65,16 @@ export {
   jsonHelpers,
 } from "./applescript.js";
 export type { AppleScriptResult } from "./applescript.js";
+
+// OmniJS utilities (preferred execution engine)
+export {
+  runOmniJS,
+  runOmniJSWrapped,
+  wrapOmniJS,
+  toOmniJSDate,
+  escapeJSString,
+} from "./omnijs.js";
+export type { OmniJSResult } from "./omnijs.js";
 
 // Asset loading utilities
 export {

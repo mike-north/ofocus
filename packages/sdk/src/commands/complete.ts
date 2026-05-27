@@ -2,9 +2,7 @@ import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runComposedScript } from "../applescript.js";
-import { loadScriptContentCached } from "../asset-loader.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from completing a task.
@@ -25,24 +23,20 @@ export async function completeTask(
   const idError = validateId(taskId, "task");
   if (idError) return failure(idError);
 
-  // Load external AppleScript helpers
-  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
-
   const body = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-    mark complete theTask
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}
+task.markComplete();
 
-    set taskName to name of theTask
-    set taskCompleted to completed of theTask
+return JSON.stringify({
+  taskId: task.id.primaryKey,
+  taskName: task.name,
+  completed: task.completed
+});`;
 
-    return "{" & ¬
-      "\\"taskId\\": \\"${escapeAppleScript(taskId)}\\"," & ¬
-      "\\"taskName\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-      "\\"completed\\": " & taskCompleted & ¬
-      "}"
-  `;
-
-  const result = await runComposedScript<CompleteResult>([jsonHelpers], body);
+  const result = await runOmniJSWrapped<CompleteResult>(body);
 
   if (!result.success) {
     return failure(

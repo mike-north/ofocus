@@ -14,10 +14,39 @@ import {
   validateEstimatedMinutes,
   validateRepetitionRule,
 } from "../validation.js";
-import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runComposedScript } from "../applescript.js";
-import { loadScriptContentCached } from "../asset-loader.js";
-import { buildRepetitionRuleScript } from "./repetition.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+import { buildRRule } from "./repetition.js";
+
+/**
+ * Serialize a task with children info as a JS expression for OmniJS scripts.
+ */
+const serializeTaskWithChildrenExpr = `
+function serializeTaskWithChildren(task, parentTask) {
+  var projId = null;
+  var projName = null;
+  if (task.containingProject) {
+    projId = task.containingProject.id.primaryKey;
+    projName = task.containingProject.name;
+  }
+  return {
+    id: task.id.primaryKey,
+    name: task.name,
+    note: task.note || null,
+    flagged: task.flagged,
+    completed: task.completed,
+    dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+    deferDate: task.deferDate ? task.deferDate.toISOString() : null,
+    completionDate: task.completionDate ? task.completionDate.toISOString() : null,
+    projectId: projId,
+    projectName: projName,
+    tags: task.tags.map(function(t) { return t.name; }),
+    estimatedMinutes: task.estimatedMinutes || null,
+    parentTaskId: parentTask ? parentTask.id.primaryKey : null,
+    parentTaskName: parentTask ? parentTask.name : null,
+    childTaskCount: task.children.length,
+    isActionGroup: task.children.length > 0
+  };
+}`;
 
 /**
  * Create a subtask under a parent task in OmniFocus.
@@ -56,66 +85,69 @@ export async function createSubtask(
   const repeatError = validateRepetitionRule(options.repeat);
   if (repeatError) return failure(repeatError);
 
-  // Build properties for the new subtask
-  const properties: string[] = [`name:"${escapeAppleScript(title)}"`];
+  // Build the OmniJS script
+  const scriptParts: string[] = [];
+
+  scriptParts.push(serializeTaskWithChildrenExpr);
+
+  scriptParts.push(`
+var parentTask = flattenedTasks.byId("${escapeJSString(parentTaskId)}");
+if (!parentTask) {
+  throw new Error("Parent task not found: ${escapeJSString(parentTaskId)}");
+}
+var task = new Task("${escapeJSString(title)}", parentTask.ending);`);
 
   if (options.note !== undefined) {
-    properties.push(`note:"${escapeAppleScript(options.note)}"`);
+    scriptParts.push(`task.note = "${escapeJSString(options.note)}";`);
   }
 
   if (options.flag === true) {
-    properties.push("flagged:true");
+    scriptParts.push(`task.flagged = true;`);
   }
 
   if (options.due !== undefined) {
-    properties.push(`due date:date "${toAppleScriptDate(options.due)}"`);
+    scriptParts.push(`task.dueDate = ${toOmniJSDate(options.due)};`);
   }
 
   if (options.defer !== undefined) {
-    properties.push(`defer date:date "${toAppleScriptDate(options.defer)}"`);
+    scriptParts.push(`task.deferDate = ${toOmniJSDate(options.defer)};`);
   }
 
   if (options.estimatedMinutes !== undefined) {
-    properties.push(`estimated minutes:${String(options.estimatedMinutes)}`);
+    scriptParts.push(
+      `task.estimatedMinutes = ${String(options.estimatedMinutes)};`
+    );
   }
 
-  // Build repetition rule script if provided
-  const repetitionScript = options.repeat
-    ? buildRepetitionRuleScript("newTask", options.repeat)
-    : "";
-
-  let tagScript = "";
+  // Handle tags
   if (options.tags && options.tags.length > 0) {
     for (const tagName of options.tags) {
-      tagScript += `
-    try
-      set theTag to first flattened tag whose name is "${escapeAppleScript(tagName)}"
-      add theTag to tags of newTask
-    end try
-      `;
+      const varName = `tag_${sanitizeVarName(tagName)}`;
+      scriptParts.push(
+        `var ${varName} = flattenedTags.byName("${escapeJSString(tagName)}");`
+      );
+      scriptParts.push(`if (${varName}) { task.addTag(${varName}); }`);
     }
   }
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, taskWithChildrenSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/task-with-children.applescript"),
-  ]);
+  // Handle repetition rule
+  if (options.repeat) {
+    const rrule = buildRRule(options.repeat);
+    const method =
+      options.repeat.repeatMethod === "due-again"
+        ? "Task.RepetitionMethod.DueDate"
+        : "Task.RepetitionMethod.DeferDate";
+    scriptParts.push(
+      `task.repetitionRule = new Task.RepetitionRule("${escapeJSString(rrule)}", ${method});`
+    );
+  }
 
-  const body = `
-    set parentTask to first flattened task whose id is "${escapeAppleScript(parentTaskId)}"
-    set newTask to make new task at end of tasks of parentTask with properties {${properties.join(", ")}}
-
-    ${tagScript}
-    ${repetitionScript}
-
-    return my serializeTaskWithChildren(newTask, parentTask)
-  `;
-
-  const result = await runComposedScript<OFTaskWithChildren>(
-    [jsonHelpers, taskWithChildrenSerializer],
-    body
+  scriptParts.push(
+    `return JSON.stringify(serializeTaskWithChildren(task, parentTask));`
   );
+
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<OFTaskWithChildren>(body);
 
   if (!result.success) {
     return failure(
@@ -144,76 +176,59 @@ export async function querySubtasks(
   const idError = validateId(parentTaskId, "task");
   if (idError) return failure(idError);
 
-  // Build filter conditions
-  const conditions: string[] = [];
-
-  if (options.completed === true) {
-    conditions.push("completed is true");
-  } else if (options.completed === false) {
-    conditions.push("completed is false");
-  }
-
-  if (options.flagged === true) {
-    conditions.push("flagged is true");
-  } else if (options.flagged === false) {
-    conditions.push("flagged is false");
-  }
-
-  const whereClause =
-    conditions.length > 0 ? ` where ${conditions.join(" and ")}` : "";
-
   // Pagination defaults
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, taskWithChildrenSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/task-with-children.applescript"),
-  ]);
+  // Build filter conditions
+  const conditions: string[] = [];
+
+  if (options.completed === true) {
+    conditions.push("t.completed");
+  } else if (options.completed === false) {
+    conditions.push("!t.completed");
+  }
+
+  if (options.flagged === true) {
+    conditions.push("t.flagged");
+  } else if (options.flagged === false) {
+    conditions.push("!t.flagged");
+  }
+
+  const filterExpr = conditions.length > 0 ? conditions.join(" && ") : "true";
 
   const body = `
-    set parentTask to first flattened task whose id is "${escapeAppleScript(parentTaskId)}"
-    set output to "{\\"items\\": ["
-    set isFirst to true
-    set totalCount to 0
-    set returnedCount to 0
-    set currentIndex to 0
+${serializeTaskWithChildrenExpr}
 
-    set childTasks to tasks of parentTask${whereClause}
+var parentTask = flattenedTasks.byId("${escapeJSString(parentTaskId)}");
+if (!parentTask) {
+  throw new Error("Parent task not found: ${escapeJSString(parentTaskId)}");
+}
 
-    repeat with t in childTasks
-      set totalCount to totalCount + 1
+var childTasks = parentTask.children.filter(function(t) {
+  return ${filterExpr};
+});
 
-      -- Check if within pagination range
-      if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
-        if not isFirst then set output to output & ","
-        set isFirst to false
-        set returnedCount to returnedCount + 1
+var totalCount = childTasks.length;
+var pageOffset = ${String(offset)};
+var pageLimit = ${String(limit)};
+var paged = childTasks.slice(pageOffset, pageOffset + pageLimit);
 
-        set output to output & (my serializeTaskWithChildren(t, parentTask))
-      end if
+var items = paged.map(function(t) {
+  return serializeTaskWithChildren(t, parentTask);
+});
 
-      set currentIndex to currentIndex + 1
-    end repeat
+return JSON.stringify({
+  items: items,
+  totalCount: totalCount,
+  returnedCount: paged.length,
+  hasMore: totalCount > (pageOffset + paged.length),
+  offset: pageOffset,
+  limit: pageLimit
+});`;
 
-    set hasMore to (totalCount > (${String(offset)} + returnedCount))
-
-    set output to output & "]," & ¬
-      "\\"totalCount\\": " & totalCount & "," & ¬
-      "\\"returnedCount\\": " & returnedCount & "," & ¬
-      "\\"hasMore\\": " & hasMore & "," & ¬
-      "\\"offset\\": ${String(offset)}," & ¬
-      "\\"limit\\": ${String(limit)}" & ¬
-      "}"
-
-    return output
-  `;
-
-  const result = await runComposedScript<PaginatedResult<OFTaskWithChildren>>(
-    [jsonHelpers, taskWithChildrenSerializer],
-    body
-  );
+  const result =
+    await runOmniJSWrapped<PaginatedResult<OFTaskWithChildren>>(body);
 
   if (!result.success) {
     return failure(
@@ -248,25 +263,24 @@ export async function moveTaskToParent(
   const parentIdError = validateId(parentTaskId, "task");
   if (parentIdError) return failure(parentIdError);
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, taskWithChildrenSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/task-with-children.applescript"),
-  ]);
-
   const body = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-    set parentTask to first flattened task whose id is "${escapeAppleScript(parentTaskId)}"
+${serializeTaskWithChildrenExpr}
 
-    move theTask to end of tasks of parentTask
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}
 
-    return my serializeTaskWithChildren(theTask, parentTask)
-  `;
+var parentTask = flattenedTasks.byId("${escapeJSString(parentTaskId)}");
+if (!parentTask) {
+  throw new Error("Parent task not found: ${escapeJSString(parentTaskId)}");
+}
 
-  const result = await runComposedScript<OFTaskWithChildren>(
-    [jsonHelpers, taskWithChildrenSerializer],
-    body
-  );
+moveTasks([task], parentTask.ending);
+
+return JSON.stringify(serializeTaskWithChildren(task, parentTask));`;
+
+  const result = await runOmniJSWrapped<OFTaskWithChildren>(body);
 
   if (!result.success) {
     return failure(
@@ -282,4 +296,11 @@ export async function moveTaskToParent(
   }
 
   return success(result.data);
+}
+
+/**
+ * Sanitize a string for use as a JavaScript variable name suffix.
+ */
+function sanitizeVarName(str: string): string {
+  return str.replace(/[^a-zA-Z0-9]/g, "_");
 }

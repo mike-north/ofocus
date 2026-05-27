@@ -1,23 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFTask, PaginatedResult } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
-}));
-
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked script"),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { queryTasks } from "../../../src/commands/tasks.js";
-import { runComposedScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 const createMockTask = (overrides: Partial<OFTask> = {}): OFTask => ({
   id: "task-123",
@@ -59,7 +55,7 @@ describe("queryTasks", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject invalid dueAfter date format", async () => {
@@ -100,10 +96,10 @@ describe("queryTasks", () => {
     it("should accept valid options", async () => {
       const mockResult = createMockPaginatedResult([createMockTask()]);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks({
         project: "Valid Project",
@@ -112,7 +108,7 @@ describe("queryTasks", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -124,10 +120,10 @@ describe("queryTasks", () => {
       ];
       const mockResult = createMockPaginatedResult(mockTasks);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks();
 
@@ -140,10 +136,10 @@ describe("queryTasks", () => {
       const mockTasks = [createMockTask({ completed: true })];
       const mockResult = createMockPaginatedResult(mockTasks);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks({ completed: true });
 
@@ -154,10 +150,10 @@ describe("queryTasks", () => {
       const mockTasks = [createMockTask({ flagged: true })];
       const mockResult = createMockPaginatedResult(mockTasks);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks({ flagged: true });
 
@@ -168,10 +164,10 @@ describe("queryTasks", () => {
       const mockTasks = [createMockTask({ completed: false, flagged: false })];
       const mockResult = createMockPaginatedResult(mockTasks);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks({ available: true });
 
@@ -188,10 +184,10 @@ describe("queryTasks", () => {
         limit: 1,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks({ offset: 50, limit: 1 });
 
@@ -207,10 +203,10 @@ describe("queryTasks", () => {
         hasMore: false,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks({ project: "Empty Project" });
 
@@ -222,13 +218,13 @@ describe("queryTasks", () => {
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks();
 
@@ -237,10 +233,10 @@ describe("queryTasks", () => {
     });
 
     it("should handle undefined data response with default empty result", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks();
 
@@ -250,10 +246,10 @@ describe("queryTasks", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<PaginatedResult<OFTask>>);
+      } as OmniJSResult<PaginatedResult<OFTask>>);
 
       const result = await queryTasks();
 
