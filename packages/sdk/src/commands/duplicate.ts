@@ -2,8 +2,7 @@ import type { CliOutput, DuplicateTaskOptions } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from duplicating a task.
@@ -29,66 +28,39 @@ export async function duplicateTask(
   // Default to including subtasks
   const includeSubtasks = options.includeSubtasks !== false;
 
-  // AppleScript's duplicate command includes subtasks by default
-  // We need to handle the case where we don't want subtasks
-  const duplicateScript = includeSubtasks
-    ? `set newTask to duplicate theTask to theContainer`
-    : `set newTask to duplicate theTask to theContainer
-       -- Remove subtasks if not including them (iterate in reverse to avoid skipping)
-       repeat with i from (count of tasks of newTask) to 1 by -1
-         delete task i of newTask
-       end repeat`;
+  // Build the post-duplicate subtask removal snippet (only when not including subtasks)
+  const removeSubtasksSnippet = includeSubtasks
+    ? ""
+    : `
+  // Remove subtasks from the duplicate
+  var children = newTask.children.slice();
+  for (var c = 0; c < children.length; c++) {
+    deleteObject(children[c]);
+  }`;
 
-  const script = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
+  const body = `
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}
 
-    -- Determine the container for the duplicate
-    set theContainer to missing value
-    try
-      -- Try to get the parent task first (for subtasks)
-      set parentTask to container of theTask
-      if class of parentTask is task then
-        set theContainer to parentTask
-      end if
-    end try
+// Determine the location: place the duplicate after the original in its container
+var location = task.containingProject ? task.containingProject.ending : inbox.ending;
+var parent = task.parent;
+if (parent && parent instanceof Task) {
+  location = parent.ending;
+}
 
-    if theContainer is missing value then
-      try
-        -- Try to get the containing project
-        set theProj to containing project of theTask
-        if theProj is not missing value then
-          set theContainer to theProj
-        end if
-      end try
-    end if
+var newTasks = duplicateTasks([task], location);
+var newTask = newTasks[0];
+${removeSubtasksSnippet}
+return JSON.stringify({
+  originalTaskId: "${escapeJSString(taskId)}",
+  newTaskId: newTask.id.primaryKey,
+  newTaskName: newTask.name
+});`;
 
-    if theContainer is missing value then
-      -- Task is in inbox, duplicate to end of inbox tasks
-      set newTask to duplicate theTask to end of inbox tasks
-      set newId to id of newTask
-      set newName to name of newTask
-      return "{" & ¬
-        "\\"originalTaskId\\": \\"${escapeAppleScript(taskId)}\\"," & ¬
-        "\\"newTaskId\\": \\"" & newId & "\\"," & ¬
-        "\\"newTaskName\\": \\"" & (my escapeJson(newName)) & "\\"" & ¬
-        "}"
-    end if
-
-    ${duplicateScript}
-
-    set newId to id of newTask
-    set newName to name of newTask
-
-    return "{" & ¬
-      "\\"originalTaskId\\": \\"${escapeAppleScript(taskId)}\\"," & ¬
-      "\\"newTaskId\\": \\"" & newId & "\\"," & ¬
-      "\\"newTaskName\\": \\"" & (my escapeJson(newName)) & "\\"" & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<DuplicateTaskResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<DuplicateTaskResult>(body);
 
   if (!result.success) {
     return failure(

@@ -2,8 +2,7 @@ import type { CliOutput, BatchResult } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId, validateDateString } from "../validation.js";
-import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Options for deferring a task.
@@ -74,43 +73,31 @@ export async function deferTask(
     if (dateError) return failure(dateError);
   }
 
-  // Build the defer date logic
-  let deferLogic: string;
+  // Build the defer date expression for OmniJS
+  let deferDateExpr: string;
   if (options.days !== undefined) {
-    deferLogic = `set newDefer to (current date) + (${String(options.days)} * days)`;
+    const msPerDay = 86400000;
+    deferDateExpr = `new Date(Date.now() + ${String(options.days)} * ${String(msPerDay)})`;
   } else {
-    deferLogic = `set newDefer to date "${toAppleScriptDate(options.to ?? "")}"`;
+    deferDateExpr = toOmniJSDate(options.to ?? "");
   }
 
-  const script = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
+  const body = `
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}
+var previousDeferDate = task.deferDate ? task.deferDate.toISOString() : null;
+task.deferDate = ${deferDateExpr};
+var newDeferDate = task.deferDate ? task.deferDate.toISOString() : null;
+return JSON.stringify({
+  taskId: "${escapeJSString(taskId)}",
+  taskName: task.name,
+  previousDeferDate: previousDeferDate,
+  newDeferDate: newDeferDate
+});`;
 
-    -- Get previous defer date
-    set prevDefer to ""
-    try
-      set prevDefer to (defer date of theTask) as string
-    end try
-
-    -- Calculate new defer date
-    ${deferLogic}
-
-    -- Set the defer date
-    set defer date of theTask to newDefer
-
-    -- Get the new defer date as string
-    set newDeferStr to (defer date of theTask) as string
-
-    return "{" & ¬
-      "\\"taskId\\": \\"${escapeAppleScript(taskId)}\\"," & ¬
-      "\\"taskName\\": \\"" & (my escapeJson(name of theTask)) & "\\"," & ¬
-      "\\"previousDeferDate\\": " & (my jsonString(prevDefer)) & "," & ¬
-      "\\"newDeferDate\\": \\"" & (my escapeJson(newDeferStr)) & "\\"" & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<DeferResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<DeferResult>(body);
 
   if (!result.success) {
     return failure(
@@ -165,6 +152,15 @@ export async function deferTasks(
     if (dateError) return failure(dateError);
   }
 
+  // Build the defer date expression for OmniJS
+  let deferDateExpr: string;
+  if (options.days !== undefined) {
+    const msPerDay = 86400000;
+    deferDateExpr = `new Date(Date.now() + ${String(options.days)} * ${String(msPerDay)})`;
+  } else {
+    deferDateExpr = toOmniJSDate(options.to ?? "");
+  }
+
   // Process in chunks
   const chunks: string[][] = [];
   for (let i = 0; i < taskIds.length; i += MAX_BATCH_SIZE) {
@@ -174,83 +170,41 @@ export async function deferTasks(
   const allSucceeded: BatchDeferItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
-  // Build the defer date logic
-  let deferLogic: string;
-  if (options.days !== undefined) {
-    deferLogic = `set newDefer to rightNow + (${String(options.days)} * days)`;
-  } else {
-    deferLogic = `set newDefer to date "${toAppleScriptDate(options.to ?? "")}"`;
-  }
-
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
-    const script = `
-      set taskIdList to ${idsJson}
-      set succeededList to {}
-      set failedList to {}
-      set rightNow to current date
+    const body = `
+var taskIds = ${idsJson};
+var newDeferDate = ${deferDateExpr};
+var succeeded = [];
+var failed = [];
+for (var i = 0; i < taskIds.length; i++) {
+  var id = taskIds[i];
+  try {
+    var task = flattenedTasks.byId(id);
+    if (!task) {
+      failed.push({ id: id, error: "Task not found: " + id });
+      continue;
+    }
+    var previousDeferDate = task.deferDate ? task.deferDate.toISOString() : null;
+    task.deferDate = newDeferDate;
+    var actualNewDeferDate = task.deferDate ? task.deferDate.toISOString() : null;
+    succeeded.push({
+      taskId: id,
+      taskName: task.name,
+      previousDeferDate: previousDeferDate,
+      newDeferDate: actualNewDeferDate
+    });
+  } catch (err) {
+    failed.push({ id: id, error: String(err) });
+  }
+}
+return JSON.stringify({ succeeded: succeeded, failed: failed });`;
 
-      ${deferLogic}
-
-      repeat with taskIdStr in taskIdList
-        try
-          set theTask to first flattened task whose id is taskIdStr
-
-          -- Get previous defer date
-          set prevDefer to ""
-          try
-            set prevDefer to (defer date of theTask) as string
-          end try
-
-          -- Set the defer date
-          set defer date of theTask to newDefer
-
-          -- Get the new defer date as string
-          set newDeferStr to (defer date of theTask) as string
-
-          set end of succeededList to "{" & ¬
-            "\\"taskId\\": \\"" & taskIdStr & "\\"," & ¬
-            "\\"taskName\\": \\"" & (my escapeJson(name of theTask)) & "\\"," & ¬
-            "\\"previousDeferDate\\": " & (my jsonString(prevDefer)) & "," & ¬
-            "\\"newDeferDate\\": \\"" & (my escapeJson(newDeferStr)) & "\\"" & ¬
-            "}"
-        on error errMsg
-          set end of failedList to "{" & ¬
-            "\\"id\\": \\"" & taskIdStr & "\\"," & ¬
-            "\\"error\\": \\"" & (my escapeJson(errMsg)) & "\\"" & ¬
-            "}"
-        end try
-      end repeat
-
-      set successJson to "["
-      set isFirst to true
-      repeat with item_ in succeededList
-        if not isFirst then set successJson to successJson & ","
-        set isFirst to false
-        set successJson to successJson & item_
-      end repeat
-      set successJson to successJson & "]"
-
-      set failJson to "["
-      set isFirst to true
-      repeat with item_ in failedList
-        if not isFirst then set failJson to failJson & ","
-        set isFirst to false
-        set failJson to failJson & item_
-      end repeat
-      set failJson to failJson & "]"
-
-      return "{" & ¬
-        "\\"succeeded\\": " & successJson & "," & ¬
-        "\\"failed\\": " & failJson & ¬
-        "}"
-    `;
-
-    const result = await runAppleScript<{
+    const result = await runOmniJSWrapped<{
       succeeded: BatchDeferItem[];
       failed: { id: string; error: string }[];
-    }>(omniFocusScriptWithHelpers(script));
+    }>(body);
 
     if (result.success && result.data) {
       allSucceeded.push(...result.data.succeeded);
