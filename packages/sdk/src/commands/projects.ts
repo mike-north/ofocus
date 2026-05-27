@@ -1,140 +1,76 @@
-import type {
-  CliOutput,
-  ProjectQueryOptions,
-  OFProject,
-  PaginatedResult,
-} from "../types.js";
+import type { CliOutput, OFProject } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validatePaginationParams } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runComposedScript } from "../applescript.js";
-import { loadScriptContentCached } from "../asset-loader.js";
+import { runOmniJSWrapped } from "../omnijs.js";
+import {
+  buildListQueryBody,
+  compileAggregate,
+  compileProjection,
+  compileSort,
+  compileProjectPredicates,
+  projectFieldSpec,
+  projectGroupKeys,
+  type QueryResult,
+  type ProjectQueryOptions,
+} from "../query/index.js";
 
 /**
- * Query projects from OmniFocus with optional filters and pagination.
+ * Query projects from OmniFocus with the full shared-query vocabulary.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryProjects(
   options: ProjectQueryOptions = {}
-): Promise<CliOutput<PaginatedResult<OFProject>>> {
-  // Validate pagination parameters
+): Promise<CliOutput<QueryResult<OFProject>>> {
+  // Pagination validation (gated separately because invalid limits/offsets
+  // would otherwise produce nonsense pagination in the result envelope).
   const paginationError = validatePaginationParams(
     options.limit,
     options.offset
   );
   if (paginationError) return failure(paginationError);
 
-  // Build filter conditions for properties that work in where clauses
-  const conditions: string[] = [];
+  // Compile each phase. We collect ALL validation errors before returning so
+  // the first one we report is the highest-priority. The order below matches
+  // the order a user encounters problems: predicate first, then projection,
+  // then sort, then aggregation.
+  const pred = compileProjectPredicates(options);
+  const proj = compileProjection(projectFieldSpec, options);
+  const sort = compileSort(projectFieldSpec, options);
+  const agg = compileAggregate(options, projectGroupKeys);
 
-  if (options.sequential === true) {
-    conditions.push("sequential is true");
-  } else if (options.sequential === false) {
-    conditions.push("sequential is false");
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
   }
 
-  const whereClause =
-    conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
-
-  // Map status option to AppleScript status value
-  let statusFilter = "";
-  if (options.status !== undefined) {
-    switch (options.status) {
-      case "active":
-        statusFilter = "active status";
-        break;
-      case "on-hold":
-        statusFilter = "on hold";
-        break;
-      case "completed":
-        statusFilter = "done";
-        break;
-      case "dropped":
-        statusFilter = "dropped";
-        break;
-    }
-  }
-
-  // Pagination defaults
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, projectSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/project.applescript"),
-  ]);
+  const body = buildListQueryBody({
+    source: "flattenedProjects",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
 
-  const body = `
-    set output to "{\\"items\\": ["
-    set isFirst to true
-    set totalCount to 0
-    set returnedCount to 0
-    set currentIndex to 0
-
-    set allProjects to flattened projects ${whereClause}
-
-    repeat with p in allProjects
-      set shouldInclude to true
-
-      -- Safely determine project status (OmniFocus requires "X status" syntax)
-      set projStatus to "active"
-      try
-        set theStatus to status of p
-        if theStatus is on hold status then
-          set projStatus to "on-hold"
-        else if theStatus is done status then
-          set projStatus to "completed"
-        else if theStatus is dropped status then
-          set projStatus to "dropped"
-        end if
-      end try
-
-      ${statusFilter === "active status" ? `if projStatus is not "active" then set shouldInclude to false` : ""}
-      ${statusFilter === "on hold" ? `if projStatus is not "on-hold" then set shouldInclude to false` : ""}
-      ${statusFilter === "done" ? `if projStatus is not "completed" then set shouldInclude to false` : ""}
-      ${statusFilter === "dropped" ? `if projStatus is not "dropped" then set shouldInclude to false` : ""}
-
-      ${options.folder ? `-- Filter by folder` : ""}
-      ${options.folder ? `try` : ""}
-      ${options.folder ? `  if name of folder of p is not "${escapeAppleScript(options.folder)}" then set shouldInclude to false` : ""}
-      ${options.folder ? `on error` : ""}
-      ${options.folder ? `  set shouldInclude to false` : ""}
-      ${options.folder ? `end try` : ""}
-
-      if shouldInclude then
-        set totalCount to totalCount + 1
-
-        -- Check if within pagination range
-        if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
-          if not isFirst then set output to output & ","
-          set isFirst to false
-          set returnedCount to returnedCount + 1
-
-          set output to output & (my serializeProject(p))
-        end if
-
-        set currentIndex to currentIndex + 1
-      end if
-    end repeat
-
-    set hasMore to (totalCount > (${String(offset)} + returnedCount))
-
-    set output to output & "]," & ¬
-      "\\"totalCount\\": " & totalCount & "," & ¬
-      "\\"returnedCount\\": " & returnedCount & "," & ¬
-      "\\"hasMore\\": " & hasMore & "," & ¬
-      "\\"offset\\": ${String(offset)}," & ¬
-      "\\"limit\\": ${String(limit)}" & ¬
-      "}"
-
-    return output
-  `;
-
-  const result = await runComposedScript<PaginatedResult<OFProject>>(
-    [jsonHelpers, projectSerializer],
-    body
-  );
+  const result = await runOmniJSWrapped<QueryResult<OFProject>>(body);
 
   if (!result.success) {
     return failure(
@@ -143,14 +79,44 @@ export async function queryProjects(
     );
   }
 
-  return success(
-    result.data ?? {
-      items: [],
-      totalCount: 0,
-      returnedCount: 0,
-      hasMore: false,
-      offset,
-      limit,
+  // Provide a typed default in the unlikely case OmniJS returns undefined.
+  // The default depends on the requested shape so the discriminant remains
+  // sound.
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFProject> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
     }
-  );
+  }
 }

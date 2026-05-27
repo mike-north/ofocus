@@ -1,23 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type {
   DeferResult,
   BatchDeferItem,
 } from "../../../src/commands/defer.js";
 import type { BatchResult } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
 }));
 
 // Import after mocking
 import { deferTask, deferTasks } from "../../../src/commands/defer.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("deferTask", () => {
   beforeEach(() => {
@@ -30,7 +31,7 @@ describe("deferTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject when neither days nor to is provided", async () => {
@@ -77,15 +78,15 @@ describe("deferTask", () => {
         newDeferDate: "2024-12-31",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeferResult>);
+      } as OmniJSResult<DeferResult>);
 
       const result = await deferTask("task-123", { days: 7 });
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should accept valid to option", async () => {
@@ -96,10 +97,10 @@ describe("deferTask", () => {
         newDeferDate: "2024-12-31",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeferResult>);
+      } as OmniJSResult<DeferResult>);
 
       const result = await deferTask("task-123", { to: "December 31, 2024" });
 
@@ -116,10 +117,10 @@ describe("deferTask", () => {
         newDeferDate: "2024-01-08",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeferResult>);
+      } as OmniJSResult<DeferResult>);
 
       const result = await deferTask("task-456", { days: 7 });
 
@@ -135,10 +136,10 @@ describe("deferTask", () => {
         newDeferDate: "2024-06-15",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeferResult>);
+      } as OmniJSResult<DeferResult>);
 
       const result = await deferTask("task-789", { to: "June 15, 2024" });
 
@@ -149,13 +150,13 @@ describe("deferTask", () => {
 
   describe("error handling", () => {
     it("should handle task not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<DeferResult>);
+      } as OmniJSResult<DeferResult>);
 
       const result = await deferTask("nonexistent", { days: 1 });
 
@@ -164,10 +165,10 @@ describe("deferTask", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<DeferResult>);
+      } as OmniJSResult<DeferResult>);
 
       const result = await deferTask("task-123", { days: 1 });
 
@@ -232,10 +233,10 @@ describe("deferTasks", () => {
         failed: [],
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<typeof mockResult>);
+      } as OmniJSResult<typeof mockResult>);
 
       const result = await deferTasks(["task-1", "task-2"], { days: 7 });
 
@@ -260,10 +261,10 @@ describe("deferTasks", () => {
         failed: [{ id: "task-2", error: "Task not found" }],
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<typeof mockResult>);
+      } as OmniJSResult<typeof mockResult>);
 
       const result = await deferTasks(["task-1", "task-2"], { days: 7 });
 
@@ -275,13 +276,13 @@ describe("deferTasks", () => {
 
   describe("error handling", () => {
     it("should handle complete batch failure", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Script failed",
         },
-      } as AppleScriptResult<BatchResult<BatchDeferItem>>);
+      } as OmniJSResult<BatchResult<BatchDeferItem>>);
 
       const result = await deferTasks(["task-1", "task-2"], { days: 1 });
 

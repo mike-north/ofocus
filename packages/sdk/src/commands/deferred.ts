@@ -1,169 +1,115 @@
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
-import { validateDateString } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
+import { validatePaginationParams } from "../validation.js";
+import { runOmniJSWrapped } from "../omnijs.js";
+import {
+  buildListQueryBody,
+  compileAggregate,
+  compileProjection,
+  compileSort,
+  compileTaskPredicates,
+  taskFieldSpec,
+  taskGroupKeys,
+  type QueryResult,
+  type BaseListQueryOptions,
+  type TaskQueryOptions,
+} from "../query/index.js";
 
 /**
  * Options for querying deferred tasks.
+ *
+ * Extends {@link BaseListQueryOptions} so callers get the full shared-query
+ * vocabulary (sort, fields, count, groupBy, etc.) in addition to the
+ * deferred-specific predicates.
+ *
+ * @public
  */
-export interface DeferredQueryOptions {
-  /** Include tasks deferred until after this date */
-  deferredAfter?: string | undefined;
-  /** Include tasks deferred until before this date */
-  deferredBefore?: string | undefined;
-  /** Only show tasks that are currently blocked by defer date */
+export interface DeferredQueryOptions extends BaseListQueryOptions {
+  /** Include tasks deferred until after this date (ISO 8601 or relative). */
+  deferAfter?: string | undefined;
+  /** Include tasks deferred until before this date (ISO 8601 or relative). */
+  deferBefore?: string | undefined;
+  /**
+   * When `true`, only include tasks whose defer date is strictly in the
+   * future — i.e., tasks actively blocked by their defer date.
+   */
   blockedOnly?: boolean | undefined;
 }
 
 /**
  * Query all deferred tasks from OmniFocus.
- * Returns tasks that have a defer date set.
+ *
+ * The preset for this command includes: hasDefer, completed: false, and
+ * effectivelyDropped: false. Additional predicates can be added via the
+ * options object.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryDeferred(
   options: DeferredQueryOptions = {}
-): Promise<CliOutput<OFTask[]>> {
-  // Validate date inputs
-  if (options.deferredAfter) {
-    const afterError = validateDateString(options.deferredAfter);
-    if (afterError) {
-      return failure(afterError);
-    }
+): Promise<CliOutput<QueryResult<OFTask>>> {
+  // Validate pagination
+  const paginationError = validatePaginationParams(options.limit, options.offset);
+  if (paginationError) return failure(paginationError);
+
+  // Build the task query options from deferred-specific fields
+  const taskOptions: TaskQueryOptions = {
+    ...options,
+    // Preset: must have a defer date, not completed, not effectively dropped
+    hasDefer: true,
+    completed: false,
+    effectivelyDropped: false,
+    // Map deferred-specific date fields to the canonical predicate names
+    ...(options.deferAfter !== undefined ? { deferAfter: options.deferAfter } : {}),
+    ...(options.deferBefore !== undefined ? { deferBefore: options.deferBefore } : {}),
+    // blockedOnly → deferredToFuture predicate
+    ...(options.blockedOnly === true ? { deferredToFuture: true } : {}),
+  };
+
+  // Apply default fields for deferred results if the caller didn't specify
+  const fieldSpec =
+    options.fields !== undefined
+      ? taskFieldSpec
+      : { ...taskFieldSpec, defaultFields: ["id", "name", "deferDate", "projectName"] };
+
+  // Compile each phase
+  const pred = compileTaskPredicates(taskOptions);
+  const proj = compileProjection(fieldSpec, taskOptions);
+  const sort = compileSort(fieldSpec, taskOptions);
+  const agg = compileAggregate(taskOptions, taskGroupKeys);
+
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
   }
-  if (options.deferredBefore) {
-    const beforeError = validateDateString(options.deferredBefore);
-    if (beforeError) {
-      return failure(beforeError);
-    }
-  }
 
-  const blockedOnly = options.blockedOnly === true;
-  const escapedDeferredAfter = options.deferredAfter
-    ? escapeAppleScript(options.deferredAfter)
-    : null;
-  const escapedDeferredBefore = options.deferredBefore
-    ? escapeAppleScript(options.deferredBefore)
-    : null;
+  const limit = options.limit ?? 100;
+  const offset = options.offset ?? 0;
 
-  const script = `
-    set output to "["
-    set isFirst to true
-    set rightNow to current date
+  const body = buildListQueryBody({
+    source: "flattenedTasks",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
 
-    set allTasks to flattened tasks where completed is false and effectively dropped is false
-
-    repeat with t in allTasks
-      set shouldInclude to false
-
-      -- Check if task has defer date
-      try
-        set taskDefer to defer date of t
-        if taskDefer is not missing value then
-          set shouldInclude to true
-
-          ${
-            blockedOnly
-              ? `
-          -- Only include if defer date is in the future (currently blocked)
-          if taskDefer <= rightNow then
-            set shouldInclude to false
-          end if
-          `
-              : ""
-          }
-
-          ${
-            escapedDeferredAfter
-              ? `
-          -- Filter by deferred after
-          if shouldInclude and taskDefer < date "${escapedDeferredAfter}" then
-            set shouldInclude to false
-          end if
-          `
-              : ""
-          }
-
-          ${
-            escapedDeferredBefore
-              ? `
-          -- Filter by deferred before
-          if shouldInclude and taskDefer > date "${escapedDeferredBefore}" then
-            set shouldInclude to false
-          end if
-          `
-              : ""
-          }
-        end if
-      end try
-
-      if shouldInclude then
-        if not isFirst then set output to output & ","
-        set isFirst to false
-
-        set taskId to id of t
-        set taskName to name of t
-        set taskNote to note of t
-        set taskFlagged to flagged of t
-        set taskCompleted to completed of t
-
-        set dueStr to ""
-        try
-          set dueStr to (due date of t) as string
-        end try
-
-        set deferStr to ""
-        try
-          set deferStr to (defer date of t) as string
-        end try
-
-        set completionStr to ""
-        try
-          set completionStr to (completion date of t) as string
-        end try
-
-        set projId to ""
-        set projName to ""
-        try
-          set proj to containing project of t
-          set projId to id of proj
-          set projName to name of proj
-        end try
-
-        set tagNames to {}
-        repeat with tg in tags of t
-          set end of tagNames to name of tg
-        end repeat
-
-        set estMinutes to 0
-        try
-          set estMinutes to estimated minutes of t
-          if estMinutes is missing value then set estMinutes to 0
-        end try
-
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & taskId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-          "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-          "\\"flagged\\": " & taskFlagged & "," & ¬
-          "\\"completed\\": " & taskCompleted & "," & ¬
-          "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-          "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-          "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-          "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-          "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-          "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-          "\\"estimatedMinutes\\": " & estMinutes & ¬
-          "}"
-      end if
-    end repeat
-
-    return output & "]"
-  `;
-
-  const result = await runAppleScript<OFTask[]>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<QueryResult<OFTask>>(body);
 
   if (!result.success) {
     return failure(
@@ -172,5 +118,41 @@ export async function queryDeferred(
     );
   }
 
-  return success(result.data ?? []);
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFTask> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
+    }
+  }
 }

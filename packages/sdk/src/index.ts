@@ -21,10 +21,8 @@ export type {
   FolderQueryOptions,
   CreateTagOptions,
   UpdateTagOptions,
-  SubtaskQueryOptions,
   BatchResult,
   RepetitionRule,
-  SearchOptions,
   ReviewResult,
   UpdateProjectOptions,
   UpdateFolderOptions,
@@ -32,14 +30,13 @@ export type {
 } from "./types.js";
 
 // Error handling
-export { ErrorCode, createError, parseAppleScriptError } from "./errors.js";
+export { ErrorCode, createError, parseScriptError } from "./errors.js";
 export type { ErrorCode as ErrorCodeType } from "./errors.js";
 
 // Result helpers
 export { success, failure, failureMessage } from "./result.js";
 
-// Utilities
-export { escapeAppleScript } from "./escape.js";
+// Validation
 export {
   validateId,
   validateDateString,
@@ -54,40 +51,83 @@ export {
   MAX_PAGINATION_LIMIT,
 } from "./validation.js";
 
-// AppleScript utilities
+// Script execution engine (OmniJS via osascript)
 export {
-  runAppleScript,
-  runAppleScriptFile,
-  omniFocusScript,
-  omniFocusScriptWithHelpers,
-  composeScript,
-  runComposedScript,
-  jsonHelpers,
-} from "./applescript.js";
-export type { AppleScriptResult } from "./applescript.js";
+  runOmniJS,
+  runOmniJSWrapped,
+  wrapOmniJS,
+  toOmniJSDate,
+  escapeJSString,
+} from "./omnijs.js";
+export type { OmniJSResult } from "./omnijs.js";
 
-// Asset loading utilities
+// Shared query layer (predicates, projection, sort, aggregate, etc.)
 export {
-  getScriptPath,
-  loadScriptContent,
-  loadScriptContentCached,
-  clearScriptCache,
-} from "./asset-loader.js";
+  buildListQueryBody,
+  compileTaskPredicates,
+  compileProjection,
+  compileSort,
+  compileAggregate,
+  parseDate,
+  parseDuration,
+  taskFieldSpec,
+  projectFieldSpec,
+  folderFieldSpec,
+  tagFieldSpec,
+  taskGroupKeys,
+} from "./query/index.js";
+export type {
+  BaseListQueryOptions,
+  QueryResult,
+  TagMode,
+  TaskStatus,
+  NumericRange,
+  ParsedDate,
+  EntityFieldSpec,
+  FieldGetter,
+  GroupKeySpec,
+  CompiledProjection,
+  CompileProjectionOptions,
+  CompiledSort,
+  CompileSortOptions,
+  AggregateShape,
+  CompiledAggregate,
+  CompiledPredicates,
+  BuildListQueryBodyArgs,
+} from "./query/index.js";
 
-// Commands
+// Tasks
 export { addToInbox } from "./commands/inbox.js";
 export { queryTasks } from "./commands/tasks.js";
-export { queryProjects } from "./commands/projects.js";
-export { queryTags } from "./commands/tags.js";
 export { completeTask } from "./commands/complete.js";
 export type { CompleteResult } from "./commands/complete.js";
 export { updateTask } from "./commands/update.js";
+export { dropTask, deleteTask } from "./commands/drop.js";
+export type { DropResult, DeleteResult } from "./commands/drop.js";
+export { duplicateTask } from "./commands/duplicate.js";
+export type { DuplicateTaskResult } from "./commands/duplicate.js";
+export { deferTask, deferTasks } from "./commands/defer.js";
+export type {
+  DeferOptions,
+  DeferResult,
+  BatchDeferItem,
+} from "./commands/defer.js";
 
-// Phase 1: Projects & Folders
+// Subtasks
+export {
+  createSubtask,
+  querySubtasks,
+  moveTaskToParent,
+} from "./commands/subtasks.js";
+export type { SubtaskQueryOptions } from "./commands/subtasks.js";
+
+// Batch operations
+export { completeTasks, updateTasks, deleteTasks } from "./commands/batch.js";
+export type { BatchCompleteItem, BatchDeleteItem } from "./commands/batch.js";
+
+// Projects
+export { queryProjects } from "./commands/projects.js";
 export { createProject } from "./commands/create-project.js";
-export { createFolder, queryFolders } from "./commands/folders.js";
-
-// Phase 1: Project CRUD
 export {
   updateProject,
   deleteProject,
@@ -98,43 +138,33 @@ export type {
   DropProjectResult,
 } from "./commands/projects-crud.js";
 
-// Phase 1: Folder CRUD
+// Folders
+export { createFolder, queryFolders } from "./commands/folders.js";
 export { updateFolder, deleteFolder } from "./commands/folders-crud.js";
 export type { DeleteFolderResult } from "./commands/folders-crud.js";
 
-// Phase 1: Drop/Delete Tasks
-export { dropTask, deleteTask } from "./commands/drop.js";
-export type { DropResult, DeleteResult } from "./commands/drop.js";
-
-// Phase 1: Tags CRUD
+// Tags
+export { queryTags } from "./commands/tags.js";
 export { createTag, updateTag, deleteTag } from "./commands/tags-crud.js";
 export type { DeleteTagResult } from "./commands/tags-crud.js";
 
-// Phase 2: Subtasks
+// Perspectives
 export {
-  createSubtask,
-  querySubtasks,
-  moveTaskToParent,
-} from "./commands/subtasks.js";
+  listPerspectives,
+  queryPerspective,
+  createPerspective,
+  renamePerspective,
+  deletePerspective,
+} from "./commands/perspectives.js";
+export type {
+  PerspectiveQueryOptions,
+  CreatePerspectiveOptions,
+  CreatePerspectiveResult,
+  RenamePerspectiveResult,
+  DeletePerspectiveResult,
+} from "./commands/perspectives.js";
 
-// Phase 3: Batch Operations
-export { completeTasks, updateTasks, deleteTasks } from "./commands/batch.js";
-export type { BatchCompleteItem, BatchDeleteItem } from "./commands/batch.js";
-
-// Phase 3: Repetition helpers
-export {
-  buildRRule,
-  buildRepetitionRuleScript,
-} from "./commands/repetition.js";
-
-// Phase 4: Search
-export { searchTasks } from "./commands/search.js";
-
-// Phase 4: Perspectives
-export { listPerspectives, queryPerspective } from "./commands/perspectives.js";
-export type { PerspectiveQueryOptions } from "./commands/perspectives.js";
-
-// Phase 4: Review
+// Review
 export {
   reviewProject,
   queryProjectsForReview,
@@ -143,31 +173,23 @@ export {
 } from "./commands/review.js";
 export type { ReviewIntervalResult } from "./commands/review.js";
 
-// Phase 5: Forecast, Focus, Deferred
+// Forecast, Focus, Deferred
 export { queryForecast } from "./commands/forecast.js";
 export type { ForecastOptions } from "./commands/forecast.js";
-
 export { focusOn, unfocus, getFocused } from "./commands/focus.js";
 export type { FocusResult } from "./commands/focus.js";
-
 export { queryDeferred } from "./commands/deferred.js";
 export type { DeferredQueryOptions } from "./commands/deferred.js";
 
-export { generateUrl } from "./commands/url.js";
-export type { UrlResult } from "./commands/url.js";
+// Search
+export { searchTasks } from "./commands/search.js";
+export type { SearchOptions } from "./commands/search.js";
 
-export { deferTask, deferTasks } from "./commands/defer.js";
-export type {
-  DeferOptions,
-  DeferResult,
-  BatchDeferItem,
-} from "./commands/defer.js";
-
-// Phase 6: Quick Capture
+// Quick capture
 export { quickCapture, parseQuickInput } from "./commands/quick.js";
 export type { ParsedQuickInput, QuickOptions } from "./commands/quick.js";
 
-// Phase 6: TaskPaper Import/Export
+// TaskPaper import/export
 export { exportTaskPaper, importTaskPaper } from "./commands/taskpaper.js";
 export type {
   TaskPaperExportOptions,
@@ -176,11 +198,7 @@ export type {
   TaskPaperImportResult,
 } from "./commands/taskpaper.js";
 
-// Phase 6: Statistics
-export { getStats } from "./commands/stats.js";
-export type { StatsOptions, StatsResult } from "./commands/stats.js";
-
-// Phase 7: Templates
+// Templates
 export {
   saveTemplate,
   listTemplates,
@@ -200,7 +218,7 @@ export type {
   DeleteTemplateResult,
 } from "./commands/templates.js";
 
-// Phase 8: Attachments
+// Attachments
 export {
   addAttachment,
   listAttachments,
@@ -213,7 +231,17 @@ export type {
   RemoveAttachmentResult,
 } from "./commands/attachments.js";
 
-// Phase 8: Archive & Cleanup
+// Statistics
+export { getStats } from "./commands/stats.js";
+export type { StatsOptions, StatsResult } from "./commands/stats.js";
+
+// URL & deep linking
+export { generateUrl } from "./commands/url.js";
+export type { UrlResult } from "./commands/url.js";
+export { openItem } from "./commands/open.js";
+export type { OpenResult } from "./commands/open.js";
+
+// Archive & cleanup
 export { archiveTasks, compactDatabase } from "./commands/archive.js";
 export type {
   ArchiveOptions,
@@ -221,13 +249,9 @@ export type {
   CompactResult,
 } from "./commands/archive.js";
 
-// Phase 8: Sync
+// Sync
 export { getSyncStatus, triggerSync } from "./commands/sync.js";
 export type { SyncStatus, SyncResult } from "./commands/sync.js";
 
-// Phase 9: Task Utilities
-export { duplicateTask } from "./commands/duplicate.js";
-export type { DuplicateTaskResult } from "./commands/duplicate.js";
-
-export { openItem } from "./commands/open.js";
-export type { OpenResult } from "./commands/open.js";
+// Repetition helpers
+export { buildRRule } from "./commands/repetition.js";

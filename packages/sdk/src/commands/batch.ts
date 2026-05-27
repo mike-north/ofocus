@@ -9,13 +9,9 @@ import {
   validateEstimatedMinutes,
   validateRepetitionRule,
 } from "../validation.js";
-import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runComposedScript } from "../applescript.js";
-import { loadScriptContentCached } from "../asset-loader.js";
-import {
-  buildRepetitionRuleScript,
-  buildClearRepetitionScript,
-} from "./repetition.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+import { buildRRule } from "./repetition.js";
+import { sanitizeVarName } from "../utils/sanitize.js";
 
 /** Batch complete result item */
 export interface BatchCompleteItem {
@@ -28,7 +24,7 @@ export interface BatchDeleteItem {
   taskId: string;
 }
 
-// Maximum tasks per batch to avoid AppleScript timeouts
+// Maximum tasks per batch to avoid OmniJS timeouts
 const MAX_BATCH_SIZE = 50;
 
 /**
@@ -58,68 +54,44 @@ export async function completeTasks(
   const allSucceeded: BatchCompleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
-  // Load external AppleScript helpers
-  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
-
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
     const body = `
-      set taskIdList to ${idsJson}
-      set succeededList to {}
-      set failedList to {}
+var taskIds = ${idsJson};
+var succeeded = [];
+var failed = [];
+for (var i = 0; i < taskIds.length; i++) {
+  var id = taskIds[i];
+  try {
+    var task = flattenedTasks.byId(id);
+    if (!task) {
+      failed.push({ id: id, error: "Task not found: " + id });
+      continue;
+    }
+    task.markComplete();
+    succeeded.push({ taskId: id, taskName: task.name });
+  } catch (err) {
+    failed.push({ id: id, error: String(err) });
+  }
+}
+return JSON.stringify({ succeeded: succeeded, failed: failed });`;
 
-      repeat with i from 1 to count of taskIdList
-        set taskIdStr to item i of taskIdList
-        try
-          set theTask to first flattened task whose id is taskIdStr
-          mark complete theTask
-          set taskName to name of theTask
-          set end of succeededList to {taskIdStr, taskName}
-        on error errMsg
-          set end of failedList to {taskIdStr, errMsg}
-        end try
-      end repeat
-
-      set output to "{\\"succeeded\\": ["
-      set isFirst to true
-      repeat with i from 1 to count of succeededList
-        set listItem to item i of succeededList
-        if not isFirst then set output to output & ","
-        set isFirst to false
-        set output to output & "{\\"taskId\\": \\"" & (item 1 of listItem) & "\\", \\"taskName\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
-      end repeat
-      set output to output & "], \\"failed\\": ["
-      set isFirst to true
-      repeat with i from 1 to count of failedList
-        set listItem to item i of failedList
-        if not isFirst then set output to output & ","
-        set isFirst to false
-        set output to output & "{\\"id\\": \\"" & (item 1 of listItem) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
-      end repeat
-      set output to output & "]}"
-
-      return output
-    `;
-
-    const result = await runComposedScript<{
+    const result = await runOmniJSWrapped<{
       succeeded: BatchCompleteItem[];
       failed: { id: string; error: string }[];
-    }>([jsonHelpers], body);
+    }>(body);
 
-    if (!result.success) {
-      return failure(
-        result.error ??
-          createError(ErrorCode.UNKNOWN_ERROR, "Failed to complete tasks")
-      );
-    }
-
-    if (result.data) {
-      if (Array.isArray(result.data.succeeded)) {
-        allSucceeded.push(...result.data.succeeded);
-      }
-      if (Array.isArray(result.data.failed)) {
-        allFailed.push(...result.data.failed);
+    if (result.success && result.data) {
+      allSucceeded.push(...result.data.succeeded);
+      allFailed.push(...result.data.failed);
+    } else {
+      // If the entire chunk failed, mark all as failed
+      for (const id of chunk) {
+        allFailed.push({
+          id,
+          error: result.error?.message ?? "Unknown error",
+        });
       }
     }
   }
@@ -173,94 +145,87 @@ export async function updateTasks(
   const repeatError = validateRepetitionRule(options.repeat);
   if (repeatError) return failure(repeatError);
 
-  // Build the update statements
-  const updates: string[] = [];
+  // Build per-task update statements (applied inside the loop body)
+  const updateParts: string[] = [];
 
   if (options.title !== undefined) {
-    updates.push(
-      `set name of theTask to "${escapeAppleScript(options.title)}"`
-    );
+    updateParts.push(`task.name = "${escapeJSString(options.title)}";`);
   }
 
   if (options.note !== undefined) {
-    updates.push(`set note of theTask to "${escapeAppleScript(options.note)}"`);
+    updateParts.push(`task.note = "${escapeJSString(options.note)}";`);
   }
 
   if (options.flag !== undefined) {
-    updates.push("set flagged of theTask to " + String(options.flag));
+    updateParts.push(`task.flagged = ${String(options.flag)};`);
   }
 
   if (options.due !== undefined) {
     if (options.due === "") {
-      updates.push(`set due date of theTask to missing value`);
+      updateParts.push(`task.dueDate = null;`);
     } else {
-      updates.push(
-        `set due date of theTask to date "${toAppleScriptDate(options.due)}"`
-      );
+      updateParts.push(`task.dueDate = ${toOmniJSDate(options.due)};`);
     }
   }
 
   if (options.defer !== undefined) {
     if (options.defer === "") {
-      updates.push(`set defer date of theTask to missing value`);
+      updateParts.push(`task.deferDate = null;`);
     } else {
-      updates.push(
-        `set defer date of theTask to date "${toAppleScriptDate(options.defer)}"`
-      );
+      updateParts.push(`task.deferDate = ${toOmniJSDate(options.defer)};`);
     }
   }
 
   if (options.estimatedMinutes !== undefined) {
-    updates.push(
-      `set estimated minutes of theTask to ${String(options.estimatedMinutes)}`
+    updateParts.push(
+      `task.estimatedMinutes = ${String(options.estimatedMinutes)};`
     );
   }
 
   if (options.clearEstimate === true) {
-    updates.push(`set estimated minutes of theTask to missing value`);
+    updateParts.push(`task.estimatedMinutes = null;`);
   }
 
   // Handle repetition
-  let repetitionScript = "";
   if (options.clearRepeat === true) {
-    repetitionScript = buildClearRepetitionScript("theTask");
+    updateParts.push(`task.repetitionRule = null;`);
   } else if (options.repeat !== undefined) {
-    repetitionScript = buildRepetitionRuleScript("theTask", options.repeat);
+    const rrule = buildRRule(options.repeat);
+    const method =
+      options.repeat.repeatMethod === "due-again"
+        ? "Task.RepetitionMethod.DueDate"
+        : "Task.RepetitionMethod.DeferDate";
+    updateParts.push(
+      `task.repetitionRule = new Task.RepetitionRule("${escapeJSString(rrule)}", ${method});`
+    );
   }
 
   // Handle project assignment
-  let projectScript = "";
   if (options.project !== undefined) {
     if (options.project === "") {
-      projectScript = `set containing project of theTask to missing value`;
+      updateParts.push(`moveTasks([task], inbox.beginning);`);
     } else {
-      projectScript = `
-        set theProject to first flattened project whose name is "${escapeAppleScript(options.project)}"
-        move theTask to end of tasks of theProject
-      `;
+      updateParts.push(`
+var proj = flattenedProjects.byName("${escapeJSString(options.project)}");
+if (!proj) {
+  throw new Error("Project not found: ${escapeJSString(options.project)}");
+}
+moveTasks([task], proj.ending);`);
     }
   }
 
   // Handle tags - clear and re-add
-  let tagScript = "";
   if (options.tags !== undefined) {
-    tagScript = `
-      repeat with existingTag in (tags of theTask)
-        remove existingTag from tags of theTask
-      end repeat
-    `;
-
-    for (const tagName of options.tags) {
-      tagScript += `
-      try
-        set theTag to first flattened tag whose name is "${escapeAppleScript(tagName)}"
-        add theTag to tags of theTask
-      end try
-      `;
+    updateParts.push(`task.clearTags();`);
+    for (const [i, tagName] of options.tags.entries()) {
+      const varName = sanitizeVarName(tagName, i);
+      updateParts.push(`
+var ${varName} = flattenedTags.byName("${escapeJSString(tagName)}");
+if (${varName}) { task.addTag(${varName}); }`);
     }
   }
 
-  const updateScript = updates.join("\n          ");
+  const perTaskScript = updateParts.join("\n    ");
 
   // Process in chunks if needed
   const chunks: string[][] = [];
@@ -271,71 +236,44 @@ export async function updateTasks(
   const allSucceeded: BatchCompleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
-  // Load external AppleScript helpers
-  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
-
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
     const body = `
-      set taskIdList to ${idsJson}
-      set succeededList to {}
-      set failedList to {}
+var taskIds = ${idsJson};
+var succeeded = [];
+var failed = [];
+for (var i = 0; i < taskIds.length; i++) {
+  var id = taskIds[i];
+  try {
+    var task = flattenedTasks.byId(id);
+    if (!task) {
+      failed.push({ id: id, error: "Task not found: " + id });
+      continue;
+    }
+    ${perTaskScript}
+    succeeded.push({ taskId: id, taskName: task.name });
+  } catch (err) {
+    failed.push({ id: id, error: String(err) });
+  }
+}
+return JSON.stringify({ succeeded: succeeded, failed: failed });`;
 
-      repeat with i from 1 to count of taskIdList
-        set taskIdStr to item i of taskIdList
-        try
-          set theTask to first flattened task whose id is taskIdStr
-          ${updateScript}
-          ${projectScript}
-          ${tagScript}
-          ${repetitionScript}
-          set taskName to name of theTask
-          set end of succeededList to {taskIdStr, taskName}
-        on error errMsg
-          set end of failedList to {taskIdStr, errMsg}
-        end try
-      end repeat
-
-      set output to "{\\"succeeded\\": ["
-      set isFirst to true
-      repeat with i from 1 to count of succeededList
-        set listItem to item i of succeededList
-        if not isFirst then set output to output & ","
-        set isFirst to false
-        set output to output & "{\\"taskId\\": \\"" & (item 1 of listItem) & "\\", \\"taskName\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
-      end repeat
-      set output to output & "], \\"failed\\": ["
-      set isFirst to true
-      repeat with i from 1 to count of failedList
-        set listItem to item i of failedList
-        if not isFirst then set output to output & ","
-        set isFirst to false
-        set output to output & "{\\"id\\": \\"" & (item 1 of listItem) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
-      end repeat
-      set output to output & "]}"
-
-      return output
-    `;
-
-    const result = await runComposedScript<{
+    const result = await runOmniJSWrapped<{
       succeeded: BatchCompleteItem[];
       failed: { id: string; error: string }[];
-    }>([jsonHelpers], body);
+    }>(body);
 
-    if (!result.success) {
-      return failure(
-        result.error ??
-          createError(ErrorCode.UNKNOWN_ERROR, "Failed to update tasks")
-      );
-    }
-
-    if (result.data) {
-      if (Array.isArray(result.data.succeeded)) {
-        allSucceeded.push(...result.data.succeeded);
-      }
-      if (Array.isArray(result.data.failed)) {
-        allFailed.push(...result.data.failed);
+    if (result.success && result.data) {
+      allSucceeded.push(...result.data.succeeded);
+      allFailed.push(...result.data.failed);
+    } else {
+      // If the entire chunk failed, mark all as failed
+      for (const id of chunk) {
+        allFailed.push({
+          id,
+          error: result.error?.message ?? "Unknown error",
+        });
       }
     }
   }
@@ -375,66 +313,44 @@ export async function deleteTasks(
   const allSucceeded: BatchDeleteItem[] = [];
   const allFailed: { id: string; error: string }[] = [];
 
-  // Load external AppleScript helpers
-  const jsonHelpers = await loadScriptContentCached("helpers/json.applescript");
-
   for (const chunk of chunks) {
     const idsJson = JSON.stringify(chunk);
 
     const body = `
-      set taskIdList to ${idsJson}
-      set succeededList to {}
-      set failedList to {}
+var taskIds = ${idsJson};
+var succeeded = [];
+var failed = [];
+for (var i = 0; i < taskIds.length; i++) {
+  var id = taskIds[i];
+  try {
+    var task = flattenedTasks.byId(id);
+    if (!task) {
+      failed.push({ id: id, error: "Task not found: " + id });
+      continue;
+    }
+    deleteObject(task);
+    succeeded.push({ taskId: id });
+  } catch (err) {
+    failed.push({ id: id, error: String(err) });
+  }
+}
+return JSON.stringify({ succeeded: succeeded, failed: failed });`;
 
-      repeat with i from 1 to count of taskIdList
-        set taskIdStr to item i of taskIdList
-        try
-          set theTask to first flattened task whose id is taskIdStr
-          delete theTask
-          set end of succeededList to taskIdStr
-        on error errMsg
-          set end of failedList to {taskIdStr, errMsg}
-        end try
-      end repeat
-
-      set output to "{\\"succeeded\\": ["
-      set isFirst to true
-      repeat with i from 1 to count of succeededList
-        if not isFirst then set output to output & ","
-        set isFirst to false
-        set output to output & "{\\"taskId\\": \\"" & (item i of succeededList) & "\\"}"
-      end repeat
-      set output to output & "], \\"failed\\": ["
-      set isFirst to true
-      repeat with i from 1 to count of failedList
-        set listItem to item i of failedList
-        if not isFirst then set output to output & ","
-        set isFirst to false
-        set output to output & "{\\"id\\": \\"" & (item 1 of listItem) & "\\", \\"error\\": \\"" & (my escapeJson(item 2 of listItem as string)) & "\\"}"
-      end repeat
-      set output to output & "]}"
-
-      return output
-    `;
-
-    const result = await runComposedScript<{
+    const result = await runOmniJSWrapped<{
       succeeded: BatchDeleteItem[];
       failed: { id: string; error: string }[];
-    }>([jsonHelpers], body);
+    }>(body);
 
-    if (!result.success) {
-      return failure(
-        result.error ??
-          createError(ErrorCode.UNKNOWN_ERROR, "Failed to delete tasks")
-      );
-    }
-
-    if (result.data) {
-      if (Array.isArray(result.data.succeeded)) {
-        allSucceeded.push(...result.data.succeeded);
-      }
-      if (Array.isArray(result.data.failed)) {
-        allFailed.push(...result.data.failed);
+    if (result.success && result.data) {
+      allSucceeded.push(...result.data.succeeded);
+      allFailed.push(...result.data.failed);
+    } else {
+      // If the entire chunk failed, mark all as failed
+      for (const id of chunk) {
+        allFailed.push({
+          id,
+          error: result.error?.message ?? "Unknown error",
+        });
       }
     }
   }

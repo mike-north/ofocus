@@ -6,8 +6,7 @@ import { success, failureMessage } from "../result.js";
 import { queryTasks } from "./tasks.js";
 import { queryProjects } from "./projects.js";
 import { createProject } from "./create-project.js";
-import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * A task within a template (without OmniFocus-specific IDs).
@@ -212,7 +211,8 @@ export async function saveTemplate(
     );
   }
 
-  const projects = projectsResult.data?.items ?? [];
+  const projects =
+    projectsResult.data?.kind === "list" ? projectsResult.data.items : [];
   const project = projects.find(
     (p: OFProject) => p.id === sourceProject || p.name === sourceProject
   );
@@ -229,7 +229,10 @@ export async function saveTemplate(
     );
   }
 
-  const allTasks = tasksResult.data?.items ?? [];
+  // queryTasks returns a discriminated QueryResult; without aggregate flags
+  // we always get `kind: "list"`, but guard explicitly for type narrowing.
+  const allTasks =
+    tasksResult.data?.kind === "list" ? tasksResult.data.items : [];
   const referenceDate = new Date();
 
   // Convert tasks to template format (flat structure for simplicity)
@@ -307,7 +310,14 @@ export function getTemplate(name: string): CliOutput<ProjectTemplate> {
 }
 
 /**
- * Create a task directly in a project via AppleScript.
+ * Result shape returned by the OmniJS task-creation script.
+ */
+interface CreateTaskResult {
+  created: boolean;
+}
+
+/**
+ * Create a task directly in a project via OmniJS.
  */
 async function createTaskInProject(
   projectName: string,
@@ -317,51 +327,49 @@ async function createTaskInProject(
   const dueDate = calculateDateFromOffset(task.dueOffsetDays, baseDate);
   const deferDate = calculateDateFromOffset(task.deferOffsetDays, baseDate);
 
-  const properties: string[] = [`name:"${escapeAppleScript(task.title)}"`];
+  const scriptParts: string[] = [];
+
+  scriptParts.push(`
+var proj = flattenedProjects.byName("${escapeJSString(projectName)}");
+if (!proj) {
+  throw new Error("Project not found: ${escapeJSString(projectName)}");
+}
+var newTask = new Task("${escapeJSString(task.title)}", proj.task.ending);`);
 
   if (task.note) {
-    properties.push(`note:"${escapeAppleScript(task.note)}"`);
+    scriptParts.push(`newTask.note = "${escapeJSString(task.note)}";`);
   }
 
   if (task.flagged) {
-    properties.push("flagged:true");
+    scriptParts.push(`newTask.flagged = true;`);
   }
 
   if (dueDate) {
-    properties.push(`due date:date "${toAppleScriptDate(dueDate)}"`);
+    scriptParts.push(`newTask.dueDate = ${toOmniJSDate(dueDate)};`);
   }
 
   if (deferDate) {
-    properties.push(`defer date:date "${toAppleScriptDate(deferDate)}"`);
+    scriptParts.push(`newTask.deferDate = ${toOmniJSDate(deferDate)};`);
   }
 
   if (task.estimatedMinutes !== null) {
-    properties.push(`estimated minutes:${String(task.estimatedMinutes)}`);
+    scriptParts.push(
+      `newTask.estimatedMinutes = ${String(task.estimatedMinutes)};`
+    );
   }
 
-  let tagScript = "";
-  if (task.tags.length > 0) {
-    for (const tagName of task.tags) {
-      tagScript += `
-    try
-      set theTag to first flattened tag whose name is "${escapeAppleScript(tagName)}"
-      add theTag to tags of newTask
-    end try
-      `;
-    }
+  for (const [i, tagName] of task.tags.entries()) {
+    const varName = `tag_${String(i)}`;
+    scriptParts.push(`
+var ${varName} = flattenedTags.byName("${escapeJSString(tagName)}");
+if (${varName}) { newTask.addTag(${varName}); }`);
   }
 
-  const script = `
-    set proj to first flattened project whose name is "${escapeAppleScript(projectName)}"
-    set newTask to make new task at end of tasks of proj with properties {${properties.join(", ")}}
-    ${tagScript}
-    return "ok"
-  `;
+  scriptParts.push(`return JSON.stringify({ created: true });`);
 
-  const result = await runAppleScript<string>(
-    omniFocusScriptWithHelpers(script)
-  );
-  return result.success;
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<CreateTaskResult>(body);
+  return result.success && (result.data?.created ?? false);
 }
 
 /**
@@ -415,12 +423,12 @@ export async function createFromTemplate(
   // Create tasks from template
   let tasksCreated = 0;
   for (const templateTask of template.tasks) {
-    const success = await createTaskInProject(
+    const created = await createTaskInProject(
       newProjectName,
       templateTask,
       baseDateObj
     );
-    if (success) {
+    if (created) {
       tasksCreated++;
     }
   }

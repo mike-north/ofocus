@@ -1,19 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFTask } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
+  escapeJSForAppleScript: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { addToInbox } from "../../../src/commands/inbox.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("addToInbox", () => {
   beforeEach(() => {
@@ -27,7 +29,7 @@ describe("addToInbox", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject defer date with invalid characters", async () => {
@@ -35,7 +37,7 @@ describe("addToInbox", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject tags with invalid characters", async () => {
@@ -43,7 +45,7 @@ describe("addToInbox", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should allow undefined optional fields", async () => {
@@ -62,15 +64,15 @@ describe("addToInbox", () => {
         estimatedMinutes: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await addToInbox("Test task");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -91,10 +93,10 @@ describe("addToInbox", () => {
         estimatedMinutes: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await addToInbox("Test task");
 
@@ -119,10 +121,10 @@ describe("addToInbox", () => {
         estimatedMinutes: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await addToInbox("Full task", {
         note: "Some notes",
@@ -135,17 +137,55 @@ describe("addToInbox", () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockTask);
     });
+
+    it("should generate repetition rule script for weekly on Tuesday", async () => {
+      const mockTask: OFTask = {
+        id: "task-789",
+        name: "Weekly task",
+        note: "",
+        flagged: false,
+        completed: false,
+        dueDate: null,
+        deferDate: null,
+        completionDate: null,
+        projectId: null,
+        projectName: null,
+        tags: [],
+        estimatedMinutes: null,
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockTask,
+      } as OmniJSResult<OFTask>);
+
+      await addToInbox("Weekly task", {
+        repeat: {
+          frequency: "weekly",
+          interval: 1,
+          repeatMethod: "due-again",
+          daysOfWeek: [2], // Tuesday
+        },
+      });
+
+      // Verify the script passed to runOmniJSWrapped contains the repetition rule
+      const scriptBody = mockRunOmniJS.mock.calls[0]![0] as string;
+      expect(scriptBody).toContain("Task.RepetitionRule");
+      expect(scriptBody).toContain("FREQ=WEEKLY");
+      expect(scriptBody).toContain("BYDAY=TU");
+      expect(scriptBody).toContain("Task.RepetitionMethod.DueDate");
+    });
   });
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await addToInbox("Test task");
 
@@ -153,27 +193,27 @@ describe("addToInbox", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript errors", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should handle OmniJS errors", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
+          code: ErrorCode.SCRIPT_ERROR,
+          message: "OmniJS script error",
           details: "Syntax error",
         },
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await addToInbox("Test task");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await addToInbox("Test task");
 
@@ -183,10 +223,10 @@ describe("addToInbox", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OFTask>);
+      } as OmniJSResult<OFTask>);
 
       const result = await addToInbox("Test task");
 

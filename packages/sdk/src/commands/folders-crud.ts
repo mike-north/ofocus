@@ -2,8 +2,7 @@ import type { CliOutput, OFFolder, UpdateFolderOptions } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId, validateFolderName } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from deleting a folder.
@@ -40,67 +39,64 @@ export async function updateFolder(
     if (parentNameError) return failure(parentNameError);
   }
 
-  // Build the update statements
-  const updates: string[] = [];
+  // Build script parts conditionally
+  const scriptParts: string[] = [];
 
+  // Look up the folder by ID
+  scriptParts.push(`
+var theFolder = flattenedFolders.filter(function(f) {
+  return f.id.primaryKey === "${escapeJSString(folderId)}";
+})[0];
+if (!theFolder) {
+  throw new Error("Folder not found: ${escapeJSString(folderId)}");
+}`);
+
+  // Apply name change
   if (options.name !== undefined) {
-    updates.push(
-      `set name of theFolder to "${escapeAppleScript(options.name)}"`
-    );
+    scriptParts.push(`theFolder.name = "${escapeJSString(options.name)}";`);
   }
 
-  // Handle reparenting
-  let reparentScript = "";
+  // Handle reparenting by ID
   if (options.parentFolderId !== undefined) {
-    reparentScript = `
-      set newParent to first flattened folder whose id is "${escapeAppleScript(options.parentFolderId)}"
-      move theFolder to end of folders of newParent
-    `;
+    scriptParts.push(`
+var newParent = flattenedFolders.filter(function(f) {
+  return f.id.primaryKey === "${escapeJSString(options.parentFolderId)}";
+})[0];
+if (!newParent) {
+  throw new Error("Parent folder not found: ${escapeJSString(options.parentFolderId)}");
+}
+moveSections([theFolder], newParent);`);
   } else if (options.parentFolderName !== undefined) {
-    reparentScript = `
-      set newParent to first flattened folder whose name is "${escapeAppleScript(options.parentFolderName)}"
-      move theFolder to end of folders of newParent
-    `;
+    scriptParts.push(`
+var newParent = flattenedFolders.filter(function(f) {
+  return f.name === "${escapeJSString(options.parentFolderName)}";
+})[0];
+if (!newParent) {
+  throw new Error("Parent folder not found: ${escapeJSString(options.parentFolderName)}");
+}
+moveSections([theFolder], newParent);`);
   }
 
-  const updateScript = updates.join("\n    ");
+  // Serialize and return the updated folder
+  scriptParts.push(`
+var parentId = null;
+var parentName = null;
+if (theFolder.parent) {
+  parentId = theFolder.parent.id.primaryKey;
+  parentName = theFolder.parent.name;
+}
 
-  const script = `
-    set theFolder to first flattened folder whose id is "${escapeAppleScript(folderId)}"
+return JSON.stringify({
+  id: theFolder.id.primaryKey,
+  name: theFolder.name,
+  parentId: parentId,
+  parentName: parentName,
+  projectCount: theFolder.projects.length,
+  folderCount: theFolder.folders.length
+});`);
 
-    ${updateScript}
-    ${reparentScript}
-
-    -- Return updated folder info
-    set folderId to id of theFolder
-    set folderName to name of theFolder
-
-    set parentId to ""
-    set parentName to ""
-    try
-      set p to container of theFolder
-      if class of p is folder then
-        set parentId to id of p
-        set parentName to name of p
-      end if
-    end try
-
-    set projCount to count of projects of theFolder
-    set subFolderCount to count of folders of theFolder
-
-    return "{" & ¬
-      "\\"id\\": \\"" & folderId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(folderName)) & "\\"," & ¬
-      "\\"parentId\\": " & (my jsonString(parentId)) & "," & ¬
-      "\\"parentName\\": " & (my jsonString(parentName)) & "," & ¬
-      "\\"projectCount\\": " & projCount & "," & ¬
-      "\\"folderCount\\": " & subFolderCount & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<OFFolder>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<OFFolder>(body);
 
   if (!result.success) {
     return failure(
@@ -129,23 +125,19 @@ export async function deleteFolder(
   const idError = validateId(folderId, "folder");
   if (idError) return failure(idError);
 
-  const script = `
-    try
-      set theFolder to first flattened folder whose id is "${escapeAppleScript(folderId)}"
-      delete theFolder
-      return "{\\"folderId\\": \\"${escapeAppleScript(folderId)}\\", \\"deleted\\": true}"
-    on error errMsg
-      if errMsg contains "Can't get" or errMsg contains "not found" then
-        return "{\\"error\\": \\"not found\\", \\"folderId\\": \\"${escapeAppleScript(folderId)}\\"}"
-      else
-        error errMsg
-      end if
-    end try
-  `;
+  const body = `
+var theFolder = flattenedFolders.filter(function(f) {
+  return f.id.primaryKey === "${escapeJSString(folderId)}";
+})[0];
+if (!theFolder) {
+  return JSON.stringify({ error: "not found", folderId: "${escapeJSString(folderId)}" });
+}
+deleteObject(theFolder);
+return JSON.stringify({ folderId: "${escapeJSString(folderId)}", deleted: true });`;
 
-  const result = await runAppleScript<
+  const result = await runOmniJSWrapped<
     DeleteFolderResult | { error: string; folderId: string }
-  >(omniFocusScriptWithHelpers(script));
+  >(body);
 
   if (!result.success) {
     return failure(

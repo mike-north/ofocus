@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OpenResult } from "../../../src/commands/open.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { openItem } from "../../../src/commands/open.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("openItem", () => {
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe("openItem", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject item ID with dangerous characters", async () => {
@@ -34,7 +34,7 @@ describe("openItem", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject item ID with newlines", async () => {
@@ -42,7 +42,7 @@ describe("openItem", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid item ID", async () => {
@@ -53,15 +53,15 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should accept item ID with underscores", async () => {
@@ -72,10 +72,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item_with_underscores");
 
@@ -88,7 +88,7 @@ describe("openItem", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
   });
 
@@ -101,10 +101,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("task-123");
 
@@ -121,10 +121,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("project-456");
 
@@ -141,10 +141,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("folder-789");
 
@@ -161,10 +161,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("tag-999");
 
@@ -183,10 +183,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-789");
 
@@ -208,10 +208,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-123");
 
@@ -229,10 +229,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-with-hyphens");
 
@@ -247,10 +247,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("abc123XYZ");
 
@@ -265,10 +265,10 @@ describe("openItem", () => {
         opened: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-123");
 
@@ -279,13 +279,13 @@ describe("openItem", () => {
 
   describe("error handling", () => {
     it("should handle item not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Item not found with ID: nonexistent-item",
         },
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("nonexistent-item");
 
@@ -294,13 +294,13 @@ describe("openItem", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-123");
 
@@ -308,28 +308,28 @@ describe("openItem", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript execution error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should handle OmniJS execution error", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
+          code: ErrorCode.SCRIPT_ERROR,
+          message: "OmniJS script error",
           details: "URL scheme error",
         },
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("URL scheme error");
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-123");
 
@@ -339,10 +339,10 @@ describe("openItem", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-123");
 
@@ -352,18 +352,18 @@ describe("openItem", () => {
     });
 
     it("should handle activation error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Cannot activate OmniFocus",
         },
-      } as AppleScriptResult<OpenResult>);
+      } as OmniJSResult<OpenResult>);
 
       const result = await openItem("item-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
   });
 

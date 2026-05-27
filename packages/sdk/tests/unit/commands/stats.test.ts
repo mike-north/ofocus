@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { OFTask, OFProject, PaginatedResult } from "../../../src/types.js";
+import type { OFTask, OFProject } from "../../../src/types.js";
+import type { QueryResult } from "../../../src/query/index.js";
 import type { StatsResult } from "../../../src/commands/stats.js";
 
 // Mock the tasks module
@@ -52,7 +53,8 @@ const createMockProject = (overrides: Partial<OFProject> = {}): OFProject => ({
 
 const createMockPaginatedTasks = (
   items: OFTask[]
-): PaginatedResult<OFTask> => ({
+): QueryResult<OFTask> => ({
+  kind: "list",
   items,
   totalCount: items.length,
   returnedCount: items.length,
@@ -63,7 +65,8 @@ const createMockPaginatedTasks = (
 
 const createMockPaginatedProjects = (
   items: OFProject[]
-): PaginatedResult<OFProject> => ({
+): QueryResult<OFProject> => ({
+  kind: "list",
   items,
   totalCount: items.length,
   returnedCount: items.length,
@@ -343,7 +346,7 @@ describe("getStats", () => {
       mockQueryProjects.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Query failed",
         },
       });

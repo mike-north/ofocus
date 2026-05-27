@@ -19,11 +19,7 @@ export interface AddAttachmentResult {
 export function addToInbox(title: string, options?: InboxOptions): Promise<CliOutput<OFTask>>;
 
 // @public
-export interface AppleScriptResult<T> {
-    data?: T;
-    error?: CliError;
-    success: boolean;
-}
+export type AggregateShape = "list" | "count" | "ids" | "single-first" | "single-last" | "groups";
 
 // @public
 export interface ArchiveOptions {
@@ -43,6 +39,21 @@ export interface ArchiveResult {
 
 // @public
 export function archiveTasks(options?: ArchiveOptions): Promise<CliOutput<ArchiveResult>>;
+
+// @public
+export interface BaseListQueryOptions extends PaginationOptions {
+    count?: boolean | undefined;
+    excludeFields?: string[] | undefined;
+    fields?: string[] | undefined;
+    first?: boolean | undefined;
+    groupBy?: string | undefined;
+    idsOnly?: boolean | undefined;
+    last?: boolean | undefined;
+    nullsFirst?: boolean | undefined;
+    reverse?: boolean | undefined;
+    sort?: string[] | undefined;
+    stats?: boolean | undefined;
+}
 
 // @public
 export interface BatchCompleteItem {
@@ -86,13 +97,25 @@ export interface BatchResult<T> {
 }
 
 // @public
-export function buildRepetitionRuleScript(taskVar: string, rule: RepetitionRule): string;
+export function buildListQueryBody(args: BuildListQueryBodyArgs): string;
+
+// @public
+export interface BuildListQueryBodyArgs {
+    aggregate: CompiledAggregate;
+    comparator: string | null;
+    conditions: string[];
+    groupKey?: string | undefined;
+    itemVar: string;
+    // (undocumented)
+    limit: number;
+    mapExpression: string;
+    // (undocumented)
+    offset: number;
+    source: string;
+}
 
 // @public
 export function buildRRule(rule: RepetitionRule): string;
-
-// @public
-export function clearScriptCache(): void;
 
 // @public
 export interface CliError {
@@ -134,6 +157,72 @@ export interface CompactResult {
 }
 
 // @public
+export function compileAggregate(options: BaseListQueryOptions, groupKeys?: Record<string, GroupKeySpec>): CompiledAggregate;
+
+// @public
+export interface CompiledAggregate {
+    groupKey?: string;
+    groupKeyExpr?: string;
+    // (undocumented)
+    shape: AggregateShape;
+    // (undocumented)
+    validationErrors: CliError[];
+    withStats: boolean;
+}
+
+// @public
+export interface CompiledPredicates {
+    // (undocumented)
+    conditions: string[];
+    // (undocumented)
+    validationErrors: CliError[];
+}
+
+// @public
+export interface CompiledProjection {
+    // (undocumented)
+    mapExpression: string;
+    resolvedFields: string[];
+    // (undocumented)
+    validationErrors: CliError[];
+}
+
+// @public
+export interface CompiledSort {
+    // (undocumented)
+    comparator: string | null;
+    // (undocumented)
+    validationErrors: CliError[];
+}
+
+// @public
+export function compileProjection(spec: EntityFieldSpec, options: CompileProjectionOptions): CompiledProjection;
+
+// @public
+export interface CompileProjectionOptions {
+    // (undocumented)
+    excludeFields?: string[] | undefined;
+    // (undocumented)
+    fields?: string[] | undefined;
+}
+
+// @public
+export function compileSort(spec: EntityFieldSpec, options: CompileSortOptions): CompiledSort;
+
+// @public
+export interface CompileSortOptions {
+    // (undocumented)
+    nullsFirst?: boolean | undefined;
+    // (undocumented)
+    reverse?: boolean | undefined;
+    // (undocumented)
+    sort?: string[] | undefined;
+}
+
+// @public
+export function compileTaskPredicates(options: TaskQueryOptions): CompiledPredicates;
+
+// @public
 export interface CompleteResult {
     // (undocumented)
     completed: boolean;
@@ -148,9 +237,6 @@ export function completeTask(taskId: string): Promise<CliOutput<CompleteResult>>
 
 // @public
 export function completeTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
-
-// @public
-export function composeScript(handlers: string[], body: string): string;
 
 // @public
 export function createError(code: ErrorCode, message: string, details?: string): CliError;
@@ -182,6 +268,20 @@ export interface CreateFromTemplateResult {
     projectId: string;
     projectName: string;
     tasksCreated: number;
+}
+
+// @public
+export function createPerspective(_name: string, _options: CreatePerspectiveOptions): Promise<CliOutput<CreatePerspectiveResult>>;
+
+// @public
+export interface CreatePerspectiveOptions {
+    archivePayload: string;
+}
+
+// @public
+export interface CreatePerspectiveResult {
+    // (undocumented)
+    perspective: OFPerspective;
 }
 
 // @public
@@ -226,10 +326,10 @@ export interface DeferOptions {
 }
 
 // @public
-export interface DeferredQueryOptions {
+export interface DeferredQueryOptions extends BaseListQueryOptions {
     blockedOnly?: boolean | undefined;
-    deferredAfter?: string | undefined;
-    deferredBefore?: string | undefined;
+    deferAfter?: string | undefined;
+    deferBefore?: string | undefined;
 }
 
 // @public
@@ -259,6 +359,19 @@ export interface DeleteFolderResult {
     deleted: true;
     // (undocumented)
     folderId: string;
+}
+
+// @public
+export function deletePerspective(idOrName: string): Promise<CliOutput<DeletePerspectiveResult>>;
+
+// @public
+export interface DeletePerspectiveResult {
+    // (undocumented)
+    deleted: true;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    name: string;
 }
 
 // @public
@@ -352,6 +465,12 @@ export interface DuplicateTaskResult {
 }
 
 // @public
+export interface EntityFieldSpec {
+    defaultFields: string[];
+    fields: Record<string, FieldGetter>;
+}
+
+// @public
 const ErrorCode: {
     readonly TASK_NOT_FOUND: "TASK_NOT_FOUND";
     readonly PROJECT_NOT_FOUND: "PROJECT_NOT_FOUND";
@@ -363,7 +482,7 @@ const ErrorCode: {
     readonly INVALID_DATE_FORMAT: "INVALID_DATE_FORMAT";
     readonly INVALID_ID_FORMAT: "INVALID_ID_FORMAT";
     readonly INVALID_REPETITION_RULE: "INVALID_REPETITION_RULE";
-    readonly APPLESCRIPT_ERROR: "APPLESCRIPT_ERROR";
+    readonly SCRIPT_ERROR: "SCRIPT_ERROR";
     readonly JSON_PARSE_ERROR: "JSON_PARSE_ERROR";
     readonly VALIDATION_ERROR: "VALIDATION_ERROR";
     readonly UNKNOWN_ERROR: "UNKNOWN_ERROR";
@@ -375,7 +494,7 @@ export { ErrorCode }
 export { ErrorCode as ErrorCodeType }
 
 // @public
-export function escapeAppleScript(str: string): string;
+export function escapeJSString(str: string): string;
 
 // @public
 export function exportTaskPaper(options?: TaskPaperExportOptions): Promise<CliOutput<TaskPaperExportResult>>;
@@ -385,6 +504,12 @@ export function failure<T = null>(error: CliError): CliOutput<T>;
 
 // @public
 export function failureMessage<T = null>(message: string): CliOutput<T>;
+
+// @public
+export interface FieldGetter {
+    // (undocumented)
+    omnijsExpr: string;
+}
 
 // @public
 export function focusOn(target: string, options?: {
@@ -404,17 +529,43 @@ export interface FocusResult {
 }
 
 // @public
-export interface FolderQueryOptions extends PaginationOptions {
+export const folderFieldSpec: EntityFieldSpec;
+
+// @public
+export interface FolderQueryOptions extends BaseListQueryOptions {
+    ancestor?: string | string[] | undefined;
+    caseSensitive?: boolean | undefined;
+    flattenedProjectCountGt?: number | undefined;
+    flattenedProjectCountLt?: number | undefined;
+    folderCountGt?: number | undefined;
+    folderCountLt?: number | undefined;
+    hasProjects?: boolean | undefined;
+    hasSubfolders?: boolean | undefined;
+    isEmpty?: boolean | undefined;
+    isRoot?: boolean | undefined;
     // (undocumented)
-    parent?: string | undefined;
+    nameContains?: string | undefined;
+    // (undocumented)
+    nameEquals?: string | undefined;
+    // (undocumented)
+    nameRegex?: string | undefined;
+    // (undocumented)
+    nameStarts?: string | undefined;
+    noProjects?: boolean | undefined;
+    noSubfolders?: boolean | undefined;
+    notIsRoot?: boolean | undefined;
+    parent?: string | string[] | undefined;
+    projectCountEq?: number | undefined;
+    projectCountGt?: number | undefined;
+    projectCountLt?: number | undefined;
+    // Warning: (ae-forgotten-export) The symbol "FolderStatus" needs to be exported by the entry point index.d.ts
+    status?: FolderStatus | undefined;
 }
 
 // @public
-export interface ForecastOptions {
+export interface ForecastOptions extends BaseListQueryOptions {
     days?: number | undefined;
-    end?: string | undefined;
     includeDeferred?: boolean | undefined;
-    start?: string | undefined;
 }
 
 // @public
@@ -427,9 +578,6 @@ export function getFocused(): Promise<CliOutput<FocusResult>>;
 export function getReviewInterval(projectId: string): Promise<CliOutput<ReviewIntervalResult>>;
 
 // @public
-export function getScriptPath(relativePath: string): string;
-
-// @public
 export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
 
 // @public
@@ -437,6 +585,12 @@ export function getSyncStatus(): Promise<CliOutput<SyncStatus>>;
 
 // @public
 export function getTemplate(name: string): CliOutput<ProjectTemplate>;
+
+// @public
+export interface GroupKeySpec {
+    // (undocumented)
+    omnijsExpr: string;
+}
 
 // @public
 export function importTaskPaper(content: string, options?: TaskPaperImportOptions): Promise<CliOutput<TaskPaperImportResult>>;
@@ -460,9 +614,6 @@ export interface InboxOptions {
 }
 
 // @public
-export const jsonHelpers = "\non jsonString(val)\n  if val is \"\" or val is missing value or val is \"missing value\" then\n    return \"null\"\n  else\n    return \"\\\"\" & my escapeJson(val) & \"\\\"\"\n  end if\nend jsonString\n\non jsonArray(theList)\n  if (count of theList) is 0 then\n    return \"[]\"\n  end if\n  set output to \"[\"\n  repeat with i from 1 to count of theList\n    if i > 1 then set output to output & \",\"\n    set output to output & \"\\\"\" & (my escapeJson(item i of theList)) & \"\\\"\"\n  end repeat\n  return output & \"]\"\nend jsonArray\n\non escapeJson(str)\n  set output to \"\"\n  set quoteChar to \"\\\"\"\n  set bslashChar to \"\\\\\"\n  set tabChar to tab\n  repeat with c in characters of (str as string)\n    set ch to c as string\n    if ch is quoteChar then\n      set output to output & \"\\\\\\\"\"\n    else if ch is bslashChar then\n      set output to output & \"\\\\\\\\\"\n    else if ch is return then\n      set output to output & \"\\\\n\"\n    else if ch is linefeed then\n      set output to output & \"\\\\n\"\n    else if ch is tabChar then\n      set output to output & \"\\\\t\"\n    else\n      -- Check for other control characters (ASCII 0-31) and skip them\n      set charCode to id of ch\n      if charCode < 32 then\n        -- Skip control characters\n      else\n        set output to output & ch\n      end if\n    end if\n  end repeat\n  return output\nend escapeJson\n";
-
-// @public
 export function listAttachments(taskId: string): Promise<CliOutput<ListAttachmentsResult>>;
 
 // @public
@@ -484,16 +635,13 @@ export interface ListTemplatesResult {
 }
 
 // @public
-export function loadScriptContent(relativePath: string): Promise<string>;
-
-// @public
-export function loadScriptContentCached(relativePath: string): Promise<string>;
-
-// @public
 export const MAX_PAGINATION_LIMIT = 10000;
 
 // @public
 export function moveTaskToParent(taskId: string, parentTaskId: string): Promise<CliOutput<OFTaskWithChildren>>;
+
+// @public
+export type NumericRange = readonly [number, number];
 
 // @public
 export interface OFAttachment {
@@ -522,9 +670,8 @@ export interface OFFolder {
 // @public
 export interface OFPerspective {
     // (undocumented)
-    custom: boolean;
-    // (undocumented)
     id: string;
+    kind: "builtin" | "custom";
     // (undocumented)
     name: string;
 }
@@ -606,10 +753,11 @@ export interface OFTaskWithChildren extends OFTask {
 }
 
 // @public
-export function omniFocusScript(body: string): string;
-
-// @public
-export function omniFocusScriptWithHelpers(body: string): string;
+export interface OmniJSResult<T> {
+    data?: T;
+    error?: CliError;
+    success: boolean;
+}
 
 // @public
 export function openItem(id: string): Promise<CliOutput<OpenResult>>;
@@ -643,7 +791,12 @@ export interface PaginationOptions {
 }
 
 // @public
-export function parseAppleScriptError(rawError: string): CliError;
+export function parseDate(input: string, now?: Date): ParsedDate | CliError;
+
+// @public
+export interface ParsedDate {
+    iso: string;
+}
 
 // @public
 export interface ParsedQuickInput {
@@ -668,7 +821,13 @@ export interface ParsedQuickInput {
 }
 
 // @public
+export function parseDuration(input: string): number | CliError;
+
+// @public
 export function parseQuickInput(input: string): ParsedQuickInput;
+
+// @public
+export function parseScriptError(rawError: string): CliError;
 
 // @public
 export interface PerspectiveQueryOptions {
@@ -677,13 +836,87 @@ export interface PerspectiveQueryOptions {
 }
 
 // @public
-export interface ProjectQueryOptions extends PaginationOptions {
+export const projectFieldSpec: EntityFieldSpec;
+
+// @public
+export interface ProjectQueryOptions extends BaseListQueryOptions {
+    caseSensitive?: boolean | undefined;
     // (undocumented)
-    folder?: string | undefined;
+    completedAfter?: string | undefined;
+    // (undocumented)
+    completedBefore?: string | undefined;
+    // (undocumented)
+    containsSingletonActions?: boolean | undefined;
+    // (undocumented)
+    deferAfter?: string | undefined;
+    // (undocumented)
+    deferBefore?: string | undefined;
+    // (undocumented)
+    deferWithin?: string | undefined;
+    // (undocumented)
+    dueAfter?: string | undefined;
+    dueBefore?: string | undefined;
+    dueForReview?: boolean | undefined;
+    dueOn?: string | undefined;
+    dueWithin?: string | undefined;
+    // (undocumented)
+    flagged?: boolean | undefined;
+    folder?: string | string[] | undefined;
+    // (undocumented)
+    hasDefer?: boolean | undefined;
+    // (undocumented)
+    hasDue?: boolean | undefined;
+    // (undocumented)
+    hasNextReview?: boolean | undefined;
+    // (undocumented)
+    hasNote?: boolean | undefined;
+    // (undocumented)
+    lastReviewedAfter?: string | undefined;
+    // (undocumented)
+    lastReviewedBefore?: string | undefined;
+    // (undocumented)
+    nameContains?: string | undefined;
+    // (undocumented)
+    nameEquals?: string | undefined;
+    // (undocumented)
+    nameRegex?: string | undefined;
+    // (undocumented)
+    nameStarts?: string | undefined;
+    // (undocumented)
+    nextReviewAfter?: string | undefined;
+    // (undocumented)
+    nextReviewBefore?: string | undefined;
+    nextReviewWithin?: string | undefined;
+    // (undocumented)
+    noDue?: boolean | undefined;
+    // (undocumented)
+    notContainsSingletonActions?: boolean | undefined;
+    // (undocumented)
+    noteContains?: string | undefined;
+    // (undocumented)
+    noteRegex?: string | undefined;
+    // (undocumented)
+    notFlagged?: boolean | undefined;
+    // (undocumented)
+    notSequential?: boolean | undefined;
+    // (undocumented)
+    remainingTaskCountEq?: number | undefined;
+    // (undocumented)
+    remainingTaskCountGt?: number | undefined;
+    // (undocumented)
+    remainingTaskCountLt?: number | undefined;
     // (undocumented)
     sequential?: boolean | undefined;
+    // Warning: (ae-forgotten-export) The symbol "ProjectStatus" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    status?: "active" | "on-hold" | "completed" | "dropped" | undefined;
+    status?: ProjectStatus | undefined;
+    // (undocumented)
+    taskCountEq?: number | undefined;
+    // (undocumented)
+    taskCountGt?: number | undefined;
+    // (undocumented)
+    taskCountLt?: number | undefined;
 }
 
 // @public
@@ -699,31 +932,59 @@ export interface ProjectTemplate {
 }
 
 // @public
-export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput<OFTask[]>>;
+export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
-export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<PaginatedResult<OFFolder>>>;
+export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<QueryResult<OFFolder>>>;
 
 // @public
-export function queryForecast(options?: ForecastOptions): Promise<CliOutput<OFTask[]>>;
+export function queryForecast(options?: ForecastOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
 export function queryPerspective(name: string, options?: PerspectiveQueryOptions): Promise<CliOutput<OFTask[]>>;
 
 // @public
-export function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<PaginatedResult<OFProject>>>;
+export function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<QueryResult<OFProject>>>;
 
 // @public
 export function queryProjectsForReview(): Promise<CliOutput<OFProject[]>>;
 
 // @public
-export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<PaginatedResult<OFTaskWithChildren>>>;
+export type QueryResult<T> = {
+    kind: "list";
+    items: T[];
+    totalCount: number;
+    returnedCount: number;
+    hasMore: boolean;
+    offset: number;
+    limit: number;
+} | {
+    kind: "count";
+    count: number;
+} | {
+    kind: "ids";
+    ids: string[];
+} | {
+    kind: "single";
+    item: T | null;
+} | {
+    kind: "groups";
+    groups: {
+        key: string;
+        count: number;
+        items?: T[];
+    }[];
+    totalCount: number;
+};
 
 // @public
-export function queryTags(options?: TagQueryOptions): Promise<CliOutput<PaginatedResult<OFTag>>>;
+export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
-export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<PaginatedResult<OFTask>>>;
+export function queryTags(options?: TagQueryOptions): Promise<CliOutput<QueryResult<OFTag>>>;
+
+// @public
+export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
 export function quickCapture(input: string, options?: QuickOptions): Promise<CliOutput<OFTask>>;
@@ -741,6 +1002,15 @@ export interface RemoveAttachmentResult {
     attachmentName: string;
     removed: boolean;
     taskId: string;
+}
+
+// @public
+export function renamePerspective(idOrName: string, _newName: string): Promise<CliOutput<RenamePerspectiveResult>>;
+
+// @public
+export interface RenamePerspectiveResult {
+    // (undocumented)
+    perspective: OFPerspective;
 }
 
 // @public
@@ -783,13 +1053,10 @@ export interface ReviewResult {
 }
 
 // @public
-export function runAppleScript<T>(script: string): Promise<AppleScriptResult<T>>;
+export function runOmniJS<T>(script: string): Promise<OmniJSResult<T>>;
 
 // @public
-export function runAppleScriptFile<T>(filePath: string, args?: string[]): Promise<AppleScriptResult<T>>;
-
-// @public
-export function runComposedScript<T>(handlers: string[], body: string): Promise<AppleScriptResult<T>>;
+export function runOmniJSWrapped<T>(body: string): Promise<OmniJSResult<T>>;
 
 // @public
 export function saveTemplate(options: SaveTemplateOptions): Promise<CliOutput<SaveTemplateResult>>;
@@ -809,17 +1076,13 @@ export interface SaveTemplateResult {
 }
 
 // @public
-export interface SearchOptions {
-    // (undocumented)
+export interface SearchOptions extends BaseListQueryOptions {
     includeCompleted?: boolean | undefined;
-    // (undocumented)
-    limit?: number | undefined;
-    // (undocumented)
     scope?: "name" | "note" | "both" | undefined;
 }
 
 // @public
-export function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<OFTask[]>>;
+export function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
 export function setReviewInterval(projectId: string, days: number): Promise<CliOutput<ReviewIntervalResult>>;
@@ -849,10 +1112,8 @@ export interface StatsResult {
 }
 
 // @public
-export interface SubtaskQueryOptions extends PaginationOptions {
-    // (undocumented)
+export interface SubtaskQueryOptions extends BaseListQueryOptions {
     completed?: boolean | undefined;
-    // (undocumented)
     flagged?: boolean | undefined;
 }
 
@@ -874,10 +1135,60 @@ export interface SyncStatus {
 }
 
 // @public
-export interface TagQueryOptions extends PaginationOptions {
+export const tagFieldSpec: EntityFieldSpec;
+
+// @public
+export type TagMode = "any" | "all" | "none";
+
+// @public
+export interface TagQueryOptions extends BaseListQueryOptions {
+    allowsNextAction?: boolean | undefined;
+    ancestor?: string | string[] | undefined;
     // (undocumented)
-    parent?: string | undefined;
+    availableTaskCountEq?: number | undefined;
+    // (undocumented)
+    availableTaskCountGt?: number | undefined;
+    // (undocumented)
+    availableTaskCountLt?: number | undefined;
+    caseSensitive?: boolean | undefined;
+    // (undocumented)
+    childTagCountGt?: number | undefined;
+    // (undocumented)
+    childTagCountLt?: number | undefined;
+    disallowsNextAction?: boolean | undefined;
+    hasAvailableTasks?: boolean | undefined;
+    hasChildren?: boolean | undefined;
+    hasNote?: boolean | undefined;
+    isRoot?: boolean | undefined;
+    // (undocumented)
+    nameContains?: string | undefined;
+    // (undocumented)
+    nameEquals?: string | undefined;
+    // (undocumented)
+    nameRegex?: string | undefined;
+    // (undocumented)
+    nameStarts?: string | undefined;
+    noAvailableTasks?: boolean | undefined;
+    noChildren?: boolean | undefined;
+    // (undocumented)
+    noteContains?: string | undefined;
+    // (undocumented)
+    noteRegex?: string | undefined;
+    notIsRoot?: boolean | undefined;
+    parent?: string | string[] | undefined;
+    // (undocumented)
+    remainingTaskCountGt?: number | undefined;
+    // (undocumented)
+    remainingTaskCountLt?: number | undefined;
+    // Warning: (ae-forgotten-export) The symbol "TagStatus" needs to be exported by the entry point index.d.ts
+    status?: TagStatus | undefined;
 }
+
+// @public
+export const taskFieldSpec: EntityFieldSpec;
+
+// @public
+export const taskGroupKeys: Record<string, GroupKeySpec>;
 
 // @public
 export interface TaskPaperExportOptions {
@@ -913,22 +1224,94 @@ export interface TaskPaperImportResult {
 }
 
 // @public
-export interface TaskQueryOptions extends PaginationOptions {
+export interface TaskQueryOptions extends BaseListQueryOptions {
     // (undocumented)
     available?: boolean | undefined;
     // (undocumented)
+    blocked?: boolean | undefined;
+    caseSensitive?: boolean | undefined;
+    // (undocumented)
     completed?: boolean | undefined;
     // (undocumented)
-    dueAfter?: string | undefined;
+    completedAfter?: string | undefined;
     // (undocumented)
+    completedBefore?: string | undefined;
+    // (undocumented)
+    deferAfter?: string | undefined;
+    // (undocumented)
+    deferBefore?: string | undefined;
+    // (undocumented)
+    deferOn?: string | undefined;
+    deferredToFuture?: boolean | undefined;
+    // (undocumented)
+    deferWithin?: string | undefined;
+    // (undocumented)
+    dropped?: boolean | undefined;
+    // (undocumented)
+    dueAfter?: string | undefined;
     dueBefore?: string | undefined;
+    dueOn?: string | undefined;
+    dueOrDeferWithin?: string | undefined;
+    dueWithin?: string | undefined;
+    // (undocumented)
+    effectivelyCompleted?: boolean | undefined;
+    // (undocumented)
+    effectivelyDropped?: boolean | undefined;
+    estimateBetween?: NumericRange | undefined;
+    // (undocumented)
+    estimateEq?: number | undefined;
+    // (undocumented)
+    estimateGt?: number | undefined;
+    // (undocumented)
+    estimateLt?: number | undefined;
     // (undocumented)
     flagged?: boolean | undefined;
+    folder?: string | string[] | undefined;
     // (undocumented)
-    project?: string | undefined;
+    hasAttachments?: boolean | undefined;
     // (undocumented)
-    tag?: string | undefined;
+    hasDefer?: boolean | undefined;
+    // (undocumented)
+    hasDue?: boolean | undefined;
+    // (undocumented)
+    hasNote?: boolean | undefined;
+    // (undocumented)
+    hasRepetition?: boolean | undefined;
+    // (undocumented)
+    hasSubtasks?: boolean | undefined;
+    // (undocumented)
+    inInbox?: boolean | undefined;
+    // (undocumented)
+    nameContains?: string | undefined;
+    // (undocumented)
+    nameEquals?: string | undefined;
+    nameOrNoteContains?: string | undefined;
+    // (undocumented)
+    nameRegex?: string | undefined;
+    // (undocumented)
+    nameStarts?: string | undefined;
+    // (undocumented)
+    noDue?: boolean | undefined;
+    // (undocumented)
+    notCompleted?: boolean | undefined;
+    // (undocumented)
+    notDropped?: boolean | undefined;
+    // (undocumented)
+    noteContains?: string | undefined;
+    // (undocumented)
+    noteRegex?: string | undefined;
+    // (undocumented)
+    notFlagged?: boolean | undefined;
+    parentTaskId?: string | string[] | undefined;
+    project?: string | string[] | undefined;
+    // (undocumented)
+    status?: TaskStatus | undefined;
+    tag?: string | string[] | undefined;
+    tagMode?: TagMode | undefined;
 }
+
+// @public
+export type TaskStatus = "active" | "completed" | "dropped" | "deferred";
 
 // @public
 export interface TaskUpdateOptions {
@@ -980,6 +1363,9 @@ export interface TemplateTask {
     tags: string[];
     title: string;
 }
+
+// @public
+export function toOmniJSDate(dateStr: string): string;
 
 // @public
 export function triggerSync(): Promise<CliOutput<SyncResult>>;
@@ -1089,6 +1475,9 @@ export function validateTagName(name: string): CliError | null;
 
 // @public
 export function validateTags(tags: string[] | undefined): CliError | null;
+
+// @public
+export function wrapOmniJS(body: string): string;
 
 // (No @packageDocumentation comment for this package)
 

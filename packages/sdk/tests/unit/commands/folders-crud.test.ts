@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFFolder, UpdateFolderOptions } from "../../../src/types.js";
 import type { DeleteFolderResult } from "../../../src/commands/folders-crud.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
@@ -15,9 +15,9 @@ import {
   updateFolder,
   deleteFolder,
 } from "../../../src/commands/folders-crud.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("updateFolder", () => {
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe("updateFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject folder ID with dangerous characters", async () => {
@@ -40,7 +40,7 @@ describe("updateFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject folder ID with newlines", async () => {
@@ -48,7 +48,7 @@ describe("updateFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject invalid folder name with quotes", async () => {
@@ -56,7 +56,7 @@ describe("updateFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject invalid parent folder ID", async () => {
@@ -67,7 +67,7 @@ describe("updateFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject invalid parent folder name with backslash", async () => {
@@ -78,7 +78,7 @@ describe("updateFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
   });
 
@@ -93,17 +93,17 @@ describe("updateFolder", () => {
         folderCount: 2,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const options: UpdateFolderOptions = { name: "Updated Name" };
       const result = await updateFolder("folder-123", options);
 
       expect(result.success).toBe(true);
       expect(result.data?.name).toBe("Updated Name");
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should move folder to new parent by ID", async () => {
@@ -116,10 +116,10 @@ describe("updateFolder", () => {
         folderCount: 2,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const options: UpdateFolderOptions = { parentFolderId: "parent-456" };
       const result = await updateFolder("folder-123", options);
@@ -138,10 +138,10 @@ describe("updateFolder", () => {
         folderCount: 2,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const options: UpdateFolderOptions = { parentFolderName: "Work" };
       const result = await updateFolder("folder-123", options);
@@ -160,10 +160,10 @@ describe("updateFolder", () => {
         folderCount: 3,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const options: UpdateFolderOptions = {
         name: "Renamed Folder",
@@ -185,10 +185,10 @@ describe("updateFolder", () => {
         folderCount: 5,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const options: UpdateFolderOptions = { name: "Root Folder" };
       const result = await updateFolder("folder-123", options);
@@ -200,13 +200,13 @@ describe("updateFolder", () => {
 
   describe("error handling", () => {
     it("should handle folder not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.FOLDER_NOT_FOUND,
           message: "Folder not found",
         },
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await updateFolder("nonexistent-folder", {
         name: "New Name",
@@ -217,13 +217,13 @@ describe("updateFolder", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await updateFolder("folder-123", { name: "New Name" });
 
@@ -231,28 +231,28 @@ describe("updateFolder", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript execution error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should handle OmniJS execution error", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
+          code: ErrorCode.SCRIPT_ERROR,
+          message: "OmniJS execution failed",
           details: "Permission denied",
         },
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await updateFolder("folder-123", { name: "New Name" });
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Permission denied");
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await updateFolder("folder-123", { name: "New Name" });
 
@@ -262,10 +262,10 @@ describe("updateFolder", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await updateFolder("folder-123", { name: "New Name" });
 
@@ -275,13 +275,13 @@ describe("updateFolder", () => {
     });
 
     it("should handle parent folder not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.FOLDER_NOT_FOUND,
           message: "Parent folder not found",
         },
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await updateFolder("folder-123", {
         parentFolderId: "nonexistent-parent",
@@ -303,7 +303,7 @@ describe("updateFolder", () => {
     });
 
     it("should handle very long folder names", async () => {
-      // Very long names are allowed - validation happens at AppleScript level
+      // Very long names are allowed - validation happens at the OmniJS level
       const veryLongName = "A".repeat(1000);
       const mockFolder: OFFolder = {
         id: "folder-123",
@@ -314,10 +314,10 @@ describe("updateFolder", () => {
         folderCount: 0,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await updateFolder("folder-123", { name: veryLongName });
 
@@ -344,7 +344,7 @@ describe("deleteFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject folder ID with dangerous characters", async () => {
@@ -352,7 +352,7 @@ describe("deleteFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject folder ID with newlines", async () => {
@@ -360,7 +360,7 @@ describe("deleteFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid folder ID", async () => {
@@ -369,15 +369,15 @@ describe("deleteFolder", () => {
         deleted: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should accept folder ID with underscores", async () => {
@@ -386,10 +386,10 @@ describe("deleteFolder", () => {
         deleted: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder_with_underscores");
 
@@ -404,10 +404,10 @@ describe("deleteFolder", () => {
         deleted: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder-789");
 
@@ -425,10 +425,10 @@ describe("deleteFolder", () => {
         deleted: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder_with_underscores");
 
@@ -441,10 +441,10 @@ describe("deleteFolder", () => {
         deleted: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder-with-hyphens");
 
@@ -457,10 +457,10 @@ describe("deleteFolder", () => {
         deleted: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("abc123XYZ");
 
@@ -473,19 +473,19 @@ describe("deleteFolder", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
   });
 
   describe("error handling", () => {
     it("should handle folder not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.FOLDER_NOT_FOUND,
           message: "Folder not found",
         },
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("nonexistent-folder");
 
@@ -494,14 +494,28 @@ describe("deleteFolder", () => {
       expect(result.error?.message).toBe("Folder not found");
     });
 
+    it("should surface FOLDER_NOT_FOUND when OmniJS returns not-found sentinel", async () => {
+      // Regression: the OmniJS script returns { error: "not found", folderId } instead of throwing
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { error: "not found", folderId: "nonexistent-folder" },
+      } as OmniJSResult<{ error: string; folderId: string }>);
+
+      const result = await deleteFolder("nonexistent-folder");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.FOLDER_NOT_FOUND);
+      expect(result.error?.message).toContain("nonexistent-folder");
+    });
+
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder-123");
 
@@ -509,28 +523,28 @@ describe("deleteFolder", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript execution error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should handle OmniJS execution error", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
+          code: ErrorCode.SCRIPT_ERROR,
+          message: "OmniJS execution failed",
           details: "Access denied",
         },
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Access denied");
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder-123");
 
@@ -540,10 +554,10 @@ describe("deleteFolder", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder-123");
 
@@ -553,18 +567,18 @@ describe("deleteFolder", () => {
     });
 
     it("should handle folder with contents error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Cannot delete folder with contents",
         },
-      } as AppleScriptResult<DeleteFolderResult>);
+      } as OmniJSResult<DeleteFolderResult>);
 
       const result = await deleteFolder("folder-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
   });
 

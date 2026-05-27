@@ -1,166 +1,74 @@
-import type {
-  CliOutput,
-  TaskQueryOptions,
-  OFTask,
-  PaginatedResult,
-} from "../types.js";
+import type { CliOutput, OFTask, TaskQueryOptions } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
+import { validatePaginationParams } from "../validation.js";
+import { runOmniJSWrapped } from "../omnijs.js";
 import {
-  validateDateString,
-  validateProjectName,
-  validatePaginationParams,
-} from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runComposedScript } from "../applescript.js";
-import { loadScriptContentCached } from "../asset-loader.js";
+  buildListQueryBody,
+  compileAggregate,
+  compileProjection,
+  compileSort,
+  compileTaskPredicates,
+  taskFieldSpec,
+  type QueryResult,
+} from "../query/index.js";
 
 /**
- * Query tasks from OmniFocus with optional filters and pagination.
+ * Query tasks from OmniFocus with the full shared-query vocabulary.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryTasks(
   options: TaskQueryOptions = {}
-): Promise<CliOutput<PaginatedResult<OFTask>>> {
-  // Validate inputs
-  if (options.dueBefore !== undefined) {
-    const dateError = validateDateString(options.dueBefore);
-    if (dateError) return failure(dateError);
-  }
-
-  if (options.dueAfter !== undefined) {
-    const dateError = validateDateString(options.dueAfter);
-    if (dateError) return failure(dateError);
-  }
-
-  const projectError = validateProjectName(options.project);
-  if (projectError) return failure(projectError);
-
-  // Validate pagination parameters
+): Promise<CliOutput<QueryResult<OFTask>>> {
+  // Pagination validation (gated separately because invalid limits/offsets
+  // would otherwise produce nonsense pagination in the result envelope).
   const paginationError = validatePaginationParams(
     options.limit,
     options.offset
   );
   if (paginationError) return failure(paginationError);
 
-  // Build filter conditions
-  const conditions: string[] = [];
+  // Compile each phase. We collect ALL validation errors before returning so
+  // the first one we report is the highest-priority. The order below matches
+  // the order a user encounters problems: predicate first, then projection,
+  // then sort, then aggregation.
+  const pred = compileTaskPredicates(options);
+  const proj = compileProjection(taskFieldSpec, options);
+  const sort = compileSort(taskFieldSpec, options);
+  const agg = compileAggregate(options);
 
-  if (options.completed === true) {
-    conditions.push("completed is true");
-  } else if (options.completed === false) {
-    conditions.push("completed is false");
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
   }
 
-  if (options.flagged === true) {
-    conditions.push("flagged is true");
-  }
-
-  if (options.available === true) {
-    conditions.push("completed is false");
-    conditions.push("effectively dropped is false");
-    conditions.push("blocked is false");
-  }
-
-  // Project filter handled separately in script
-  // Tag filter handled separately in script
-  // Date filters handled separately in script
-
-  const whereClause =
-    conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
-
-  // Pagination defaults
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, taskSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/task.applescript"),
-  ]);
+  const body = buildListQueryBody({
+    source: "flattenedTasks",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
 
-  const body = `
-    set output to "{\\"items\\": ["
-    set isFirst to true
-    set totalCount to 0
-    set returnedCount to 0
-    set currentIndex to 0
-
-    set allTasks to flattened tasks ${whereClause}
-
-    -- First pass: count matching items and collect within pagination range
-    repeat with t in allTasks
-      -- Apply additional filters
-      set shouldInclude to true
-
-      ${options.project ? `-- Filter by project (inbox tasks have no containing project)` : ""}
-      ${options.project ? `try` : ""}
-      ${options.project ? `  if name of containing project of t is not "${escapeAppleScript(options.project)}" then set shouldInclude to false` : ""}
-      ${options.project ? `on error` : ""}
-      ${options.project ? `  set shouldInclude to false` : ""}
-      ${options.project ? `end try` : ""}
-
-      ${options.tag ? `-- Filter by tag` : ""}
-      ${options.tag ? `if shouldInclude then` : ""}
-      ${options.tag ? `  set hasTag to false` : ""}
-      ${options.tag ? `  repeat with tg in tags of t` : ""}
-      ${options.tag ? `    if name of tg is "${escapeAppleScript(options.tag)}" then set hasTag to true` : ""}
-      ${options.tag ? `  end repeat` : ""}
-      ${options.tag ? `  if not hasTag then set shouldInclude to false` : ""}
-      ${options.tag ? `end if` : ""}
-
-      ${options.dueBefore ? `-- Filter by due before` : ""}
-      ${options.dueBefore ? `if shouldInclude then` : ""}
-      ${options.dueBefore ? `  try` : ""}
-      ${options.dueBefore ? `    set taskDue to due date of t` : ""}
-      ${options.dueBefore ? `    if taskDue > date "${options.dueBefore}" then set shouldInclude to false` : ""}
-      ${options.dueBefore ? `  on error` : ""}
-      ${options.dueBefore ? `    set shouldInclude to false` : ""}
-      ${options.dueBefore ? `  end try` : ""}
-      ${options.dueBefore ? `end if` : ""}
-
-      ${options.dueAfter ? `-- Filter by due after` : ""}
-      ${options.dueAfter ? `if shouldInclude then` : ""}
-      ${options.dueAfter ? `  try` : ""}
-      ${options.dueAfter ? `    set taskDue to due date of t` : ""}
-      ${options.dueAfter ? `    if taskDue < date "${options.dueAfter}" then set shouldInclude to false` : ""}
-      ${options.dueAfter ? `  on error` : ""}
-      ${options.dueAfter ? `    set shouldInclude to false` : ""}
-      ${options.dueAfter ? `  end try` : ""}
-      ${options.dueAfter ? `end if` : ""}
-
-      if shouldInclude then
-        set totalCount to totalCount + 1
-
-        -- Check if within pagination range
-        if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
-          if not isFirst then set output to output & ","
-          set isFirst to false
-          set returnedCount to returnedCount + 1
-
-          set output to output & (my serializeTask(t))
-        end if
-
-        set currentIndex to currentIndex + 1
-      end if
-    end repeat
-
-    set hasMore to (totalCount > (${String(offset)} + returnedCount))
-
-    set output to output & "]," & ¬
-      "\\"totalCount\\": " & totalCount & "," & ¬
-      "\\"returnedCount\\": " & returnedCount & "," & ¬
-      "\\"hasMore\\": " & hasMore & "," & ¬
-      "\\"offset\\": ${String(offset)}," & ¬
-      "\\"limit\\": ${String(limit)}" & ¬
-      "}"
-
-    return output
-  `;
-
-  const result = await runComposedScript<PaginatedResult<OFTask>>(
-    [jsonHelpers, taskSerializer],
-    body
-  );
+  const result = await runOmniJSWrapped<QueryResult<OFTask>>(body);
 
   if (!result.success) {
     return failure(
@@ -169,14 +77,44 @@ export async function queryTasks(
     );
   }
 
-  return success(
-    result.data ?? {
-      items: [],
-      totalCount: 0,
-      returnedCount: 0,
-      hasMore: false,
-      offset,
-      limit,
+  // Provide a typed default in the unlikely case OmniJS returns undefined.
+  // The default depends on the requested shape so the discriminant remains
+  // sound.
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFTask> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
     }
-  );
+  }
 }

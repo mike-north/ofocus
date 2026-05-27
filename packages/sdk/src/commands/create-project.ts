@@ -7,8 +7,7 @@ import {
   validateDateString,
   validateId,
 } from "../validation.js";
-import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Create a new project in OmniFocus.
@@ -46,96 +45,81 @@ export async function createProject(
     if (deferError) return failure(deferError);
   }
 
-  // Build properties for the new project
-  const properties: string[] = [`name:"${escapeAppleScript(name)}"`];
+  // Build the OmniJS script
+  const scriptParts: string[] = [];
+
+  // Create project — in a folder or at top level
+  if (options.folderId) {
+    scriptParts.push(`
+var targetFolder = Folder.byIdentifier("${escapeJSString(options.folderId)}");
+if (!targetFolder) {
+  throw new Error("Folder not found: ${escapeJSString(options.folderId)}");
+}
+var proj = new Project("${escapeJSString(name)}", targetFolder);`);
+  } else if (options.folderName) {
+    scriptParts.push(`
+var targetFolder = flattenedFolders.byName("${escapeJSString(options.folderName)}");
+if (!targetFolder) {
+  throw new Error("Folder not found: ${escapeJSString(options.folderName)}");
+}
+var proj = new Project("${escapeJSString(name)}", targetFolder);`);
+  } else {
+    scriptParts.push(`var proj = new Project("${escapeJSString(name)}");`);
+  }
 
   if (options.note !== undefined) {
-    properties.push(`note:"${escapeAppleScript(options.note)}"`);
+    scriptParts.push(`proj.note = "${escapeJSString(options.note)}";`);
   }
 
   if (options.sequential !== undefined) {
-    properties.push(`sequential:${String(options.sequential)}`);
+    scriptParts.push(`proj.sequential = ${String(options.sequential)};`);
   }
 
   if (options.status === "on-hold") {
-    properties.push("status:on hold");
+    scriptParts.push(`proj.status = Project.Status.OnHold;`);
   }
-  // "active" is the default status, no need to set it explicitly
+  // "active" is the default status — no need to set it explicitly
 
   if (options.dueDate !== undefined) {
-    properties.push(`due date:date "${toAppleScriptDate(options.dueDate)}"`);
+    scriptParts.push(`proj.dueDate = ${toOmniJSDate(options.dueDate)};`);
   }
 
   if (options.deferDate !== undefined) {
-    properties.push(
-      `defer date:date "${toAppleScriptDate(options.deferDate)}"`
-    );
+    scriptParts.push(`proj.deferDate = ${toOmniJSDate(options.deferDate)};`);
   }
 
-  // Build script based on whether we're placing in a folder
-  let findFolder = "";
-  let makeProject = "";
+  // Serialize and return
+  scriptParts.push(`
+var folderId = null;
+var folderName = null;
+if (proj.parentFolder) {
+  folderId = proj.parentFolder.id.primaryKey;
+  folderName = proj.parentFolder.name;
+}
 
-  if (options.folderId) {
-    findFolder = `set targetFolder to first flattened folder whose id is "${escapeAppleScript(options.folderId)}"`;
-    makeProject = `set newProject to make new project at end of projects of targetFolder with properties {${properties.join(", ")}}`;
-  } else if (options.folderName) {
-    findFolder = `set targetFolder to first flattened folder whose name is "${escapeAppleScript(options.folderName)}"`;
-    makeProject = `set newProject to make new project at end of projects of targetFolder with properties {${properties.join(", ")}}`;
-  } else {
-    findFolder = "";
-    makeProject = `set newProject to make new project with properties {${properties.join(", ")}}`;
-  }
+var statusStr = "active";
+if (proj.status === Project.Status.OnHold) {
+  statusStr = "on-hold";
+} else if (proj.status === Project.Status.Done) {
+  statusStr = "completed";
+} else if (proj.status === Project.Status.Dropped) {
+  statusStr = "dropped";
+}
 
-  const script = `
-    ${findFolder}
-    ${makeProject}
+return JSON.stringify({
+  id: proj.id.primaryKey,
+  name: proj.name,
+  note: proj.note || null,
+  status: statusStr,
+  sequential: proj.sequential,
+  folderId: folderId,
+  folderName: folderName,
+  taskCount: proj.tasks.length,
+  remainingTaskCount: proj.tasks.filter(function(t) { return !t.completed; }).length
+});`);
 
-    -- Return the created project info
-    set projId to id of newProject
-    set projName to name of newProject
-    set projNote to note of newProject
-    set projSeq to sequential of newProject
-
-    set projStatus to "active"
-    try
-      set theStatus to status of newProject
-      if theStatus is on hold status then
-        set projStatus to "on-hold"
-      else if theStatus is done status then
-        set projStatus to "completed"
-      else if theStatus is dropped status then
-        set projStatus to "dropped"
-      end if
-    end try
-
-    set folderId to ""
-    set folderName to ""
-    try
-      set f to folder of newProject
-      set folderId to id of f
-      set folderName to name of f
-    end try
-
-    set taskCount to count of tasks of newProject
-    set remainingCount to count of (tasks of newProject where completed is false)
-
-    return "{" & ¬
-      "\\"id\\": \\"" & projId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-      "\\"note\\": " & (my jsonString(projNote)) & "," & ¬
-      "\\"status\\": \\"" & projStatus & "\\"," & ¬
-      "\\"sequential\\": " & projSeq & "," & ¬
-      "\\"folderId\\": " & (my jsonString(folderId)) & "," & ¬
-      "\\"folderName\\": " & (my jsonString(folderName)) & "," & ¬
-      "\\"taskCount\\": " & taskCount & "," & ¬
-      "\\"remainingTaskCount\\": " & remainingCount & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<OFProject>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<OFProject>(body);
 
   if (!result.success) {
     return failure(

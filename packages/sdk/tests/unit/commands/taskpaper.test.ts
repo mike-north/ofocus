@@ -1,7 +1,64 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ErrorCode } from "../../../src/errors.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 
-// We need to test the parsing functions which are internal
-// So we'll test through the exported functions with mocked dependencies
+// Mock the omnijs module before any imports that depend on it
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
+}));
+
+// Import after mocking
+import {
+  exportTaskPaper,
+  importTaskPaper,
+} from "../../../src/commands/taskpaper.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
+
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
+
+// ---------------------------------------------------------------------------
+// Shared factories
+// ---------------------------------------------------------------------------
+
+interface MockExportResult {
+  content: string;
+  taskCount: number;
+  projectCount: number;
+}
+
+interface MockImportResult {
+  tasksCreated: number;
+  projectsCreated: number;
+  errors: string[];
+}
+
+function makeExportResult(
+  overrides: Partial<MockExportResult> = {}
+): MockExportResult {
+  return {
+    content: "Work:\n\t- Task 1\n",
+    taskCount: 1,
+    projectCount: 1,
+    ...overrides,
+  };
+}
+
+function makeImportResult(
+  overrides: Partial<MockImportResult> = {}
+): MockImportResult {
+  return {
+    tasksCreated: 0,
+    projectsCreated: 0,
+    errors: [],
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// parseTaskPaperLine — tested indirectly via importTaskPaper behavior
+// ---------------------------------------------------------------------------
 
 describe("TaskPaper format", () => {
   describe("parseTaskPaperLine (via import behavior)", () => {
@@ -138,6 +195,602 @@ describe("TaskPaper format", () => {
       expect(onHold).toBe("@on-hold");
       expect(sequential).toBe("@sequential");
       expect(parallel).toBe("@parallel");
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// exportTaskPaper — behavioral tests via mocked runOmniJSWrapped
+// ---------------------------------------------------------------------------
+
+describe("exportTaskPaper", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("successful export", () => {
+    it("should return export data on success", async () => {
+      const mockData = makeExportResult({
+        content: "Work:\n\t- Fix bug @flagged\n",
+        taskCount: 1,
+        projectCount: 1,
+      });
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockData,
+      } as OmniJSResult<MockExportResult>);
+
+      const result = await exportTaskPaper();
+
+      expect(result.success).toBe(true);
+      expect(result.data?.content).toContain("Work:");
+      expect(result.data?.taskCount).toBe(1);
+      expect(result.data?.projectCount).toBe(1);
+      expect(result.error).toBeNull();
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
+    });
+
+    it("should call OmniJS once (single round-trip regardless of database size)", async () => {
+      const mockData = makeExportResult({ taskCount: 250, projectCount: 30 });
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockData,
+      } as OmniJSResult<MockExportResult>);
+
+      await exportTaskPaper();
+
+      // Single OmniJS execution — not one call per project
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
+    });
+
+    it("should embed includeCompleted=true in the OmniJS script body", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeExportResult(),
+      } as OmniJSResult<MockExportResult>);
+
+      await exportTaskPaper({ includeCompleted: true });
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("!true");
+    });
+
+    it("should embed includeCompleted=false in the OmniJS script body", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeExportResult(),
+      } as OmniJSResult<MockExportResult>);
+
+      await exportTaskPaper({ includeCompleted: false });
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("!false");
+    });
+
+    it("should embed project filter in the OmniJS script body", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeExportResult(),
+      } as OmniJSResult<MockExportResult>);
+
+      await exportTaskPaper({ project: "Work" });
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      // The project name should appear in the filter clause
+      expect(body).toContain("work"); // lowercased for case-insensitive match
+    });
+
+    it("should not include inbox clause when project filter is active", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeExportResult(),
+      } as OmniJSResult<MockExportResult>);
+
+      await exportTaskPaper({ project: "Work" });
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      // When filtering by project, inbox section should be skipped
+      expect(body).not.toContain("var inboxTasks = inbox");
+    });
+
+    it("should include inbox clause when no project filter", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeExportResult(),
+      } as OmniJSResult<MockExportResult>);
+
+      await exportTaskPaper();
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("var inboxTasks = inbox");
+    });
+
+    it("should use flattenedProjects in script body", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeExportResult(),
+      } as OmniJSResult<MockExportResult>);
+
+      await exportTaskPaper();
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("flattenedProjects");
+    });
+
+    it("should include Project.Status checks in script body", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeExportResult(),
+      } as OmniJSResult<MockExportResult>);
+
+      await exportTaskPaper();
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("Project.Status.Done");
+      expect(body).toContain("Project.Status.Dropped");
+      expect(body).toContain("Project.Status.OnHold");
+    });
+
+    it("should return empty export result when OmniJS returns zero counts", async () => {
+      const mockData = makeExportResult({
+        content: "",
+        taskCount: 0,
+        projectCount: 0,
+      });
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockData,
+      } as OmniJSResult<MockExportResult>);
+
+      const result = await exportTaskPaper();
+
+      expect(result.success).toBe(true);
+      expect(result.data?.taskCount).toBe(0);
+      expect(result.data?.projectCount).toBe(0);
+    });
+  });
+
+  describe("error handling", () => {
+    it("should propagate OmniFocus not running error", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: {
+          code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
+          message: "OmniFocus is not running",
+        },
+      } as OmniJSResult<MockExportResult>);
+
+      const result = await exportTaskPaper();
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
+    });
+
+    it("should propagate OmniJS script error", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: {
+          code: ErrorCode.SCRIPT_ERROR,
+          message: "Script execution failed",
+        },
+      } as OmniJSResult<MockExportResult>);
+
+      const result = await exportTaskPaper();
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
+    });
+
+    it("should handle undefined error in failure response", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: undefined,
+      } as OmniJSResult<MockExportResult>);
+
+      const result = await exportTaskPaper();
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+    });
+
+    it("should handle undefined data in successful response", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: undefined,
+      } as OmniJSResult<MockExportResult>);
+
+      const result = await exportTaskPaper();
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+      expect(result.error?.message).toBe("No export data returned");
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// importTaskPaper — behavioral tests via mocked runOmniJSWrapped
+// ---------------------------------------------------------------------------
+
+describe("importTaskPaper", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("successful import", () => {
+    it("should return import result on success", async () => {
+      const mockData = makeImportResult({ tasksCreated: 3, projectsCreated: 1 });
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockData,
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "Work:\n\t- Task 1\n\t- Task 2\n\t- Task 3\n";
+      const result = await importTaskPaper(content, { createProjects: true });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.tasksCreated).toBe(3);
+      expect(result.data?.projectsCreated).toBe(1);
+      expect(result.data?.errors).toEqual([]);
+      expect(result.error).toBeNull();
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
+    });
+
+    it("should issue a single OmniJS call regardless of task/project count", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 20, projectsCreated: 5 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const lines = [
+        "Project A:",
+        "\t- Task 1",
+        "\t- Task 2",
+        "Project B:",
+        "\t- Task 3",
+      ];
+
+      await importTaskPaper(lines.join("\n"), { createProjects: true });
+
+      // Always exactly one OmniJS call
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
+    });
+
+    it("should embed task names in the OmniJS script body", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "Work:\n\t- Fix critical bug\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("Fix critical bug");
+    });
+
+    it("should embed project creation in script when createProjects=true", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ projectsCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "NewProject:\n\t- Some task\n";
+      await importTaskPaper(content, { createProjects: true });
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("new Project");
+      expect(body).toContain("NewProject");
+    });
+
+    it("should NOT embed project creation when createProjects is not set", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult(),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "ExistingProject:\n\t- Some task\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).not.toContain("new Project");
+    });
+
+    it("should route tasks without a project to inbox", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 2 }),
+      } as OmniJSResult<MockImportResult>);
+
+      // No project header — tasks go to inbox
+      const content = "- Orphan task 1\n- Orphan task 2\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("inbox.ending");
+    });
+
+    it("should route tasks under Inbox header to inbox (not a project)", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "Inbox:\n\t- Inbox task\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      // Inbox header should NOT create a project
+      expect(body).not.toContain("new Project");
+      // The task should go to inbox.ending
+      expect(body).toContain("inbox.ending");
+    });
+
+    it("should skip completed tasks during import", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      // One active task, one completed
+      const content =
+        "Work:\n\t- Active task\n\t- Completed task @done\n\t- Dropped task @dropped\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      // Only the active task should appear in new Task() calls
+      expect(body).toContain("Active task");
+      expect(body).not.toContain("Completed task");
+      expect(body).not.toContain("Dropped task");
+    });
+
+    it("should embed due date in OmniJS script using toOmniJSDate", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "- Task @due(2024-12-31)\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("dueDate");
+      // toOmniJSDate is mocked to return new Date("...")
+      expect(body).toContain("2024-12-31");
+    });
+
+    it("should embed defer date in OmniJS script", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "- Task @defer(2024-12-01)\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("deferDate");
+      expect(body).toContain("2024-12-01");
+    });
+
+    it("should embed flagged=true in OmniJS script", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "- Important task @flagged\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("flagged = true");
+    });
+
+    it("should embed estimatedMinutes in OmniJS script", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "- Long task @estimate(90m)\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("estimatedMinutes");
+      expect(body).toContain("90");
+    });
+
+    it("should embed tag lookup in OmniJS script for tasks with tags", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "- Tagged task @work @urgent\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("flattenedTags.byName");
+      expect(body).toContain("work");
+      expect(body).toContain("urgent");
+    });
+
+    it("should include error handling (try/catch) in the OmniJS script", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "Work:\n\t- A task\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("try {");
+      expect(body).toContain("} catch (e)");
+      expect(body).toContain("errors.push");
+    });
+
+    it("should propagate OmniJS-reported errors in result", async () => {
+      const importErrors = [
+        'Failed to create tasks in project "Nonexistent": Error: Project not found',
+      ];
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ errors: importErrors }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "Nonexistent:\n\t- Task\n";
+      const result = await importTaskPaper(content);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.errors).toHaveLength(1);
+      expect(result.data?.errors[0]).toContain("Nonexistent");
+    });
+
+    it("should handle empty content gracefully", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult(),
+      } as OmniJSResult<MockImportResult>);
+
+      const result = await importTaskPaper("");
+
+      expect(result.success).toBe(true);
+      expect(result.data?.tasksCreated).toBe(0);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle content with only notes (no projects/tasks)", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult(),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "Just a note line\nAnother note\n";
+      const result = await importTaskPaper(content);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.tasksCreated).toBe(0);
+    });
+
+    it("should convert 1h estimate to 60 minutes in OmniJS script", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "- Long task @estimate(2h)\n";
+      await importTaskPaper(content);
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      // 2h = 120 minutes
+      expect(body).toContain("120");
+    });
+
+    it("should use defaultProject for tasks before any project header", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 1 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = "- Floating task\n";
+      await importTaskPaper(content, { defaultProject: "Inbox" });
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      // With a defaultProject set, tasks that would otherwise go to inbox
+      // are routed to the project
+      expect(body).toContain("Inbox");
+    });
+
+    it("should generate valid OmniJS with multiple projects and tasks", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: makeImportResult({ tasksCreated: 4, projectsCreated: 2 }),
+      } as OmniJSResult<MockImportResult>);
+
+      const content = [
+        "Work:",
+        "\t- Fix bug",
+        "\t- Write tests",
+        "Personal:",
+        "\t- Buy groceries",
+        "\t- Exercise",
+      ].join("\n");
+
+      await importTaskPaper(content, { createProjects: true });
+
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      // All task names present
+      expect(body).toContain("Fix bug");
+      expect(body).toContain("Write tests");
+      expect(body).toContain("Buy groceries");
+      expect(body).toContain("Exercise");
+      // Project references
+      expect(body).toContain("flattenedProjects.byName");
+      // Returns JSON
+      expect(body).toContain("return JSON.stringify");
+    });
+  });
+
+  describe("error handling", () => {
+    it("should propagate OmniFocus not running error", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: {
+          code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
+          message: "OmniFocus is not running",
+        },
+      } as OmniJSResult<MockImportResult>);
+
+      const result = await importTaskPaper("Work:\n\t- Task\n");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
+    });
+
+    it("should propagate OmniJS script error", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: {
+          code: ErrorCode.SCRIPT_ERROR,
+          message: "Execution failed",
+        },
+      } as OmniJSResult<MockImportResult>);
+
+      const result = await importTaskPaper("- Task\n");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
+    });
+
+    it("should handle undefined error in failure response", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: undefined,
+      } as OmniJSResult<MockImportResult>);
+
+      const result = await importTaskPaper("- Task\n");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+    });
+
+    it("should handle undefined data in successful response", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: undefined,
+      } as OmniJSResult<MockImportResult>);
+
+      const result = await importTaskPaper("- Task\n");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+      expect(result.error?.message).toBe("No import result returned");
     });
   });
 });

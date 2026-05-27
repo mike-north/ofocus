@@ -1,20 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
-import type {
-  OFTaskWithChildren,
-  PaginatedResult,
-} from "../../../src/types.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
+import type { OFTask, OFTaskWithChildren } from "../../../src/types.js";
+import type { QueryResult } from "../../../src/query/index.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
-}));
-
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked script"),
-}));
+// Use the partial-real mock pattern so that escapeJSString and other helpers
+// run for real (the query layer uses them), while runOmniJSWrapped is
+// intercepted.
+vi.mock("../../../src/omnijs.js", async () => {
+  const actual = await vi.importActual<typeof import("../../../src/omnijs.js")>(
+    "../../../src/omnijs.js"
+  );
+  return {
+    ...actual,
+    runOmniJSWrapped: vi.fn(),
+    toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
+  };
+});
 
 // Import after mocking
 import {
@@ -22,13 +24,13 @@ import {
   querySubtasks,
   moveTaskToParent,
 } from "../../../src/commands/subtasks.js";
-import { runComposedScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
-const createMockTaskWithChildren = (
-  overrides: Partial<OFTaskWithChildren> = {}
-): OFTaskWithChildren => ({
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+const createMockTask = (overrides: Partial<OFTask> = {}): OFTask => ({
   id: "task-123",
   name: "Test Task",
   note: null,
@@ -41,16 +43,25 @@ const createMockTaskWithChildren = (
   projectName: null,
   tags: [],
   estimatedMinutes: null,
-  parentTaskId: "parent-123",
-  parentTaskName: "Parent Task",
-  subtasks: [],
   ...overrides,
 });
 
-const createMockPaginatedResult = (
-  items: OFTaskWithChildren[],
-  overrides: Partial<PaginatedResult<OFTaskWithChildren>> = {}
-): PaginatedResult<OFTaskWithChildren> => ({
+const createMockTaskWithChildren = (
+  overrides: Partial<OFTaskWithChildren> = {}
+): OFTaskWithChildren => ({
+  ...createMockTask(),
+  parentTaskId: "parent-123",
+  parentTaskName: "Parent Task",
+  childTaskCount: 0,
+  isActionGroup: false,
+  ...overrides,
+});
+
+const createMockListResult = (
+  items: OFTask[],
+  overrides: Partial<Extract<QueryResult<OFTask>, { kind: "list" }>> = {}
+): Extract<QueryResult<OFTask>, { kind: "list" }> => ({
+  kind: "list",
   items,
   totalCount: items.length,
   returnedCount: items.length,
@@ -60,28 +71,46 @@ const createMockPaginatedResult = (
   ...overrides,
 });
 
+function expectList(
+  result: QueryResult<OFTask> | null | undefined
+): Extract<QueryResult<OFTask>, { kind: "list" }> {
+  expect(result).toBeDefined();
+  expect(result?.kind).toBe("list");
+  if (!result || result.kind !== "list")
+    throw new Error("Expected list shape");
+  return result;
+}
+
+function getScriptBody(): string {
+  const call = mockRunOmniJS.mock.calls[0];
+  if (!call) throw new Error("runOmniJSWrapped was not called");
+  return call[0] as string;
+}
+
+// ── createSubtask ─────────────────────────────────────────────────────────────
+
 describe("createSubtask", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("validation", () => {
-    it("should reject empty parent task ID", async () => {
+    it("rejects empty parent task ID", async () => {
       const result = await createSubtask("New Subtask", "");
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
-    it("should reject invalid parent task ID format", async () => {
+    it("rejects invalid parent task ID format", async () => {
       const result = await createSubtask("New Subtask", 'parent"id');
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
     });
 
-    it("should reject empty title", async () => {
+    it("rejects empty title", async () => {
       const result = await createSubtask("", "parent-123");
 
       expect(result.success).toBe(false);
@@ -89,14 +118,14 @@ describe("createSubtask", () => {
       expect(result.error?.message).toContain("title cannot be empty");
     });
 
-    it("should reject whitespace-only title", async () => {
+    it("rejects whitespace-only title", async () => {
       const result = await createSubtask("   ", "parent-123");
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
     });
 
-    it("should reject invalid due date", async () => {
+    it("rejects invalid due date", async () => {
       const result = await createSubtask("New Subtask", "parent-123", {
         due: 'bad"date',
       });
@@ -105,7 +134,7 @@ describe("createSubtask", () => {
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
     });
 
-    it("should reject invalid defer date", async () => {
+    it("rejects invalid defer date", async () => {
       const result = await createSubtask("New Subtask", "parent-123", {
         defer: 'bad"date',
       });
@@ -114,7 +143,7 @@ describe("createSubtask", () => {
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
     });
 
-    it("should reject empty tags", async () => {
+    it("rejects empty tags", async () => {
       const result = await createSubtask("New Subtask", "parent-123", {
         tags: ["valid", ""],
       });
@@ -123,7 +152,7 @@ describe("createSubtask", () => {
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
     });
 
-    it("should reject negative estimated minutes", async () => {
+    it("rejects negative estimated minutes", async () => {
       const result = await createSubtask("New Subtask", "parent-123", {
         estimatedMinutes: -10,
       });
@@ -132,23 +161,22 @@ describe("createSubtask", () => {
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
     });
 
-    it("should accept valid subtask creation", async () => {
+    it("accepts valid subtask creation", async () => {
       const mockTask = createMockTaskWithChildren({ name: "New Subtask" });
-
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await createSubtask("New Subtask", "parent-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("successful creation", () => {
-    it("should create subtask with all options", async () => {
+    it("creates subtask with all options", async () => {
       const mockTask = createMockTaskWithChildren({
         name: "New Subtask",
         note: "Test note",
@@ -156,11 +184,10 @@ describe("createSubtask", () => {
         tags: ["work"],
         estimatedMinutes: 30,
       });
-
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await createSubtask("New Subtask", "parent-123", {
         note: "Test note",
@@ -175,14 +202,14 @@ describe("createSubtask", () => {
   });
 
   describe("error handling", () => {
-    it("should handle parent task not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("handles parent task not found", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Parent task not found",
         },
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await createSubtask("New Subtask", "nonexistent");
 
@@ -190,11 +217,11 @@ describe("createSubtask", () => {
       expect(result.error?.code).toBe(ErrorCode.TASK_NOT_FOUND);
     });
 
-    it("should handle undefined data response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("handles undefined data response", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await createSubtask("New Subtask", "parent-123");
 
@@ -204,87 +231,141 @@ describe("createSubtask", () => {
   });
 });
 
+// ── querySubtasks ─────────────────────────────────────────────────────────────
+
 describe("querySubtasks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("validation", () => {
-    it("should reject empty parent task ID", async () => {
+    it("rejects empty parent task ID", async () => {
       const result = await querySubtasks("");
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
     });
 
-    it("should reject invalid parent task ID format", async () => {
+    it("rejects invalid parent task ID format", async () => {
       const result = await querySubtasks('parent"id');
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
     });
+
+    it("rejects invalid limit", async () => {
+      const result = await querySubtasks("parent-123", { limit: -1 });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
   });
 
-  describe("successful query", () => {
-    it("should return paginated subtasks", async () => {
-      const mockSubtasks = [
-        createMockTaskWithChildren({ id: "subtask-1" }),
-        createMockTaskWithChildren({ id: "subtask-2" }),
-      ];
-      const mockResult = createMockPaginatedResult(mockSubtasks);
-
-      mockRunComposedScript.mockResolvedValue({
+  describe("parentTaskId predicate", () => {
+    beforeEach(() => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFTask>>);
+    });
+
+    it("emits parentTaskId predicate scoped to the given parent ID", async () => {
+      await querySubtasks("parent-abc");
+
+      const body = getScriptBody();
+      // parentTaskId predicate: (t.parent instanceof Task) && t.parent.id.primaryKey === "parent-abc"
+      expect(body).toContain("(t.parent instanceof Task)");
+      expect(body).toContain("parent-abc");
+    });
+  });
+
+  describe("completed and flagged filters", () => {
+    beforeEach(() => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFTask>>);
+    });
+
+    it("completed: true → t.completed predicate", async () => {
+      await querySubtasks("parent-123", { completed: true });
+
+      expect(getScriptBody()).toContain("t.completed");
+    });
+
+    it("completed: false → !t.completed predicate", async () => {
+      await querySubtasks("parent-123", { completed: false });
+
+      expect(getScriptBody()).toContain("!t.completed");
+    });
+
+    it("flagged: true → t.flagged predicate", async () => {
+      await querySubtasks("parent-123", { flagged: true });
+
+      expect(getScriptBody()).toContain("t.flagged");
+    });
+
+    it("flagged: false → !t.flagged predicate", async () => {
+      await querySubtasks("parent-123", { flagged: false });
+
+      expect(getScriptBody()).toContain("!t.flagged");
+    });
+  });
+
+  describe("return shape — QueryResult", () => {
+    it("returns subtasks as a list result", async () => {
+      const mockSubtasks = [
+        createMockTask({ id: "subtask-1" }),
+        createMockTask({ id: "subtask-2" }),
+      ];
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult(mockSubtasks),
+      } as OmniJSResult<QueryResult<OFTask>>);
 
       const result = await querySubtasks("parent-123");
 
       expect(result.success).toBe(true);
-      expect(result.data?.items).toHaveLength(2);
+      const list = expectList(result.data);
+      expect(list.items).toHaveLength(2);
     });
 
-    it("should filter by completed status", async () => {
-      const mockSubtasks = [createMockTaskWithChildren({ completed: true })];
-      const mockResult = createMockPaginatedResult(mockSubtasks);
-
-      mockRunComposedScript.mockResolvedValue({
+    it("returns empty list on undefined data", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+        data: undefined,
+      } as OmniJSResult<QueryResult<OFTask>>);
 
-      const result = await querySubtasks("parent-123", { completed: true });
+      const result = await querySubtasks("parent-123");
 
       expect(result.success).toBe(true);
+      const list = expectList(result.data);
+      expect(list.items).toEqual([]);
     });
 
-    it("should filter by flagged status", async () => {
-      const mockSubtasks = [createMockTaskWithChildren({ flagged: true })];
-      const mockResult = createMockPaginatedResult(mockSubtasks);
-
-      mockRunComposedScript.mockResolvedValue({
+    it("supports count shape via count: true", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+        data: { kind: "count", count: 5 },
+      } as OmniJSResult<QueryResult<OFTask>>);
 
-      const result = await querySubtasks("parent-123", { flagged: true });
+      const result = await querySubtasks("parent-123", { count: true });
 
       expect(result.success).toBe(true);
+      expect(result.data?.kind).toBe("count");
     });
 
-    it("should handle pagination with offset and limit", async () => {
-      const mockSubtasks = [createMockTaskWithChildren()];
-      const mockResult = createMockPaginatedResult(mockSubtasks, {
-        totalCount: 50,
-        hasMore: true,
-        offset: 10,
-        limit: 5,
-      });
-
-      mockRunComposedScript.mockResolvedValue({
+    it("supports hasMore pagination in list result", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+        data: createMockListResult([createMockTask()], {
+          totalCount: 50,
+          hasMore: true,
+          offset: 10,
+          limit: 5,
+          returnedCount: 1,
+        }),
+      } as OmniJSResult<QueryResult<OFTask>>);
 
       const result = await querySubtasks("parent-123", {
         offset: 10,
@@ -292,41 +373,64 @@ describe("querySubtasks", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.offset).toBe(10);
-      expect(result.data?.hasMore).toBe(true);
+      const list = expectList(result.data);
+      expect(list.offset).toBe(10);
+      expect(list.hasMore).toBe(true);
+    });
+  });
+
+  describe("sort and pagination are forwarded", () => {
+    beforeEach(() => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFTask>>);
     });
 
-    it("should return default empty result on undefined data", async () => {
-      mockRunComposedScript.mockResolvedValue({
-        success: true,
-        data: undefined,
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+    it("respects limit option", async () => {
+      await querySubtasks("parent-123", { limit: 25 });
 
-      const result = await querySubtasks("parent-123");
+      expect(getScriptBody()).toContain("var __limit = 25");
+    });
 
-      expect(result.success).toBe(true);
-      expect(result.data?.items).toEqual([]);
-      expect(result.data?.totalCount).toBe(0);
+    it("includes sort comparator when sort option is set", async () => {
+      await querySubtasks("parent-123", { sort: ["name"] });
+
+      expect(getScriptBody()).toContain("rows.sort(");
     });
   });
 
   describe("error handling", () => {
-    it("should handle parent task not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("propagates parent task not found error", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Parent task not found",
         },
-      } as AppleScriptResult<PaginatedResult<OFTaskWithChildren>>);
+      } as OmniJSResult<QueryResult<OFTask>>);
 
       const result = await querySubtasks("nonexistent");
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.TASK_NOT_FOUND);
     });
+
+    it("falls back to UNKNOWN_ERROR when failure has no error object", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: undefined,
+      } as OmniJSResult<QueryResult<OFTask>>);
+
+      const result = await querySubtasks("parent-123");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+    });
   });
 });
+
+// ── moveTaskToParent ──────────────────────────────────────────────────────────
 
 describe("moveTaskToParent", () => {
   beforeEach(() => {
@@ -334,28 +438,28 @@ describe("moveTaskToParent", () => {
   });
 
   describe("validation", () => {
-    it("should reject empty task ID", async () => {
+    it("rejects empty task ID", async () => {
       const result = await moveTaskToParent("", "parent-123");
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
     });
 
-    it("should reject empty parent task ID", async () => {
+    it("rejects empty parent task ID", async () => {
       const result = await moveTaskToParent("task-123", "");
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
     });
 
-    it("should reject invalid task ID format", async () => {
+    it("rejects invalid task ID format", async () => {
       const result = await moveTaskToParent('task"id', "parent-123");
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
     });
 
-    it("should reject invalid parent task ID format", async () => {
+    it("rejects invalid parent task ID format", async () => {
       const result = await moveTaskToParent("task-123", 'parent"id');
 
       expect(result.success).toBe(false);
@@ -364,16 +468,15 @@ describe("moveTaskToParent", () => {
   });
 
   describe("successful move", () => {
-    it("should move task to new parent", async () => {
+    it("moves task to new parent", async () => {
       const mockTask = createMockTaskWithChildren({
         id: "task-123",
         parentTaskId: "new-parent-456",
       });
-
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTask,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await moveTaskToParent("task-123", "new-parent-456");
 
@@ -383,14 +486,14 @@ describe("moveTaskToParent", () => {
   });
 
   describe("error handling", () => {
-    it("should handle task not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("handles task not found", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await moveTaskToParent("nonexistent", "parent-123");
 
@@ -398,11 +501,11 @@ describe("moveTaskToParent", () => {
       expect(result.error?.code).toBe(ErrorCode.TASK_NOT_FOUND);
     });
 
-    it("should handle undefined data response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("handles undefined data response", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFTaskWithChildren>);
+      } as OmniJSResult<OFTaskWithChildren>);
 
       const result = await moveTaskToParent("task-123", "parent-123");
 

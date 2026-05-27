@@ -1,10 +1,4 @@
-import type {
-  CliOutput,
-  CreateFolderOptions,
-  FolderQueryOptions,
-  OFFolder,
-  PaginatedResult,
-} from "../types.js";
+import type { CliOutput, CreateFolderOptions, OFFolder } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import {
@@ -12,9 +6,18 @@ import {
   validateId,
   validatePaginationParams,
 } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runComposedScript } from "../applescript.js";
-import { loadScriptContentCached } from "../asset-loader.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import {
+  buildListQueryBody,
+  compileAggregate,
+  compileFolderPredicates,
+  compileProjection,
+  compileSort,
+  folderFieldSpec,
+  folderGroupKeys,
+  type FolderQueryOptions,
+  type QueryResult,
+} from "../query/index.js";
 
 /**
  * Create a new folder in OmniFocus.
@@ -42,38 +45,51 @@ export async function createFolder(
   const parentNameError = validateFolderName(options.parentFolderName);
   if (parentNameError) return failure(parentNameError);
 
-  // Build script based on whether we're placing in a parent folder
-  let findParent = "";
-  let makeFolder = "";
+  // Build script body based on whether we're placing in a parent folder
+  let findParentAndCreate: string;
 
   if (options.parentFolderId) {
-    findParent = `set parentFolder to first flattened folder whose id is "${escapeAppleScript(options.parentFolderId)}"`;
-    makeFolder = `set newFolder to make new folder at end of folders of parentFolder with properties {name:"${escapeAppleScript(name)}"}`;
+    findParentAndCreate = `
+var parentFolder = flattenedFolders.filter(function(f) {
+  return f.id.primaryKey === "${escapeJSString(options.parentFolderId)}";
+})[0];
+if (!parentFolder) {
+  throw new Error("Parent folder not found: ${escapeJSString(options.parentFolderId)}");
+}
+var newFolder = new Folder("${escapeJSString(name)}", parentFolder);`;
   } else if (options.parentFolderName) {
-    findParent = `set parentFolder to first flattened folder whose name is "${escapeAppleScript(options.parentFolderName)}"`;
-    makeFolder = `set newFolder to make new folder at end of folders of parentFolder with properties {name:"${escapeAppleScript(name)}"}`;
+    findParentAndCreate = `
+var parentFolder = flattenedFolders.filter(function(f) {
+  return f.name === "${escapeJSString(options.parentFolderName)}";
+})[0];
+if (!parentFolder) {
+  throw new Error("Parent folder not found: ${escapeJSString(options.parentFolderName)}");
+}
+var newFolder = new Folder("${escapeJSString(name)}", parentFolder);`;
   } else {
-    findParent = "";
-    makeFolder = `set newFolder to make new folder with properties {name:"${escapeAppleScript(name)}"}`;
+    findParentAndCreate = `var newFolder = new Folder("${escapeJSString(name)}");`;
   }
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, folderSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/folder.applescript"),
-  ]);
-
   const body = `
-    ${findParent}
-    ${makeFolder}
+${findParentAndCreate}
 
-    return my serializeFolder(newFolder)
-  `;
+var parentId = null;
+var parentName = null;
+if (newFolder.parent) {
+  parentId = newFolder.parent.id.primaryKey;
+  parentName = newFolder.parent.name;
+}
 
-  const result = await runComposedScript<OFFolder>(
-    [jsonHelpers, folderSerializer],
-    body
-  );
+return JSON.stringify({
+  id: newFolder.id.primaryKey,
+  name: newFolder.name,
+  parentId: parentId,
+  parentName: parentName,
+  projectCount: newFolder.projects.length,
+  folderCount: newFolder.folders.length
+});`;
+
+  const result = await runOmniJSWrapped<OFFolder>(body);
 
   if (!result.success) {
     return failure(
@@ -92,91 +108,59 @@ export async function createFolder(
 }
 
 /**
- * Query folders from OmniFocus with optional filters and pagination.
+ * Query folders from OmniFocus with the full shared-query vocabulary.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryFolders(
   options: FolderQueryOptions = {}
-): Promise<CliOutput<PaginatedResult<OFFolder>>> {
-  // Validate parent filter
-  const parentError = validateFolderName(options.parent);
-  if (parentError) return failure(parentError);
-
-  // Validate pagination parameters
+): Promise<CliOutput<QueryResult<OFFolder>>> {
+  // Pagination validation — invalid limits/offsets would produce nonsense in
+  // the result envelope.
   const paginationError = validatePaginationParams(
     options.limit,
     options.offset
   );
   if (paginationError) return failure(paginationError);
 
-  // Pagination defaults
+  // Compile each phase. Collect ALL validation errors before returning so the
+  // first one we report is the highest-priority.
+  const pred = compileFolderPredicates(options);
+  const proj = compileProjection(folderFieldSpec, options);
+  const sort = compileSort(folderFieldSpec, options);
+  const agg = compileAggregate(options, folderGroupKeys);
+
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
+  }
+
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, folderSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/folder.applescript"),
-  ]);
+  const body = buildListQueryBody({
+    source: "flattenedFolders",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
 
-  const body = `
-    set output to "{\\"items\\": ["
-    set isFirst to true
-    set totalCount to 0
-    set returnedCount to 0
-    set currentIndex to 0
-
-    set allFolders to flattened folders
-
-    repeat with f in allFolders
-      set shouldInclude to true
-
-      -- Get parent info first (we need this for filtering)
-      set parentId to ""
-      set parentName to ""
-      try
-        set p to container of f
-        if class of p is folder then
-          set parentId to id of p
-          set parentName to name of p
-        end if
-      end try
-
-      ${options.parent ? `-- Filter by parent folder` : ""}
-      ${options.parent ? `if parentName is not "${escapeAppleScript(options.parent)}" then set shouldInclude to false` : ""}
-
-      if shouldInclude then
-        set totalCount to totalCount + 1
-
-        -- Check if within pagination range
-        if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
-          if not isFirst then set output to output & ","
-          set isFirst to false
-          set returnedCount to returnedCount + 1
-
-          set output to output & (my serializeFolder(f))
-        end if
-
-        set currentIndex to currentIndex + 1
-      end if
-    end repeat
-
-    set hasMore to (totalCount > (${String(offset)} + returnedCount))
-
-    set output to output & "]," & ¬
-      "\\"totalCount\\": " & totalCount & "," & ¬
-      "\\"returnedCount\\": " & returnedCount & "," & ¬
-      "\\"hasMore\\": " & hasMore & "," & ¬
-      "\\"offset\\": ${String(offset)}," & ¬
-      "\\"limit\\": ${String(limit)}" & ¬
-      "}"
-
-    return output
-  `;
-
-  const result = await runComposedScript<PaginatedResult<OFFolder>>(
-    [jsonHelpers, folderSerializer],
-    body
-  );
+  const result = await runOmniJSWrapped<QueryResult<OFFolder>>(body);
 
   if (!result.success) {
     return failure(
@@ -185,14 +169,41 @@ export async function queryFolders(
     );
   }
 
-  return success(
-    result.data ?? {
-      items: [],
-      totalCount: 0,
-      returnedCount: 0,
-      hasMore: false,
-      offset,
-      limit,
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFFolder> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
     }
-  );
+  }
 }

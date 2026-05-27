@@ -7,8 +7,7 @@ import type {
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId, validateTagName } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from deleting a tag.
@@ -40,53 +39,50 @@ export async function createTag(
     if (parentNameError) return failure(parentNameError);
   }
 
-  // Build script based on whether we're placing under a parent tag
-  let findParent = "";
-  let makeTag = "";
+  // Build script parts conditionally
+  const scriptParts: string[] = [];
 
   if (options.parentTagId) {
-    findParent = `set parentTag to first flattened tag whose id is "${escapeAppleScript(options.parentTagId)}"`;
-    makeTag = `set newTag to make new tag at end of tags of parentTag with properties {name:"${escapeAppleScript(name)}"}`;
+    scriptParts.push(`
+var parentTag = flattenedTags.filter(function(t) {
+  return t.id.primaryKey === "${escapeJSString(options.parentTagId)}";
+})[0];
+if (!parentTag) {
+  throw new Error("Parent tag not found: ${escapeJSString(options.parentTagId)}");
+}
+var newTag = new Tag("${escapeJSString(name)}", parentTag);`);
   } else if (options.parentTagName) {
-    findParent = `set parentTag to first flattened tag whose name is "${escapeAppleScript(options.parentTagName)}"`;
-    makeTag = `set newTag to make new tag at end of tags of parentTag with properties {name:"${escapeAppleScript(name)}"}`;
+    scriptParts.push(`
+var parentTag = flattenedTags.filter(function(t) {
+  return t.name === "${escapeJSString(options.parentTagName)}";
+})[0];
+if (!parentTag) {
+  throw new Error("Parent tag not found: ${escapeJSString(options.parentTagName)}");
+}
+var newTag = new Tag("${escapeJSString(name)}", parentTag);`);
   } else {
-    findParent = "";
-    makeTag = `set newTag to make new tag with properties {name:"${escapeAppleScript(name)}"}`;
+    scriptParts.push(`var newTag = new Tag("${escapeJSString(name)}");`);
   }
 
-  const script = `
-    ${findParent}
-    ${makeTag}
+  // Serialize and return the created tag
+  scriptParts.push(`
+var parentId = null;
+var parentName = null;
+if (newTag.parent) {
+  parentId = newTag.parent.id.primaryKey;
+  parentName = newTag.parent.name;
+}
 
-    -- Return the created tag info
-    set tagId to id of newTag
-    set tagName to name of newTag
+return JSON.stringify({
+  id: newTag.id.primaryKey,
+  name: newTag.name,
+  parentId: parentId,
+  parentName: parentName,
+  availableTaskCount: newTag.availableTaskCount
+});`);
 
-    set parentId to ""
-    set parentName to ""
-    try
-      set p to container of newTag
-      if class of p is tag then
-        set parentId to id of p
-        set parentName to name of p
-      end if
-    end try
-
-    set availCount to count of (flattened tasks whose primary tag is newTag and completed is false)
-
-    return "{" & ¬
-      "\\"id\\": \\"" & tagId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(tagName)) & "\\"," & ¬
-      "\\"parentId\\": " & (my jsonString(parentId)) & "," & ¬
-      "\\"parentName\\": " & (my jsonString(parentName)) & "," & ¬
-      "\\"availableTaskCount\\": " & availCount & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<OFTag>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<OFTag>(body);
 
   if (!result.success) {
     return failure(
@@ -131,63 +127,63 @@ export async function updateTag(
     if (parentNameError) return failure(parentNameError);
   }
 
-  // Build the update statements
-  const updates: string[] = [];
+  // Build script parts conditionally
+  const scriptParts: string[] = [];
 
+  // Look up the tag by ID
+  scriptParts.push(`
+var theTag = flattenedTags.filter(function(t) {
+  return t.id.primaryKey === "${escapeJSString(tagId)}";
+})[0];
+if (!theTag) {
+  throw new Error("Tag not found: ${escapeJSString(tagId)}");
+}`);
+
+  // Apply name change
   if (options.name !== undefined) {
-    updates.push(`set name of theTag to "${escapeAppleScript(options.name)}"`);
+    scriptParts.push(`theTag.name = "${escapeJSString(options.name)}";`);
   }
 
-  // Handle reparenting
-  let reparentScript = "";
+  // Handle reparenting by ID
   if (options.parentTagId !== undefined) {
-    reparentScript = `
-      set newParent to first flattened tag whose id is "${escapeAppleScript(options.parentTagId)}"
-      move theTag to end of tags of newParent
-    `;
+    scriptParts.push(`
+var newParent = flattenedTags.filter(function(t) {
+  return t.id.primaryKey === "${escapeJSString(options.parentTagId)}";
+})[0];
+if (!newParent) {
+  throw new Error("Parent tag not found: ${escapeJSString(options.parentTagId)}");
+}
+moveTags([theTag], newParent);`);
   } else if (options.parentTagName !== undefined) {
-    reparentScript = `
-      set newParent to first flattened tag whose name is "${escapeAppleScript(options.parentTagName)}"
-      move theTag to end of tags of newParent
-    `;
+    scriptParts.push(`
+var newParent = flattenedTags.filter(function(t) {
+  return t.name === "${escapeJSString(options.parentTagName)}";
+})[0];
+if (!newParent) {
+  throw new Error("Parent tag not found: ${escapeJSString(options.parentTagName)}");
+}
+moveTags([theTag], newParent);`);
   }
 
-  const updateScript = updates.join("\n    ");
+  // Serialize and return the updated tag
+  scriptParts.push(`
+var parentId = null;
+var parentName = null;
+if (theTag.parent) {
+  parentId = theTag.parent.id.primaryKey;
+  parentName = theTag.parent.name;
+}
 
-  const script = `
-    set theTag to first flattened tag whose id is "${escapeAppleScript(tagId)}"
+return JSON.stringify({
+  id: theTag.id.primaryKey,
+  name: theTag.name,
+  parentId: parentId,
+  parentName: parentName,
+  availableTaskCount: theTag.availableTaskCount
+});`);
 
-    ${updateScript}
-    ${reparentScript}
-
-    -- Return updated tag info
-    set tagId to id of theTag
-    set tagName to name of theTag
-
-    set parentId to ""
-    set parentName to ""
-    try
-      set p to container of theTag
-      if class of p is tag then
-        set parentId to id of p
-        set parentName to name of p
-      end if
-    end try
-
-    set availCount to count of (flattened tasks whose primary tag is theTag and completed is false)
-
-    return "{" & ¬
-      "\\"id\\": \\"" & tagId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(tagName)) & "\\"," & ¬
-      "\\"parentId\\": " & (my jsonString(parentId)) & "," & ¬
-      "\\"parentName\\": " & (my jsonString(parentName)) & "," & ¬
-      "\\"availableTaskCount\\": " & availCount & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<OFTag>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<OFTag>(body);
 
   if (!result.success) {
     return failure(
@@ -216,23 +212,19 @@ export async function deleteTag(
   const idError = validateId(tagId, "tag");
   if (idError) return failure(idError);
 
-  const script = `
-    try
-      set theTag to first flattened tag whose id is "${escapeAppleScript(tagId)}"
-      delete theTag
-      return "{\\"tagId\\": \\"${escapeAppleScript(tagId)}\\", \\"deleted\\": true}"
-    on error errMsg
-      if errMsg contains "Can't get" or errMsg contains "not found" then
-        return "{\\"error\\": \\"not found\\", \\"tagId\\": \\"${escapeAppleScript(tagId)}\\"}"
-      else
-        error errMsg
-      end if
-    end try
-  `;
+  const body = `
+var theTag = flattenedTags.filter(function(t) {
+  return t.id.primaryKey === "${escapeJSString(tagId)}";
+})[0];
+if (!theTag) {
+  return JSON.stringify({ error: "not found", tagId: "${escapeJSString(tagId)}" });
+}
+deleteObject(theTag);
+return JSON.stringify({ tagId: "${escapeJSString(tagId)}", deleted: true });`;
 
-  const result = await runAppleScript<
+  const result = await runOmniJSWrapped<
     DeleteTagResult | { error: string; tagId: string }
-  >(omniFocusScriptWithHelpers(script));
+  >(body);
 
   if (!result.success) {
     return failure(

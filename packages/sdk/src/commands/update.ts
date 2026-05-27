@@ -9,12 +9,9 @@ import {
   validateEstimatedMinutes,
   validateRepetitionRule,
 } from "../validation.js";
-import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
-import {
-  buildRepetitionRuleScript,
-  buildClearRepetitionScript,
-} from "./repetition.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+import { buildRRule } from "./repetition.js";
+import { sanitizeVarName } from "../utils/sanitize.js";
 
 /**
  * Update properties of an existing task in OmniFocus.
@@ -49,161 +46,119 @@ export async function updateTask(
   const repeatError = validateRepetitionRule(options.repeat);
   if (repeatError) return failure(repeatError);
 
-  // Build the update statements
-  const updates: string[] = [];
+  // Build the OmniJS script
+  const scriptParts: string[] = [];
+
+  scriptParts.push(`
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}`);
 
   if (options.title !== undefined) {
-    updates.push(
-      `set name of theTask to "${escapeAppleScript(options.title)}"`
-    );
+    scriptParts.push(`task.name = "${escapeJSString(options.title)}";`);
   }
 
   if (options.note !== undefined) {
-    updates.push(`set note of theTask to "${escapeAppleScript(options.note)}"`);
+    scriptParts.push(`task.note = "${escapeJSString(options.note)}";`);
   }
 
   if (options.flag !== undefined) {
-    updates.push("set flagged of theTask to " + String(options.flag));
+    scriptParts.push(`task.flagged = ${String(options.flag)};`);
   }
 
   if (options.due !== undefined) {
     if (options.due === "") {
-      updates.push(`set due date of theTask to missing value`);
+      scriptParts.push(`task.dueDate = null;`);
     } else {
-      updates.push(
-        `set due date of theTask to date "${toAppleScriptDate(options.due)}"`
-      );
+      scriptParts.push(`task.dueDate = ${toOmniJSDate(options.due)};`);
     }
   }
 
   if (options.defer !== undefined) {
     if (options.defer === "") {
-      updates.push(`set defer date of theTask to missing value`);
+      scriptParts.push(`task.deferDate = null;`);
     } else {
-      updates.push(
-        `set defer date of theTask to date "${toAppleScriptDate(options.defer)}"`
-      );
+      scriptParts.push(`task.deferDate = ${toOmniJSDate(options.defer)};`);
     }
   }
 
   if (options.project !== undefined) {
     if (options.project === "") {
-      updates.push(`set containing project of theTask to missing value`);
+      scriptParts.push(`moveTasks([task], inbox.beginning);`);
     } else {
-      updates.push(
-        `set theProject to first flattened project whose name is "${escapeAppleScript(options.project)}"`
-      );
-      updates.push(`move theTask to end of tasks of theProject`);
+      scriptParts.push(`
+var proj = flattenedProjects.byName("${escapeJSString(options.project)}");
+if (!proj) {
+  throw new Error("Project not found: ${escapeJSString(options.project)}");
+}
+moveTasks([task], proj.ending);`);
     }
   }
 
   if (options.estimatedMinutes !== undefined) {
-    updates.push(
-      `set estimated minutes of theTask to ${String(options.estimatedMinutes)}`
+    scriptParts.push(
+      `task.estimatedMinutes = ${String(options.estimatedMinutes)};`
     );
   }
 
   if (options.clearEstimate === true) {
-    updates.push(`set estimated minutes of theTask to missing value`);
+    scriptParts.push(`task.estimatedMinutes = null;`);
   }
 
-  const updateScript = updates.join("\n    ");
-
   // Handle repetition rule
-  let repetitionScript = "";
   if (options.clearRepeat === true) {
-    repetitionScript = buildClearRepetitionScript("theTask");
+    scriptParts.push(`task.repetitionRule = null;`);
   } else if (options.repeat !== undefined) {
-    repetitionScript = buildRepetitionRuleScript("theTask", options.repeat);
+    const rrule = buildRRule(options.repeat);
+    const method =
+      options.repeat.repeatMethod === "due-again"
+        ? "Task.RepetitionMethod.DueDate"
+        : "Task.RepetitionMethod.DeferDate";
+    scriptParts.push(
+      `task.repetitionRule = new Task.RepetitionRule("${escapeJSString(rrule)}", ${method});`
+    );
   }
 
   // Handle tags - clear and re-add
-  let tagScript = "";
   if (options.tags !== undefined) {
-    tagScript = `
-    -- Clear existing tags
-    repeat with existingTag in (tags of theTask)
-      remove existingTag from tags of theTask
-    end repeat
-    `;
-
-    for (const tagName of options.tags) {
-      tagScript += `
-    try
-      set theTag to first flattened tag whose name is "${escapeAppleScript(tagName)}"
-      add theTag to tags of theTask
-    end try
-      `;
+    scriptParts.push(`
+task.clearTags();`);
+    for (const [i, tagName] of options.tags.entries()) {
+      const varName = sanitizeVarName(tagName, i);
+      scriptParts.push(`
+var ${varName} = flattenedTags.byName("${escapeJSString(tagName)}");
+if (${varName}) { task.addTag(${varName}); }`);
     }
   }
 
-  const script = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
+  // Serialize and return
+  scriptParts.push(`
+var projId = null;
+var projName = null;
+if (task.containingProject) {
+  projId = task.containingProject.id.primaryKey;
+  projName = task.containingProject.name;
+}
+var tagNames = task.tags.map(function(t) { return t.name; });
 
-    ${updateScript}
-    ${tagScript}
-    ${repetitionScript}
+return JSON.stringify({
+  id: task.id.primaryKey,
+  name: task.name,
+  note: task.note || null,
+  flagged: task.flagged,
+  completed: task.completed,
+  dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+  deferDate: task.deferDate ? task.deferDate.toISOString() : null,
+  completionDate: task.completionDate ? task.completionDate.toISOString() : null,
+  projectId: projId,
+  projectName: projName,
+  tags: tagNames,
+  estimatedMinutes: task.estimatedMinutes != null ? task.estimatedMinutes : null
+});`);
 
-    -- Return updated task info
-    set taskId to id of theTask
-    set taskName to name of theTask
-    set taskNote to note of theTask
-    set taskFlagged to flagged of theTask
-    set taskCompleted to completed of theTask
-
-    set dueStr to ""
-    try
-      set dueStr to (due date of theTask) as string
-    end try
-
-    set deferStr to ""
-    try
-      set deferStr to (defer date of theTask) as string
-    end try
-
-    set completionStr to ""
-    try
-      set completionStr to (completion date of theTask) as string
-    end try
-
-    set projId to ""
-    set projName to ""
-    try
-      set proj to containing project of theTask
-      set projId to id of proj
-      set projName to name of proj
-    end try
-
-    set tagNames to {}
-    repeat with t in tags of theTask
-      set end of tagNames to name of t
-    end repeat
-
-    set estMinutes to 0
-    try
-      set estMinutes to estimated minutes of theTask
-      if estMinutes is missing value then set estMinutes to 0
-    end try
-
-    return "{" & ¬
-      "\\"id\\": \\"" & taskId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-      "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-      "\\"flagged\\": " & taskFlagged & "," & ¬
-      "\\"completed\\": " & taskCompleted & "," & ¬
-      "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-      "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-      "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-      "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-      "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-      "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-      "\\"estimatedMinutes\\": " & estMinutes & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<OFTask>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<OFTask>(body);
 
   if (!result.success) {
     return failure(

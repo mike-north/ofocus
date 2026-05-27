@@ -200,7 +200,11 @@ export async function getStats(
     );
   }
 
-  const allTasks = allTasksResult.data?.items ?? [];
+  // queryTasks returns a discriminated QueryResult. Without aggregate flags
+  // it always returns `kind: "list"`, but TS can't narrow that statically,
+  // so guard explicitly.
+  const allTasks =
+    allTasksResult.data?.kind === "list" ? allTasksResult.data.items : [];
 
   // Get available tasks
   const availableTasksResult = await queryTasks({
@@ -208,16 +212,19 @@ export async function getStats(
     available: true,
   });
 
-  const availableTasks = availableTasksResult.success
-    ? (availableTasksResult.data?.items ?? [])
-    : [];
+  const availableTasks =
+    availableTasksResult.success &&
+    availableTasksResult.data?.kind === "list"
+      ? availableTasksResult.data.items
+      : [];
 
   // Get projects
   const projectsResult = await queryProjects({});
 
-  const projects = projectsResult.success
-    ? (projectsResult.data?.items ?? [])
-    : [];
+  const projects =
+    projectsResult.success && projectsResult.data?.kind === "list"
+      ? projectsResult.data.items
+      : [];
 
   // Calculate statistics
   let tasksCompleted = 0;

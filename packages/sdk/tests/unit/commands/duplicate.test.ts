@@ -1,20 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { DuplicateTaskOptions } from "../../../src/types.js";
 import type { DuplicateTaskResult } from "../../../src/commands/duplicate.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
 }));
 
 // Import after mocking
 import { duplicateTask } from "../../../src/commands/duplicate.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("duplicateTask", () => {
   beforeEach(() => {
@@ -27,7 +28,7 @@ describe("duplicateTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with dangerous characters", async () => {
@@ -35,7 +36,7 @@ describe("duplicateTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with newlines", async () => {
@@ -43,7 +44,7 @@ describe("duplicateTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid task ID", async () => {
@@ -53,15 +54,15 @@ describe("duplicateTask", () => {
         newTaskName: "Test task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should accept task ID with underscores", async () => {
@@ -71,10 +72,10 @@ describe("duplicateTask", () => {
         newTaskName: "Test task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task_with_underscores");
 
@@ -87,7 +88,7 @@ describe("duplicateTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
   });
 
@@ -99,10 +100,10 @@ describe("duplicateTask", () => {
         newTaskName: "Duplicated task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-789");
 
@@ -122,18 +123,18 @@ describe("duplicateTask", () => {
         newTaskName: "Parent task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
       expect(result.success).toBe(true);
-      // Default behavior includes subtasks
-      const scriptCall = mockRunAppleScript.mock.calls[0]?.[0];
-      expect(scriptCall).toContain("duplicate theTask");
-      expect(scriptCall).not.toContain("Remove subtasks");
+      // Default behavior includes subtasks — no removal snippet in the script
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(scriptBody).toContain("duplicateTasks");
+      expect(scriptBody).not.toContain("Remove subtasks");
     });
 
     it("should duplicate task without subtasks when includeSubtasks is false", async () => {
@@ -143,19 +144,19 @@ describe("duplicateTask", () => {
         newTaskName: "Task without subtasks",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const options: DuplicateTaskOptions = { includeSubtasks: false };
       const result = await duplicateTask("task-123", options);
 
       expect(result.success).toBe(true);
       // Should include script to remove subtasks
-      const scriptCall = mockRunAppleScript.mock.calls[0]?.[0];
-      expect(scriptCall).toContain("duplicate theTask");
-      expect(scriptCall).toContain("Remove subtasks");
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(scriptBody).toContain("duplicateTasks");
+      expect(scriptBody).toContain("Remove subtasks");
     });
 
     it("should duplicate task with subtasks when includeSubtasks is true", async () => {
@@ -165,18 +166,18 @@ describe("duplicateTask", () => {
         newTaskName: "Task with subtasks",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const options: DuplicateTaskOptions = { includeSubtasks: true };
       const result = await duplicateTask("task-123", options);
 
       expect(result.success).toBe(true);
-      const scriptCall = mockRunAppleScript.mock.calls[0]?.[0];
-      expect(scriptCall).toContain("duplicate theTask");
-      expect(scriptCall).not.toContain("Remove subtasks");
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(scriptBody).toContain("duplicateTasks");
+      expect(scriptBody).not.toContain("Remove subtasks");
     });
 
     it("should handle task names with special characters", async () => {
@@ -186,10 +187,10 @@ describe("duplicateTask", () => {
         newTaskName: "Task with \"quotes\" and 'apostrophes'",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
@@ -206,10 +207,10 @@ describe("duplicateTask", () => {
         newTaskName: "Task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-with-hyphens");
 
@@ -225,16 +226,16 @@ describe("duplicateTask", () => {
         newTaskName: "Task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
       expect(result.success).toBe(true);
-      const scriptCall = mockRunAppleScript.mock.calls[0]?.[0];
-      expect(scriptCall).not.toContain("Remove subtasks");
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(scriptBody).not.toContain("Remove subtasks");
     });
 
     it("should default to including subtasks when options is empty object", async () => {
@@ -244,16 +245,16 @@ describe("duplicateTask", () => {
         newTaskName: "Task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123", {});
 
       expect(result.success).toBe(true);
-      const scriptCall = mockRunAppleScript.mock.calls[0]?.[0];
-      expect(scriptCall).not.toContain("Remove subtasks");
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(scriptBody).not.toContain("Remove subtasks");
     });
 
     it("should exclude subtasks when explicitly set to false", async () => {
@@ -263,30 +264,30 @@ describe("duplicateTask", () => {
         newTaskName: "Task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123", {
         includeSubtasks: false,
       });
 
       expect(result.success).toBe(true);
-      const scriptCall = mockRunAppleScript.mock.calls[0]?.[0];
-      expect(scriptCall).toContain("Remove subtasks");
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(scriptBody).toContain("Remove subtasks");
     });
   });
 
   describe("error handling", () => {
     it("should handle task not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("nonexistent-task");
 
@@ -296,13 +297,13 @@ describe("duplicateTask", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
@@ -310,28 +311,28 @@ describe("duplicateTask", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript execution error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should handle OmniJS execution error", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
+          code: ErrorCode.SCRIPT_ERROR,
+          message: "OmniJS execution failed",
           details: "Duplication error",
         },
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Duplication error");
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
@@ -341,10 +342,10 @@ describe("duplicateTask", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
@@ -354,18 +355,18 @@ describe("duplicateTask", () => {
     });
 
     it("should handle permission denied error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Permission denied",
         },
-      } as AppleScriptResult<DuplicateTaskResult>);
+      } as OmniJSResult<DuplicateTaskResult>);
 
       const result = await duplicateTask("task-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
   });
 

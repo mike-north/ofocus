@@ -2,8 +2,7 @@ import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateProjectName } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runOmniJSWrapped, escapeJSString } from "../omnijs.js";
 
 /**
  * Result from focus operations.
@@ -38,6 +37,8 @@ function validateFocusId(id: string): { code: string; message: string } | null {
 /**
  * Focus on a specific project or folder in OmniFocus.
  * This matches the OmniFocus UI focus feature.
+ *
+ * @see https://omni-automation.com/omnifocus/document-window.html
  */
 export async function focusOn(
   target: string,
@@ -54,75 +55,69 @@ export async function focusOn(
     if (error) return failure(error);
   }
 
-  const escapedTarget = escapeAppleScript(target);
+  const escapedTarget = escapeJSString(target);
 
-  const findScript = options.byId
+  // Build lookup script: try project first, then folder
+  const lookupScript = options.byId
     ? `
-      -- Try to find by ID (could be project or folder)
-      set targetItem to missing value
-      set targetType to ""
+var targetItem = null;
+var targetType = null;
 
-      try
-        set targetItem to first flattened project whose id is "${escapedTarget}"
-        set targetType to "project"
-      end try
+var proj = flattenedProjects.byIdentifier("${escapedTarget}");
+if (proj) {
+  targetItem = proj;
+  targetType = "project";
+} else {
+  var folder = flattenedFolders.byIdentifier("${escapedTarget}");
+  if (folder) {
+    targetItem = folder;
+    targetType = "folder";
+  }
+}
 
-      if targetItem is missing value then
-        try
-          set targetItem to first flattened folder whose id is "${escapedTarget}"
-          set targetType to "folder"
-        end try
-      end if
-
-      if targetItem is missing value then
-        error "Target not found with ID: ${escapedTarget}"
-      end if
-    `
+if (!targetItem) {
+  throw new Error("Target not found with ID: ${escapedTarget}");
+}`
     : `
-      -- Try to find by name (project first, then folder)
-      set targetItem to missing value
-      set targetType to ""
+var targetItem = null;
+var targetType = null;
 
-      try
-        set targetItem to first flattened project whose name is "${escapedTarget}"
-        set targetType to "project"
-      end try
+var proj = flattenedProjects.byName("${escapedTarget}");
+if (proj) {
+  targetItem = proj;
+  targetType = "project";
+} else {
+  var folder = flattenedFolders.byName("${escapedTarget}");
+  if (folder) {
+    targetItem = folder;
+    targetType = "folder";
+  }
+}
 
-      if targetItem is missing value then
-        try
-          set targetItem to first flattened folder whose name is "${escapedTarget}"
-          set targetType to "folder"
-        end try
-      end if
+if (!targetItem) {
+  throw new Error("Target not found: ${escapedTarget}");
+}`;
 
-      if targetItem is missing value then
-        error "Target not found: ${escapedTarget}"
-      end if
-    `;
+  const body = `
+${lookupScript}
 
-  const script = `
-    ${findScript}
+var targetId = targetItem.id.primaryKey;
+var targetName = targetItem.name;
 
-    -- Get info while still in document context
-    set targetId to id of targetItem
-    set targetName to name of targetItem
-  end tell
+var win = document.windows[0];
+if (!win) {
+  throw new Error("No OmniFocus window is open");
+}
+win.focus = [targetItem];
 
-  -- Set focus (document window is on application, not document)
-  set focused of document window 1 to {targetItem}
+return JSON.stringify({
+  focused: true,
+  targetId: targetId,
+  targetName: targetName,
+  targetType: targetType
+});`;
 
-  tell default document
-    return "{" & ¬
-      "\\"focused\\": true," & ¬
-      "\\"targetId\\": \\"" & targetId & "\\"," & ¬
-      "\\"targetName\\": \\"" & (my escapeJson(targetName)) & "\\"," & ¬
-      "\\"targetType\\": \\"" & targetType & "\\"" & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<FocusResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<FocusResult>(body);
 
   if (!result.success) {
     return failure(
@@ -140,26 +135,25 @@ export async function focusOn(
 
 /**
  * Clear focus in OmniFocus (show all items).
+ *
+ * @see https://omni-automation.com/omnifocus/document-window.html
  */
 export async function unfocus(): Promise<CliOutput<FocusResult>> {
-  const script = `
-  end tell
+  const body = `
+var win = document.windows[0];
+if (!win) {
+  throw new Error("No OmniFocus window is open");
+}
+win.focus = [];
 
-  -- Clear focus by setting to empty list (document window is on application, not document)
-  set focused of document window 1 to {}
+return JSON.stringify({
+  focused: false,
+  targetId: null,
+  targetName: null,
+  targetType: null
+});`;
 
-  tell default document
-    return "{" & ¬
-      "\\"focused\\": false," & ¬
-      "\\"targetId\\": null," & ¬
-      "\\"targetName\\": null," & ¬
-      "\\"targetType\\": null" & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<FocusResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<FocusResult>(body);
 
   if (!result.success) {
     return failure(
@@ -177,50 +171,43 @@ export async function unfocus(): Promise<CliOutput<FocusResult>> {
 
 /**
  * Get the current focus state in OmniFocus.
+ *
+ * @see https://omni-automation.com/omnifocus/document-window.html
  */
 export async function getFocused(): Promise<CliOutput<FocusResult>> {
-  const script = `
-  end tell
+  const body = `
+var win = document.windows[0];
+if (!win) {
+  throw new Error("No OmniFocus window is open");
+}
 
-  -- Get focused items (document window is on application, not document)
-  set focusedItems to focused of document window 1
+var focusedItems = win.focus;
 
-  if (count of focusedItems) is 0 then
-    tell default document
-      return "{" & ¬
-        "\\"focused\\": false," & ¬
-        "\\"targetId\\": null," & ¬
-        "\\"targetName\\": null," & ¬
-        "\\"targetType\\": null" & ¬
-        "}"
-    end tell
-  end if
+if (!focusedItems || focusedItems.length === 0) {
+  return JSON.stringify({
+    focused: false,
+    targetId: null,
+    targetName: null,
+    targetType: null
+  });
+}
 
-  -- Get first focused item (typically only one)
-  set focusedItem to item 1 of focusedItems
+// Get first focused item (typically only one)
+var focusedItem = focusedItems[0];
+var targetId = focusedItem.id.primaryKey;
+var targetName = focusedItem.name;
 
-  set targetId to id of focusedItem
-  set targetName to name of focusedItem
+// Determine type: Projects have a "status" property; Folders do not
+var targetType = (typeof focusedItem.status !== "undefined") ? "project" : "folder";
 
-  -- Determine type
-  set targetType to "folder"
-  try
-    set testStatus to status of focusedItem
-    set targetType to "project"
-  end try
+return JSON.stringify({
+  focused: true,
+  targetId: targetId,
+  targetName: targetName,
+  targetType: targetType
+});`;
 
-  tell default document
-    return "{" & ¬
-      "\\"focused\\": true," & ¬
-      "\\"targetId\\": \\"" & targetId & "\\"," & ¬
-      "\\"targetName\\": \\"" & (my escapeJson(targetName)) & "\\"," & ¬
-      "\\"targetType\\": \\"" & targetType & "\\"" & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<FocusResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<FocusResult>(body);
 
   if (!result.success) {
     return failure(

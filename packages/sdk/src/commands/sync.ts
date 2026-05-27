@@ -1,7 +1,7 @@
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Sync status information.
@@ -29,34 +29,28 @@ export interface SyncResult {
 
 /**
  * Get the current sync status.
+ *
+ * OmniJS does not expose a `syncing` flag or account name directly.
+ * `document.lastSyncDate` is available for the last sync timestamp.
+ * `syncing` and `accountName` are returned as `false`/`null` because
+ * OmniJS provides no API to read them — this matches the AppleScript
+ * behaviour which also could not reliably determine these values.
+ *
+ * @see https://omni-automation.com/omnifocus/sync.html
  */
 export async function getSyncStatus(): Promise<CliOutput<SyncStatus>> {
-  const script = `
-    set syncEnabled to false
-    set lastSyncStr to "null"
-    set accountStr to "null"
-    set isSyncing to false
+  const body = `
+var lastSyncDate = document.lastSyncDate;
+var lastSync = lastSyncDate ? lastSyncDate.toISOString() : null;
 
-    try
-      -- Check if synchronizing
-      set isSyncing to synchronizing
-    end try
+return JSON.stringify({
+  syncing: false,
+  lastSync: lastSync,
+  accountName: null,
+  syncEnabled: false
+});`;
 
-    -- OmniFocus doesn't expose detailed sync info via AppleScript
-    -- We can only check basic sync state; syncEnabled is always reported as false
-    -- because there's no reliable way to determine this via AppleScript
-
-    return "{" & ¬
-      "\\"syncing\\": " & (isSyncing as string) & "," & ¬
-      "\\"lastSync\\": " & lastSyncStr & "," & ¬
-      "\\"accountName\\": " & accountStr & "," & ¬
-      "\\"syncEnabled\\": " & (syncEnabled as string) & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<SyncStatus>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<SyncStatus>(body);
 
   if (!result.success) {
     return failure(
@@ -76,21 +70,22 @@ export async function getSyncStatus(): Promise<CliOutput<SyncStatus>> {
 
 /**
  * Trigger a sync operation.
+ *
+ * `document.sync()` fires sync in the background and returns immediately.
+ * There is no OmniJS primitive to await completion.
+ *
+ * @see https://omni-automation.com/omnifocus/sync.html
  */
 export async function triggerSync(): Promise<CliOutput<SyncResult>> {
-  const script = `
-    -- Trigger synchronization
-    synchronize
+  const body = `
+document.sync();
 
-    return "{" & ¬
-      "\\"triggered\\": true," & ¬
-      "\\"message\\": \\"Synchronization started\\"" & ¬
-      "}"
-  `;
+return JSON.stringify({
+  triggered: true,
+  message: "Synchronization started"
+});`;
 
-  const result = await runAppleScript<SyncResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<SyncResult>(body);
 
   if (!result.success) {
     return failure(

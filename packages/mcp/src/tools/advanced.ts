@@ -132,28 +132,22 @@ export function registerAdvancedTools(server: McpServer): void {
   server.registerTool(
     "forecast",
     {
-      description: "Query tasks by date range (forecast view)",
+      description: "Query tasks due within N days (forecast view)",
       inputSchema: {
-        start: z.string().optional().describe("Start date (defaults to today)"),
-        end: z.string().optional().describe("End date"),
         days: z
           .number()
           .int()
           .min(1)
           .optional()
-          .describe(
-            "Number of days from start (alternative to end, default: 7)"
-          ),
+          .describe("Number of days ahead to include (default: 7)"),
         includeDeferred: z
           .boolean()
           .optional()
-          .describe("Include tasks deferred to the date range"),
+          .describe("Include tasks deferred to the same window"),
       },
     },
     async (params) => {
       const result = await queryForecast({
-        start: params.start,
-        end: params.end,
         days: params.days,
         includeDeferred: params.includeDeferred,
       });
@@ -226,8 +220,8 @@ export function registerAdvancedTools(server: McpServer): void {
     },
     async (params) => {
       const result = await queryDeferred({
-        deferredAfter: params.deferredAfter,
-        deferredBefore: params.deferredBefore,
+        deferAfter: params.deferredAfter,
+        deferBefore: params.deferredBefore,
         blockedOnly: params.blockedOnly,
       });
       return formatResult(result);

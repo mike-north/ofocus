@@ -1,37 +1,45 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
-import type { OFFolder, PaginatedResult } from "../../../src/types.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
+import type { OFFolder } from "../../../src/types.js";
+import type { QueryResult } from "../../../src/query/index.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
-}));
-
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked script"),
-}));
+// Mock the omnijs module. `runOmniJSWrapped` is the only OmniJS entry the
+// refactored folders.ts uses; `escapeJSString` is still imported transitively
+// by predicates.ts via the real (un-mocked) source path.
+vi.mock("../../../src/omnijs.js", async () => {
+  const actual = await vi.importActual<typeof import("../../../src/omnijs.js")>(
+    "../../../src/omnijs.js"
+  );
+  return {
+    ...actual,
+    runOmniJSWrapped: vi.fn(),
+  };
+});
 
 // Import after mocking
 import { createFolder, queryFolders } from "../../../src/commands/folders.js";
-import { runComposedScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
+
+// ── Test helpers ─────────────────────────────────────────────────────────────
 
 const createMockFolder = (overrides: Partial<OFFolder> = {}): OFFolder => ({
   id: "folder-123",
   name: "Test Folder",
-  parentFolderId: null,
-  parentFolderName: null,
+  parentId: null,
+  parentName: null,
   projectCount: 3,
+  folderCount: 0,
   ...overrides,
 });
 
-const createMockPaginatedResult = (
+const createMockListResult = (
   items: OFFolder[],
-  overrides: Partial<PaginatedResult<OFFolder>> = {}
-): PaginatedResult<OFFolder> => ({
+  overrides: Partial<Extract<QueryResult<OFFolder>, { kind: "list" }>> = {}
+): Extract<QueryResult<OFFolder>, { kind: "list" }> => ({
+  kind: "list",
   items,
   totalCount: items.length,
   returnedCount: items.length,
@@ -40,6 +48,19 @@ const createMockPaginatedResult = (
   limit: 100,
   ...overrides,
 });
+
+/** Narrow a QueryResult to the list shape and fail fast if it isn't. */
+function expectList(
+  result: QueryResult<OFFolder> | null | undefined
+): Extract<QueryResult<OFFolder>, { kind: "list" }> {
+  expect(result).toBeDefined();
+  expect(result?.kind).toBe("list");
+  if (!result || result.kind !== "list")
+    throw new Error("Expected list shape");
+  return result;
+}
+
+// ── createFolder ──────────────────────────────────────────────────────────────
 
 describe("createFolder", () => {
   beforeEach(() => {
@@ -53,7 +74,7 @@ describe("createFolder", () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(result.error?.message).toContain("cannot be empty");
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject whitespace-only folder name", async () => {
@@ -91,15 +112,15 @@ describe("createFolder", () => {
     it("should accept valid folder name", async () => {
       const mockFolder = createMockFolder({ name: "New Folder" });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder");
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -107,13 +128,13 @@ describe("createFolder", () => {
     it("should create folder at root level", async () => {
       const mockFolder = createMockFolder({
         name: "New Folder",
-        parentFolderId: null,
+        parentId: null,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder");
 
@@ -124,33 +145,33 @@ describe("createFolder", () => {
     it("should create folder inside parent by ID", async () => {
       const mockFolder = createMockFolder({
         name: "Child Folder",
-        parentFolderId: "parent-123",
-        parentFolderName: "Parent Folder",
+        parentId: "parent-123",
+        parentName: "Parent Folder",
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("Child Folder", {
         parentFolderId: "parent-123",
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.parentFolderId).toBe("parent-123");
+      expect(result.data?.parentId).toBe("parent-123");
     });
 
     it("should create folder inside parent by name", async () => {
       const mockFolder = createMockFolder({
         name: "Child Folder",
-        parentFolderName: "Work",
+        parentName: "Work",
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("Child Folder", {
         parentFolderName: "Work",
@@ -162,13 +183,13 @@ describe("createFolder", () => {
 
   describe("error handling", () => {
     it("should handle parent folder not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Folder not found",
         },
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder", {
         parentFolderName: "Nonexistent",
@@ -178,10 +199,10 @@ describe("createFolder", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder");
 
@@ -190,10 +211,10 @@ describe("createFolder", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder");
 
@@ -203,14 +224,31 @@ describe("createFolder", () => {
   });
 });
 
+// ── queryFolders ──────────────────────────────────────────────────────────────
+
 describe("queryFolders", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("validation", () => {
-    it("should reject invalid parent name", async () => {
+    it("should reject invalid parent name (quotes)", async () => {
       const result = await queryFolders({ parent: 'bad"name' });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    });
+
+    it("should reject empty parent array", async () => {
+      const result = await queryFolders({ parent: [] });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
+
+    it("should reject empty ancestor array", async () => {
+      const result = await queryFolders({ ancestor: [] });
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
@@ -230,100 +268,292 @@ describe("queryFolders", () => {
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
     });
 
-    it("should accept valid options", async () => {
-      const mockResult = createMockPaginatedResult([createMockFolder()]);
+    it("should reject unknown projection field", async () => {
+      const result = await queryFolders({ fields: ["id", "doesNotExist"] });
 
-      mockRunComposedScript.mockResolvedValue({
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
+
+    it("should reject unknown sort key", async () => {
+      const result = await queryFolders({ sort: ["bogusKey"] });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
+
+    it("should reject mutually exclusive shape modifiers", async () => {
+      const result = await queryFolders({ count: true, first: true });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
+
+    it("should reject unknown groupBy key", async () => {
+      const result = await queryFolders({ groupBy: "bogusKey" });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
+
+    it("should accept valid options", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+        data: createMockListResult([createMockFolder()]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
 
       const result = await queryFolders({ limit: 50, offset: 0 });
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("successful queries", () => {
-    it("should return paginated folders with default options", async () => {
+  describe("list-shape queries", () => {
+    it("should return list result with default options", async () => {
       const mockFolders = [
         createMockFolder({ id: "folder-1" }),
         createMockFolder({ id: "folder-2" }),
       ];
-      const mockResult = createMockPaginatedResult(mockFolders);
-
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+        data: createMockListResult(mockFolders),
+      } as OmniJSResult<QueryResult<OFFolder>>);
 
       const result = await queryFolders();
 
       expect(result.success).toBe(true);
-      expect(result.data?.items).toHaveLength(2);
-      expect(result.data?.totalCount).toBe(2);
+      const list = expectList(result.data);
+      expect(list.items).toHaveLength(2);
+      expect(list.totalCount).toBe(2);
     });
 
-    it("should filter by parent folder", async () => {
-      const mockFolders = [createMockFolder({ parentFolderName: "Work" })];
-      const mockResult = createMockPaginatedResult(mockFolders);
-
-      mockRunComposedScript.mockResolvedValue({
+    it("should filter by parent folder (single)", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+        data: createMockListResult([createMockFolder({ parentName: "Work" })]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
 
       const result = await queryFolders({ parent: "Work" });
 
       expect(result.success).toBe(true);
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("t.parent.name");
+      expect(body).toContain('"Work"');
+    });
+
+    it("should filter by ancestor (transitive walk)", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ ancestor: "Work" });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("p = t.parent");
+      expect(body).toContain("p = p.parent");
+      expect(body).toContain('"Work"');
+    });
+
+    it("should filter by isRoot: true", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([createMockFolder()]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ isRoot: true });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("(t.parent == null)");
+    });
+
+    it("should filter by hasProjects: true", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([createMockFolder({ projectCount: 5 })]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ hasProjects: true });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("(t.projects.length > 0)");
+    });
+
+    it("should filter by status: active", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ status: "active" });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("Folder.Status.Active");
     });
 
     it("should handle pagination with offset and limit", async () => {
-      const mockFolders = [createMockFolder({ id: "folder-51" })];
-      const mockResult = createMockPaginatedResult(mockFolders, {
-        totalCount: 100,
-        returnedCount: 1,
-        hasMore: true,
-        offset: 50,
-        limit: 1,
-      });
-
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+        data: createMockListResult(
+          [createMockFolder({ id: "folder-51" })],
+          { totalCount: 100, returnedCount: 1, hasMore: true, offset: 50, limit: 1 }
+        ),
+      } as OmniJSResult<QueryResult<OFFolder>>);
 
       const result = await queryFolders({ offset: 50, limit: 1 });
 
       expect(result.success).toBe(true);
-      expect(result.data?.offset).toBe(50);
-      expect(result.data?.hasMore).toBe(true);
+      const list = expectList(result.data);
+      expect(list.offset).toBe(50);
+      expect(list.hasMore).toBe(true);
     });
+  });
 
-    it("should return default empty result on undefined data", async () => {
-      mockRunComposedScript.mockResolvedValue({
+  describe("aggregate shapes", () => {
+    it("--count returns kind: 'count'", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: undefined,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+        data: { kind: "count", count: 7 },
+      } as OmniJSResult<QueryResult<OFFolder>>);
 
-      const result = await queryFolders();
+      const result = await queryFolders({ count: true });
 
       expect(result.success).toBe(true);
-      expect(result.data?.items).toEqual([]);
-      expect(result.data?.totalCount).toBe(0);
+      expect(result.data?.kind).toBe("count");
+      if (result.data?.kind === "count") expect(result.data.count).toBe(7);
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain('kind: "count"');
+    });
+
+    it("--ids-only returns kind: 'ids'", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { kind: "ids", ids: ["a", "b"] },
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      const result = await queryFolders({ idsOnly: true });
+      expect(result.data?.kind).toBe("ids");
+    });
+
+    it("--first returns kind: 'single'", async () => {
+      const folder = createMockFolder({ id: "folder-first" });
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { kind: "single", item: folder },
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      const result = await queryFolders({ first: true });
+      expect(result.data?.kind).toBe("single");
+      if (result.data?.kind === "single") {
+        expect(result.data.item?.id).toBe("folder-first");
+      }
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("rows[0]");
+    });
+
+    it("--group-by parent returns kind: 'groups'", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: {
+          kind: "groups",
+          groups: [{ key: "Work", count: 3 }],
+          totalCount: 3,
+        },
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      const result = await queryFolders({ groupBy: "parent" });
+      expect(result.data?.kind).toBe("groups");
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain('kind: "groups"');
+      expect(body).toContain("(Root)");
+    });
+
+    it("--group-by status groups by active/dropped", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { kind: "groups", groups: [], totalCount: 0 },
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ groupBy: "status" });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("Folder.Status.Active");
+    });
+  });
+
+  describe("projection options", () => {
+    it("--fields id,name limits the projection", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ fields: ["id", "name"] });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("id: t.id.primaryKey");
+      expect(body).toContain("name: t.name");
+      // Default field not requested — should not appear
+      expect(body).not.toContain("projectCount");
+    });
+
+    it("extended fields like flattenedProjectCount are accessible", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ fields: ["id", "flattenedProjectCount", "status"] });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("t.flattenedProjects.length");
+      expect(body).toContain("Folder.Status.Active");
+    });
+  });
+
+  describe("sort options", () => {
+    it("--sort name --reverse wraps comparator", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ sort: ["name"], reverse: true });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("rows.sort");
+      expect(body).toContain("return -base(a, b)");
+    });
+  });
+
+  describe("string predicates", () => {
+    it("nameContains is case-insensitive by default", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ nameContains: "work" });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain("t.name.toLowerCase()");
+      expect(body).toContain('"work"');
+    });
+
+    it("nameEquals with caseSensitive: true keeps original case", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      await queryFolders({ nameEquals: "Work", caseSensitive: true });
+      const body = mockRunOmniJS.mock.calls[0]?.[0];
+      expect(body).toContain('"Work"');
+      expect(body).not.toContain("toLowerCase");
     });
   });
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<QueryResult<OFFolder>>);
 
       const result = await queryFolders();
 
@@ -331,11 +561,36 @@ describe("queryFolders", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
+    it("should handle undefined data response with default empty list", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: undefined,
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      const result = await queryFolders();
+
+      expect(result.success).toBe(true);
+      const list = expectList(result.data);
+      expect(list.items).toEqual([]);
+      expect(list.totalCount).toBe(0);
+    });
+
+    it("default for count shape uses count: 0", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: undefined,
+      } as OmniJSResult<QueryResult<OFFolder>>);
+
+      const result = await queryFolders({ count: true });
+      expect(result.data?.kind).toBe("count");
+      if (result.data?.kind === "count") expect(result.data.count).toBe(0);
+    });
+
     it("should handle null error in failure response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<QueryResult<OFFolder>>);
 
       const result = await queryFolders();
 

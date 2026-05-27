@@ -6,8 +6,7 @@ import {
   validateProjectName,
   validateFolderName,
 } from "../validation.js";
-import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from deleting a project.
@@ -24,6 +23,38 @@ export interface DropProjectResult {
   projectId: string;
   projectName: string;
   dropped: boolean;
+}
+
+/** Shared serializer for an OFProject — appended to every script body. */
+function projectSerializerScript(): string {
+  return `
+var folderId = null;
+var folderName = null;
+if (theProject.parentFolder) {
+  folderId = theProject.parentFolder.id.primaryKey;
+  folderName = theProject.parentFolder.name;
+}
+
+var statusStr = "active";
+if (theProject.status === Project.Status.OnHold) {
+  statusStr = "on-hold";
+} else if (theProject.status === Project.Status.Done) {
+  statusStr = "completed";
+} else if (theProject.status === Project.Status.Dropped) {
+  statusStr = "dropped";
+}
+
+return JSON.stringify({
+  id: theProject.id.primaryKey,
+  name: theProject.name,
+  note: theProject.note || null,
+  status: statusStr,
+  sequential: theProject.sequential,
+  folderId: folderId,
+  folderName: folderName,
+  taskCount: theProject.tasks.length,
+  remainingTaskCount: theProject.tasks.filter(function(t) { return !t.completed; }).length
+});`;
 }
 
 /**
@@ -53,57 +84,56 @@ export async function updateProject(
     if (folderNameError) return failure(folderNameError);
   }
 
-  // Build the update statements
-  const updates: string[] = [];
+  // Build the OmniJS script
+  const scriptParts: string[] = [];
+
+  scriptParts.push(`
+var theProject = Project.byIdentifier("${escapeJSString(projectId)}");
+if (!theProject) {
+  throw new Error("Project not found: ${escapeJSString(projectId)}");
+}`);
 
   if (options.name !== undefined) {
-    updates.push(
-      `set name of theProject to "${escapeAppleScript(options.name)}"`
-    );
+    scriptParts.push(`theProject.name = "${escapeJSString(options.name)}";`);
   }
 
   if (options.note !== undefined) {
-    updates.push(
-      `set note of theProject to "${escapeAppleScript(options.note)}"`
-    );
+    scriptParts.push(`theProject.note = "${escapeJSString(options.note)}";`);
   }
 
   if (options.sequential !== undefined) {
-    updates.push(
-      `set sequential of theProject to ${String(options.sequential)}`
-    );
+    scriptParts.push(`theProject.sequential = ${String(options.sequential)};`);
   }
 
   // Handle status changes
-  // OmniFocus status values: active status, on hold status, done status, dropped status
   if (options.status !== undefined) {
-    let statusValue: string;
+    let statusExpr: string;
     switch (options.status) {
       case "active":
-        statusValue = "active status";
+        statusExpr = "Project.Status.Active";
         break;
       case "on-hold":
-        statusValue = "on hold status";
+        statusExpr = "Project.Status.OnHold";
         break;
       case "completed":
-        statusValue = "done status";
+        statusExpr = "Project.Status.Done";
         break;
       case "dropped":
-        statusValue = "dropped status";
+        statusExpr = "Project.Status.Dropped";
         break;
       default:
-        statusValue = "active status";
+        statusExpr = "Project.Status.Active";
     }
-    updates.push(`set status of theProject to ${statusValue}`);
+    scriptParts.push(`theProject.status = ${statusExpr};`);
   }
 
   // Handle due date
   if (options.dueDate !== undefined) {
     if (options.dueDate === "") {
-      updates.push(`set due date of theProject to missing value`);
+      scriptParts.push(`theProject.dueDate = null;`);
     } else {
-      updates.push(
-        `set due date of theProject to date "${toAppleScriptDate(options.dueDate)}"`
+      scriptParts.push(
+        `theProject.dueDate = ${toOmniJSDate(options.dueDate)};`
       );
     }
   }
@@ -111,81 +141,35 @@ export async function updateProject(
   // Handle defer date
   if (options.deferDate !== undefined) {
     if (options.deferDate === "") {
-      updates.push(`set defer date of theProject to missing value`);
+      scriptParts.push(`theProject.deferDate = null;`);
     } else {
-      updates.push(
-        `set defer date of theProject to date "${toAppleScriptDate(options.deferDate)}"`
+      scriptParts.push(
+        `theProject.deferDate = ${toOmniJSDate(options.deferDate)};`
       );
     }
   }
 
   // Handle folder move
-  let moveScript = "";
   if (options.folderId !== undefined) {
-    moveScript = `
-      set targetFolder to first flattened folder whose id is "${escapeAppleScript(options.folderId)}"
-      move theProject to end of projects of targetFolder
-    `;
+    scriptParts.push(`
+var targetFolder = Folder.byIdentifier("${escapeJSString(options.folderId)}");
+if (!targetFolder) {
+  throw new Error("Folder not found: ${escapeJSString(options.folderId)}");
+}
+moveSections([theProject], targetFolder);`);
   } else if (options.folderName !== undefined) {
-    moveScript = `
-      set targetFolder to first flattened folder whose name is "${escapeAppleScript(options.folderName)}"
-      move theProject to end of projects of targetFolder
-    `;
+    scriptParts.push(`
+var targetFolder = flattenedFolders.byName("${escapeJSString(options.folderName)}");
+if (!targetFolder) {
+  throw new Error("Folder not found: ${escapeJSString(options.folderName)}");
+}
+moveSections([theProject], targetFolder);`);
   }
 
-  const updateScript = updates.join("\n    ");
+  scriptParts.push(projectSerializerScript());
 
-  const script = `
-    set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
-
-    ${updateScript}
-    ${moveScript}
-
-    -- Return updated project info
-    set projId to id of theProject
-    set projName to name of theProject
-    set projNote to note of theProject
-    set projSeq to sequential of theProject
-
-    set projStatus to "active"
-    try
-      set theStatus to status of theProject
-      if theStatus is on hold status then
-        set projStatus to "on-hold"
-      else if theStatus is done status then
-        set projStatus to "completed"
-      else if theStatus is dropped status then
-        set projStatus to "dropped"
-      end if
-    end try
-
-    set folderId to ""
-    set folderName to ""
-    try
-      set f to folder of theProject
-      set folderId to id of f
-      set folderName to name of f
-    end try
-
-    set taskCount to count of tasks of theProject
-    set remainingCount to count of (tasks of theProject where completed is false)
-
-    return "{" & ¬
-      "\\"id\\": \\"" & projId & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-      "\\"note\\": " & (my jsonString(projNote)) & "," & ¬
-      "\\"status\\": \\"" & projStatus & "\\"," & ¬
-      "\\"sequential\\": " & projSeq & "," & ¬
-      "\\"folderId\\": " & (my jsonString(folderId)) & "," & ¬
-      "\\"folderName\\": " & (my jsonString(folderName)) & "," & ¬
-      "\\"taskCount\\": " & taskCount & "," & ¬
-      "\\"remainingTaskCount\\": " & remainingCount & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<OFProject>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const body = scriptParts.join("\n");
+  const result = await runOmniJSWrapped<OFProject>(body);
 
   if (!result.success) {
     return failure(
@@ -214,23 +198,17 @@ export async function deleteProject(
   const idError = validateId(projectId, "project");
   if (idError) return failure(idError);
 
-  const script = `
-    try
-      set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
-      delete theProject
-      return "{\\"projectId\\": \\"${escapeAppleScript(projectId)}\\", \\"deleted\\": true}"
-    on error errMsg
-      if errMsg contains "Can't get" or errMsg contains "not found" then
-        return "{\\"error\\": \\"not found\\", \\"projectId\\": \\"${escapeAppleScript(projectId)}\\"}"
-      else
-        error errMsg
-      end if
-    end try
-  `;
+  const body = `
+var theProject = Project.byIdentifier("${escapeJSString(projectId)}");
+if (!theProject) {
+  return JSON.stringify({ error: "not found", projectId: "${escapeJSString(projectId)}" });
+}
+deleteObject(theProject);
+return JSON.stringify({ projectId: "${escapeJSString(projectId)}", deleted: true });`;
 
-  const result = await runAppleScript<
+  const result = await runOmniJSWrapped<
     DeleteProjectResult | { error: string; projectId: string }
-  >(omniFocusScriptWithHelpers(script));
+  >(body);
 
   if (!result.success) {
     return failure(
@@ -266,23 +244,20 @@ export async function dropProject(
   const idError = validateId(projectId, "project");
   if (idError) return failure(idError);
 
-  const script = `
-    set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
-    mark dropped theProject
+  const body = `
+var theProject = Project.byIdentifier("${escapeJSString(projectId)}");
+if (!theProject) {
+  throw new Error("Project not found: ${escapeJSString(projectId)}");
+}
+theProject.markDropped();
 
-    set projName to name of theProject
-    set projDropped to (status of theProject is dropped status)
+return JSON.stringify({
+  projectId: theProject.id.primaryKey,
+  projectName: theProject.name,
+  dropped: theProject.status === Project.Status.Dropped
+});`;
 
-    return "{" & ¬
-      "\\"projectId\\": \\"${escapeAppleScript(projectId)}\\"," & ¬
-      "\\"projectName\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-      "\\"dropped\\": " & projDropped & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<DropProjectResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<DropProjectResult>(body);
 
   if (!result.success) {
     return failure(

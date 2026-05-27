@@ -1,23 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { CompleteResult } from "../../../src/commands/complete.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
-}));
-
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked json helpers"),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { completeTask } from "../../../src/commands/complete.js";
-import { runComposedScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("completeTask", () => {
   beforeEach(() => {
@@ -30,7 +26,7 @@ describe("completeTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with dangerous characters", async () => {
@@ -38,7 +34,7 @@ describe("completeTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject task ID with newlines", async () => {
@@ -46,7 +42,7 @@ describe("completeTask", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid task ID", async () => {
@@ -56,15 +52,15 @@ describe("completeTask", () => {
         completed: true,
       };
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("abc-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -76,10 +72,10 @@ describe("completeTask", () => {
         completed: true,
       };
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("task-789");
 
@@ -99,10 +95,10 @@ describe("completeTask", () => {
         completed: true,
       };
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("task_with_underscores");
 
@@ -116,10 +112,10 @@ describe("completeTask", () => {
         completed: true,
       };
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("task-with-hyphens");
 
@@ -129,13 +125,13 @@ describe("completeTask", () => {
 
   describe("error handling", () => {
     it("should handle task not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("nonexistent-task");
 
@@ -145,13 +141,13 @@ describe("completeTask", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("task-123");
 
@@ -159,28 +155,28 @@ describe("completeTask", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript execution error", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("should handle OmniJS execution error", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
+          code: ErrorCode.SCRIPT_ERROR,
+          message: "OmniJS script error",
           details: "Some error details",
         },
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("task-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Some error details");
     });
 
     it("should handle undefined data response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("task-123");
 
@@ -190,10 +186,10 @@ describe("completeTask", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<CompleteResult>);
+      } as OmniJSResult<CompleteResult>);
 
       const result = await completeTask("task-123");
 

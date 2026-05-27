@@ -5,20 +5,65 @@ import {
   deleteTasks,
 } from "../../../src/commands/batch.js";
 import { ErrorCode } from "../../../src/errors.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
 }));
 
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked json helpers"),
-}));
+// Import after mocking
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-// Import the mocked function
-import { runComposedScript } from "../../../src/applescript.js";
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function succeededCompleteResult(
+  ids: string[],
+  namePrefix = "Task"
+): OmniJSResult<{
+  succeeded: { taskId: string; taskName: string }[];
+  failed: { id: string; error: string }[];
+}> {
+  return {
+    success: true,
+    data: {
+      succeeded: ids.map((id) => ({ taskId: id, taskName: `${namePrefix} ${id}` })),
+      failed: [],
+    },
+  };
+}
+
+function succeededDeleteResult(
+  ids: string[]
+): OmniJSResult<{
+  succeeded: { taskId: string }[];
+  failed: { id: string; error: string }[];
+}> {
+  return {
+    success: true,
+    data: {
+      succeeded: ids.map((id) => ({ taskId: id })),
+      failed: [],
+    },
+  };
+}
+
+function errorResult(message = "OmniFocus not running"): OmniJSResult<never> {
+  return {
+    success: false,
+    error: { code: ErrorCode.SCRIPT_ERROR, message },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// completeTasks
+// ---------------------------------------------------------------------------
 
 describe("completeTasks", () => {
   beforeEach(() => {
@@ -32,7 +77,7 @@ describe("completeTasks", () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(result.error?.message).toBe("No task IDs provided");
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should return error for invalid task ID format", async () => {
@@ -40,7 +85,7 @@ describe("completeTasks", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should return error if any task ID is invalid", async () => {
@@ -51,13 +96,13 @@ describe("completeTasks", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
   });
 
   describe("success cases", () => {
     it("should complete a single task", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -80,7 +125,7 @@ describe("completeTasks", () => {
     });
 
     it("should complete multiple tasks", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -102,8 +147,8 @@ describe("completeTasks", () => {
       expect(result.data?.totalFailed).toBe(0);
     });
 
-    it("should handle partial failures", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("should handle partial failures (task not found in OmniJS)", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -138,53 +183,55 @@ describe("completeTasks", () => {
         (_, i) => `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
       );
 
-      // First chunk returns 50 succeeded
-      mockRunComposedScript.mockResolvedValueOnce({
-        success: true,
-        data: {
-          succeeded: taskIds
-            .slice(0, 50)
-            .map((id) => ({ taskId: id, taskName: `Task ${id}` })),
-          failed: [],
-        },
-      });
+      // First chunk: 50 succeeded
+      mockRunOmniJS.mockResolvedValueOnce(
+        succeededCompleteResult(taskIds.slice(0, 50))
+      );
 
-      // Second chunk returns 25 succeeded
-      mockRunComposedScript.mockResolvedValueOnce({
-        success: true,
-        data: {
-          succeeded: taskIds
-            .slice(50, 75)
-            .map((id) => ({ taskId: id, taskName: `Task ${id}` })),
-          failed: [],
-        },
-      });
+      // Second chunk: 25 succeeded
+      mockRunOmniJS.mockResolvedValueOnce(
+        succeededCompleteResult(taskIds.slice(50, 75))
+      );
 
       const result = await completeTasks(taskIds);
 
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(2);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(2);
       expect(result.success).toBe(true);
       expect(result.data?.totalSucceeded).toBe(75);
+      expect(result.data?.totalFailed).toBe(0);
+    });
+
+    it("should mark all chunk IDs as failed when OmniJS fails for whole chunk", async () => {
+      const taskIds = [
+        "abc123ABC-xyz789XYZ-12345678",
+        "def456DEF-uvw012UVW-87654321",
+      ];
+
+      mockRunOmniJS.mockResolvedValue(errorResult("Script execution failed"));
+
+      const result = await completeTasks(taskIds);
+
+      // The outer function still returns success:true with failed items
+      expect(result.success).toBe(true);
+      expect(result.data?.totalSucceeded).toBe(0);
+      expect(result.data?.totalFailed).toBe(2);
     });
   });
 
   describe("error cases", () => {
-    it("should return failure if AppleScript fails", async () => {
-      mockRunComposedScript.mockResolvedValue({
-        success: false,
-        error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
-        },
-      });
+    it("should return failure if OmniJS executor rejects entirely", async () => {
+      mockRunOmniJS.mockRejectedValue(new Error("Network error"));
 
-      const result = await completeTasks(["abc123ABC-xyz789XYZ-12345678"]);
-
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      await expect(
+        completeTasks(["abc123ABC-xyz789XYZ-12345678"])
+      ).rejects.toThrow("Network error");
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// updateTasks
+// ---------------------------------------------------------------------------
 
 describe("updateTasks", () => {
   beforeEach(() => {
@@ -250,7 +297,7 @@ describe("updateTasks", () => {
 
   describe("success cases", () => {
     it("should update task flag", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -269,7 +316,7 @@ describe("updateTasks", () => {
     });
 
     it("should update task title", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -288,7 +335,7 @@ describe("updateTasks", () => {
     });
 
     it("should update multiple tasks with same options", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -309,7 +356,7 @@ describe("updateTasks", () => {
     });
 
     it("should allow clearing due date with empty string", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -324,12 +371,29 @@ describe("updateTasks", () => {
       });
 
       expect(result.success).toBe(true);
-      // The script should contain "missing value" for clearing
-      expect(mockRunComposedScript).toHaveBeenCalled();
+      expect(mockRunOmniJS).toHaveBeenCalled();
     });
 
-    it("should handle repetition rule updates", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("should allow clearing defer date with empty string", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: {
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" },
+          ],
+          failed: [],
+        },
+      });
+
+      const result = await updateTasks(["abc123ABC-xyz789XYZ-12345678"], {
+        defer: "",
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it("should handle repetition rule updates (due-again)", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -350,8 +414,30 @@ describe("updateTasks", () => {
       expect(result.success).toBe(true);
     });
 
+    it("should handle repetition rule updates (defer-another)", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: {
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" },
+          ],
+          failed: [],
+        },
+      });
+
+      const result = await updateTasks(["abc123ABC-xyz789XYZ-12345678"], {
+        repeat: {
+          frequency: "monthly",
+          interval: 1,
+          repeatMethod: "defer-another",
+        },
+      });
+
+      expect(result.success).toBe(true);
+    });
+
     it("should handle clear repetition", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [
@@ -367,6 +453,24 @@ describe("updateTasks", () => {
 
       expect(result.success).toBe(true);
     });
+
+    it("should handle clearEstimate option", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: {
+          succeeded: [
+            { taskId: "abc123ABC-xyz789XYZ-12345678", taskName: "Test" },
+          ],
+          failed: [],
+        },
+      });
+
+      const result = await updateTasks(["abc123ABC-xyz789XYZ-12345678"], {
+        clearEstimate: true,
+      });
+
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("chunking", () => {
@@ -376,33 +480,36 @@ describe("updateTasks", () => {
         (_, i) => `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
       );
 
-      mockRunComposedScript
-        .mockResolvedValueOnce({
-          success: true,
-          data: {
-            succeeded: taskIds
-              .slice(0, 50)
-              .map((id) => ({ taskId: id, taskName: "Test" })),
-            failed: [],
-          },
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          data: {
-            succeeded: taskIds
-              .slice(50, 60)
-              .map((id) => ({ taskId: id, taskName: "Test" })),
-            failed: [],
-          },
-        });
+      mockRunOmniJS
+        .mockResolvedValueOnce(succeededCompleteResult(taskIds.slice(0, 50)))
+        .mockResolvedValueOnce(succeededCompleteResult(taskIds.slice(50, 60)));
 
       const result = await updateTasks(taskIds, { flag: true });
 
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(2);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(2);
       expect(result.data?.totalSucceeded).toBe(60);
+    });
+
+    it("should accumulate failed items from a failing chunk", async () => {
+      const taskIds = [
+        "abc123ABC-xyz789XYZ-12345678",
+        "def456DEF-uvw012UVW-87654321",
+      ];
+
+      mockRunOmniJS.mockResolvedValue(errorResult("OmniJS crash"));
+
+      const result = await updateTasks(taskIds, { flag: false });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.totalFailed).toBe(2);
+      expect(result.data?.totalSucceeded).toBe(0);
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// deleteTasks
+// ---------------------------------------------------------------------------
 
 describe("deleteTasks", () => {
   beforeEach(() => {
@@ -428,13 +535,9 @@ describe("deleteTasks", () => {
 
   describe("success cases", () => {
     it("should delete a single task", async () => {
-      mockRunComposedScript.mockResolvedValue({
-        success: true,
-        data: {
-          succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678" }],
-          failed: [],
-        },
-      });
+      mockRunOmniJS.mockResolvedValue(
+        succeededDeleteResult(["abc123ABC-xyz789XYZ-12345678"])
+      );
 
       const result = await deleteTasks(["abc123ABC-xyz789XYZ-12345678"]);
 
@@ -448,16 +551,12 @@ describe("deleteTasks", () => {
     });
 
     it("should delete multiple tasks", async () => {
-      mockRunComposedScript.mockResolvedValue({
-        success: true,
-        data: {
-          succeeded: [
-            { taskId: "abc123ABC-xyz789XYZ-12345678" },
-            { taskId: "def456DEF-uvw012UVW-87654321" },
-          ],
-          failed: [],
-        },
-      });
+      mockRunOmniJS.mockResolvedValue(
+        succeededDeleteResult([
+          "abc123ABC-xyz789XYZ-12345678",
+          "def456DEF-uvw012UVW-87654321",
+        ])
+      );
 
       const result = await deleteTasks([
         "abc123ABC-xyz789XYZ-12345678",
@@ -469,8 +568,8 @@ describe("deleteTasks", () => {
       expect(result.data?.totalSucceeded).toBe(2);
     });
 
-    it("should handle partial failures", async () => {
-      mockRunComposedScript.mockResolvedValue({
+    it("should handle partial failures (task not found in OmniJS)", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: {
           succeeded: [{ taskId: "abc123ABC-xyz789XYZ-12345678" }],
@@ -500,43 +599,39 @@ describe("deleteTasks", () => {
         (_, i) => `abc${String(i).padStart(3, "0")}ABC-xyz789XYZ-12345678`
       );
 
-      mockRunComposedScript
-        .mockResolvedValueOnce({
-          success: true,
-          data: {
-            succeeded: taskIds.slice(0, 50).map((id) => ({ taskId: id })),
-            failed: [],
-          },
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          data: {
-            succeeded: taskIds.slice(50, 100).map((id) => ({ taskId: id })),
-            failed: [],
-          },
-        });
+      mockRunOmniJS
+        .mockResolvedValueOnce(succeededDeleteResult(taskIds.slice(0, 50)))
+        .mockResolvedValueOnce(succeededDeleteResult(taskIds.slice(50, 100)));
 
       const result = await deleteTasks(taskIds);
 
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(2);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(2);
       expect(result.data?.totalSucceeded).toBe(100);
+    });
+
+    it("should mark all chunk IDs as failed when OmniJS fails for whole chunk", async () => {
+      const taskIds = [
+        "abc123ABC-xyz789XYZ-12345678",
+        "def456DEF-uvw012UVW-87654321",
+      ];
+
+      mockRunOmniJS.mockResolvedValue(errorResult("OmniFocus not running"));
+
+      const result = await deleteTasks(taskIds);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.totalSucceeded).toBe(0);
+      expect(result.data?.totalFailed).toBe(2);
     });
   });
 
   describe("error cases", () => {
-    it("should return failure if AppleScript fails", async () => {
-      mockRunComposedScript.mockResolvedValue({
-        success: false,
-        error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "OmniFocus not running",
-        },
-      });
+    it("should return failure if OmniJS executor rejects entirely", async () => {
+      mockRunOmniJS.mockRejectedValue(new Error("OmniFocus not running"));
 
-      const result = await deleteTasks(["abc123ABC-xyz789XYZ-12345678"]);
-
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      await expect(
+        deleteTasks(["abc123ABC-xyz789XYZ-12345678"])
+      ).rejects.toThrow("OmniFocus not running");
     });
   });
 });
