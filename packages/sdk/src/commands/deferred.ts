@@ -1,100 +1,115 @@
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { runOmniJSWrapped, toOmniJSDate } from "../omnijs.js";
-import { validateDateString } from "../validation.js";
+import { validatePaginationParams } from "../validation.js";
+import { runOmniJSWrapped } from "../omnijs.js";
+import {
+  buildListQueryBody,
+  compileAggregate,
+  compileProjection,
+  compileSort,
+  compileTaskPredicates,
+  taskFieldSpec,
+  taskGroupKeys,
+  type QueryResult,
+  type BaseListQueryOptions,
+  type TaskQueryOptions,
+} from "../query/index.js";
 
 /**
  * Options for querying deferred tasks.
+ *
+ * Extends {@link BaseListQueryOptions} so callers get the full shared-query
+ * vocabulary (sort, fields, count, groupBy, etc.) in addition to the
+ * deferred-specific predicates.
+ *
+ * @public
  */
-export interface DeferredQueryOptions {
-  /** Include tasks deferred until after this date */
-  deferredAfter?: string | undefined;
-  /** Include tasks deferred until before this date */
-  deferredBefore?: string | undefined;
-  /** Only show tasks that are currently blocked by defer date */
+export interface DeferredQueryOptions extends BaseListQueryOptions {
+  /** Include tasks deferred until after this date (ISO 8601 or relative). */
+  deferAfter?: string | undefined;
+  /** Include tasks deferred until before this date (ISO 8601 or relative). */
+  deferBefore?: string | undefined;
+  /**
+   * When `true`, only include tasks whose defer date is strictly in the
+   * future — i.e., tasks actively blocked by their defer date.
+   */
   blockedOnly?: boolean | undefined;
 }
 
 /**
  * Query all deferred tasks from OmniFocus.
- * Returns tasks that have a defer date set.
+ *
+ * The preset for this command includes: hasDefer, completed: false, and
+ * effectivelyDropped: false. Additional predicates can be added via the
+ * options object.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryDeferred(
   options: DeferredQueryOptions = {}
-): Promise<CliOutput<OFTask[]>> {
-  // Validate date inputs
-  if (options.deferredAfter) {
-    const afterError = validateDateString(options.deferredAfter);
-    if (afterError) {
-      return failure(afterError);
-    }
-  }
-  if (options.deferredBefore) {
-    const beforeError = validateDateString(options.deferredBefore);
-    if (beforeError) {
-      return failure(beforeError);
-    }
-  }
+): Promise<CliOutput<QueryResult<OFTask>>> {
+  // Validate pagination
+  const paginationError = validatePaginationParams(options.limit, options.offset);
+  if (paginationError) return failure(paginationError);
 
-  const blockedOnly = options.blockedOnly === true;
-
-  // Build filter conditions as JavaScript expressions
-  const conditions: string[] = [
-    "t.deferDate != null",
-    "!t.completed",
-    "!t.effectivelyDropped",
-  ];
-
-  if (blockedOnly) {
-    conditions.push("t.deferDate > new Date()");
-  }
-
-  if (options.deferredAfter !== undefined) {
-    conditions.push(
-      `t.deferDate >= ${toOmniJSDate(options.deferredAfter)}`
-    );
-  }
-
-  if (options.deferredBefore !== undefined) {
-    conditions.push(
-      `t.deferDate <= ${toOmniJSDate(options.deferredBefore)}`
-    );
-  }
-
-  const filterExpr = conditions.join(" && ");
-
-  const body = `
-var allTasks = flattenedTasks.filter(function(t) {
-  return ${filterExpr};
-});
-
-var items = allTasks.map(function(t) {
-  var projId = null;
-  var projName = null;
-  if (t.containingProject) {
-    projId = t.containingProject.id.primaryKey;
-    projName = t.containingProject.name;
-  }
-  return {
-    id: t.id.primaryKey,
-    name: t.name,
-    note: t.note || null,
-    flagged: t.flagged,
-    completed: t.completed,
-    dueDate: t.dueDate ? t.dueDate.toISOString() : null,
-    deferDate: t.deferDate ? t.deferDate.toISOString() : null,
-    completionDate: t.completionDate ? t.completionDate.toISOString() : null,
-    projectId: projId,
-    projectName: projName,
-    tags: t.tags.map(function(tg) { return tg.name; }),
-    estimatedMinutes: t.estimatedMinutes != null ? t.estimatedMinutes : null
+  // Build the task query options from deferred-specific fields
+  const taskOptions: TaskQueryOptions = {
+    ...options,
+    // Preset: must have a defer date, not completed, not effectively dropped
+    hasDefer: true,
+    completed: false,
+    effectivelyDropped: false,
+    // Map deferred-specific date fields to the canonical predicate names
+    ...(options.deferAfter !== undefined ? { deferAfter: options.deferAfter } : {}),
+    ...(options.deferBefore !== undefined ? { deferBefore: options.deferBefore } : {}),
+    // blockedOnly → deferredToFuture predicate
+    ...(options.blockedOnly === true ? { deferredToFuture: true } : {}),
   };
-});
 
-return JSON.stringify(items);`;
+  // Apply default fields for deferred results if the caller didn't specify
+  const fieldSpec =
+    options.fields !== undefined
+      ? taskFieldSpec
+      : { ...taskFieldSpec, defaultFields: ["id", "name", "deferDate", "projectName"] };
 
-  const result = await runOmniJSWrapped<OFTask[]>(body);
+  // Compile each phase
+  const pred = compileTaskPredicates(taskOptions);
+  const proj = compileProjection(fieldSpec, taskOptions);
+  const sort = compileSort(fieldSpec, taskOptions);
+  const agg = compileAggregate(taskOptions, taskGroupKeys);
+
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
+  }
+
+  const limit = options.limit ?? 100;
+  const offset = options.offset ?? 0;
+
+  const body = buildListQueryBody({
+    source: "flattenedTasks",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
+
+  const result = await runOmniJSWrapped<QueryResult<OFTask>>(body);
 
   if (!result.success) {
     return failure(
@@ -103,5 +118,41 @@ return JSON.stringify(items);`;
     );
   }
 
-  return success(result.data ?? []);
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFTask> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
+    }
+  }
 }

@@ -21,10 +21,8 @@ export type {
   FolderQueryOptions,
   CreateTagOptions,
   UpdateTagOptions,
-  SubtaskQueryOptions,
   BatchResult,
   RepetitionRule,
-  SearchOptions,
   ReviewResult,
   UpdateProjectOptions,
   UpdateFolderOptions,
@@ -121,6 +119,7 @@ export {
   querySubtasks,
   moveTaskToParent,
 } from "./commands/subtasks.js";
+export type { SubtaskQueryOptions } from "./commands/subtasks.js";
 
 // Batch operations
 export { completeTasks, updateTasks, deleteTasks } from "./commands/batch.js";
@@ -184,6 +183,7 @@ export type { DeferredQueryOptions } from "./commands/deferred.js";
 
 // Search
 export { searchTasks } from "./commands/search.js";
+export type { SearchOptions } from "./commands/search.js";
 
 // Quick capture
 export { quickCapture, parseQuickInput } from "./commands/quick.js";

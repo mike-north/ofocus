@@ -199,8 +199,6 @@ interface PerspectiveOptions {
 }
 
 interface ForecastCommandOptions {
-  start?: string | undefined;
-  end?: string | undefined;
   days?: number | undefined;
   includeDeferred?: boolean | undefined;
 }
@@ -901,16 +899,12 @@ Use --human flag for human-readable output (default is JSON).
   // forecast
   program
     .command("forecast")
-    .description("Query tasks by date range (like OmniFocus Forecast view)")
-    .option("--start <date>", "Start date for forecast range (default: today)")
-    .option("--end <date>", "End date for forecast range")
-    .option("--days <n>", "Number of days from start (default: 7)", parseInt)
-    .option("--include-deferred", "Include tasks deferred to the date range")
+    .description("Query tasks due within N days (like OmniFocus Forecast view)")
+    .option("--days <n>", "Number of days ahead to include (default: 7)", parseInt)
+    .option("--include-deferred", "Include tasks deferred to the same window")
     .action(async (options: ForecastCommandOptions, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = await queryForecast({
-        start: options.start,
-        end: options.end,
         days: options.days,
         includeDeferred: options.includeDeferred,
       });
@@ -965,8 +959,8 @@ Use --human flag for human-readable output (default is JSON).
     .action(async (options: DeferredCommandOptions, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = await queryDeferred({
-        deferredAfter: options.deferredAfter,
-        deferredBefore: options.deferredBefore,
+        deferAfter: options.deferredAfter,
+        deferBefore: options.deferredBefore,
         blockedOnly: options.blockedOnly,
       });
       output(result, getOutputFormat(globalOpts));

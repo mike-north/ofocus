@@ -141,8 +141,35 @@ export interface TaskQueryOptions extends BaseListQueryOptions {
   nameRegex?: string | undefined;
   noteContains?: string | undefined;
   noteRegex?: string | undefined;
+  /**
+   * Matches tasks whose name OR note contains the given substring
+   * (case-insensitive). Used by `searchTasks` scope="both".
+   */
+  nameOrNoteContains?: string | undefined;
   /** Case sensitivity for `nameContains` / `nameStarts` / `noteContains`. Default: `false`. */
   caseSensitive?: boolean | undefined;
+
+  // ── Combined date range predicate ────────────────────────────────────────
+  /**
+   * Duration string like `7d`/`1w` — matches tasks whose dueDate OR deferDate
+   * falls within `now..now+duration`. Used by `queryForecast` when
+   * `includeDeferred: true`.
+   */
+  dueOrDeferWithin?: string | undefined;
+
+  // ── Deferred-to-future predicate ─────────────────────────────────────────
+  /**
+   * When `true`, matches tasks whose `deferDate` is non-null and in the future
+   * (`t.deferDate > new Date()`). Used by `queryDeferred` `blockedOnly: true`.
+   */
+  deferredToFuture?: boolean | undefined;
+
+  // ── Parent task predicate ─────────────────────────────────────────────────
+  /**
+   * Match tasks whose direct parent task has the given primary key. Accepts a
+   * single ID or an array (any-of). Used by `querySubtasks`.
+   */
+  parentTaskId?: string | string[] | undefined;
 }
 
 /**
@@ -177,7 +204,7 @@ export interface TagQueryOptions extends BaseListQueryOptions {
   allowsNextAction?: boolean | undefined;
   /** Match tags that do not allow next-action promotion. */
   disallowsNextAction?: boolean | undefined;
-  /** Match tags with at least one available task (availableTaskCount > 0). */
+  /** Match tags with at least one available task (availableTaskCount \> 0). */
   hasAvailableTasks?: boolean | undefined;
   /** Match tags with no available tasks. */
   noAvailableTasks?: boolean | undefined;
@@ -248,7 +275,7 @@ export interface ProjectQueryOptions extends BaseListQueryOptions {
   hasDefer?: boolean | undefined;
   hasNote?: boolean | undefined;
   hasNextReview?: boolean | undefined;
-  /** Projects whose nextReviewDate is non-null and <= now. */
+  /** Projects whose nextReviewDate is non-null and \<= now. */
   dueForReview?: boolean | undefined;
 
   // ── Status ────────────────────────────────────────────────────────────────

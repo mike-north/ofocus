@@ -1,9 +1,8 @@
 import type {
   CliOutput,
   InboxOptions,
-  SubtaskQueryOptions,
+  OFTask,
   OFTaskWithChildren,
-  PaginatedResult,
 } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
@@ -13,10 +12,23 @@ import {
   validateTags,
   validateEstimatedMinutes,
   validateRepetitionRule,
+  validatePaginationParams,
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 import { buildRRule } from "./repetition.js";
 import { sanitizeVarName } from "../utils/sanitize.js";
+import {
+  buildListQueryBody,
+  compileAggregate,
+  compileProjection,
+  compileSort,
+  compileTaskPredicates,
+  taskFieldSpec,
+  taskGroupKeys,
+  type QueryResult,
+  type BaseListQueryOptions,
+  type TaskQueryOptions,
+} from "../query/index.js";
 
 /**
  * Serialize a task with children info as a JS expression for OmniJS scripts.
@@ -167,69 +179,98 @@ var task = new Task("${escapeJSString(title)}", parentTask.ending);`);
 }
 
 /**
- * Query subtasks of a parent task in OmniFocus with pagination.
+ * Options for querying subtasks.
+ *
+ * Extends {@link BaseListQueryOptions} so callers get the full shared-query
+ * vocabulary (sort, fields, count, groupBy, etc.) in addition to the
+ * subtask-specific predicates.
+ *
+ * @public
+ */
+export interface SubtaskQueryOptions extends BaseListQueryOptions {
+  /** When set, filter by completion status. */
+  completed?: boolean | undefined;
+  /** When set, filter by flagged status. */
+  flagged?: boolean | undefined;
+}
+
+/**
+ * Query subtasks of a parent task in OmniFocus.
+ *
+ * The preset for this command scopes results to children of the given parent
+ * task via the `parentTaskId` predicate. Default fields include id, name,
+ * completed, and flagged since that metadata is the primary reason to query
+ * subtasks.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function querySubtasks(
   parentTaskId: string,
   options: SubtaskQueryOptions = {}
-): Promise<CliOutput<PaginatedResult<OFTaskWithChildren>>> {
+): Promise<CliOutput<QueryResult<OFTask>>> {
   // Validate parent task ID
   const idError = validateId(parentTaskId, "task");
   if (idError) return failure(idError);
 
-  // Pagination defaults
+  // Validate pagination
+  const paginationError = validatePaginationParams(options.limit, options.offset);
+  if (paginationError) return failure(paginationError);
+
+  // Build the task query options: scope to children of the given parent,
+  // plus any caller-supplied filters
+  const taskOptions: TaskQueryOptions = {
+    ...options,
+    parentTaskId,
+    ...(options.completed !== undefined ? { completed: options.completed } : {}),
+    ...(options.flagged !== undefined ? { flagged: options.flagged } : {}),
+  };
+
+  // Apply default fields for subtask results if the caller didn't specify
+  const fieldSpec =
+    options.fields !== undefined
+      ? taskFieldSpec
+      : {
+          ...taskFieldSpec,
+          defaultFields: ["id", "name", "completed", "flagged"],
+        };
+
+  // Compile each phase
+  const pred = compileTaskPredicates(taskOptions);
+  const proj = compileProjection(fieldSpec, taskOptions);
+  const sort = compileSort(fieldSpec, taskOptions);
+  const agg = compileAggregate(taskOptions, taskGroupKeys);
+
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
+  }
+
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Build filter conditions
-  const conditions: string[] = [];
+  const body = buildListQueryBody({
+    source: "flattenedTasks",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
 
-  if (options.completed === true) {
-    conditions.push("t.completed");
-  } else if (options.completed === false) {
-    conditions.push("!t.completed");
-  }
-
-  if (options.flagged === true) {
-    conditions.push("t.flagged");
-  } else if (options.flagged === false) {
-    conditions.push("!t.flagged");
-  }
-
-  const filterExpr = conditions.length > 0 ? conditions.join(" && ") : "true";
-
-  const body = `
-${serializeTaskWithChildrenExpr}
-
-var parentTask = flattenedTasks.byId("${escapeJSString(parentTaskId)}");
-if (!parentTask) {
-  throw new Error("Parent task not found: ${escapeJSString(parentTaskId)}");
-}
-
-var childTasks = parentTask.children.filter(function(t) {
-  return ${filterExpr};
-});
-
-var totalCount = childTasks.length;
-var pageOffset = ${String(offset)};
-var pageLimit = ${String(limit)};
-var paged = childTasks.slice(pageOffset, pageOffset + pageLimit);
-
-var items = paged.map(function(t) {
-  return serializeTaskWithChildren(t, parentTask);
-});
-
-return JSON.stringify({
-  items: items,
-  totalCount: totalCount,
-  returnedCount: paged.length,
-  hasMore: totalCount > (pageOffset + paged.length),
-  offset: pageOffset,
-  limit: pageLimit
-});`;
-
-  const result =
-    await runOmniJSWrapped<PaginatedResult<OFTaskWithChildren>>(body);
+  const result = await runOmniJSWrapped<QueryResult<OFTask>>(body);
 
   if (!result.success) {
     return failure(
@@ -238,16 +279,43 @@ return JSON.stringify({
     );
   }
 
-  return success(
-    result.data ?? {
-      items: [],
-      totalCount: 0,
-      returnedCount: 0,
-      hasMore: false,
-      offset,
-      limit,
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFTask> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
     }
-  );
+  }
 }
 
 /**

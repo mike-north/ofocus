@@ -19,6 +19,9 @@ export interface AddAttachmentResult {
 export function addToInbox(title: string, options?: InboxOptions): Promise<CliOutput<OFTask>>;
 
 // @public
+export type AggregateShape = "list" | "count" | "ids" | "single-first" | "single-last" | "groups";
+
+// @public
 export interface ArchiveOptions {
     completedBefore?: string | undefined;
     droppedBefore?: string | undefined;
@@ -36,6 +39,21 @@ export interface ArchiveResult {
 
 // @public
 export function archiveTasks(options?: ArchiveOptions): Promise<CliOutput<ArchiveResult>>;
+
+// @public
+export interface BaseListQueryOptions extends PaginationOptions {
+    count?: boolean | undefined;
+    excludeFields?: string[] | undefined;
+    fields?: string[] | undefined;
+    first?: boolean | undefined;
+    groupBy?: string | undefined;
+    idsOnly?: boolean | undefined;
+    last?: boolean | undefined;
+    nullsFirst?: boolean | undefined;
+    reverse?: boolean | undefined;
+    sort?: string[] | undefined;
+    stats?: boolean | undefined;
+}
 
 // @public
 export interface BatchCompleteItem {
@@ -79,6 +97,24 @@ export interface BatchResult<T> {
 }
 
 // @public
+export function buildListQueryBody(args: BuildListQueryBodyArgs): string;
+
+// @public
+export interface BuildListQueryBodyArgs {
+    aggregate: CompiledAggregate;
+    comparator: string | null;
+    conditions: string[];
+    groupKey?: string | undefined;
+    itemVar: string;
+    // (undocumented)
+    limit: number;
+    mapExpression: string;
+    // (undocumented)
+    offset: number;
+    source: string;
+}
+
+// @public
 export function buildRRule(rule: RepetitionRule): string;
 
 // @public
@@ -119,6 +155,72 @@ export interface CompactResult {
     compacted: boolean;
     message: string;
 }
+
+// @public
+export function compileAggregate(options: BaseListQueryOptions, groupKeys?: Record<string, GroupKeySpec>): CompiledAggregate;
+
+// @public
+export interface CompiledAggregate {
+    groupKey?: string;
+    groupKeyExpr?: string;
+    // (undocumented)
+    shape: AggregateShape;
+    // (undocumented)
+    validationErrors: CliError[];
+    withStats: boolean;
+}
+
+// @public
+export interface CompiledPredicates {
+    // (undocumented)
+    conditions: string[];
+    // (undocumented)
+    validationErrors: CliError[];
+}
+
+// @public
+export interface CompiledProjection {
+    // (undocumented)
+    mapExpression: string;
+    resolvedFields: string[];
+    // (undocumented)
+    validationErrors: CliError[];
+}
+
+// @public
+export interface CompiledSort {
+    // (undocumented)
+    comparator: string | null;
+    // (undocumented)
+    validationErrors: CliError[];
+}
+
+// @public
+export function compileProjection(spec: EntityFieldSpec, options: CompileProjectionOptions): CompiledProjection;
+
+// @public
+export interface CompileProjectionOptions {
+    // (undocumented)
+    excludeFields?: string[] | undefined;
+    // (undocumented)
+    fields?: string[] | undefined;
+}
+
+// @public
+export function compileSort(spec: EntityFieldSpec, options: CompileSortOptions): CompiledSort;
+
+// @public
+export interface CompileSortOptions {
+    // (undocumented)
+    nullsFirst?: boolean | undefined;
+    // (undocumented)
+    reverse?: boolean | undefined;
+    // (undocumented)
+    sort?: string[] | undefined;
+}
+
+// @public
+export function compileTaskPredicates(options: TaskQueryOptions): CompiledPredicates;
 
 // @public
 export interface CompleteResult {
@@ -224,10 +326,10 @@ export interface DeferOptions {
 }
 
 // @public
-export interface DeferredQueryOptions {
+export interface DeferredQueryOptions extends BaseListQueryOptions {
     blockedOnly?: boolean | undefined;
-    deferredAfter?: string | undefined;
-    deferredBefore?: string | undefined;
+    deferAfter?: string | undefined;
+    deferBefore?: string | undefined;
 }
 
 // @public
@@ -363,6 +465,12 @@ export interface DuplicateTaskResult {
 }
 
 // @public
+export interface EntityFieldSpec {
+    defaultFields: string[];
+    fields: Record<string, FieldGetter>;
+}
+
+// @public
 const ErrorCode: {
     readonly TASK_NOT_FOUND: "TASK_NOT_FOUND";
     readonly PROJECT_NOT_FOUND: "PROJECT_NOT_FOUND";
@@ -398,6 +506,12 @@ export function failure<T = null>(error: CliError): CliOutput<T>;
 export function failureMessage<T = null>(message: string): CliOutput<T>;
 
 // @public
+export interface FieldGetter {
+    // (undocumented)
+    omnijsExpr: string;
+}
+
+// @public
 export function focusOn(target: string, options?: {
     byId?: boolean | undefined;
 }): Promise<CliOutput<FocusResult>>;
@@ -415,17 +529,43 @@ export interface FocusResult {
 }
 
 // @public
-export interface FolderQueryOptions extends PaginationOptions {
+export const folderFieldSpec: EntityFieldSpec;
+
+// @public
+export interface FolderQueryOptions extends BaseListQueryOptions {
+    ancestor?: string | string[] | undefined;
+    caseSensitive?: boolean | undefined;
+    flattenedProjectCountGt?: number | undefined;
+    flattenedProjectCountLt?: number | undefined;
+    folderCountGt?: number | undefined;
+    folderCountLt?: number | undefined;
+    hasProjects?: boolean | undefined;
+    hasSubfolders?: boolean | undefined;
+    isEmpty?: boolean | undefined;
+    isRoot?: boolean | undefined;
     // (undocumented)
-    parent?: string | undefined;
+    nameContains?: string | undefined;
+    // (undocumented)
+    nameEquals?: string | undefined;
+    // (undocumented)
+    nameRegex?: string | undefined;
+    // (undocumented)
+    nameStarts?: string | undefined;
+    noProjects?: boolean | undefined;
+    noSubfolders?: boolean | undefined;
+    notIsRoot?: boolean | undefined;
+    parent?: string | string[] | undefined;
+    projectCountEq?: number | undefined;
+    projectCountGt?: number | undefined;
+    projectCountLt?: number | undefined;
+    // Warning: (ae-forgotten-export) The symbol "FolderStatus" needs to be exported by the entry point index.d.ts
+    status?: FolderStatus | undefined;
 }
 
 // @public
-export interface ForecastOptions {
+export interface ForecastOptions extends BaseListQueryOptions {
     days?: number | undefined;
-    end?: string | undefined;
     includeDeferred?: boolean | undefined;
-    start?: string | undefined;
 }
 
 // @public
@@ -445,6 +585,12 @@ export function getSyncStatus(): Promise<CliOutput<SyncStatus>>;
 
 // @public
 export function getTemplate(name: string): CliOutput<ProjectTemplate>;
+
+// @public
+export interface GroupKeySpec {
+    // (undocumented)
+    omnijsExpr: string;
+}
 
 // @public
 export function importTaskPaper(content: string, options?: TaskPaperImportOptions): Promise<CliOutput<TaskPaperImportResult>>;
@@ -493,6 +639,9 @@ export const MAX_PAGINATION_LIMIT = 10000;
 
 // @public
 export function moveTaskToParent(taskId: string, parentTaskId: string): Promise<CliOutput<OFTaskWithChildren>>;
+
+// @public
+export type NumericRange = readonly [number, number];
 
 // @public
 export interface OFAttachment {
@@ -642,6 +791,14 @@ export interface PaginationOptions {
 }
 
 // @public
+export function parseDate(input: string, now?: Date): ParsedDate | CliError;
+
+// @public
+export interface ParsedDate {
+    iso: string;
+}
+
+// @public
 export interface ParsedQuickInput {
     // (undocumented)
     defer: string | null;
@@ -664,6 +821,9 @@ export interface ParsedQuickInput {
 }
 
 // @public
+export function parseDuration(input: string): number | CliError;
+
+// @public
 export function parseQuickInput(input: string): ParsedQuickInput;
 
 // @public
@@ -676,13 +836,87 @@ export interface PerspectiveQueryOptions {
 }
 
 // @public
-export interface ProjectQueryOptions extends PaginationOptions {
+export const projectFieldSpec: EntityFieldSpec;
+
+// @public
+export interface ProjectQueryOptions extends BaseListQueryOptions {
+    caseSensitive?: boolean | undefined;
     // (undocumented)
-    folder?: string | undefined;
+    completedAfter?: string | undefined;
+    // (undocumented)
+    completedBefore?: string | undefined;
+    // (undocumented)
+    containsSingletonActions?: boolean | undefined;
+    // (undocumented)
+    deferAfter?: string | undefined;
+    // (undocumented)
+    deferBefore?: string | undefined;
+    // (undocumented)
+    deferWithin?: string | undefined;
+    // (undocumented)
+    dueAfter?: string | undefined;
+    dueBefore?: string | undefined;
+    dueForReview?: boolean | undefined;
+    dueOn?: string | undefined;
+    dueWithin?: string | undefined;
+    // (undocumented)
+    flagged?: boolean | undefined;
+    folder?: string | string[] | undefined;
+    // (undocumented)
+    hasDefer?: boolean | undefined;
+    // (undocumented)
+    hasDue?: boolean | undefined;
+    // (undocumented)
+    hasNextReview?: boolean | undefined;
+    // (undocumented)
+    hasNote?: boolean | undefined;
+    // (undocumented)
+    lastReviewedAfter?: string | undefined;
+    // (undocumented)
+    lastReviewedBefore?: string | undefined;
+    // (undocumented)
+    nameContains?: string | undefined;
+    // (undocumented)
+    nameEquals?: string | undefined;
+    // (undocumented)
+    nameRegex?: string | undefined;
+    // (undocumented)
+    nameStarts?: string | undefined;
+    // (undocumented)
+    nextReviewAfter?: string | undefined;
+    // (undocumented)
+    nextReviewBefore?: string | undefined;
+    nextReviewWithin?: string | undefined;
+    // (undocumented)
+    noDue?: boolean | undefined;
+    // (undocumented)
+    notContainsSingletonActions?: boolean | undefined;
+    // (undocumented)
+    noteContains?: string | undefined;
+    // (undocumented)
+    noteRegex?: string | undefined;
+    // (undocumented)
+    notFlagged?: boolean | undefined;
+    // (undocumented)
+    notSequential?: boolean | undefined;
+    // (undocumented)
+    remainingTaskCountEq?: number | undefined;
+    // (undocumented)
+    remainingTaskCountGt?: number | undefined;
+    // (undocumented)
+    remainingTaskCountLt?: number | undefined;
     // (undocumented)
     sequential?: boolean | undefined;
+    // Warning: (ae-forgotten-export) The symbol "ProjectStatus" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    status?: "active" | "on-hold" | "completed" | "dropped" | undefined;
+    status?: ProjectStatus | undefined;
+    // (undocumented)
+    taskCountEq?: number | undefined;
+    // (undocumented)
+    taskCountGt?: number | undefined;
+    // (undocumented)
+    taskCountLt?: number | undefined;
 }
 
 // @public
@@ -698,31 +932,59 @@ export interface ProjectTemplate {
 }
 
 // @public
-export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput<OFTask[]>>;
+export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
-export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<PaginatedResult<OFFolder>>>;
+export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<QueryResult<OFFolder>>>;
 
 // @public
-export function queryForecast(options?: ForecastOptions): Promise<CliOutput<OFTask[]>>;
+export function queryForecast(options?: ForecastOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
 export function queryPerspective(name: string, options?: PerspectiveQueryOptions): Promise<CliOutput<OFTask[]>>;
 
 // @public
-export function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<PaginatedResult<OFProject>>>;
+export function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<QueryResult<OFProject>>>;
 
 // @public
 export function queryProjectsForReview(): Promise<CliOutput<OFProject[]>>;
 
 // @public
-export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<PaginatedResult<OFTaskWithChildren>>>;
+export type QueryResult<T> = {
+    kind: "list";
+    items: T[];
+    totalCount: number;
+    returnedCount: number;
+    hasMore: boolean;
+    offset: number;
+    limit: number;
+} | {
+    kind: "count";
+    count: number;
+} | {
+    kind: "ids";
+    ids: string[];
+} | {
+    kind: "single";
+    item: T | null;
+} | {
+    kind: "groups";
+    groups: {
+        key: string;
+        count: number;
+        items?: T[];
+    }[];
+    totalCount: number;
+};
 
 // @public
-export function queryTags(options?: TagQueryOptions): Promise<CliOutput<PaginatedResult<OFTag>>>;
+export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
-export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<PaginatedResult<OFTask>>>;
+export function queryTags(options?: TagQueryOptions): Promise<CliOutput<QueryResult<OFTag>>>;
+
+// @public
+export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
 export function quickCapture(input: string, options?: QuickOptions): Promise<CliOutput<OFTask>>;
@@ -814,17 +1076,13 @@ export interface SaveTemplateResult {
 }
 
 // @public
-export interface SearchOptions {
-    // (undocumented)
+export interface SearchOptions extends BaseListQueryOptions {
     includeCompleted?: boolean | undefined;
-    // (undocumented)
-    limit?: number | undefined;
-    // (undocumented)
     scope?: "name" | "note" | "both" | undefined;
 }
 
 // @public
-export function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<OFTask[]>>;
+export function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
 export function setReviewInterval(projectId: string, days: number): Promise<CliOutput<ReviewIntervalResult>>;
@@ -854,10 +1112,8 @@ export interface StatsResult {
 }
 
 // @public
-export interface SubtaskQueryOptions extends PaginationOptions {
-    // (undocumented)
+export interface SubtaskQueryOptions extends BaseListQueryOptions {
     completed?: boolean | undefined;
-    // (undocumented)
     flagged?: boolean | undefined;
 }
 
@@ -879,10 +1135,60 @@ export interface SyncStatus {
 }
 
 // @public
-export interface TagQueryOptions extends PaginationOptions {
+export const tagFieldSpec: EntityFieldSpec;
+
+// @public
+export type TagMode = "any" | "all" | "none";
+
+// @public
+export interface TagQueryOptions extends BaseListQueryOptions {
+    allowsNextAction?: boolean | undefined;
+    ancestor?: string | string[] | undefined;
     // (undocumented)
-    parent?: string | undefined;
+    availableTaskCountEq?: number | undefined;
+    // (undocumented)
+    availableTaskCountGt?: number | undefined;
+    // (undocumented)
+    availableTaskCountLt?: number | undefined;
+    caseSensitive?: boolean | undefined;
+    // (undocumented)
+    childTagCountGt?: number | undefined;
+    // (undocumented)
+    childTagCountLt?: number | undefined;
+    disallowsNextAction?: boolean | undefined;
+    hasAvailableTasks?: boolean | undefined;
+    hasChildren?: boolean | undefined;
+    hasNote?: boolean | undefined;
+    isRoot?: boolean | undefined;
+    // (undocumented)
+    nameContains?: string | undefined;
+    // (undocumented)
+    nameEquals?: string | undefined;
+    // (undocumented)
+    nameRegex?: string | undefined;
+    // (undocumented)
+    nameStarts?: string | undefined;
+    noAvailableTasks?: boolean | undefined;
+    noChildren?: boolean | undefined;
+    // (undocumented)
+    noteContains?: string | undefined;
+    // (undocumented)
+    noteRegex?: string | undefined;
+    notIsRoot?: boolean | undefined;
+    parent?: string | string[] | undefined;
+    // (undocumented)
+    remainingTaskCountGt?: number | undefined;
+    // (undocumented)
+    remainingTaskCountLt?: number | undefined;
+    // Warning: (ae-forgotten-export) The symbol "TagStatus" needs to be exported by the entry point index.d.ts
+    status?: TagStatus | undefined;
 }
+
+// @public
+export const taskFieldSpec: EntityFieldSpec;
+
+// @public
+export const taskGroupKeys: Record<string, GroupKeySpec>;
 
 // @public
 export interface TaskPaperExportOptions {
@@ -918,22 +1224,94 @@ export interface TaskPaperImportResult {
 }
 
 // @public
-export interface TaskQueryOptions extends PaginationOptions {
+export interface TaskQueryOptions extends BaseListQueryOptions {
     // (undocumented)
     available?: boolean | undefined;
     // (undocumented)
+    blocked?: boolean | undefined;
+    caseSensitive?: boolean | undefined;
+    // (undocumented)
     completed?: boolean | undefined;
     // (undocumented)
-    dueAfter?: string | undefined;
+    completedAfter?: string | undefined;
     // (undocumented)
+    completedBefore?: string | undefined;
+    // (undocumented)
+    deferAfter?: string | undefined;
+    // (undocumented)
+    deferBefore?: string | undefined;
+    // (undocumented)
+    deferOn?: string | undefined;
+    deferredToFuture?: boolean | undefined;
+    // (undocumented)
+    deferWithin?: string | undefined;
+    // (undocumented)
+    dropped?: boolean | undefined;
+    // (undocumented)
+    dueAfter?: string | undefined;
     dueBefore?: string | undefined;
+    dueOn?: string | undefined;
+    dueOrDeferWithin?: string | undefined;
+    dueWithin?: string | undefined;
+    // (undocumented)
+    effectivelyCompleted?: boolean | undefined;
+    // (undocumented)
+    effectivelyDropped?: boolean | undefined;
+    estimateBetween?: NumericRange | undefined;
+    // (undocumented)
+    estimateEq?: number | undefined;
+    // (undocumented)
+    estimateGt?: number | undefined;
+    // (undocumented)
+    estimateLt?: number | undefined;
     // (undocumented)
     flagged?: boolean | undefined;
+    folder?: string | string[] | undefined;
     // (undocumented)
-    project?: string | undefined;
+    hasAttachments?: boolean | undefined;
     // (undocumented)
-    tag?: string | undefined;
+    hasDefer?: boolean | undefined;
+    // (undocumented)
+    hasDue?: boolean | undefined;
+    // (undocumented)
+    hasNote?: boolean | undefined;
+    // (undocumented)
+    hasRepetition?: boolean | undefined;
+    // (undocumented)
+    hasSubtasks?: boolean | undefined;
+    // (undocumented)
+    inInbox?: boolean | undefined;
+    // (undocumented)
+    nameContains?: string | undefined;
+    // (undocumented)
+    nameEquals?: string | undefined;
+    nameOrNoteContains?: string | undefined;
+    // (undocumented)
+    nameRegex?: string | undefined;
+    // (undocumented)
+    nameStarts?: string | undefined;
+    // (undocumented)
+    noDue?: boolean | undefined;
+    // (undocumented)
+    notCompleted?: boolean | undefined;
+    // (undocumented)
+    notDropped?: boolean | undefined;
+    // (undocumented)
+    noteContains?: string | undefined;
+    // (undocumented)
+    noteRegex?: string | undefined;
+    // (undocumented)
+    notFlagged?: boolean | undefined;
+    parentTaskId?: string | string[] | undefined;
+    project?: string | string[] | undefined;
+    // (undocumented)
+    status?: TaskStatus | undefined;
+    tag?: string | string[] | undefined;
+    tagMode?: TagMode | undefined;
 }
+
+// @public
+export type TaskStatus = "active" | "completed" | "dropped" | "deferred";
 
 // @public
 export interface TaskUpdateOptions {

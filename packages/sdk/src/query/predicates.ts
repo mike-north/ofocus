@@ -612,6 +612,71 @@ export function compileTaskPredicates(
     }
   }
 
+  // nameOrNoteContains — used by searchTasks scope="both"
+  if (options.nameOrNoteContains !== undefined) {
+    const err = validateNames([options.nameOrNoteContains], "nameOrNoteContains");
+    if (err) {
+      validationErrors.push(err);
+    } else {
+      const needle = `"${escapeJSString(options.nameOrNoteContains.toLowerCase())}"`;
+      conditions.push(
+        `(t.name.toLowerCase().indexOf(${needle}) !== -1 || (t.note && t.note.toLowerCase().indexOf(${needle}) !== -1))`
+      );
+    }
+  }
+
+  // dueOrDeferWithin — used by queryForecast includeDeferred=true
+  if (options.dueOrDeferWithin !== undefined) {
+    const dur = parseDuration(options.dueOrDeferWithin);
+    if (typeof dur !== "number") {
+      validationErrors.push(
+        createError(
+          dur.code,
+          `Invalid dueOrDeferWithin: ${dur.message}`,
+          dur.details
+        )
+      );
+    } else {
+      const cutoff = new Date(Date.now() + dur);
+      conditions.push(
+        `((t.dueDate != null && t.dueDate >= new Date() && t.dueDate <= ${isoToOmniJSDate(cutoff.toISOString())}) || (t.deferDate != null && t.deferDate >= new Date() && t.deferDate <= ${isoToOmniJSDate(cutoff.toISOString())}))`
+      );
+    }
+  }
+
+  // deferredToFuture — used by queryDeferred blockedOnly=true
+  if (options.deferredToFuture === true) {
+    conditions.push("(t.deferDate != null && t.deferDate > new Date())");
+  }
+
+  // parentTaskId — used by querySubtasks
+  const parentIds = toList(options.parentTaskId);
+  if (parentIds !== null) {
+    if (parentIds.length === 0) {
+      validationErrors.push(
+        createError(
+          ErrorCode.VALIDATION_ERROR,
+          "parentTaskId filter cannot be an empty array"
+        )
+      );
+    } else {
+      const nameError = validateNames(parentIds, "parentTaskId");
+      if (nameError) {
+        validationErrors.push(nameError);
+      } else if (parentIds.length === 1) {
+        const id = parentIds[0] ?? "";
+        conditions.push(
+          `((t.parent instanceof Task) && t.parent.id.primaryKey === "${escapeJSString(id)}")`
+        );
+      } else {
+        const arr = jsStringArray(parentIds);
+        conditions.push(
+          `((t.parent instanceof Task) && ${arr}.indexOf(t.parent.id.primaryKey) !== -1)`
+        );
+      }
+    }
+  }
+
   return { conditions, validationErrors };
 }
 

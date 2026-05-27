@@ -204,13 +204,9 @@ export interface OFTaskWithChildren extends OFTask {
   isActionGroup: boolean;
 }
 
-/**
- * Options for querying subtasks.
- */
-export interface SubtaskQueryOptions extends PaginationOptions {
-  completed?: boolean | undefined;
-  flagged?: boolean | undefined;
-}
+// SubtaskQueryOptions has moved to `./commands/subtasks.js` where it extends
+// BaseListQueryOptions with the full shared-query vocabulary. It is re-exported
+// from the SDK root via index.ts for backwards-compatible imports.
 
 /**
  * Result from a batch operation.
@@ -233,14 +229,9 @@ export interface RepetitionRule {
   dayOfMonth?: number | undefined;
 }
 
-/**
- * Options for searching tasks.
- */
-export interface SearchOptions {
-  scope?: "name" | "note" | "both" | undefined;
-  limit?: number | undefined;
-  includeCompleted?: boolean | undefined;
-}
+// SearchOptions has moved to `./commands/search.js` where it extends
+// BaseListQueryOptions with the full shared-query vocabulary. It is re-exported
+// from the SDK root via index.ts for backwards-compatible imports.
 
 /**
  * Result from a review operation.

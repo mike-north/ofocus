@@ -2,19 +2,28 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
 import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFTask } from "../../../src/types.js";
+import type { QueryResult } from "../../../src/query/index.js";
 
-// Mock the omnijs module
-vi.mock("../../../src/omnijs.js", () => ({
-  runOmniJSWrapped: vi.fn(),
-  escapeJSString: vi.fn((s: string) => s),
-  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
-}));
+// Use the partial-real mock pattern so that escapeJSString and other helpers
+// run for real (the query layer uses them), while runOmniJSWrapped is
+// intercepted.
+vi.mock("../../../src/omnijs.js", async () => {
+  const actual = await vi.importActual<typeof import("../../../src/omnijs.js")>(
+    "../../../src/omnijs.js"
+  );
+  return {
+    ...actual,
+    runOmniJSWrapped: vi.fn(),
+  };
+});
 
 // Import after mocking
 import { queryDeferred } from "../../../src/commands/deferred.js";
 import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
 const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
+
+// ── helpers ──────────────────────────────────────────────────────────────────
 
 const createMockTask = (overrides: Partial<OFTask> = {}): OFTask => ({
   id: "task-123",
@@ -32,39 +41,76 @@ const createMockTask = (overrides: Partial<OFTask> = {}): OFTask => ({
   ...overrides,
 });
 
+const createMockListResult = (
+  items: OFTask[],
+  overrides: Partial<Extract<QueryResult<OFTask>, { kind: "list" }>> = {}
+): Extract<QueryResult<OFTask>, { kind: "list" }> => ({
+  kind: "list",
+  items,
+  totalCount: items.length,
+  returnedCount: items.length,
+  hasMore: false,
+  offset: 0,
+  limit: 100,
+  ...overrides,
+});
+
+function expectList(
+  result: QueryResult<OFTask> | null | undefined
+): Extract<QueryResult<OFTask>, { kind: "list" }> {
+  expect(result).toBeDefined();
+  expect(result?.kind).toBe("list");
+  if (!result || result.kind !== "list")
+    throw new Error("Expected list shape");
+  return result;
+}
+
+function getScriptBody(): string {
+  const call = mockRunOmniJS.mock.calls[0];
+  if (!call) throw new Error("runOmniJSWrapped was not called");
+  return call[0] as string;
+}
+
+// ── tests ─────────────────────────────────────────────────────────────────────
+
 describe("queryDeferred", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("validation", () => {
-    it("should reject invalid deferredAfter date format", async () => {
-      const result = await queryDeferred({ deferredAfter: 'bad"date' });
+    it("rejects invalid deferAfter date format", async () => {
+      const result = await queryDeferred({ deferAfter: 'bad"date' });
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
       expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
-    it("should reject invalid deferredBefore date format", async () => {
-      const result = await queryDeferred({ deferredBefore: 'invalid"date' });
+    it("rejects invalid deferBefore date format", async () => {
+      const result = await queryDeferred({ deferBefore: 'invalid"date' });
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
       expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
-    it("should accept valid date options", async () => {
-      const mockTasks = [createMockTask()];
+    it("rejects invalid limit", async () => {
+      const result = await queryDeferred({ limit: -1 });
 
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
+
+    it("accepts valid date options", async () => {
       mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockTasks,
-      } as OmniJSResult<OFTask[]>);
+        data: createMockListResult([createMockTask()]),
+      } as OmniJSResult<QueryResult<OFTask>>);
 
       const result = await queryDeferred({
-        deferredAfter: "2024-01-01",
-        deferredBefore: "2024-12-31",
+        deferAfter: "2024-01-01",
+        deferBefore: "2024-12-31",
       });
 
       expect(result.success).toBe(true);
@@ -72,103 +118,152 @@ describe("queryDeferred", () => {
     });
   });
 
-  describe("successful queries", () => {
-    it("should return deferred tasks with default options", async () => {
+  describe("preset conditions", () => {
+    beforeEach(() => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFTask>>);
+    });
+
+    it("always emits hasDefer predicate (t.deferDate != null)", async () => {
+      await queryDeferred();
+
+      expect(getScriptBody()).toContain("(t.deferDate != null)");
+    });
+
+    it("always emits completed: false predicate (!t.completed)", async () => {
+      await queryDeferred();
+
+      expect(getScriptBody()).toContain("!t.completed");
+    });
+
+    it("always emits effectivelyDropped: false predicate (!t.effectivelyDropped)", async () => {
+      await queryDeferred();
+
+      expect(getScriptBody()).toContain("!t.effectivelyDropped");
+    });
+  });
+
+  describe("blockedOnly option", () => {
+    beforeEach(() => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFTask>>);
+    });
+
+    it("when blockedOnly: true → emits deferredToFuture predicate (deferDate > new Date())", async () => {
+      await queryDeferred({ blockedOnly: true });
+
+      expect(getScriptBody()).toContain(
+        "(t.deferDate != null && t.deferDate > new Date())"
+      );
+    });
+
+    it("when blockedOnly: false (default) → no deferredToFuture predicate", async () => {
+      await queryDeferred({ blockedOnly: false });
+
+      // Only the deferDate != null from hasDefer, not the > new Date() guard
+      expect(getScriptBody()).not.toContain("t.deferDate > new Date()");
+    });
+  });
+
+  describe("date range predicates", () => {
+    beforeEach(() => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFTask>>);
+    });
+
+    it("deferAfter emits deferDate > expr predicate", async () => {
+      await queryDeferred({ deferAfter: "2024-06-01" });
+
+      expect(getScriptBody()).toContain("t.deferDate > ");
+    });
+
+    it("deferBefore emits deferDate < expr predicate", async () => {
+      await queryDeferred({ deferBefore: "2024-12-31" });
+
+      expect(getScriptBody()).toContain("t.deferDate < ");
+    });
+  });
+
+  describe("return shape — QueryResult", () => {
+    it("returns deferred tasks as a list result", async () => {
       const mockTasks = [
         createMockTask({ id: "task-1", deferDate: "2024-06-01T00:00:00.000Z" }),
         createMockTask({ id: "task-2", deferDate: "2024-07-01T00:00:00.000Z" }),
       ];
-
       mockRunOmniJS.mockResolvedValue({
         success: true,
-        data: mockTasks,
-      } as OmniJSResult<OFTask[]>);
+        data: createMockListResult(mockTasks),
+      } as OmniJSResult<QueryResult<OFTask>>);
 
       const result = await queryDeferred();
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
+      const list = expectList(result.data);
+      expect(list.items).toHaveLength(2);
     });
 
-    it("should filter by deferredAfter", async () => {
-      const mockTasks = [
-        createMockTask({ deferDate: "2024-07-01T00:00:00.000Z" }),
-      ];
-
-      mockRunOmniJS.mockResolvedValue({
-        success: true,
-        data: mockTasks,
-      } as OmniJSResult<OFTask[]>);
-
-      const result = await queryDeferred({ deferredAfter: "2024-06-01" });
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should filter by deferredBefore", async () => {
-      const mockTasks = [
-        createMockTask({ deferDate: "2024-05-01T00:00:00.000Z" }),
-      ];
-
-      mockRunOmniJS.mockResolvedValue({
-        success: true,
-        data: mockTasks,
-      } as OmniJSResult<OFTask[]>);
-
-      const result = await queryDeferred({ deferredBefore: "2024-06-01" });
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should filter blocked only tasks", async () => {
-      const mockTasks = [
-        createMockTask({ deferDate: "2025-12-01T00:00:00.000Z" }), // Future date
-      ];
-
-      mockRunOmniJS.mockResolvedValue({
-        success: true,
-        data: mockTasks,
-      } as OmniJSResult<OFTask[]>);
-
-      const result = await queryDeferred({ blockedOnly: true });
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should return empty array when no deferred tasks exist", async () => {
-      mockRunOmniJS.mockResolvedValue({
-        success: true,
-        data: [],
-      } as OmniJSResult<OFTask[]>);
-
-      const result = await queryDeferred();
-
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual([]);
-    });
-
-    it("should return empty array on undefined data", async () => {
+    it("returns empty list on undefined data", async () => {
       mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as OmniJSResult<OFTask[]>);
+      } as OmniJSResult<QueryResult<OFTask>>);
 
       const result = await queryDeferred();
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual([]);
+      const list = expectList(result.data);
+      expect(list.items).toEqual([]);
+    });
+
+    it("supports count shape via count: true", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { kind: "count", count: 3 },
+      } as OmniJSResult<QueryResult<OFTask>>);
+
+      const result = await queryDeferred({ count: true });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.kind).toBe("count");
+    });
+  });
+
+  describe("sort and pagination are forwarded", () => {
+    beforeEach(() => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([]),
+      } as OmniJSResult<QueryResult<OFTask>>);
+    });
+
+    it("respects limit option", async () => {
+      await queryDeferred({ limit: 25 });
+
+      expect(getScriptBody()).toContain("var __limit = 25");
+    });
+
+    it("includes sort comparator when sort option is set", async () => {
+      await queryDeferred({ sort: ["deferDate"] });
+
+      expect(getScriptBody()).toContain("rows.sort(");
     });
   });
 
   describe("error handling", () => {
-    it("should handle OmniFocus not running", async () => {
+    it("propagates OmniFocus not running error", async () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as OmniJSResult<OFTask[]>);
+      } as OmniJSResult<QueryResult<OFTask>>);
 
       const result = await queryDeferred();
 
@@ -176,31 +271,31 @@ describe("queryDeferred", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle null error in failure response", async () => {
-      mockRunOmniJS.mockResolvedValue({
-        success: false,
-        error: undefined,
-      } as OmniJSResult<OFTask[]>);
-
-      const result = await queryDeferred();
-
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
-    });
-
-    it("should handle OmniJS script error", async () => {
+    it("propagates OmniJS script errors", async () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.SCRIPT_ERROR,
-          message: "OmniJS script error: ReferenceError: flattenedTasks is not defined",
+          message: "OmniJS script error",
         },
-      } as OmniJSResult<OFTask[]>);
+      } as OmniJSResult<QueryResult<OFTask>>);
 
       const result = await queryDeferred();
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
+    });
+
+    it("falls back to UNKNOWN_ERROR when failure has no error object", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: undefined,
+      } as OmniJSResult<QueryResult<OFTask>>);
+
+      const result = await queryDeferred();
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
     });
   });
 });

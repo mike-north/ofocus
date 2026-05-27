@@ -1,41 +1,60 @@
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { validateDateString } from "../validation.js";
-import { runOmniJSWrapped, toOmniJSDate } from "../omnijs.js";
+import { validatePaginationParams } from "../validation.js";
+import { runOmniJSWrapped } from "../omnijs.js";
+import {
+  buildListQueryBody,
+  compileAggregate,
+  compileProjection,
+  compileSort,
+  compileTaskPredicates,
+  taskFieldSpec,
+  taskGroupKeys,
+  type QueryResult,
+  type BaseListQueryOptions,
+  type TaskQueryOptions,
+} from "../query/index.js";
 
 /**
  * Options for querying forecast tasks.
+ *
+ * Extends {@link BaseListQueryOptions} so callers get the full shared-query
+ * vocabulary (sort, fields, count, groupBy, etc.) in addition to the
+ * forecast-specific predicates.
+ *
+ * @public
  */
-export interface ForecastOptions {
-  /** Start date for the forecast range (defaults to today) */
-  start?: string | undefined;
-  /** End date for the forecast range */
-  end?: string | undefined;
-  /** Number of days from start to include (alternative to end) */
+export interface ForecastOptions extends BaseListQueryOptions {
+  /**
+   * Number of days from today to include in the forecast window. Default: `7`.
+   * Must be a positive integer.
+   */
   days?: number | undefined;
-  /** Include tasks with no due date but deferred to the range */
+  /**
+   * When `true`, tasks whose deferDate falls within the forecast window are
+   * also included (in addition to tasks due within the window).
+   * Default: `false`.
+   */
   includeDeferred?: boolean | undefined;
 }
 
 /**
- * Query tasks by date range, similar to OmniFocus Forecast view.
- * Returns tasks that are due or deferred within the specified date range.
+ * Query tasks by date window, similar to OmniFocus Forecast view.
+ *
+ * By default returns tasks that are due within the next N days (default 7).
+ * When `includeDeferred: true`, also includes tasks deferred to the same
+ * window.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryForecast(
   options: ForecastOptions = {}
-): Promise<CliOutput<OFTask[]>> {
-  // Validate date inputs
-  if (options.start !== undefined) {
-    const error = validateDateString(options.start);
-    if (error) return failure(error);
-  }
-
-  if (options.end !== undefined) {
-    const error = validateDateString(options.end);
-    if (error) return failure(error);
-  }
-
+): Promise<CliOutput<QueryResult<OFTask>>> {
   // Validate days option
   if (
     options.days !== undefined &&
@@ -46,78 +65,68 @@ export async function queryForecast(
     );
   }
 
-  const includeDeferred = options.includeDeferred === true;
+  // Validate pagination
+  const paginationError = validatePaginationParams(options.limit, options.offset);
+  if (paginationError) return failure(paginationError);
 
-  // Build start date expression for OmniJS
-  const startDateExpr =
-    options.start !== undefined
-      ? toOmniJSDate(options.start)
-      : "new Date()";
+  const days = options.days ?? 7;
+  const includeDeferred = options.includeDeferred ?? false;
+  const windowDuration = `${String(days)}d`;
 
-  // Build end date expression for OmniJS
-  let endDateExpr: string;
-  if (options.end !== undefined) {
-    endDateExpr = toOmniJSDate(options.end);
-  } else if (options.days !== undefined) {
-    endDateExpr = `new Date(startDate.getTime() + ${String(options.days)} * 86400000)`;
-  } else {
-    // Default to 7 days
-    endDateExpr = `new Date(startDate.getTime() + 7 * 86400000)`;
-  }
-
-  // Build task inclusion logic
-  const deferredCheck = includeDeferred
-    ? `
-  if (!shouldInclude && t.deferDate != null) {
-    shouldInclude = t.deferDate >= startDate && t.deferDate <= endDate;
-  }`
-    : "";
-
-  const body = `
-var startDate = ${startDateExpr};
-var endDate = ${endDateExpr};
-
-var allTasks = flattenedTasks.filter(function(t) {
-  return !t.completed && !t.effectivelyDropped;
-});
-
-var matchedTasks = allTasks.filter(function(t) {
-  var shouldInclude = false;
-
-  if (t.dueDate != null) {
-    shouldInclude = t.dueDate >= startDate && t.dueDate <= endDate;
-  }
-${deferredCheck}
-
-  return shouldInclude;
-});
-
-var items = matchedTasks.map(function(t) {
-  var projId = null;
-  var projName = null;
-  if (t.containingProject) {
-    projId = t.containingProject.id.primaryKey;
-    projName = t.containingProject.name;
-  }
-  return {
-    id: t.id.primaryKey,
-    name: t.name,
-    note: t.note || null,
-    flagged: t.flagged,
-    completed: t.completed,
-    dueDate: t.dueDate ? t.dueDate.toISOString() : null,
-    deferDate: t.deferDate ? t.deferDate.toISOString() : null,
-    completionDate: t.completionDate ? t.completionDate.toISOString() : null,
-    projectId: projId,
-    projectName: projName,
-    tags: t.tags.map(function(tg) { return tg.name; }),
-    estimatedMinutes: t.estimatedMinutes != null ? t.estimatedMinutes : null
+  // Build the task query options from forecast-specific fields.
+  // When includeDeferred is false, we use the narrower dueWithin predicate.
+  // When includeDeferred is true, we use dueOrDeferWithin which covers both.
+  const taskOptions: TaskQueryOptions = {
+    ...options,
+    completed: false,
+    effectivelyDropped: false,
+    ...(includeDeferred
+      ? { dueOrDeferWithin: windowDuration }
+      : { dueWithin: windowDuration }),
   };
-});
 
-return JSON.stringify(items);`;
+  // Apply default fields for forecast results if the caller didn't specify
+  const fieldSpec =
+    options.fields !== undefined
+      ? taskFieldSpec
+      : {
+          ...taskFieldSpec,
+          defaultFields: ["id", "name", "dueDate", "projectName"],
+        };
 
-  const result = await runOmniJSWrapped<OFTask[]>(body);
+  // Compile each phase
+  const pred = compileTaskPredicates(taskOptions);
+  const proj = compileProjection(fieldSpec, taskOptions);
+  const sort = compileSort(fieldSpec, taskOptions);
+  const agg = compileAggregate(taskOptions, taskGroupKeys);
+
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
+  }
+
+  const limit = options.limit ?? 100;
+  const offset = options.offset ?? 0;
+
+  const body = buildListQueryBody({
+    source: "flattenedTasks",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
+
+  const result = await runOmniJSWrapped<QueryResult<OFTask>>(body);
 
   if (!result.success) {
     return failure(
@@ -126,5 +135,41 @@ return JSON.stringify(items);`;
     );
   }
 
-  return success(result.data ?? []);
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFTask> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
+    }
+  }
 }

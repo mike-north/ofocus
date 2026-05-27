@@ -1475,3 +1475,129 @@ describe("compileFolderPredicates", () => {
     });
   });
 });
+
+// ─── New predicates added for W4 command migration ────────────────────────────
+
+describe("compileTaskPredicates — new predicates (W4 migration)", () => {
+  describe("nameOrNoteContains", () => {
+    it("emits OR condition covering both t.name and t.note", () => {
+      const r = compileTaskPredicates({ nameOrNoteContains: "report" });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+      const cond = r.conditions[0] ?? "";
+      expect(cond).toContain("t.name.toLowerCase().indexOf(");
+      expect(cond).toContain("t.note && t.note.toLowerCase().indexOf(");
+      expect(cond).toContain('"report"');
+      expect(cond).toContain("||");
+    });
+
+    it("is always case-insensitive (lowercased needle)", () => {
+      const r = compileTaskPredicates({ nameOrNoteContains: "Meeting" });
+      expect(r.conditions[0]).toContain('"meeting"');
+    });
+
+    it("rejects empty string", () => {
+      const r = compileTaskPredicates({ nameOrNoteContains: "" });
+      expect(r.validationErrors.length).toBeGreaterThan(0);
+    });
+
+    it("rejects string with double-quote injection character", () => {
+      const r = compileTaskPredicates({ nameOrNoteContains: 'bad"query' });
+      expect(r.validationErrors.length).toBeGreaterThan(0);
+      expect(r.conditions).toEqual([]);
+    });
+  });
+
+  describe("dueOrDeferWithin", () => {
+    it("emits OR condition covering both dueDate and deferDate within window", () => {
+      const r = compileTaskPredicates({ dueOrDeferWithin: "7d" });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+      const cond = r.conditions[0] ?? "";
+      expect(cond).toContain("t.dueDate");
+      expect(cond).toContain("t.deferDate");
+      expect(cond).toContain("||");
+      expect(cond.match(/new Date\(\)/g)?.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("is valid for 14d window", () => {
+      const r = compileTaskPredicates({ dueOrDeferWithin: "14d" });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+    });
+
+    it("is valid for 1w window", () => {
+      const r = compileTaskPredicates({ dueOrDeferWithin: "1w" });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+    });
+
+    it("rejects invalid duration string", () => {
+      const r = compileTaskPredicates({ dueOrDeferWithin: "notaduration" });
+      expect(r.validationErrors).toHaveLength(1);
+      expect(r.validationErrors[0]?.message).toContain("dueOrDeferWithin");
+    });
+
+    it("produces a condition distinct from dueWithin alone", () => {
+      const rDue = compileTaskPredicates({ dueWithin: "7d" });
+      const rBoth = compileTaskPredicates({ dueOrDeferWithin: "7d" });
+      expect(rDue.conditions[0]).not.toContain("t.deferDate");
+      expect(rBoth.conditions[0]).toContain("t.deferDate");
+    });
+  });
+
+  describe("deferredToFuture", () => {
+    it("emits deferDate != null && deferDate > new Date() when true", () => {
+      const r = compileTaskPredicates({ deferredToFuture: true });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+      const cond = r.conditions[0] ?? "";
+      expect(cond).toContain("t.deferDate != null");
+      expect(cond).toContain("t.deferDate > new Date()");
+    });
+
+    it("emits nothing when false", () => {
+      const r = compileTaskPredicates({ deferredToFuture: false });
+      expect(r.conditions).toEqual([]);
+    });
+
+    it("is distinct from the blocked predicate", () => {
+      const rBlocked = compileTaskPredicates({ blocked: true });
+      const rDeferred = compileTaskPredicates({ deferredToFuture: true });
+      expect(rBlocked.conditions[0]).toBe("t.blocked");
+      expect(rDeferred.conditions[0]).toContain("t.deferDate");
+    });
+  });
+
+  describe("parentTaskId", () => {
+    it("emits instanceof Task check + primaryKey equality for a single ID", () => {
+      const r = compileTaskPredicates({ parentTaskId: "parent-abc" });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+      const cond = r.conditions[0] ?? "";
+      expect(cond).toContain("(t.parent instanceof Task)");
+      expect(cond).toContain('t.parent.id.primaryKey === "parent-abc"');
+    });
+
+    it("emits indexOf for an array of IDs", () => {
+      const r = compileTaskPredicates({ parentTaskId: ["id-1", "id-2"] });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+      const cond = r.conditions[0] ?? "";
+      expect(cond).toContain("(t.parent instanceof Task)");
+      expect(cond).toContain("indexOf(t.parent.id.primaryKey)");
+    });
+
+    it("rejects an empty array", () => {
+      const r = compileTaskPredicates({ parentTaskId: [] });
+      expect(r.validationErrors.length).toBeGreaterThan(0);
+      expect(r.conditions).toEqual([]);
+    });
+
+    it("rejects IDs with injection characters", () => {
+      const r = compileTaskPredicates({ parentTaskId: 'bad"id' });
+      expect(r.validationErrors.length).toBeGreaterThan(0);
+      expect(r.conditions).toEqual([]);
+    });
+  });
+});
