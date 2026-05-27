@@ -71,7 +71,8 @@ export interface OFTag {
 export interface OFPerspective {
   id: string;
   name: string;
-  custom: boolean;
+  /** Whether this is a built-in or user-created custom perspective. */
+  kind: "builtin" | "custom";
 }
 
 /**

@@ -440,15 +440,16 @@ function formatFolders(folders: OFFolder[]): void {
 
 // Perspective formatters
 function formatPerspective(perspective: OFPerspective): void {
-  const customStr = perspective.custom ? " (custom)" : " (built-in)";
-  console.log(perspective.name + customStr);
+  const kindStr = perspective.kind === "custom" ? " (custom)" : " (built-in)";
+  console.log(perspective.name + kindStr);
   console.log(`  ID: ${perspective.id}`);
 }
 
 function formatPerspectives(perspectives: OFPerspective[]): void {
   for (const perspective of perspectives) {
-    const customStr = perspective.custom ? "[custom]" : "[built-in]";
-    console.log(`${customStr} ${perspective.name}`);
+    const kindStr =
+      perspective.kind === "custom" ? "[custom]" : "[built-in]";
+    console.log(`${kindStr} ${perspective.name}`);
     console.log(`  ${perspective.id}`);
   }
 }

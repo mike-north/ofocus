@@ -141,8 +141,20 @@ export {
 export { searchTasks } from "./commands/search.js";
 
 // Phase 4: Perspectives
-export { listPerspectives, queryPerspective } from "./commands/perspectives.js";
-export type { PerspectiveQueryOptions } from "./commands/perspectives.js";
+export {
+  listPerspectives,
+  queryPerspective,
+  createPerspective,
+  renamePerspective,
+  deletePerspective,
+} from "./commands/perspectives.js";
+export type {
+  PerspectiveQueryOptions,
+  CreatePerspectiveOptions,
+  CreatePerspectiveResult,
+  RenamePerspectiveResult,
+  DeletePerspectiveResult,
+} from "./commands/perspectives.js";
 
 // Phase 4: Review
 export {
