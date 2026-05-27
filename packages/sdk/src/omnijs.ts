@@ -201,27 +201,39 @@ export async function runOmniJSWrapped<T>(
  * Convert a Date string (ISO format or similar) to a JavaScript Date constructor call
  * suitable for use in OmniJS scripts.
  *
- * @param dateStr - Date string in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
+ * Local-time strings (no timezone designator) are emitted as a 6-argument
+ * `new Date(year, monthIndex, day, hours, minutes, seconds)` call so they are
+ * interpreted in OmniFocus's local timezone. Strings carrying a timezone
+ * designator (`Z` or `±HH:MM`) are passed through to `new Date("<str>")` so the
+ * JS parser preserves the original timezone semantics. Any other format also
+ * falls through to the string constructor.
+ *
+ * @param dateStr - Date string in ISO format (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM[:SS]`),
+ *                  optionally with a `Z`/`±HH:MM` suffix, or any other Date-parseable string.
  * @returns JavaScript expression that creates a Date object
  */
 export function toOmniJSDate(dateStr: string): string {
-  // If already ISO format, use directly with Date constructor
-  const isoDatePattern =
-    /^(\d{4})-(\d{2})-(\d{2})(T(\d{2}):(\d{2}):?(\d{2})?)?/;
-  const match = isoDatePattern.exec(dateStr);
+  // Strict local-time ISO pattern: anchored end-of-string with no timezone suffix.
+  // Strings like `2024-06-15T14:30:00Z` or `2024-06-15T14:30:00+05:00` will NOT match
+  // and will fall through to the string-constructor branch, which preserves their
+  // intended UTC/offset semantics instead of silently reinterpreting them as local time.
+  const isoLocalPattern =
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?$/;
+  const match = isoLocalPattern.exec(dateStr);
 
   if (match) {
     const year = match[1] ?? "2026";
     const month = String(parseInt(match[2] ?? "1", 10) - 1); // JS months are 0-indexed
     const day = String(parseInt(match[3] ?? "1", 10));
-    const hours = String(parseInt(match[5] ?? "0", 10));
-    const minutes = String(parseInt(match[6] ?? "0", 10));
-    const seconds = String(parseInt(match[7] ?? "0", 10));
+    const hours = String(parseInt(match[4] ?? "0", 10));
+    const minutes = String(parseInt(match[5] ?? "0", 10));
+    const seconds = String(parseInt(match[6] ?? "0", 10));
 
     return `new Date(${year}, ${month}, ${day}, ${hours}, ${minutes}, ${seconds})`;
   }
 
-  // For other formats, let JS parse it
+  // For timezone-suffixed inputs and any other format, let JS parse it so the
+  // string carries its full timezone semantics into the OmniJS Date constructor.
   return `new Date("${escapeJSString(dateStr)}")`;
 }
 

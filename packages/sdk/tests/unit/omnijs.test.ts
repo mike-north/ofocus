@@ -151,6 +151,41 @@ describe("omnijs", () => {
       const dec = toOmniJSDate("2024-12-25");
       expect(dec).toBe("new Date(2024, 11, 25, 0, 0, 0)");
     });
+
+    describe("timezone semantics", () => {
+      // The 6-argument Date constructor always interprets values in the local
+      // timezone. Inputs that carry a timezone designator must fall through to
+      // `new Date("<str>")` so the JS parser preserves their UTC / offset
+      // semantics instead of silently reinterpreting them as local time.
+
+      it("emits a Date string call for a UTC-suffixed input (Z)", () => {
+        const result = toOmniJSDate("2024-06-15T14:30:00Z");
+        expect(result).toBe('new Date("2024-06-15T14:30:00Z")');
+      });
+
+      it("emits a Date string call for a positive UTC-offset input", () => {
+        const result = toOmniJSDate("2024-06-15T14:30:00+05:00");
+        expect(result).toBe('new Date("2024-06-15T14:30:00+05:00")');
+      });
+
+      it("emits a Date string call for a negative UTC-offset input", () => {
+        const result = toOmniJSDate("2024-06-15T14:30:00-08:00");
+        expect(result).toBe('new Date("2024-06-15T14:30:00-08:00")');
+      });
+
+      it("keeps the local-time 6-arg form for an unsuffixed ISO datetime", () => {
+        const result = toOmniJSDate("2024-06-15T14:30:00");
+        expect(result).toBe("new Date(2024, 5, 15, 14, 30, 0)");
+      });
+
+      it("anchors the ISO pattern: trailing garbage falls through to string constructor", () => {
+        // The old (unanchored) regex would have matched the leading
+        // "2024-06-15" and dropped the trailing " garbage". Anchoring at
+        // end-of-string forces the string-constructor branch instead.
+        const result = toOmniJSDate("2024-06-15 garbage");
+        expect(result).toBe('new Date("2024-06-15 garbage")');
+      });
+    });
   });
 
   describe("wrapOmniJS", () => {
