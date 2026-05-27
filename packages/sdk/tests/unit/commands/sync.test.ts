@@ -1,19 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { SyncStatus, SyncResult } from "../../../src/commands/sync.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
 }));
 
 // Import after mocking
 import { getSyncStatus, triggerSync } from "../../../src/commands/sync.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("getSyncStatus", () => {
   beforeEach(() => {
@@ -29,16 +28,16 @@ describe("getSyncStatus", () => {
         syncEnabled: false,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<SyncStatus>);
+      } as OmniJSResult<SyncStatus>);
 
       const result = await getSyncStatus();
 
       expect(result.success).toBe(true);
       expect(result.data?.syncing).toBe(false);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should return sync status when syncing", async () => {
@@ -49,27 +48,46 @@ describe("getSyncStatus", () => {
         syncEnabled: false,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<SyncStatus>);
+      } as OmniJSResult<SyncStatus>);
 
       const result = await getSyncStatus();
 
       expect(result.success).toBe(true);
       expect(result.data?.syncing).toBe(true);
     });
+
+    it("should return lastSync date when available", async () => {
+      const mockResult: SyncStatus = {
+        syncing: false,
+        lastSync: "2026-05-27T10:00:00.000Z",
+        accountName: null,
+        syncEnabled: false,
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockResult,
+      } as OmniJSResult<SyncStatus>);
+
+      const result = await getSyncStatus();
+
+      expect(result.success).toBe(true);
+      expect(result.data?.lastSync).toBe("2026-05-27T10:00:00.000Z");
+    });
   });
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<SyncStatus>);
+      } as OmniJSResult<SyncStatus>);
 
       const result = await getSyncStatus();
 
@@ -78,10 +96,10 @@ describe("getSyncStatus", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<SyncStatus>);
+      } as OmniJSResult<SyncStatus>);
 
       const result = await getSyncStatus();
 
@@ -90,10 +108,10 @@ describe("getSyncStatus", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<SyncStatus>);
+      } as OmniJSResult<SyncStatus>);
 
       const result = await getSyncStatus();
 
@@ -115,29 +133,29 @@ describe("triggerSync", () => {
         message: "Synchronization started",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<SyncResult>);
+      } as OmniJSResult<SyncResult>);
 
       const result = await triggerSync();
 
       expect(result.success).toBe(true);
       expect(result.data?.triggered).toBe(true);
       expect(result.data?.message).toBe("Synchronization started");
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<SyncResult>);
+      } as OmniJSResult<SyncResult>);
 
       const result = await triggerSync();
 
@@ -146,10 +164,10 @@ describe("triggerSync", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<SyncResult>);
+      } as OmniJSResult<SyncResult>);
 
       const result = await triggerSync();
 
@@ -158,10 +176,10 @@ describe("triggerSync", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<SyncResult>);
+      } as OmniJSResult<SyncResult>);
 
       const result = await triggerSync();
 

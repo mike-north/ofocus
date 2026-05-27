@@ -1,7 +1,7 @@
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from URL generation.
@@ -44,65 +44,61 @@ export async function generateUrl(id: string): Promise<CliOutput<UrlResult>> {
     return failure(createError(ErrorCode.INVALID_ID_FORMAT, error.message));
   }
 
-  const script = `
-    set itemId to "${id}"
-    set itemType to ""
-    set itemName to ""
-    set itemUrl to ""
+  const escapedId = escapeJSString(id);
 
-    -- Try task first
-    try
-      set theItem to first flattened task whose id is itemId
-      set itemType to "task"
-      set itemName to name of theItem
-      set itemUrl to "omnifocus:///task/" & itemId
-    end try
+  const body = `
+var itemId = "${escapedId}";
+var itemType = null;
+var itemName = null;
 
-    -- Try project
-    if itemType is "" then
-      try
-        set theItem to first flattened project whose id is itemId
-        set itemType to "project"
-        set itemName to name of theItem
-        set itemUrl to "omnifocus:///project/" & itemId
-      end try
-    end if
+// Try task first
+var task = Task.byIdentifier(itemId);
+if (task) {
+  itemType = "task";
+  itemName = task.name;
+}
 
-    -- Try folder
-    if itemType is "" then
-      try
-        set theItem to first flattened folder whose id is itemId
-        set itemType to "folder"
-        set itemName to name of theItem
-        set itemUrl to "omnifocus:///folder/" & itemId
-      end try
-    end if
+// Try project
+if (!itemType) {
+  var project = Project.byIdentifier(itemId);
+  if (project) {
+    itemType = "project";
+    itemName = project.name;
+  }
+}
 
-    -- Try tag
-    if itemType is "" then
-      try
-        set theItem to first flattened tag whose id is itemId
-        set itemType to "tag"
-        set itemName to name of theItem
-        set itemUrl to "omnifocus:///tag/" & itemId
-      end try
-    end if
+// Try folder
+if (!itemType) {
+  var folder = Folder.byIdentifier(itemId);
+  if (folder) {
+    itemType = "folder";
+    itemName = folder.name;
+  }
+}
 
-    if itemType is "" then
-      error "Item not found with ID: " & itemId
-    end if
+// Try tag
+if (!itemType) {
+  var tag = Tag.byIdentifier(itemId);
+  if (tag) {
+    itemType = "tag";
+    itemName = tag.name;
+  }
+}
 
-    return "{" & ¬
-      "\\"id\\": \\"" & itemId & "\\"," & ¬
-      "\\"type\\": \\"" & itemType & "\\"," & ¬
-      "\\"url\\": \\"" & itemUrl & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(itemName)) & "\\"" & ¬
-      "}"
-  `;
+if (!itemType) {
+  throw new Error("Item not found with ID: ${escapedId}");
+}
 
-  const result = await runAppleScript<UrlResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+var itemUrl = "omnifocus:///" + itemType + "/" + itemId;
+
+return JSON.stringify({
+  id: itemId,
+  type: itemType,
+  url: itemUrl,
+  name: itemName
+});`;
+
+  const result = await runOmniJSWrapped<UrlResult>(body);
 
   if (!result.success) {
     return failure(

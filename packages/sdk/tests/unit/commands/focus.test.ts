@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { FocusResult } from "../../../src/commands/focus.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { focusOn, unfocus, getFocused } from "../../../src/commands/focus.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("focusOn", () => {
   beforeEach(() => {
@@ -22,20 +22,20 @@ describe("focusOn", () => {
 
   describe("validation", () => {
     it("should handle empty target by name", async () => {
-      // validateProjectName allows empty strings, so the call proceeds to AppleScript
+      // validateProjectName allows empty strings, so the call proceeds to OmniJS
       // which will fail to find a target with empty name
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
           message: "Target not found: ",
         },
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await focusOn("");
 
       expect(result.success).toBe(false);
-      expect(mockRunAppleScript).toHaveBeenCalled();
+      expect(mockRunOmniJS).toHaveBeenCalled();
     });
 
     it("should reject empty target by ID", async () => {
@@ -60,15 +60,15 @@ describe("focusOn", () => {
         targetType: "project",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await focusOn("My Project");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should accept valid ID", async () => {
@@ -79,10 +79,10 @@ describe("focusOn", () => {
         targetType: "project",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await focusOn("abc-123", { byId: true });
 
@@ -99,10 +99,10 @@ describe("focusOn", () => {
         targetType: "project",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await focusOn("Work Projects");
 
@@ -118,10 +118,10 @@ describe("focusOn", () => {
         targetType: "folder",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await focusOn("Personal");
 
@@ -132,13 +132,13 @@ describe("focusOn", () => {
 
   describe("error handling", () => {
     it("should handle target not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
           message: "Target not found",
         },
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await focusOn("Nonexistent Project");
 
@@ -146,10 +146,10 @@ describe("focusOn", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await focusOn("Test");
 
@@ -158,10 +158,10 @@ describe("focusOn", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await focusOn("Test");
 
@@ -185,10 +185,10 @@ describe("unfocus", () => {
         targetType: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await unfocus();
 
@@ -200,10 +200,10 @@ describe("unfocus", () => {
 
   describe("error handling", () => {
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await unfocus();
 
@@ -212,13 +212,13 @@ describe("unfocus", () => {
     });
 
     it("should handle script failure", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await unfocus();
 
@@ -242,10 +242,10 @@ describe("getFocused", () => {
         targetType: "project",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await getFocused();
 
@@ -262,10 +262,10 @@ describe("getFocused", () => {
         targetType: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await getFocused();
 
@@ -276,10 +276,10 @@ describe("getFocused", () => {
 
   describe("error handling", () => {
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<FocusResult>);
+      } as OmniJSResult<FocusResult>);
 
       const result = await getFocused();
 

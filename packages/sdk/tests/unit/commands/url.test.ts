@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { UrlResult } from "../../../src/commands/url.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { generateUrl } from "../../../src/commands/url.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("generateUrl", () => {
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe("generateUrl", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject ID with whitespace only", async () => {
@@ -58,15 +58,15 @@ describe("generateUrl", () => {
         name: "Test Task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("abc123");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should accept ID with hyphens", async () => {
@@ -77,10 +77,10 @@ describe("generateUrl", () => {
         name: "Test Project",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("abc-123-def");
 
@@ -95,10 +95,10 @@ describe("generateUrl", () => {
         name: "Task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("task_with_underscores");
 
@@ -115,10 +115,10 @@ describe("generateUrl", () => {
         name: "My Task",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("task-789");
 
@@ -136,10 +136,10 @@ describe("generateUrl", () => {
         name: "My Project",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("proj-456");
 
@@ -155,10 +155,10 @@ describe("generateUrl", () => {
         name: "My Folder",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("folder-123");
 
@@ -174,10 +174,10 @@ describe("generateUrl", () => {
         name: "Important",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("tag-999");
 
@@ -188,13 +188,13 @@ describe("generateUrl", () => {
 
   describe("error handling", () => {
     it("should handle item not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
           message: "Item not found with ID: nonexistent",
         },
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("nonexistent");
 
@@ -202,13 +202,13 @@ describe("generateUrl", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("task-123");
 
@@ -217,10 +217,10 @@ describe("generateUrl", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("task-123");
 
@@ -229,10 +229,10 @@ describe("generateUrl", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<UrlResult>);
+      } as OmniJSResult<UrlResult>);
 
       const result = await generateUrl("task-123");
 

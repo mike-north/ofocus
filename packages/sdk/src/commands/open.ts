@@ -2,8 +2,7 @@ import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from opening an item.
@@ -25,72 +24,63 @@ export async function openItem(id: string): Promise<CliOutput<OpenResult>> {
   const idError = validateId(id, "item");
   if (idError) return failure(idError);
 
-  // Try to find the item and determine its type, then open it
-  const script = `
-    set itemId to "${escapeAppleScript(id)}"
-    set itemType to ""
-    set itemName to ""
-    set foundItem to missing value
+  const escapedId = escapeJSString(id);
 
-    -- Try to find as task first (most common)
-    try
-      set foundItem to first flattened task whose id is itemId
-      set itemType to "task"
-      set itemName to name of foundItem
-    end try
+  const body = `
+var itemId = "${escapedId}";
+var itemType = null;
+var itemName = null;
 
-    -- Try as project
-    if foundItem is missing value then
-      try
-        set foundItem to first flattened project whose id is itemId
-        set itemType to "project"
-        set itemName to name of foundItem
-      end try
-    end if
+// Try task first (most common)
+var task = Task.byIdentifier(itemId);
+if (task) {
+  itemType = "task";
+  itemName = task.name;
+}
 
-    -- Try as folder
-    if foundItem is missing value then
-      try
-        set foundItem to first flattened folder whose id is itemId
-        set itemType to "folder"
-        set itemName to name of foundItem
-      end try
-    end if
+// Try project
+if (!itemType) {
+  var project = Project.byIdentifier(itemId);
+  if (project) {
+    itemType = "project";
+    itemName = project.name;
+  }
+}
 
-    -- Try as tag
-    if foundItem is missing value then
-      try
-        set foundItem to first flattened tag whose id is itemId
-        set itemType to "tag"
-        set itemName to name of foundItem
-      end try
-    end if
+// Try folder
+if (!itemType) {
+  var folder = Folder.byIdentifier(itemId);
+  if (folder) {
+    itemType = "folder";
+    itemName = folder.name;
+  }
+}
 
-    if foundItem is missing value then
-      error "Item not found with ID: " & itemId
-    end if
+// Try tag
+if (!itemType) {
+  var tag = Tag.byIdentifier(itemId);
+  if (tag) {
+    itemType = "tag";
+    itemName = tag.name;
+  }
+}
 
-    -- Activate OmniFocus and open the item using URL scheme
-    tell application "OmniFocus"
-      activate
-    end tell
+if (!itemType) {
+  throw new Error("Item not found with ID: ${escapedId}");
+}
 
-    -- Use URL scheme to navigate to the item
-    -- OmniFocus URL scheme: omnifocus:///task/ID, omnifocus:///project/ID, etc.
-    set theUrl to "omnifocus:///" & itemType & "/" & itemId
-    do shell script "open " & quoted form of theUrl
+// Open the item using the OmniFocus URL scheme
+var url = URL.fromString("omnifocus:///" + itemType + "/" + itemId);
+url.open();
 
-    return "{" & ¬
-      "\\"id\\": \\"" & itemId & "\\"," & ¬
-      "\\"type\\": \\"" & itemType & "\\"," & ¬
-      "\\"name\\": \\"" & (my escapeJson(itemName)) & "\\"," & ¬
-      "\\"opened\\": true" & ¬
-      "}"
-  `;
+return JSON.stringify({
+  id: itemId,
+  type: itemType,
+  name: itemName,
+  opened: true
+});`;
 
-  const result = await runAppleScript<OpenResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<OpenResult>(body);
 
   if (!result.success) {
     return failure(
