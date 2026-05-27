@@ -151,6 +151,30 @@ describe("omnijs", () => {
       const dec = toOmniJSDate("2024-12-25");
       expect(dec).toBe("new Date(2024, 11, 25, 0, 0, 0)");
     });
+
+    // Regression: the original ISO regex was unanchored at the end and accepted
+    // timezone-suffixed strings, then constructed a local-time Date that
+    // silently discarded the suffix. UTC/offset inputs must round-trip through
+    // the JS Date parser so the original semantics are preserved.
+    it("should pass through UTC-suffixed ISO strings to Date constructor", () => {
+      const result = toOmniJSDate("2024-06-15T14:30:00Z");
+      expect(result).toBe('new Date("2024-06-15T14:30:00Z")');
+    });
+
+    it("should pass through ISO strings with positive offset to Date constructor", () => {
+      const result = toOmniJSDate("2024-06-15T14:30:00+05:00");
+      expect(result).toBe('new Date("2024-06-15T14:30:00+05:00")');
+    });
+
+    it("should pass through ISO strings with negative offset to Date constructor", () => {
+      const result = toOmniJSDate("2024-06-15T14:30:00-08:00");
+      expect(result).toBe('new Date("2024-06-15T14:30:00-08:00")');
+    });
+
+    it("should handle ISO datetime without seconds", () => {
+      const result = toOmniJSDate("2024-06-15T14:30");
+      expect(result).toBe("new Date(2024, 5, 15, 14, 30, 0)");
+    });
   });
 
   describe("wrapOmniJS", () => {
@@ -284,6 +308,65 @@ describe("omnijs", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
+    });
+
+    // Regression: previously parseOmniJSError fell back to parseAppleScriptError
+    // for these messages, which only matches AppleScript phrasings like
+    // "task doesn't exist" — so OmniJS-thrown "Task not found:" surfaced as
+    // a generic APPLESCRIPT_ERROR instead of TASK_NOT_FOUND.
+    it("should map 'Task not found' OmniJS errors to TASK_NOT_FOUND", async () => {
+      mockExecFileSuccess(
+        '{"__omnijs_error": true, "message": "Error: Task not found: abc-123"}'
+      );
+
+      const result = await runOmniJSWrapped<unknown>("test");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe("TASK_NOT_FOUND");
+    });
+
+    it("should map 'Parent task not found' OmniJS errors to TASK_NOT_FOUND", async () => {
+      mockExecFileSuccess(
+        '{"__omnijs_error": true, "message": "Error: Parent task not found: abc-123"}'
+      );
+
+      const result = await runOmniJSWrapped<unknown>("test");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe("TASK_NOT_FOUND");
+    });
+
+    it("should map 'Project not found' OmniJS errors to PROJECT_NOT_FOUND", async () => {
+      mockExecFileSuccess(
+        '{"__omnijs_error": true, "message": "Error: Project not found: Inbox"}'
+      );
+
+      const result = await runOmniJSWrapped<unknown>("test");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe("PROJECT_NOT_FOUND");
+    });
+
+    it("should map 'Tag not found' OmniJS errors to TAG_NOT_FOUND", async () => {
+      mockExecFileSuccess(
+        '{"__omnijs_error": true, "message": "Error: Tag not found: urgent"}'
+      );
+
+      const result = await runOmniJSWrapped<unknown>("test");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe("TAG_NOT_FOUND");
+    });
+
+    it("should map 'Folder not found' OmniJS errors to FOLDER_NOT_FOUND", async () => {
+      mockExecFileSuccess(
+        '{"__omnijs_error": true, "message": "Error: Folder not found: Work"}'
+      );
+
+      const result = await runOmniJSWrapped<unknown>("test");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe("FOLDER_NOT_FOUND");
     });
 
     it("should pass through successful results", async () => {

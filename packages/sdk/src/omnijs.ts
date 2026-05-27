@@ -119,12 +119,14 @@ export function escapeJSForAppleScript(js: string): string {
 
 /**
  * Parse an OmniJS error message into a structured CliError.
- * Reuses AppleScript error parsing since errors come through the same osascript channel.
+ *
+ * Maps OmniJS-thrown error patterns (e.g. `throw new Error("Task not found: <id>")`)
+ * to semantic error codes before falling back to AppleScript error parsing.
  */
 function parseOmniJSError(rawError: string): CliError {
-  // Check for OmniJS-specific errors first
   const errorLower = rawError.toLowerCase();
 
+  // OmniJS script/runtime errors (TypeError, undefined symbol, etc.)
   if (
     errorLower.includes("error: typeerror") ||
     errorLower.includes("is not a function") ||
@@ -138,7 +140,37 @@ function parseOmniJSError(rawError: string): CliError {
     );
   }
 
-  // Fall back to the existing AppleScript error parser
+  // OmniJS commands throw `Error("Task not found: <id>")` (and the
+  // "Parent task not found: <id>" variant). Map these to TASK_NOT_FOUND.
+  if (errorLower.includes("task not found")) {
+    return createError(ErrorCode.TASK_NOT_FOUND, "Task not found", rawError);
+  }
+
+  // OmniJS commands throw `Error("Project not found: <name>")`.
+  if (errorLower.includes("project not found")) {
+    return createError(
+      ErrorCode.PROJECT_NOT_FOUND,
+      "Project not found",
+      rawError
+    );
+  }
+
+  // OmniJS commands throw `Error("Tag not found: <name>")`.
+  if (errorLower.includes("tag not found")) {
+    return createError(ErrorCode.TAG_NOT_FOUND, "Tag not found", rawError);
+  }
+
+  // OmniJS commands throw `Error("Folder not found: <id|name>")`.
+  if (errorLower.includes("folder not found")) {
+    return createError(
+      ErrorCode.FOLDER_NOT_FOUND,
+      "Folder not found",
+      rawError
+    );
+  }
+
+  // Fall back to the existing AppleScript error parser for messages that
+  // surface through the same osascript channel (e.g. OmniFocus not running).
   return parseAppleScriptError(rawError);
 }
 
@@ -201,27 +233,39 @@ export async function runOmniJSWrapped<T>(
  * Convert a Date string (ISO format or similar) to a JavaScript Date constructor call
  * suitable for use in OmniJS scripts.
  *
- * @param dateStr - Date string in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
+ * Local-time strings (no timezone designator) are emitted as a 6-argument
+ * `new Date(year, monthIndex, day, hours, minutes, seconds)` call so they are
+ * interpreted in OmniFocus's local timezone. Strings carrying a timezone
+ * designator (`Z` or `±HH:MM`) are passed through to `new Date("<str>")` so the
+ * JS parser preserves the original timezone semantics. Any other format also
+ * falls through to the string constructor.
+ *
+ * @param dateStr - Date string in ISO format (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM[:SS]`),
+ *                  optionally with a `Z`/`±HH:MM` suffix, or any other Date-parseable string.
  * @returns JavaScript expression that creates a Date object
  */
 export function toOmniJSDate(dateStr: string): string {
-  // If already ISO format, use directly with Date constructor
-  const isoDatePattern =
-    /^(\d{4})-(\d{2})-(\d{2})(T(\d{2}):(\d{2}):?(\d{2})?)?/;
-  const match = isoDatePattern.exec(dateStr);
+  // Strict local-time ISO pattern: anchored end-of-string with no timezone suffix.
+  // Strings like `2024-06-15T14:30:00Z` or `2024-06-15T14:30:00+05:00` will NOT match
+  // and will fall through to the string-constructor branch, which preserves their
+  // intended UTC/offset semantics instead of silently reinterpreting them as local time.
+  const isoLocalPattern =
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?$/;
+  const match = isoLocalPattern.exec(dateStr);
 
   if (match) {
     const year = match[1] ?? "2026";
     const month = String(parseInt(match[2] ?? "1", 10) - 1); // JS months are 0-indexed
     const day = String(parseInt(match[3] ?? "1", 10));
-    const hours = String(parseInt(match[5] ?? "0", 10));
-    const minutes = String(parseInt(match[6] ?? "0", 10));
-    const seconds = String(parseInt(match[7] ?? "0", 10));
+    const hours = String(parseInt(match[4] ?? "0", 10));
+    const minutes = String(parseInt(match[5] ?? "0", 10));
+    const seconds = String(parseInt(match[6] ?? "0", 10));
 
     return `new Date(${year}, ${month}, ${day}, ${hours}, ${minutes}, ${seconds})`;
   }
 
-  // For other formats, let JS parse it
+  // For ISO strings with timezone designators (Z or ±HH:MM) or any other format,
+  // let JS's Date parser handle it so timezone semantics are preserved.
   return `new Date("${escapeJSString(dateStr)}")`;
 }
 
