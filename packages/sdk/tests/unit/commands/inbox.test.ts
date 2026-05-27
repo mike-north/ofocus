@@ -8,6 +8,7 @@ vi.mock("../../../src/omnijs.js", () => ({
   runOmniJSWrapped: vi.fn(),
   escapeJSString: vi.fn((s: string) => s),
   toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
+  escapeJSForAppleScript: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
@@ -135,6 +136,44 @@ describe("addToInbox", () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockTask);
+    });
+
+    it("should generate repetition rule script for weekly on Tuesday", async () => {
+      const mockTask: OFTask = {
+        id: "task-789",
+        name: "Weekly task",
+        note: "",
+        flagged: false,
+        completed: false,
+        dueDate: null,
+        deferDate: null,
+        completionDate: null,
+        projectId: null,
+        projectName: null,
+        tags: [],
+        estimatedMinutes: null,
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockTask,
+      } as OmniJSResult<OFTask>);
+
+      await addToInbox("Weekly task", {
+        repeat: {
+          frequency: "weekly",
+          interval: 1,
+          repeatMethod: "due-again",
+          daysOfWeek: [2], // Tuesday
+        },
+      });
+
+      // Verify the script passed to runOmniJSWrapped contains the repetition rule
+      const scriptBody = mockRunOmniJS.mock.calls[0]![0] as string;
+      expect(scriptBody).toContain("Task.RepetitionRule");
+      expect(scriptBody).toContain("FREQ=WEEKLY");
+      expect(scriptBody).toContain("BYDAY=TU");
+      expect(scriptBody).toContain("Task.RepetitionMethod.DueDate");
     });
   });
 

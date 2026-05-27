@@ -10,8 +10,9 @@ import {
   validateDateString,
   validateProjectName,
   validatePaginationParams,
+  validateTagName,
 } from "../validation.js";
-import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Query tasks from OmniFocus with optional filters and pagination.
@@ -32,6 +33,11 @@ export async function queryTasks(
 
   const projectError = validateProjectName(options.project);
   if (projectError) return failure(projectError);
+
+  if (options.tag !== undefined) {
+    const tagError = validateTagName(options.tag);
+    if (tagError) return failure(tagError);
+  }
 
   // Validate pagination parameters
   const paginationError = validatePaginationParams(
@@ -77,13 +83,13 @@ export async function queryTasks(
 
   if (options.dueBefore !== undefined) {
     conditions.push(
-      `(t.dueDate && t.dueDate < new Date("${escapeJSString(options.dueBefore)}"))`
+      `(t.dueDate && t.dueDate < ${toOmniJSDate(options.dueBefore)})`
     );
   }
 
   if (options.dueAfter !== undefined) {
     conditions.push(
-      `(t.dueDate && t.dueDate > new Date("${escapeJSString(options.dueAfter)}"))`
+      `(t.dueDate && t.dueDate > ${toOmniJSDate(options.dueAfter)})`
     );
   }
 
@@ -118,7 +124,7 @@ var items = paged.map(function(t) {
     projectId: projId,
     projectName: projName,
     tags: t.tags.map(function(tg) { return tg.name; }),
-    estimatedMinutes: t.estimatedMinutes || null
+    estimatedMinutes: t.estimatedMinutes != null ? t.estimatedMinutes : null
   };
 });
 

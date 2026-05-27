@@ -5,21 +5,23 @@ import {
   wrapOmniJS,
   toOmniJSDate,
   escapeJSString,
+  escapeJSForAppleScript,
 } from "../../src/omnijs.js";
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 
-// Mock node:child_process exec
+// Mock node:child_process execFile
 vi.mock("node:child_process", () => ({
-  exec: vi.fn(),
+  execFile: vi.fn(),
 }));
 
-const mockExec = vi.mocked(exec);
+const mockExecFile = vi.mocked(execFile);
 
-// Helper to simulate successful exec callback
-function mockExecSuccess(stdout: string, stderr = "") {
-  mockExec.mockImplementation(
+// Helper to simulate successful execFile callback
+function mockExecFileSuccess(stdout: string, stderr = "") {
+  mockExecFile.mockImplementation(
     (
-      _cmd: string,
+      _file: string,
+      _args: unknown,
       _opts: unknown,
       callback: (
         error: Error | null,
@@ -31,18 +33,23 @@ function mockExecSuccess(stdout: string, stderr = "") {
   );
 }
 
-// Helper to simulate exec error
-function mockExecError(errorMessage: string) {
-  mockExec.mockImplementation(
+// Helper to simulate execFile error
+function mockExecFileError(errorMessage: string, killed = false) {
+  mockExecFile.mockImplementation(
     (
-      _cmd: string,
+      _file: string,
+      _args: unknown,
       _opts: unknown,
       callback: (
         error: Error | null,
         result: { stdout: string; stderr: string } | null
       ) => void
     ) => {
-      callback(new Error(errorMessage), null);
+      const error = new Error(errorMessage) as Error & { killed?: boolean };
+      if (killed) {
+        error.killed = true;
+      }
+      callback(error, null);
     }
   );
 }
@@ -75,6 +82,47 @@ describe("omnijs", () => {
 
     it("should handle empty string", () => {
       expect(escapeJSString("")).toBe("");
+    });
+  });
+
+  describe("escapeJSForAppleScript", () => {
+    it("should escape backslashes (double, not quadruple)", () => {
+      expect(escapeJSForAppleScript("C:\\Users\\docs")).toBe(
+        "C:\\\\Users\\\\docs"
+      );
+    });
+
+    it("should escape double quotes", () => {
+      expect(escapeJSForAppleScript('He said "hello"')).toBe(
+        'He said \\"hello\\"'
+      );
+    });
+
+    it("should escape newlines", () => {
+      expect(escapeJSForAppleScript("line1\nline2")).toBe("line1\\nline2");
+    });
+
+    it("should escape tabs", () => {
+      expect(escapeJSForAppleScript("col1\tcol2")).toBe("col1\\tcol2");
+    });
+
+    it("should escape carriage returns", () => {
+      expect(escapeJSForAppleScript("line1\rline2")).toBe("line1\\rline2");
+    });
+
+    it("should not escape single quotes (no shell layer)", () => {
+      expect(escapeJSForAppleScript("it's done")).toBe("it's done");
+    });
+
+    it("should handle combined special characters", () => {
+      const input = 'She said "it\'s a backslash: \\" today';
+      const result = escapeJSForAppleScript(input);
+      // backslash becomes \\, double quote becomes \", single quote unchanged
+      expect(result).toBe('She said \\"it\'s a backslash: \\\\\\" today');
+    });
+
+    it("should handle empty string", () => {
+      expect(escapeJSForAppleScript("")).toBe("");
     });
   });
 
@@ -123,7 +171,7 @@ describe("omnijs", () => {
     });
 
     it("should execute script and parse JSON response", async () => {
-      mockExecSuccess('{"result": 42}');
+      mockExecFileSuccess('{"result": 42}');
 
       const result = await runOmniJS<{ result: number }>(
         "JSON.stringify({result: 42})"
@@ -133,28 +181,36 @@ describe("omnijs", () => {
       expect(result.data).toEqual({ result: 42 });
     });
 
-    it("should use osascript with evaluate javascript", async () => {
-      mockExecSuccess('{"ok": true}');
+    it("should use osascript with evaluate javascript via execFile", async () => {
+      mockExecFileSuccess('{"ok": true}');
 
       await runOmniJS<unknown>("1+1");
 
-      const calledCommand = mockExec.mock.calls[0]?.[0] as string;
-      expect(calledCommand).toContain("osascript -e");
-      expect(calledCommand).toContain('tell application "OmniFocus"');
-      expect(calledCommand).toContain("evaluate javascript");
+      expect(mockExecFile).toHaveBeenCalledTimes(1);
+      const [file, args] = mockExecFile.mock.calls[0]! as [
+        string,
+        string[],
+        unknown,
+        unknown,
+      ];
+      expect(file).toBe("osascript");
+      expect(args).toHaveLength(2);
+      expect(args[0]).toBe("-e");
+      expect(args[1]).toContain('tell application "OmniFocus"');
+      expect(args[1]).toContain("evaluate javascript");
     });
 
-    it("should return raw string for non-JSON output", async () => {
-      mockExecSuccess("hello world");
+    it("should fail on non-JSON output instead of type-lying", async () => {
+      mockExecFileSuccess("hello world");
 
       const result = await runOmniJS<string>("'hello world'");
 
-      expect(result.success).toBe(true);
-      expect(result.data).toBe("hello world");
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("Unexpected non-JSON output");
     });
 
     it("should handle stderr as error", async () => {
-      mockExecSuccess("", "Script error: something went wrong");
+      mockExecFileSuccess("", "Script error: something went wrong");
 
       const result = await runOmniJS<unknown>("bad code");
 
@@ -163,7 +219,7 @@ describe("omnijs", () => {
     });
 
     it("should fail on empty response", async () => {
-      mockExecSuccess("");
+      mockExecFileSuccess("");
 
       const result = await runOmniJS<unknown>("undefined");
 
@@ -172,7 +228,7 @@ describe("omnijs", () => {
     });
 
     it("should handle execution errors", async () => {
-      mockExecError("Command failed: osascript");
+      mockExecFileError("Command failed: osascript");
 
       const result = await runOmniJS<unknown>("bad");
 
@@ -181,12 +237,34 @@ describe("omnijs", () => {
     });
 
     it("should detect OmniFocus not running", async () => {
-      mockExecError("application isn't running");
+      mockExecFileError("application isn't running");
 
       const result = await runOmniJS<unknown>("test");
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe("OMNIFOCUS_NOT_RUNNING");
+    });
+
+    it("should handle timeout with killed flag", async () => {
+      mockExecFileError("Command timed out", true);
+
+      const result = await runOmniJS<unknown>("slow script");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("timed out");
+    });
+
+    it("should pass timeout option to execFile", async () => {
+      mockExecFileSuccess('{"ok": true}');
+
+      await runOmniJS<unknown>("test");
+
+      const opts = mockExecFile.mock.calls[0]![2] as {
+        timeout: number;
+        maxBuffer: number;
+      };
+      expect(opts.timeout).toBe(30_000);
+      expect(opts.maxBuffer).toBe(10 * 1024 * 1024);
     });
   });
 
@@ -196,7 +274,7 @@ describe("omnijs", () => {
     });
 
     it("should detect caught errors from wrapped script", async () => {
-      mockExecSuccess(
+      mockExecFileSuccess(
         '{"__omnijs_error": true, "message": "Task not found: xyz"}'
       );
 
@@ -209,7 +287,7 @@ describe("omnijs", () => {
     });
 
     it("should pass through successful results", async () => {
-      mockExecSuccess('{"id": "abc-123", "name": "Test"}');
+      mockExecFileSuccess('{"id": "abc-123", "name": "Test"}');
 
       const result = await runOmniJSWrapped<{ id: string; name: string }>(
         'return JSON.stringify({id: "abc-123", name: "Test"});'
@@ -220,7 +298,7 @@ describe("omnijs", () => {
     });
 
     it("should pass through transport-level failures", async () => {
-      mockExecError("Connection refused");
+      mockExecFileError("Connection refused");
 
       const result = await runOmniJSWrapped<unknown>("test");
 

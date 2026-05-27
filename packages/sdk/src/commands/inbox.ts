@@ -9,6 +9,7 @@ import {
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 import { buildRRule } from "./repetition.js";
+import { sanitizeVarName } from "../utils/sanitize.js";
 
 /**
  * Add a task to the OmniFocus inbox.
@@ -68,8 +69,8 @@ export async function addToInbox(
 
   // Handle tags
   if (options.tags && options.tags.length > 0) {
-    for (const tagName of options.tags) {
-      const varName = `tag_${sanitizeVarName(tagName)}`;
+    for (const [i, tagName] of options.tags.entries()) {
+      const varName = sanitizeVarName(tagName, i);
       scriptParts.push(
         `var ${varName} = flattenedTags.byName("${escapeJSString(tagName)}");`
       );
@@ -104,7 +105,7 @@ return JSON.stringify({
   projectId: null,
   projectName: null,
   tags: tagNames,
-  estimatedMinutes: task.estimatedMinutes || null
+  estimatedMinutes: task.estimatedMinutes != null ? task.estimatedMinutes : null
 });`);
 
   const body = scriptParts.join("\n");
@@ -124,11 +125,4 @@ return JSON.stringify({
   }
 
   return success(result.data);
-}
-
-/**
- * Sanitize a string for use as a JavaScript variable name suffix.
- */
-function sanitizeVarName(str: string): string {
-  return str.replace(/[^a-zA-Z0-9]/g, "_");
 }

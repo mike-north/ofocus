@@ -1,4 +1,4 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import {
   type CliError,
@@ -7,7 +7,7 @@ import {
   parseAppleScriptError,
 } from "./errors.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 /**
  * Result of executing an OmniJS script via OmniFocus's evaluate javascript.
@@ -37,11 +37,16 @@ export interface OmniJSResult<T> {
 export async function runOmniJS<T>(script: string): Promise<OmniJSResult<T>> {
   try {
     const escapedScript = escapeJSForAppleScript(script);
-    const command = `osascript -e 'tell application "OmniFocus" to evaluate javascript "${escapedScript}"'`;
+    const asScript = `tell application "OmniFocus" to evaluate javascript "${escapedScript}"`;
 
-    const { stdout, stderr } = await execAsync(command, {
-      maxBuffer: 10 * 1024 * 1024, // 10MB for large query results
-    });
+    const { stdout, stderr } = await execFileAsync(
+      "osascript",
+      ["-e", asScript],
+      {
+        maxBuffer: 10 * 1024 * 1024, // 10MB for large query results
+        timeout: 30_000,
+      }
+    );
 
     if (stderr) {
       return { success: false, error: parseOmniJSError(stderr.trim()) };
@@ -60,15 +65,34 @@ export async function runOmniJS<T>(script: string): Promise<OmniJSResult<T>> {
       };
     }
 
-    // Try to parse as JSON first
+    // Parse as JSON — non-JSON output is a protocol violation
     try {
       const data = JSON.parse(trimmed) as T;
       return { success: true, data };
     } catch {
-      // Return raw string if not JSON
-      return { success: true, data: trimmed as T };
+      return {
+        success: false,
+        error: createError(
+          ErrorCode.APPLESCRIPT_ERROR,
+          `Unexpected non-JSON output: ${trimmed.slice(0, 200)}`
+        ),
+      };
     }
   } catch (err) {
+    // Handle timeout (execFile sets killed=true when timeout exceeded)
+    if (
+      err instanceof Error &&
+      "killed" in err &&
+      (err as NodeJS.ErrnoException & { killed?: boolean }).killed
+    ) {
+      return {
+        success: false,
+        error: createError(
+          ErrorCode.APPLESCRIPT_ERROR,
+          "OmniJS script timed out after 30 seconds"
+        ),
+      };
+    }
     const message = err instanceof Error ? err.message : String(err);
     return { success: false, error: parseOmniJSError(message) };
   }
@@ -78,17 +102,15 @@ export async function runOmniJS<T>(script: string): Promise<OmniJSResult<T>> {
  * Escape a JavaScript string for embedding inside an AppleScript
  * double-quoted string passed to `evaluate javascript`.
  *
- * The escaping layers are:
- * 1. The JS code lives inside an AppleScript string literal (double-quoted)
- * 2. That AppleScript lives inside a shell single-quoted argument
+ * With execFile (no shell layer), escaping layers are:
+ * 1. AppleScript double-quoted string: \\ → \, \" → "
+ * 2. JavaScript eval: interprets the resulting string as JS source
  *
- * We need to escape: backslashes, double quotes, and newlines for the
- * AppleScript string layer. The shell single-quote layer is handled by
- * the outer quoting in the command string.
+ * We escape: backslashes, double quotes, newlines, tabs, carriage returns.
  */
-function escapeJSForAppleScript(js: string): string {
+export function escapeJSForAppleScript(js: string): string {
   return js
-    .replace(/\\/g, "\\\\\\\\") // \ → \\\\ (JS backslash in AS string)
+    .replace(/\\/g, "\\\\") // \ → \\ (for AppleScript string layer)
     .replace(/"/g, '\\"') // " → \" (escape for AS string)
     .replace(/\n/g, "\\n") // newline → \n literal in AS string
     .replace(/\r/g, "\\r") // carriage return → \r
@@ -163,7 +185,7 @@ export async function runOmniJSWrapped<T>(
     result.data !== undefined &&
     typeof result.data === "object" &&
     "__omnijs_error" in result.data &&
-    (result.data as { __omnijs_error: boolean }).__omnijs_error === true
+    (result.data as { __omnijs_error: boolean }).__omnijs_error
   ) {
     const errData = result.data as { __omnijs_error: boolean; message: string };
     return {

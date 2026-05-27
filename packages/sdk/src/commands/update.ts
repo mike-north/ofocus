@@ -11,6 +11,7 @@ import {
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 import { buildRRule } from "./repetition.js";
+import { sanitizeVarName } from "../utils/sanitize.js";
 
 /**
  * Update properties of an existing task in OmniFocus.
@@ -88,9 +89,10 @@ if (!task) {
     } else {
       scriptParts.push(`
 var proj = flattenedProjects.byName("${escapeJSString(options.project)}");
-if (proj) {
-  moveTasks([task], proj.ending);
-}`);
+if (!proj) {
+  throw new Error("Project not found: ${escapeJSString(options.project)}");
+}
+moveTasks([task], proj.ending);`);
     }
   }
 
@@ -122,10 +124,11 @@ if (proj) {
   if (options.tags !== undefined) {
     scriptParts.push(`
 task.clearTags();`);
-    for (const tagName of options.tags) {
+    for (const [i, tagName] of options.tags.entries()) {
+      const varName = sanitizeVarName(tagName, i);
       scriptParts.push(`
-var tagFor_${sanitizeVarName(tagName)} = flattenedTags.byName("${escapeJSString(tagName)}");
-if (tagFor_${sanitizeVarName(tagName)}) { task.addTag(tagFor_${sanitizeVarName(tagName)}); }`);
+var ${varName} = flattenedTags.byName("${escapeJSString(tagName)}");
+if (${varName}) { task.addTag(${varName}); }`);
     }
   }
 
@@ -151,7 +154,7 @@ return JSON.stringify({
   projectId: projId,
   projectName: projName,
   tags: tagNames,
-  estimatedMinutes: task.estimatedMinutes || null
+  estimatedMinutes: task.estimatedMinutes != null ? task.estimatedMinutes : null
 });`);
 
   const body = scriptParts.join("\n");
@@ -171,11 +174,4 @@ return JSON.stringify({
   }
 
   return success(result.data);
-}
-
-/**
- * Sanitize a string for use as a JavaScript variable name suffix.
- */
-function sanitizeVarName(str: string): string {
-  return str.replace(/[^a-zA-Z0-9]/g, "_");
 }
