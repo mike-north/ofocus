@@ -1,5 +1,5 @@
 import { type CliError, ErrorCode, createError } from "../errors.js";
-import { taskGroupKeys } from "./fields.js";
+import { taskGroupKeys, type GroupKeySpec } from "./fields.js";
 import type { BaseListQueryOptions } from "./types.js";
 
 /**
@@ -35,13 +35,15 @@ export interface CompiledAggregate {
  * Compile aggregate options into a single shape, validating that at most one
  * shape modifier is set.
  *
- * Currently uses {@link taskGroupKeys} for `groupBy` validation; per-entity
- * group key tables can be added in a follow-up phase as more entities migrate.
+ * Pass an entity-specific `groupKeys` map to validate `groupBy` against the
+ * correct key set. Defaults to {@link taskGroupKeys} for backward compatibility
+ * with call sites that do not supply a map.
  *
  * @public
  */
 export function compileAggregate(
-  options: BaseListQueryOptions
+  options: BaseListQueryOptions,
+  groupKeys: Record<string, GroupKeySpec> = taskGroupKeys
 ): CompiledAggregate {
   const validationErrors: CliError[] = [];
 
@@ -84,13 +86,13 @@ export function compileAggregate(
   }
   if (options.groupBy !== undefined) {
     const groupKey = options.groupBy;
-    const spec = taskGroupKeys[groupKey];
+    const spec = groupKeys[groupKey];
     if (spec === undefined) {
       validationErrors.push(
         createError(
           ErrorCode.VALIDATION_ERROR,
           `Unknown groupBy key: ${groupKey}`,
-          `Supported keys: ${Object.keys(taskGroupKeys).sort().join(", ")}`
+          `Supported keys: ${Object.keys(groupKeys).sort().join(", ")}`
         )
       );
       // Degrade to list so subsequent compilation doesn't try to use an

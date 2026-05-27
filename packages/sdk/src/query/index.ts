@@ -228,15 +228,31 @@ function renderGroups(args: {
 
 // Public re-exports for the query module. `BuildListQueryBodyArgs` is already
 // exported above as an `export interface`.
-export type { BaseListQueryOptions, QueryResult, TagMode, TaskQueryOptions, TaskStatus, NumericRange } from "./types.js";
+export type {
+  BaseListQueryOptions,
+  QueryResult,
+  TagMode,
+  TaskQueryOptions,
+  TaskStatus,
+  NumericRange,
+  FolderQueryOptions,
+  FolderStatus,
+  ProjectQueryOptions,
+  ProjectStatus,
+  TagQueryOptions,
+  TagStatus,
+} from "./types.js";
 export type { ParsedDate } from "./dates.js";
 export { parseDate, parseDuration } from "./dates.js";
 export type { EntityFieldSpec, FieldGetter, GroupKeySpec } from "./fields.js";
 export {
   taskFieldSpec,
   projectFieldSpec,
+  projectGroupKeys,
   folderFieldSpec,
+  folderGroupKeys,
   tagFieldSpec,
+  tagGroupKeys,
   taskGroupKeys,
 } from "./fields.js";
 export type { CompiledProjection, CompileProjectionOptions } from "./projection.js";
@@ -246,4 +262,9 @@ export { compileSort } from "./sort.js";
 export type { AggregateShape, CompiledAggregate } from "./aggregate.js";
 export { compileAggregate } from "./aggregate.js";
 export type { CompiledPredicates } from "./predicates.js";
-export { compileTaskPredicates } from "./predicates.js";
+export {
+  compileTaskPredicates,
+  compileProjectPredicates,
+  compileTagPredicates,
+  compileFolderPredicates,
+} from "./predicates.js";

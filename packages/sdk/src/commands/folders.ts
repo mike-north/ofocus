@@ -1,10 +1,4 @@
-import type {
-  CliOutput,
-  CreateFolderOptions,
-  FolderQueryOptions,
-  OFFolder,
-  PaginatedResult,
-} from "../types.js";
+import type { CliOutput, CreateFolderOptions, OFFolder } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import {
@@ -13,6 +7,17 @@ import {
   validatePaginationParams,
 } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import {
+  buildListQueryBody,
+  compileAggregate,
+  compileFolderPredicates,
+  compileProjection,
+  compileSort,
+  folderFieldSpec,
+  folderGroupKeys,
+  type FolderQueryOptions,
+  type QueryResult,
+} from "../query/index.js";
 
 /**
  * Create a new folder in OmniFocus.
@@ -103,71 +108,59 @@ return JSON.stringify({
 }
 
 /**
- * Query folders from OmniFocus with optional filters and pagination.
+ * Query folders from OmniFocus with the full shared-query vocabulary.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryFolders(
   options: FolderQueryOptions = {}
-): Promise<CliOutput<PaginatedResult<OFFolder>>> {
-  // Validate parent filter
-  const parentError = validateFolderName(options.parent);
-  if (parentError) return failure(parentError);
-
-  // Validate pagination parameters
+): Promise<CliOutput<QueryResult<OFFolder>>> {
+  // Pagination validation — invalid limits/offsets would produce nonsense in
+  // the result envelope.
   const paginationError = validatePaginationParams(
     options.limit,
     options.offset
   );
   if (paginationError) return failure(paginationError);
 
-  // Pagination defaults
+  // Compile each phase. Collect ALL validation errors before returning so the
+  // first one we report is the highest-priority.
+  const pred = compileFolderPredicates(options);
+  const proj = compileProjection(folderFieldSpec, options);
+  const sort = compileSort(folderFieldSpec, options);
+  const agg = compileAggregate(options, folderGroupKeys);
+
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
+  }
+
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Build filter condition
-  let filterExpr: string;
-  if (options.parent !== undefined) {
-    filterExpr = `(f.parent && f.parent.name === "${escapeJSString(options.parent)}")`;
-  } else {
-    filterExpr = "true";
-  }
+  const body = buildListQueryBody({
+    source: "flattenedFolders",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
 
-  const body = `
-var allFolders = flattenedFolders.filter(function(f) {
-  return ${filterExpr};
-});
-
-var totalCount = allFolders.length;
-var pageOffset = ${String(offset)};
-var pageLimit = ${String(limit)};
-var paged = allFolders.slice(pageOffset, pageOffset + pageLimit);
-
-var items = paged.map(function(f) {
-  var parentId = null;
-  var parentName = null;
-  if (f.parent) {
-    parentId = f.parent.id.primaryKey;
-    parentName = f.parent.name;
-  }
-  return {
-    id: f.id.primaryKey,
-    name: f.name,
-    parentId: parentId,
-    parentName: parentName,
-    projectCount: f.projects.length,
-    folderCount: f.folders.length
-  };
-});
-
-return JSON.stringify({
-  items: items,
-  totalCount: totalCount,
-  returnedCount: paged.length,
-  hasMore: totalCount > (pageOffset + paged.length),
-  offset: pageOffset,
-  limit: pageLimit
-});`;
-
-  const result = await runOmniJSWrapped<PaginatedResult<OFFolder>>(body);
+  const result = await runOmniJSWrapped<QueryResult<OFFolder>>(body);
 
   if (!result.success) {
     return failure(
@@ -176,14 +169,41 @@ return JSON.stringify({
     );
   }
 
-  return success(
-    result.data ?? {
-      items: [],
-      totalCount: 0,
-      returnedCount: 0,
-      hasMore: false,
-      offset,
-      limit,
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFFolder> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
     }
-  );
+  }
 }

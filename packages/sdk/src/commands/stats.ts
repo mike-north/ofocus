@@ -221,9 +221,10 @@ export async function getStats(
   // Get projects
   const projectsResult = await queryProjects({});
 
-  const projects = projectsResult.success
-    ? (projectsResult.data?.items ?? [])
-    : [];
+  const projects =
+    projectsResult.success && projectsResult.data?.kind === "list"
+      ? projectsResult.data.items
+      : [];
 
   // Calculate statistics
   let tasksCompleted = 0;

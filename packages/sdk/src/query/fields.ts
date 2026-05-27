@@ -77,33 +77,125 @@ export const taskFieldSpec: EntityFieldSpec = {
 };
 
 /**
- * Stub field spec for projects. Filled out in a follow-up phase.
+ * Field specification for {@link OFProject}-shaped queries.
+ *
+ * The default field set is compact; extended fields (dates, review metadata,
+ * etc.) are available via opt-in `--fields`.
  *
  * @public
  */
 export const projectFieldSpec: EntityFieldSpec = {
-  fields: {},
-  defaultFields: [],
+  fields: {
+    id: { omnijsExpr: "t.id.primaryKey" },
+    name: { omnijsExpr: "t.name" },
+    note: { omnijsExpr: "(t.note || null)" },
+    flagged: { omnijsExpr: "t.flagged" },
+    sequential: { omnijsExpr: "t.sequential" },
+    containsSingletonActions: { omnijsExpr: "t.containsSingletonActions" },
+    status: {
+      omnijsExpr:
+        '(t.status === Project.Status.Active ? "active" : t.status === Project.Status.OnHold ? "on-hold" : t.status === Project.Status.Done ? "completed" : "dropped")',
+    },
+    dueDate: {
+      omnijsExpr: "(t.dueDate ? t.dueDate.toISOString() : null)",
+    },
+    effectiveDueDate: {
+      omnijsExpr: "(t.effectiveDueDate ? t.effectiveDueDate.toISOString() : null)",
+    },
+    deferDate: {
+      omnijsExpr: "(t.deferDate ? t.deferDate.toISOString() : null)",
+    },
+    effectiveDeferDate: {
+      omnijsExpr: "(t.effectiveDeferDate ? t.effectiveDeferDate.toISOString() : null)",
+    },
+    completionDate: {
+      omnijsExpr: "(t.completionDate ? t.completionDate.toISOString() : null)",
+    },
+    nextReviewDate: {
+      omnijsExpr: "(t.nextReviewDate ? t.nextReviewDate.toISOString() : null)",
+    },
+    lastReviewDate: {
+      omnijsExpr: "(t.lastReviewDate ? t.lastReviewDate.toISOString() : null)",
+    },
+    folderId: {
+      omnijsExpr: "(t.parentFolder ? t.parentFolder.id.primaryKey : null)",
+    },
+    folderName: {
+      omnijsExpr: "(t.parentFolder ? t.parentFolder.name : null)",
+    },
+    taskCount: {
+      omnijsExpr: "t.task.flattenedTasks.length",
+    },
+    remainingTaskCount: {
+      omnijsExpr:
+        "t.task.flattenedTasks.filter(function(s){ return !s.completed && !s.effectivelyDropped; }).length",
+    },
+  },
+  defaultFields: ["id", "name", "status", "folderName", "remainingTaskCount"],
 };
 
 /**
- * Stub field spec for folders. Filled out in a follow-up phase.
+ * Field specification for {@link OFFolder}-shaped queries.
+ *
+ * Default fields match the mandatory wire shape of OFFolder exactly. Additional
+ * fields (flattenedProjectCount, flattenedFolderCount, status) are available
+ * via opt-in `--fields` but are NOT part of the default projection.
+ *
+ * OmniJS API: each Folder has `id.primaryKey`, `name`, `parent` (Folder|null),
+ * `folders` (direct children), `projects` (direct child projects),
+ * `flattenedFolders`, `flattenedProjects`, `status` (Folder.Status enum).
  *
  * @public
  */
 export const folderFieldSpec: EntityFieldSpec = {
-  fields: {},
-  defaultFields: [],
+  fields: {
+    id: { omnijsExpr: "t.id.primaryKey" },
+    name: { omnijsExpr: "t.name" },
+    parentId: { omnijsExpr: "(t.parent ? t.parent.id.primaryKey : null)" },
+    parentName: { omnijsExpr: "(t.parent ? t.parent.name : null)" },
+    projectCount: { omnijsExpr: "t.projects.length" },
+    folderCount: { omnijsExpr: "t.folders.length" },
+    flattenedProjectCount: { omnijsExpr: "t.flattenedProjects.length" },
+    flattenedFolderCount: { omnijsExpr: "t.flattenedFolders.length" },
+    status: {
+      omnijsExpr:
+        '(t.status === Folder.Status.Active ? "active" : "dropped")',
+    },
+  },
+  defaultFields: ["id", "name", "parentName", "projectCount"],
 };
 
 /**
- * Stub field spec for tags. Filled out in a follow-up phase.
+ * Field specification for {@link OFTag}-shaped queries.
+ *
+ * The default field set (`id`, `name`, `availableTaskCount`) matches the
+ * existing `OFTag` wire shape exactly so default output is byte-for-byte
+ * compatible. Additional fields are opt-in via the `fields` option.
  *
  * @public
  */
 export const tagFieldSpec: EntityFieldSpec = {
-  fields: {},
-  defaultFields: [],
+  fields: {
+    id: { omnijsExpr: "t.id.primaryKey" },
+    name: { omnijsExpr: "t.name" },
+    note: { omnijsExpr: "(t.note || null)" },
+    parentId: {
+      omnijsExpr: "(t.parent ? t.parent.id.primaryKey : null)",
+    },
+    parentName: {
+      omnijsExpr: "(t.parent ? t.parent.name : null)",
+    },
+    availableTaskCount: { omnijsExpr: "t.availableTaskCount" },
+    remainingTaskCount: { omnijsExpr: "t.remainingTaskCount" },
+    childTagCount: { omnijsExpr: "t.tags.length" },
+    flattenedTagCount: { omnijsExpr: "t.flattenedTags.length" },
+    status: {
+      omnijsExpr:
+        '(t.status === Tag.Status.Active ? "active" : t.status === Tag.Status.OnHold ? "on-hold" : "dropped")',
+    },
+    allowsNextAction: { omnijsExpr: "t.allowsNextAction" },
+  },
+  defaultFields: ["id", "name", "availableTaskCount"],
 };
 
 /**
@@ -115,6 +207,49 @@ export const tagFieldSpec: EntityFieldSpec = {
 export interface GroupKeySpec {
   omnijsExpr: string;
 }
+
+/**
+ * Group keys supported by `projects --group-by`.
+ *
+ * @public
+ */
+export const projectGroupKeys: Record<string, GroupKeySpec> = {
+  folder: {
+    omnijsExpr: '(t.parentFolder ? t.parentFolder.name : "(No Folder)")',
+  },
+  status: {
+    omnijsExpr: `(t.status === Project.Status.Active ? "active" : t.status === Project.Status.OnHold ? "on-hold" : t.status === Project.Status.Done ? "completed" : "dropped")`,
+  },
+  flagged: {
+    omnijsExpr: '(t.flagged ? "flagged" : "not flagged")',
+  },
+  dueBucket: {
+    omnijsExpr: `(function() {
+      if (!t.dueDate) return "none";
+      var now = new Date();
+      var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var tomorrowStart = new Date(todayStart.getTime() + 86400000);
+      var weekEnd = new Date(todayStart.getTime() + 7 * 86400000);
+      if (t.dueDate < todayStart) return "overdue";
+      if (t.dueDate < tomorrowStart) return "today";
+      if (t.dueDate < weekEnd) return "this-week";
+      return "later";
+    })()`,
+  },
+  nextReviewBucket: {
+    omnijsExpr: `(function() {
+      if (!t.nextReviewDate) return "none";
+      var now = new Date();
+      var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var tomorrowStart = new Date(todayStart.getTime() + 86400000);
+      var weekEnd = new Date(todayStart.getTime() + 7 * 86400000);
+      if (t.nextReviewDate < todayStart) return "overdue";
+      if (t.nextReviewDate < tomorrowStart) return "today";
+      if (t.nextReviewDate < weekEnd) return "this-week";
+      return "later";
+    })()`,
+  },
+};
 
 /**
  * Group keys supported by `tasks --group-by`.
@@ -161,5 +296,47 @@ export const taskGroupKeys: Record<string, GroupKeySpec> = {
       if (t.dueDate < weekEnd) return "this-week";
       return "later";
     })()`,
+  },
+};
+
+/**
+ * Group keys supported by `tags --group-by`.
+ *
+ * @public
+ */
+export const tagGroupKeys: Record<string, GroupKeySpec> = {
+  parent: {
+    omnijsExpr: '(t.parent ? t.parent.name : "(Root)")',
+  },
+  status: {
+    omnijsExpr:
+      '(t.status === Tag.Status.Active ? "active" : t.status === Tag.Status.OnHold ? "on-hold" : "dropped")',
+  },
+  isRoot: {
+    omnijsExpr: '(t.parent == null ? "root" : "child")',
+  },
+  hasAvailableTasks: {
+    omnijsExpr: '(t.availableTaskCount > 0 ? "active" : "empty")',
+  },
+};
+
+/**
+ * Group keys supported by `folders --group-by`.
+ *
+ * @public
+ */
+export const folderGroupKeys: Record<string, GroupKeySpec> = {
+  parent: {
+    omnijsExpr: '(t.parent ? t.parent.name : "(Root)")',
+  },
+  status: {
+    omnijsExpr:
+      '(t.status === Folder.Status.Active ? "active" : "dropped")',
+  },
+  isRoot: {
+    omnijsExpr: '(t.parent == null ? "root" : "child")',
+  },
+  hasProjects: {
+    omnijsExpr: '(t.projects.length > 0 ? "has projects" : "empty")',
   },
 };

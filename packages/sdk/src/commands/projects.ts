@@ -1,119 +1,76 @@
-import type {
-  CliOutput,
-  ProjectQueryOptions,
-  OFProject,
-  PaginatedResult,
-} from "../types.js";
+import type { CliOutput, OFProject } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validatePaginationParams } from "../validation.js";
-import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { runOmniJSWrapped } from "../omnijs.js";
+import {
+  buildListQueryBody,
+  compileAggregate,
+  compileProjection,
+  compileSort,
+  compileProjectPredicates,
+  projectFieldSpec,
+  projectGroupKeys,
+  type QueryResult,
+  type ProjectQueryOptions,
+} from "../query/index.js";
 
 /**
- * Query projects from OmniFocus with optional filters and pagination.
+ * Query projects from OmniFocus with the full shared-query vocabulary.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryProjects(
   options: ProjectQueryOptions = {}
-): Promise<CliOutput<PaginatedResult<OFProject>>> {
-  // Validate pagination parameters
+): Promise<CliOutput<QueryResult<OFProject>>> {
+  // Pagination validation (gated separately because invalid limits/offsets
+  // would otherwise produce nonsense pagination in the result envelope).
   const paginationError = validatePaginationParams(
     options.limit,
     options.offset
   );
   if (paginationError) return failure(paginationError);
 
-  // Pagination defaults
+  // Compile each phase. We collect ALL validation errors before returning so
+  // the first one we report is the highest-priority. The order below matches
+  // the order a user encounters problems: predicate first, then projection,
+  // then sort, then aggregation.
+  const pred = compileProjectPredicates(options);
+  const proj = compileProjection(projectFieldSpec, options);
+  const sort = compileSort(projectFieldSpec, options);
+  const agg = compileAggregate(options, projectGroupKeys);
+
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
+  }
+
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Build filter conditions as JavaScript expressions
-  const conditions: string[] = [];
+  const body = buildListQueryBody({
+    source: "flattenedProjects",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
 
-  if (options.sequential === true) {
-    conditions.push("p.sequential === true");
-  } else if (options.sequential === false) {
-    conditions.push("p.sequential === false");
-  }
-
-  if (options.status !== undefined) {
-    switch (options.status) {
-      case "active":
-        conditions.push("p.status === Project.Status.Active");
-        break;
-      case "on-hold":
-        conditions.push("p.status === Project.Status.OnHold");
-        break;
-      case "completed":
-        conditions.push("p.status === Project.Status.Done");
-        break;
-      case "dropped":
-        conditions.push("p.status === Project.Status.Dropped");
-        break;
-    }
-  }
-
-  if (options.folder !== undefined) {
-    conditions.push(
-      `(p.parentFolder && p.parentFolder.name === "${escapeJSString(options.folder)}")`
-    );
-  }
-
-  const filterExpr = conditions.length > 0 ? conditions.join(" && ") : "true";
-
-  const body = `
-var allProjects = flattenedProjects.filter(function(p) {
-  return ${filterExpr};
-});
-
-var totalCount = allProjects.length;
-var pageOffset = ${String(offset)};
-var pageLimit = ${String(limit)};
-var paged = allProjects.slice(pageOffset, pageOffset + pageLimit);
-
-var items = paged.map(function(p) {
-  var folderId = null;
-  var folderName = null;
-  if (p.parentFolder) {
-    folderId = p.parentFolder.id.primaryKey;
-    folderName = p.parentFolder.name;
-  }
-
-  var statusStr = "active";
-  if (p.status === Project.Status.OnHold) {
-    statusStr = "on-hold";
-  } else if (p.status === Project.Status.Done) {
-    statusStr = "completed";
-  } else if (p.status === Project.Status.Dropped) {
-    statusStr = "dropped";
-  }
-
-  var allTasks = p.flattenedTasks;
-  var taskCount = allTasks.length;
-  var remainingTaskCount = allTasks.filter(function(t) { return !t.completed; }).length;
-
-  return {
-    id: p.id.primaryKey,
-    name: p.name,
-    note: p.note || null,
-    status: statusStr,
-    sequential: p.sequential,
-    folderId: folderId,
-    folderName: folderName,
-    taskCount: taskCount,
-    remainingTaskCount: remainingTaskCount
-  };
-});
-
-return JSON.stringify({
-  items: items,
-  totalCount: totalCount,
-  returnedCount: paged.length,
-  hasMore: totalCount > (pageOffset + paged.length),
-  offset: pageOffset,
-  limit: pageLimit
-});`;
-
-  const result = await runOmniJSWrapped<PaginatedResult<OFProject>>(body);
+  const result = await runOmniJSWrapped<QueryResult<OFProject>>(body);
 
   if (!result.success) {
     return failure(
@@ -122,14 +79,44 @@ return JSON.stringify({
     );
   }
 
-  return success(
-    result.data ?? {
-      items: [],
-      totalCount: 0,
-      returnedCount: 0,
-      hasMore: false,
-      offset,
-      limit,
+  // Provide a typed default in the unlikely case OmniJS returns undefined.
+  // The default depends on the requested shape so the discriminant remains
+  // sound.
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFProject> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
     }
-  );
+  }
 }

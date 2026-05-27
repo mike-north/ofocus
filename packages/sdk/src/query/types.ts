@@ -146,6 +146,241 @@ export interface TaskQueryOptions extends BaseListQueryOptions {
 }
 
 /**
+ * Tag status values on the wire. Maps to the OmniJS `Tag.Status` enum.
+ *
+ * @public
+ */
+export type TagStatus = "active" | "on-hold" | "dropped";
+
+/**
+ * Options for querying tags. Extends {@link BaseListQueryOptions} with the
+ * full predicate vocabulary supported by the OmniJS tag query compiler.
+ *
+ * Every field is optional; only fields that are explicitly set contribute a
+ * filter condition to the compiled query.
+ *
+ * @public
+ */
+export interface TagQueryOptions extends BaseListQueryOptions {
+  // ── Boolean state predicates ─────────────────────────────────────────────
+  /** Match only root tags (no parent). */
+  isRoot?: boolean | undefined;
+  /** Match only non-root tags (has a parent). Inverse of isRoot. */
+  notIsRoot?: boolean | undefined;
+  /** Match only tags that have at least one direct child tag. */
+  hasChildren?: boolean | undefined;
+  /** Match only tags with no child tags. */
+  noChildren?: boolean | undefined;
+  /** Match tags that have a non-empty note. */
+  hasNote?: boolean | undefined;
+  /** Match tags that allow next-action promotion. */
+  allowsNextAction?: boolean | undefined;
+  /** Match tags that do not allow next-action promotion. */
+  disallowsNextAction?: boolean | undefined;
+  /** Match tags with at least one available task (availableTaskCount > 0). */
+  hasAvailableTasks?: boolean | undefined;
+  /** Match tags with no available tasks. */
+  noAvailableTasks?: boolean | undefined;
+
+  // ── Status ────────────────────────────────────────────────────────────────
+  /** Filter by tag status (active | on-hold | dropped). */
+  status?: TagStatus | undefined;
+
+  // ── Membership ───────────────────────────────────────────────────────────
+  /**
+   * Exact parent tag — name or id. A tag matches if its direct parent has the
+   * given name or primary key. Accepts a single value or an array (any-of).
+   */
+  parent?: string | string[] | undefined;
+  /**
+   * Ancestor tag — transitive. A tag matches if any tag in its ancestor chain
+   * (parent, parent's parent, ...) has the given name or primary key.
+   * Accepts a single value or an array (any-of).
+   */
+  ancestor?: string | string[] | undefined;
+
+  // ── Numeric predicates ───────────────────────────────────────────────────
+  availableTaskCountLt?: number | undefined;
+  availableTaskCountGt?: number | undefined;
+  availableTaskCountEq?: number | undefined;
+  remainingTaskCountLt?: number | undefined;
+  remainingTaskCountGt?: number | undefined;
+  childTagCountLt?: number | undefined;
+  childTagCountGt?: number | undefined;
+
+  // ── String matching ──────────────────────────────────────────────────────
+  nameContains?: string | undefined;
+  nameStarts?: string | undefined;
+  nameEquals?: string | undefined;
+  nameRegex?: string | undefined;
+  noteContains?: string | undefined;
+  noteRegex?: string | undefined;
+  /** Case sensitivity for string predicates. Default: `false`. */
+  caseSensitive?: boolean | undefined;
+}
+
+/**
+ * Project status values on the wire.
+ *
+ * @public
+ */
+export type ProjectStatus = "active" | "on-hold" | "completed" | "dropped";
+
+/**
+ * Options for querying projects. Extends {@link BaseListQueryOptions} with the
+ * full predicate vocabulary supported by the OmniJS project query compiler.
+ *
+ * Every field is optional; only fields that are explicitly set contribute a
+ * filter condition to the compiled query.
+ *
+ * @public
+ */
+export interface ProjectQueryOptions extends BaseListQueryOptions {
+  // ── Boolean state predicates ─────────────────────────────────────────────
+  flagged?: boolean | undefined;
+  notFlagged?: boolean | undefined;
+  sequential?: boolean | undefined;
+  notSequential?: boolean | undefined;
+  containsSingletonActions?: boolean | undefined;
+  notContainsSingletonActions?: boolean | undefined;
+  hasDue?: boolean | undefined;
+  noDue?: boolean | undefined;
+  hasDefer?: boolean | undefined;
+  hasNote?: boolean | undefined;
+  hasNextReview?: boolean | undefined;
+  /** Projects whose nextReviewDate is non-null and <= now. */
+  dueForReview?: boolean | undefined;
+
+  // ── Status ────────────────────────────────────────────────────────────────
+  status?: ProjectStatus | undefined;
+
+  // ── Membership ───────────────────────────────────────────────────────────
+  /**
+   * Folder name(s) or id(s). A project matches if its folder chain
+   * contains any of the named folders (transitive).
+   */
+  folder?: string | string[] | undefined;
+
+  // ── Date predicates ──────────────────────────────────────────────────────
+  /** Each accepts ISO 8601 or a relative expression (see `parseDate`). */
+  dueBefore?: string | undefined;
+  dueAfter?: string | undefined;
+  /** Match projects whose dueDate falls on the given calendar day (UTC). */
+  dueOn?: string | undefined;
+  /** Duration string like `7d`/`1w` — `dueDate` must be within `now + duration`. */
+  dueWithin?: string | undefined;
+
+  deferBefore?: string | undefined;
+  deferAfter?: string | undefined;
+  deferWithin?: string | undefined;
+
+  completedBefore?: string | undefined;
+  completedAfter?: string | undefined;
+
+  nextReviewBefore?: string | undefined;
+  nextReviewAfter?: string | undefined;
+  /** Duration string — nextReviewDate must be within `now + duration`. */
+  nextReviewWithin?: string | undefined;
+
+  lastReviewedBefore?: string | undefined;
+  lastReviewedAfter?: string | undefined;
+
+  // ── Numeric (task counts) ────────────────────────────────────────────────
+  taskCountLt?: number | undefined;
+  taskCountGt?: number | undefined;
+  taskCountEq?: number | undefined;
+  remainingTaskCountLt?: number | undefined;
+  remainingTaskCountGt?: number | undefined;
+  remainingTaskCountEq?: number | undefined;
+
+  // ── String matching ──────────────────────────────────────────────────────
+  nameContains?: string | undefined;
+  nameStarts?: string | undefined;
+  nameEquals?: string | undefined;
+  nameRegex?: string | undefined;
+  noteContains?: string | undefined;
+  noteRegex?: string | undefined;
+  /** Case sensitivity for string predicates. Default: `false`. */
+  caseSensitive?: boolean | undefined;
+}
+
+/**
+ * Folder status values mirror the OmniJS `Folder.Status` enum.
+ *
+ * @public
+ */
+export type FolderStatus = "active" | "dropped";
+
+/**
+ * Options for querying folders. Extends {@link BaseListQueryOptions} with the
+ * full predicate vocabulary supported by the OmniJS folder query compiler.
+ *
+ * Every field is optional; only fields that are explicitly set contribute a
+ * filter condition to the compiled query.
+ *
+ * @public
+ */
+export interface FolderQueryOptions extends BaseListQueryOptions {
+  // ── Boolean state predicates ─────────────────────────────────────────────
+  /** Matches folders with no parent (root-level folders). */
+  isRoot?: boolean | undefined;
+  /** Matches folders that have at least one parent. */
+  notIsRoot?: boolean | undefined;
+  /** Matches folders with at least one direct child project. */
+  hasProjects?: boolean | undefined;
+  /** Matches folders with no direct child projects. */
+  noProjects?: boolean | undefined;
+  /** Matches folders with at least one direct child subfolder. */
+  hasSubfolders?: boolean | undefined;
+  /** Matches folders with no direct child subfolders. */
+  noSubfolders?: boolean | undefined;
+  /** Matches folders with neither projects nor subfolders. */
+  isEmpty?: boolean | undefined;
+
+  // ── Status ───────────────────────────────────────────────────────────────
+  /** Filter by folder status (`"active"` or `"dropped"`). */
+  status?: FolderStatus | undefined;
+
+  // ── Membership ───────────────────────────────────────────────────────────
+  /**
+   * Exact parent match — the folder's direct parent name or primary key.
+   * When an array is given, semantics are "any of" (OR).
+   * This is NOT transitive; use {@link FolderQueryOptions.ancestor} for that.
+   */
+  parent?: string | string[] | undefined;
+  /**
+   * Transitive ancestor match — walks the parent chain looking for any folder
+   * whose name or primary key matches. When an array is given, semantics are
+   * "any of" (OR) across the whole chain.
+   */
+  ancestor?: string | string[] | undefined;
+
+  // ── Numeric predicates ───────────────────────────────────────────────────
+  /** Direct child project count is less than this value. */
+  projectCountLt?: number | undefined;
+  /** Direct child project count is greater than this value. */
+  projectCountGt?: number | undefined;
+  /** Direct child project count equals this value. */
+  projectCountEq?: number | undefined;
+  /** Recursive (flattened) project count is less than this value. */
+  flattenedProjectCountLt?: number | undefined;
+  /** Recursive (flattened) project count is greater than this value. */
+  flattenedProjectCountGt?: number | undefined;
+  /** Direct child folder count is less than this value. */
+  folderCountLt?: number | undefined;
+  /** Direct child folder count is greater than this value. */
+  folderCountGt?: number | undefined;
+
+  // ── String matching ──────────────────────────────────────────────────────
+  nameContains?: string | undefined;
+  nameStarts?: string | undefined;
+  nameEquals?: string | undefined;
+  nameRegex?: string | undefined;
+  /** Case sensitivity for string predicates. Default: `false`. */
+  caseSensitive?: boolean | undefined;
+}
+
+/**
  * Discriminated wire shape returned by every list endpoint.
  *
  * @typeParam T - The entity type (e.g., OFTask)

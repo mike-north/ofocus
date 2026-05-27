@@ -211,7 +211,8 @@ export async function saveTemplate(
     );
   }
 
-  const projects = projectsResult.data?.items ?? [];
+  const projects =
+    projectsResult.data?.kind === "list" ? projectsResult.data.items : [];
   const project = projects.find(
     (p: OFProject) => p.id === sourceProject || p.name === sourceProject
   );

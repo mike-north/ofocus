@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { OFTask, OFProject, PaginatedResult } from "../../../src/types.js";
+import type { OFTask, OFProject } from "../../../src/types.js";
 import type { QueryResult } from "../../../src/query/index.js";
 import type { StatsResult } from "../../../src/commands/stats.js";
 
@@ -65,7 +65,8 @@ const createMockPaginatedTasks = (
 
 const createMockPaginatedProjects = (
   items: OFProject[]
-): PaginatedResult<OFProject> => ({
+): QueryResult<OFProject> => ({
+  kind: "list",
   items,
   totalCount: items.length,
   returnedCount: items.length,

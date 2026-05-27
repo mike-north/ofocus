@@ -116,26 +116,10 @@ export interface PaginatedResult<T> {
   limit: number;
 }
 
-// TaskQueryOptions now lives in `./query/types.js` alongside the rest of the
-// query vocabulary. Re-export it for backwards-compatible imports from the
-// SDK root types module.
-export type { TaskQueryOptions } from "./query/types.js";
-
-/**
- * Options for querying projects.
- */
-export interface ProjectQueryOptions extends PaginationOptions {
-  folder?: string | undefined;
-  status?: "active" | "on-hold" | "completed" | "dropped" | undefined;
-  sequential?: boolean | undefined;
-}
-
-/**
- * Options for querying tags.
- */
-export interface TagQueryOptions extends PaginationOptions {
-  parent?: string | undefined;
-}
+// TaskQueryOptions, ProjectQueryOptions, and TagQueryOptions live in
+// `./query/types.js` alongside the rest of the query vocabulary. Re-export
+// them for backwards-compatible imports from the SDK root types module.
+export type { TaskQueryOptions, ProjectQueryOptions, TagQueryOptions } from "./query/types.js";
 
 /**
  * Options for updating a task.
@@ -187,12 +171,11 @@ export interface CreateFolderOptions {
   parentFolderName?: string | undefined;
 }
 
-/**
- * Options for querying folders.
- */
-export interface FolderQueryOptions extends PaginationOptions {
-  parent?: string | undefined;
-}
+// FolderQueryOptions now lives in `./query/types.js` alongside the rest of the
+// query vocabulary. Re-export it for backwards-compatible imports from the
+// SDK root types module. The old narrow shape is intentionally replaced by the
+// richer query-layer type.
+export type { FolderQueryOptions } from "./query/types.js";
 
 /**
  * Options for creating a tag.
