@@ -5,6 +5,7 @@ import * as path from "node:path";
 import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFProject, OFTask } from "../../../src/types.js";
 import type { PaginatedResult } from "../../../src/types.js";
+import type { QueryResult } from "../../../src/query/index.js";
 
 // Mock fs module
 vi.mock("node:fs", () => ({
@@ -491,13 +492,14 @@ describe("saveTemplate", () => {
       mockQueryTasks.mockResolvedValue({
         success: true,
         data: {
+          kind: "list",
           items: [mockTask],
           totalCount: 1,
           returnedCount: 1,
           hasMore: false,
           offset: 0,
           limit: 100,
-        } as PaginatedResult<OFTask>,
+        } as QueryResult<OFTask>,
         error: null,
       });
 
@@ -537,13 +539,14 @@ describe("saveTemplate", () => {
       mockQueryTasks.mockResolvedValue({
         success: true,
         data: {
+          kind: "list",
           items: [],
           totalCount: 0,
           returnedCount: 0,
           hasMore: false,
           offset: 0,
           limit: 100,
-        } as PaginatedResult<OFTask>,
+        } as QueryResult<OFTask>,
         error: null,
       });
 
@@ -581,13 +584,14 @@ describe("saveTemplate", () => {
       mockQueryTasks.mockResolvedValue({
         success: true,
         data: {
+          kind: "list",
           items: [],
           totalCount: 0,
           returnedCount: 0,
           hasMore: false,
           offset: 0,
           limit: 100,
-        } as PaginatedResult<OFTask>,
+        } as QueryResult<OFTask>,
         error: null,
       });
 

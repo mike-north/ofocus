@@ -1,143 +1,74 @@
-import type {
-  CliOutput,
-  TaskQueryOptions,
-  OFTask,
-  PaginatedResult,
-} from "../types.js";
+import type { CliOutput, OFTask, TaskQueryOptions } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
+import { validatePaginationParams } from "../validation.js";
+import { runOmniJSWrapped } from "../omnijs.js";
 import {
-  validateDateString,
-  validateProjectName,
-  validatePaginationParams,
-  validateTagName,
-} from "../validation.js";
-import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+  buildListQueryBody,
+  compileAggregate,
+  compileProjection,
+  compileSort,
+  compileTaskPredicates,
+  taskFieldSpec,
+  type QueryResult,
+} from "../query/index.js";
 
 /**
- * Query tasks from OmniFocus with optional filters and pagination.
+ * Query tasks from OmniFocus with the full shared-query vocabulary.
+ *
+ * Returns a discriminated {@link QueryResult} — the `kind` field tells the
+ * caller whether the response is a paged list, a count, an ID list, a single
+ * item, or grouped buckets.
+ *
+ * @public
  */
 export async function queryTasks(
   options: TaskQueryOptions = {}
-): Promise<CliOutput<PaginatedResult<OFTask>>> {
-  // Validate inputs
-  if (options.dueBefore !== undefined) {
-    const dateError = validateDateString(options.dueBefore);
-    if (dateError) return failure(dateError);
-  }
-
-  if (options.dueAfter !== undefined) {
-    const dateError = validateDateString(options.dueAfter);
-    if (dateError) return failure(dateError);
-  }
-
-  const projectError = validateProjectName(options.project);
-  if (projectError) return failure(projectError);
-
-  if (options.tag !== undefined) {
-    const tagError = validateTagName(options.tag);
-    if (tagError) return failure(tagError);
-  }
-
-  // Validate pagination parameters
+): Promise<CliOutput<QueryResult<OFTask>>> {
+  // Pagination validation (gated separately because invalid limits/offsets
+  // would otherwise produce nonsense pagination in the result envelope).
   const paginationError = validatePaginationParams(
     options.limit,
     options.offset
   );
   if (paginationError) return failure(paginationError);
 
-  // Pagination defaults
+  // Compile each phase. We collect ALL validation errors before returning so
+  // the first one we report is the highest-priority. The order below matches
+  // the order a user encounters problems: predicate first, then projection,
+  // then sort, then aggregation.
+  const pred = compileTaskPredicates(options);
+  const proj = compileProjection(taskFieldSpec, options);
+  const sort = compileSort(taskFieldSpec, options);
+  const agg = compileAggregate(options);
+
+  const errors = [
+    ...pred.validationErrors,
+    ...proj.validationErrors,
+    ...sort.validationErrors,
+    ...agg.validationErrors,
+  ];
+  if (errors.length > 0) {
+    const first = errors[0];
+    if (first) return failure(first);
+  }
+
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Build filter conditions as JavaScript expressions
-  const conditions: string[] = [];
+  const body = buildListQueryBody({
+    source: "flattenedTasks",
+    itemVar: "t",
+    conditions: pred.conditions,
+    comparator: sort.comparator,
+    mapExpression: proj.mapExpression,
+    aggregate: agg,
+    limit,
+    offset,
+    groupKey: agg.groupKey,
+  });
 
-  if (options.completed === true) {
-    conditions.push("t.completed");
-  } else if (options.completed === false) {
-    conditions.push("!t.completed");
-  }
-
-  if (options.flagged === true) {
-    conditions.push("t.flagged");
-  }
-
-  if (options.available === true) {
-    conditions.push("!t.completed");
-    conditions.push("!t.effectivelyDropped");
-    conditions.push("!t.blocked");
-  }
-
-  if (options.project !== undefined) {
-    conditions.push(
-      `(t.containingProject && t.containingProject.name === "${escapeJSString(options.project)}")`
-    );
-  }
-
-  if (options.tag !== undefined) {
-    conditions.push(
-      `t.tags.some(function(tg) { return tg.name === "${escapeJSString(options.tag)}"; })`
-    );
-  }
-
-  if (options.dueBefore !== undefined) {
-    conditions.push(
-      `(t.dueDate && t.dueDate < ${toOmniJSDate(options.dueBefore)})`
-    );
-  }
-
-  if (options.dueAfter !== undefined) {
-    conditions.push(
-      `(t.dueDate && t.dueDate > ${toOmniJSDate(options.dueAfter)})`
-    );
-  }
-
-  const filterExpr = conditions.length > 0 ? conditions.join(" && ") : "true";
-
-  const body = `
-var allTasks = flattenedTasks.filter(function(t) {
-  return ${filterExpr};
-});
-
-var totalCount = allTasks.length;
-var pageOffset = ${String(offset)};
-var pageLimit = ${String(limit)};
-var paged = allTasks.slice(pageOffset, pageOffset + pageLimit);
-
-var items = paged.map(function(t) {
-  var projId = null;
-  var projName = null;
-  if (t.containingProject) {
-    projId = t.containingProject.id.primaryKey;
-    projName = t.containingProject.name;
-  }
-  return {
-    id: t.id.primaryKey,
-    name: t.name,
-    note: t.note || null,
-    flagged: t.flagged,
-    completed: t.completed,
-    dueDate: t.dueDate ? t.dueDate.toISOString() : null,
-    deferDate: t.deferDate ? t.deferDate.toISOString() : null,
-    completionDate: t.completionDate ? t.completionDate.toISOString() : null,
-    projectId: projId,
-    projectName: projName,
-    tags: t.tags.map(function(tg) { return tg.name; }),
-    estimatedMinutes: t.estimatedMinutes != null ? t.estimatedMinutes : null
-  };
-});
-
-return JSON.stringify({
-  items: items,
-  totalCount: totalCount,
-  returnedCount: paged.length,
-  hasMore: totalCount > (pageOffset + paged.length),
-  offset: pageOffset,
-  limit: pageLimit
-});`;
-
-  const result = await runOmniJSWrapped<PaginatedResult<OFTask>>(body);
+  const result = await runOmniJSWrapped<QueryResult<OFTask>>(body);
 
   if (!result.success) {
     return failure(
@@ -146,14 +77,44 @@ return JSON.stringify({
     );
   }
 
-  return success(
-    result.data ?? {
-      items: [],
-      totalCount: 0,
-      returnedCount: 0,
-      hasMore: false,
-      offset,
-      limit,
+  // Provide a typed default in the unlikely case OmniJS returns undefined.
+  // The default depends on the requested shape so the discriminant remains
+  // sound.
+  if (result.data === undefined) {
+    return success(makeEmptyResult(agg.shape, limit, offset));
+  }
+
+  return success(result.data);
+}
+
+function makeEmptyResult(
+  shape: ReturnType<typeof compileAggregate>["shape"],
+  limit: number,
+  offset: number
+): QueryResult<OFTask> {
+  switch (shape) {
+    case "count":
+      return { kind: "count", count: 0 };
+    case "ids":
+      return { kind: "ids", ids: [] };
+    case "single-first":
+    case "single-last":
+      return { kind: "single", item: null };
+    case "groups":
+      return { kind: "groups", groups: [], totalCount: 0 };
+    case "list":
+      return {
+        kind: "list",
+        items: [],
+        totalCount: 0,
+        returnedCount: 0,
+        hasMore: false,
+        offset,
+        limit,
+      };
+    default: {
+      const exhaustive: never = shape;
+      throw new Error(`Unknown shape: ${String(exhaustive)}`);
     }
-  );
+  }
 }

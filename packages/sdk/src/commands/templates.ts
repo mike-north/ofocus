@@ -228,7 +228,10 @@ export async function saveTemplate(
     );
   }
 
-  const allTasks = tasksResult.data?.items ?? [];
+  // queryTasks returns a discriminated QueryResult; without aggregate flags
+  // we always get `kind: "list"`, but guard explicitly for type narrowing.
+  const allTasks =
+    tasksResult.data?.kind === "list" ? tasksResult.data.items : [];
   const referenceDate = new Date();
 
   // Convert tasks to template format (flat structure for simplicity)

@@ -116,18 +116,10 @@ export interface PaginatedResult<T> {
   limit: number;
 }
 
-/**
- * Options for querying tasks.
- */
-export interface TaskQueryOptions extends PaginationOptions {
-  project?: string | undefined;
-  tag?: string | undefined;
-  dueBefore?: string | undefined;
-  dueAfter?: string | undefined;
-  flagged?: boolean | undefined;
-  completed?: boolean | undefined;
-  available?: boolean | undefined;
-}
+// TaskQueryOptions now lives in `./query/types.js` alongside the rest of the
+// query vocabulary. Re-export it for backwards-compatible imports from the
+// SDK root types module.
+export type { TaskQueryOptions } from "./query/types.js";
 
 /**
  * Options for querying projects.

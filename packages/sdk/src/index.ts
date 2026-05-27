@@ -63,6 +63,41 @@ export {
 } from "./omnijs.js";
 export type { OmniJSResult } from "./omnijs.js";
 
+// Shared query layer (predicates, projection, sort, aggregate, etc.)
+export {
+  buildListQueryBody,
+  compileTaskPredicates,
+  compileProjection,
+  compileSort,
+  compileAggregate,
+  parseDate,
+  parseDuration,
+  taskFieldSpec,
+  projectFieldSpec,
+  folderFieldSpec,
+  tagFieldSpec,
+  taskGroupKeys,
+} from "./query/index.js";
+export type {
+  BaseListQueryOptions,
+  QueryResult,
+  TagMode,
+  TaskStatus,
+  NumericRange,
+  ParsedDate,
+  EntityFieldSpec,
+  FieldGetter,
+  GroupKeySpec,
+  CompiledProjection,
+  CompileProjectionOptions,
+  CompiledSort,
+  CompileSortOptions,
+  AggregateShape,
+  CompiledAggregate,
+  CompiledPredicates,
+  BuildListQueryBodyArgs,
+} from "./query/index.js";
+
 // Tasks
 export { addToInbox } from "./commands/inbox.js";
 export { queryTasks } from "./commands/tasks.js";
