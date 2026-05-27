@@ -1,30 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFFolder, PaginatedResult } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
-}));
-
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked script"),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { createFolder, queryFolders } from "../../../src/commands/folders.js";
-import { runComposedScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 const createMockFolder = (overrides: Partial<OFFolder> = {}): OFFolder => ({
   id: "folder-123",
   name: "Test Folder",
-  parentFolderId: null,
-  parentFolderName: null,
+  parentId: null,
+  parentName: null,
   projectCount: 3,
+  folderCount: 0,
   ...overrides,
 });
 
@@ -53,7 +50,7 @@ describe("createFolder", () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(result.error?.message).toContain("cannot be empty");
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject whitespace-only folder name", async () => {
@@ -91,15 +88,15 @@ describe("createFolder", () => {
     it("should accept valid folder name", async () => {
       const mockFolder = createMockFolder({ name: "New Folder" });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder");
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -107,13 +104,13 @@ describe("createFolder", () => {
     it("should create folder at root level", async () => {
       const mockFolder = createMockFolder({
         name: "New Folder",
-        parentFolderId: null,
+        parentId: null,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder");
 
@@ -124,33 +121,33 @@ describe("createFolder", () => {
     it("should create folder inside parent by ID", async () => {
       const mockFolder = createMockFolder({
         name: "Child Folder",
-        parentFolderId: "parent-123",
-        parentFolderName: "Parent Folder",
+        parentId: "parent-123",
+        parentName: "Parent Folder",
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("Child Folder", {
         parentFolderId: "parent-123",
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.parentFolderId).toBe("parent-123");
+      expect(result.data?.parentId).toBe("parent-123");
     });
 
     it("should create folder inside parent by name", async () => {
       const mockFolder = createMockFolder({
         name: "Child Folder",
-        parentFolderName: "Work",
+        parentName: "Work",
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockFolder,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("Child Folder", {
         parentFolderName: "Work",
@@ -162,13 +159,13 @@ describe("createFolder", () => {
 
   describe("error handling", () => {
     it("should handle parent folder not found", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
           message: "Folder not found",
         },
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder", {
         parentFolderName: "Nonexistent",
@@ -178,10 +175,10 @@ describe("createFolder", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder");
 
@@ -190,10 +187,10 @@ describe("createFolder", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OFFolder>);
+      } as OmniJSResult<OFFolder>);
 
       const result = await createFolder("New Folder");
 
@@ -233,15 +230,15 @@ describe("queryFolders", () => {
     it("should accept valid options", async () => {
       const mockResult = createMockPaginatedResult([createMockFolder()]);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<PaginatedResult<OFFolder>>);
 
       const result = await queryFolders({ limit: 50, offset: 0 });
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -253,10 +250,10 @@ describe("queryFolders", () => {
       ];
       const mockResult = createMockPaginatedResult(mockFolders);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<PaginatedResult<OFFolder>>);
 
       const result = await queryFolders();
 
@@ -266,13 +263,13 @@ describe("queryFolders", () => {
     });
 
     it("should filter by parent folder", async () => {
-      const mockFolders = [createMockFolder({ parentFolderName: "Work" })];
+      const mockFolders = [createMockFolder({ parentName: "Work" })];
       const mockResult = createMockPaginatedResult(mockFolders);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<PaginatedResult<OFFolder>>);
 
       const result = await queryFolders({ parent: "Work" });
 
@@ -289,10 +286,10 @@ describe("queryFolders", () => {
         limit: 1,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<PaginatedResult<OFFolder>>);
 
       const result = await queryFolders({ offset: 50, limit: 1 });
 
@@ -302,10 +299,10 @@ describe("queryFolders", () => {
     });
 
     it("should return default empty result on undefined data", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<PaginatedResult<OFFolder>>);
 
       const result = await queryFolders();
 
@@ -317,13 +314,13 @@ describe("queryFolders", () => {
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<PaginatedResult<OFFolder>>);
 
       const result = await queryFolders();
 
@@ -332,10 +329,10 @@ describe("queryFolders", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<PaginatedResult<OFFolder>>);
+      } as OmniJSResult<PaginatedResult<OFFolder>>);
 
       const result = await queryFolders();
 

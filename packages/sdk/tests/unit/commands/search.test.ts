@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFTask } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { searchTasks } from "../../../src/commands/search.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 const createMockTask = (overrides: Partial<OFTask> = {}): OFTask => ({
   id: "task-123",
@@ -42,7 +42,7 @@ describe("searchTasks", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject whitespace-only query", async () => {
@@ -60,15 +60,15 @@ describe("searchTasks", () => {
     });
 
     it("should accept valid query", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: [],
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("valid query");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -79,10 +79,10 @@ describe("searchTasks", () => {
         createMockTask({ id: "task-2", name: "Go grocery shopping" }),
       ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("grocery");
 
@@ -91,10 +91,10 @@ describe("searchTasks", () => {
     });
 
     it("should return empty array when no matches", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: [],
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("nonexistent");
 
@@ -102,53 +102,50 @@ describe("searchTasks", () => {
       expect(result.data).toEqual([]);
     });
 
-    it("should search by name scope", async () => {
+    it("should search by name scope using indexOf on t.name", async () => {
       const mockTasks = [createMockTask({ name: "Meeting notes" })];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("meeting", { scope: "name" });
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledWith(
-        expect.stringContaining("containsText(name of t")
+      expect(mockRunOmniJS).toHaveBeenCalledWith(
+        expect.stringContaining("t.name.toLowerCase().indexOf(")
       );
     });
 
-    it("should search by note scope", async () => {
+    it("should search by note scope using indexOf on t.note", async () => {
       const mockTasks = [createMockTask({ note: "Important details here" })];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("important", { scope: "note" });
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledWith(
-        expect.stringContaining("containsText(note of t")
+      expect(mockRunOmniJS).toHaveBeenCalledWith(
+        expect.stringContaining("t.note && t.note.toLowerCase().indexOf(")
       );
     });
 
     it("should search both name and note by default", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: [],
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("term");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledWith(
-        expect.stringContaining("containsText(name of t")
-      );
-      expect(mockRunAppleScript).toHaveBeenCalledWith(
-        expect.stringContaining("containsText(note of t")
-      );
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(scriptBody).toContain("t.name.toLowerCase().indexOf(");
+      expect(scriptBody).toContain("t.note && t.note.toLowerCase().indexOf(");
     });
 
     it("should include completed tasks when specified", async () => {
@@ -157,55 +154,71 @@ describe("searchTasks", () => {
         createMockTask({ id: "task-2", completed: false }),
       ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("test", { includeCompleted: true });
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(2);
+      // When includeCompleted is true, the completed-filter line must be absent
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(scriptBody).not.toContain("if (t.completed) return false");
     });
 
-    it("should respect limit option", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should exclude completed tasks by default", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: [],
-      } as AppleScriptResult<OFTask[]>);
-
-      const result = await searchTasks("test", { limit: 10 });
-
-      expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledWith(
-        expect.stringContaining("set maxResults to 10")
-      );
-    });
-
-    it("should use default limit of 100", async () => {
-      mockRunAppleScript.mockResolvedValue({
-        success: true,
-        data: [],
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("test");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledWith(
-        expect.stringContaining("set maxResults to 100")
+      const scriptBody = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(scriptBody).toContain("if (t.completed) return false");
+    });
+
+    it("should respect limit option", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: [],
+      } as OmniJSResult<OFTask[]>);
+
+      const result = await searchTasks("test", { limit: 10 });
+
+      expect(result.success).toBe(true);
+      expect(mockRunOmniJS).toHaveBeenCalledWith(
+        expect.stringContaining("var maxResults = 10")
+      );
+    });
+
+    it("should use default limit of 100", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: [],
+      } as OmniJSResult<OFTask[]>);
+
+      const result = await searchTasks("test");
+
+      expect(result.success).toBe(true);
+      expect(mockRunOmniJS).toHaveBeenCalledWith(
+        expect.stringContaining("var maxResults = 100")
       );
     });
   });
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("test");
 
@@ -213,14 +226,14 @@ describe("searchTasks", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript errors", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should handle OmniJS script errors", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "Script execution failed",
+          message: "OmniJS script error",
         },
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("test");
 
@@ -229,10 +242,10 @@ describe("searchTasks", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("test");
 
@@ -241,10 +254,10 @@ describe("searchTasks", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await searchTasks("test");
 

@@ -2,8 +2,7 @@ import type { CliOutput, SearchOptions, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateSearchQuery } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Search tasks in OmniFocus.
@@ -20,139 +19,69 @@ export async function searchTasks(
   const limit = options.limit ?? 100;
   const includeCompleted = options.includeCompleted ?? false;
 
-  // Build the search script
-  // OmniFocus doesn't have a built-in full-text search, so we do it manually
-  const escapedQuery = escapeAppleScript(query.toLowerCase());
+  // Escape query for safe embedding in JS string literal; search is case-insensitive
+  const escapedQuery = escapeJSString(query.toLowerCase());
 
-  // Build filter conditions based on scope
-  let searchCondition: string;
+  // Build filter condition based on scope
+  let searchConditionExpr: string;
   switch (scope) {
     case "name":
-      searchCondition = `(my containsText(name of t, "${escapedQuery}"))`;
+      searchConditionExpr = `(t.name.toLowerCase().indexOf("${escapedQuery}") !== -1)`;
       break;
     case "note":
-      searchCondition = `(my containsText(note of t, "${escapedQuery}"))`;
+      searchConditionExpr = `(t.note && t.note.toLowerCase().indexOf("${escapedQuery}") !== -1)`;
       break;
     default:
       // "both"
-      searchCondition = `(my containsText(name of t, "${escapedQuery}") or my containsText(note of t, "${escapedQuery}"))`;
+      searchConditionExpr = `(t.name.toLowerCase().indexOf("${escapedQuery}") !== -1 || (t.note && t.note.toLowerCase().indexOf("${escapedQuery}") !== -1))`;
       break;
   }
 
-  const completedFilter = includeCompleted
+  const completedFilterExpr = includeCompleted
     ? ""
-    : "if completed of t is true then set shouldInclude to false";
+    : "if (t.completed) return false;";
 
-  const script = `
-    -- Helper function to check if a string contains another string (case-insensitive)
-    on containsText(theText, searchText)
-      if theText is missing value then return false
-      set theTextLower to (my toLowerCase(theText as string))
-      return theTextLower contains searchText
-    end containsText
+  const body = `
+var maxResults = ${String(limit)};
+var results = [];
 
-    on toLowerCase(theText)
-      set lowercaseChars to "abcdefghijklmnopqrstuvwxyz"
-      set uppercaseChars to "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      set resultText to ""
-      repeat with c in theText
-        set charIndex to offset of c in uppercaseChars
-        if charIndex > 0 then
-          set resultText to resultText & (character charIndex of lowercaseChars)
-        else
-          set resultText to resultText & c
-        end if
-      end repeat
-      return resultText
-    end toLowerCase
+var allTasks = flattenedTasks;
 
-    set output to "["
-    set isFirst to true
-    set matchCount to 0
-    set maxResults to ${String(limit)}
+for (var i = 0; i < allTasks.length; i++) {
+  if (results.length >= maxResults) break;
 
-    set allTasks to flattened tasks
+  var t = allTasks[i];
 
-    repeat with t in allTasks
-      if matchCount >= maxResults then exit repeat
+  ${completedFilterExpr}
 
-      set shouldInclude to false
+  if (!${searchConditionExpr}) continue;
 
-      try
-        if ${searchCondition} then set shouldInclude to true
-      end try
+  var projId = null;
+  var projName = null;
+  if (t.containingProject) {
+    projId = t.containingProject.id.primaryKey;
+    projName = t.containingProject.name;
+  }
 
-      ${completedFilter}
+  results.push({
+    id: t.id.primaryKey,
+    name: t.name,
+    note: t.note || null,
+    flagged: t.flagged,
+    completed: t.completed,
+    dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+    deferDate: t.deferDate ? t.deferDate.toISOString() : null,
+    completionDate: t.completionDate ? t.completionDate.toISOString() : null,
+    projectId: projId,
+    projectName: projName,
+    tags: t.tags.map(function(tg) { return tg.name; }),
+    estimatedMinutes: t.estimatedMinutes != null ? t.estimatedMinutes : null
+  });
+}
 
-      if shouldInclude then
-        set matchCount to matchCount + 1
+return JSON.stringify(results);`;
 
-        if not isFirst then set output to output & ","
-        set isFirst to false
-
-        set taskId to id of t
-        set taskName to name of t
-        set taskNote to note of t
-        set taskFlagged to flagged of t
-        set taskCompleted to completed of t
-
-        set dueStr to ""
-        try
-          set dueStr to (due date of t) as string
-        end try
-
-        set deferStr to ""
-        try
-          set deferStr to (defer date of t) as string
-        end try
-
-        set completionStr to ""
-        try
-          set completionStr to (completion date of t) as string
-        end try
-
-        set projId to ""
-        set projName to ""
-        try
-          set proj to containing project of t
-          set projId to id of proj
-          set projName to name of proj
-        end try
-
-        set tagNames to {}
-        repeat with tg in tags of t
-          set end of tagNames to name of tg
-        end repeat
-
-        set estMinutes to 0
-        try
-          set estMinutes to estimated minutes of t
-          if estMinutes is missing value then set estMinutes to 0
-        end try
-
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & taskId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-          "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-          "\\"flagged\\": " & taskFlagged & "," & ¬
-          "\\"completed\\": " & taskCompleted & "," & ¬
-          "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-          "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-          "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-          "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-          "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-          "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-          "\\"estimatedMinutes\\": " & estMinutes & ¬
-          "}"
-      end if
-    end repeat
-
-    return output & "]"
-  `;
-
-  const result = await runAppleScript<OFTask[]>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<OFTask[]>(body);
 
   if (!result.success) {
     return failure(

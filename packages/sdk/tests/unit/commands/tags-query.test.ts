@@ -1,30 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFTag, PaginatedResult } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
-}));
-
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked script"),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { queryTags } from "../../../src/commands/tags.js";
-import { runComposedScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 const createMockTag = (overrides: Partial<OFTag> = {}): OFTag => ({
   id: "tag-123",
   name: "Test Tag",
-  parentTagId: null,
-  parentTagName: null,
-  taskCount: 5,
+  parentId: null,
+  parentName: null,
+  availableTaskCount: 5,
   ...overrides,
 });
 
@@ -52,7 +48,7 @@ describe("queryTags", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject negative offset", async () => {
@@ -72,15 +68,15 @@ describe("queryTags", () => {
     it("should accept valid options", async () => {
       const mockResult = createMockPaginatedResult([createMockTag()]);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTag>>);
+      } as OmniJSResult<PaginatedResult<OFTag>>);
 
       const result = await queryTags({ limit: 50, offset: 0 });
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -92,10 +88,10 @@ describe("queryTags", () => {
       ];
       const mockResult = createMockPaginatedResult(mockTags);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTag>>);
+      } as OmniJSResult<PaginatedResult<OFTag>>);
 
       const result = await queryTags();
 
@@ -106,14 +102,14 @@ describe("queryTags", () => {
 
     it("should filter by parent tag", async () => {
       const mockTags = [
-        createMockTag({ name: "Urgent", parentTagName: "Work" }),
+        createMockTag({ name: "Urgent", parentName: "Work" }),
       ];
       const mockResult = createMockPaginatedResult(mockTags);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTag>>);
+      } as OmniJSResult<PaginatedResult<OFTag>>);
 
       const result = await queryTags({ parent: "Work" });
 
@@ -130,10 +126,10 @@ describe("queryTags", () => {
         limit: 1,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTag>>);
+      } as OmniJSResult<PaginatedResult<OFTag>>);
 
       const result = await queryTags({ offset: 50, limit: 1 });
 
@@ -149,10 +145,10 @@ describe("queryTags", () => {
         hasMore: false,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFTag>>);
+      } as OmniJSResult<PaginatedResult<OFTag>>);
 
       const result = await queryTags();
 
@@ -162,10 +158,10 @@ describe("queryTags", () => {
     });
 
     it("should return default empty result on undefined data", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<PaginatedResult<OFTag>>);
+      } as OmniJSResult<PaginatedResult<OFTag>>);
 
       const result = await queryTags();
 
@@ -177,13 +173,13 @@ describe("queryTags", () => {
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<PaginatedResult<OFTag>>);
+      } as OmniJSResult<PaginatedResult<OFTag>>);
 
       const result = await queryTags();
 
@@ -191,11 +187,26 @@ describe("queryTags", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
+    it("should handle OmniJS script errors", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: {
+          code: ErrorCode.APPLESCRIPT_ERROR,
+          message: "OmniJS script error",
+        },
+      } as OmniJSResult<PaginatedResult<OFTag>>);
+
+      const result = await queryTags();
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+    });
+
     it("should handle null error in failure response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<PaginatedResult<OFTag>>);
+      } as OmniJSResult<PaginatedResult<OFTag>>);
 
       const result = await queryTags();
 

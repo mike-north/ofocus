@@ -7,9 +7,7 @@ import type {
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validatePaginationParams } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runComposedScript } from "../applescript.js";
-import { loadScriptContentCached } from "../asset-loader.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Query tags from OmniFocus with optional filters and pagination.
@@ -28,65 +26,47 @@ export async function queryTags(
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, tagSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/tag.applescript"),
-  ]);
+  // Build optional parent-filter condition
+  const parentFilterExpr = options.parent
+    ? `(tag.parent && tag.parent.name === "${escapeJSString(options.parent)}")`
+    : "true";
 
   const body = `
-    set output to "{\\"items\\": ["
-    set isFirst to true
-    set totalCount to 0
-    set returnedCount to 0
-    set currentIndex to 0
+var allTags = flattenedTags.filter(function(tag) {
+  return ${parentFilterExpr};
+});
 
-    set allTags to flattened tags
+var totalCount = allTags.length;
+var pageOffset = ${String(offset)};
+var pageLimit = ${String(limit)};
+var paged = allTags.slice(pageOffset, pageOffset + pageLimit);
 
-    repeat with theTag in allTags
-      set shouldInclude to true
+var items = paged.map(function(tag) {
+  var parentId = null;
+  var parentName = null;
+  if (tag.parent) {
+    parentId = tag.parent.id.primaryKey;
+    parentName = tag.parent.name;
+  }
+  return {
+    id: tag.id.primaryKey,
+    name: tag.name,
+    parentId: parentId,
+    parentName: parentName,
+    availableTaskCount: tag.availableTaskCount
+  };
+});
 
-      ${options.parent ? `-- Filter by parent tag` : ""}
-      ${options.parent ? `try` : ""}
-      ${options.parent ? `  set theContainer to container of theTag` : ""}
-      ${options.parent ? `  if name of theContainer is not "${escapeAppleScript(options.parent)}" then set shouldInclude to false` : ""}
-      ${options.parent ? `on error` : ""}
-      ${options.parent ? `  set shouldInclude to false` : ""}
-      ${options.parent ? `end try` : ""}
+return JSON.stringify({
+  items: items,
+  totalCount: totalCount,
+  returnedCount: paged.length,
+  hasMore: totalCount > (pageOffset + paged.length),
+  offset: pageOffset,
+  limit: pageLimit
+});`;
 
-      if shouldInclude then
-        set totalCount to totalCount + 1
-
-        -- Check if within pagination range
-        if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
-          if not isFirst then set output to output & ","
-          set isFirst to false
-          set returnedCount to returnedCount + 1
-
-          set output to output & (my serializeTag(theTag))
-        end if
-
-        set currentIndex to currentIndex + 1
-      end if
-    end repeat
-
-    set hasMore to (totalCount > (${String(offset)} + returnedCount))
-
-    set output to output & "]," & ¬
-      "\\"totalCount\\": " & totalCount & "," & ¬
-      "\\"returnedCount\\": " & returnedCount & "," & ¬
-      "\\"hasMore\\": " & hasMore & "," & ¬
-      "\\"offset\\": ${String(offset)}," & ¬
-      "\\"limit\\": ${String(limit)}" & ¬
-      "}"
-
-    return output
-  `;
-
-  const result = await runComposedScript<PaginatedResult<OFTag>>(
-    [jsonHelpers, tagSerializer],
-    body
-  );
+  const result = await runOmniJSWrapped<PaginatedResult<OFTag>>(body);
 
   if (!result.success) {
     return failure(

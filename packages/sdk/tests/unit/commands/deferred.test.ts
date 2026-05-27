@@ -1,19 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFTask } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((s: string) => `new Date("${s}")`),
 }));
 
 // Import after mocking
 import { queryDeferred } from "../../../src/commands/deferred.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 const createMockTask = (overrides: Partial<OFTask> = {}): OFTask => ({
   id: "task-123",
@@ -22,7 +23,7 @@ const createMockTask = (overrides: Partial<OFTask> = {}): OFTask => ({
   flagged: false,
   completed: false,
   dueDate: null,
-  deferDate: "2024-12-31",
+  deferDate: "2024-12-31T00:00:00.000Z",
   completionDate: null,
   projectId: null,
   projectName: null,
@@ -42,7 +43,7 @@ describe("queryDeferred", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject invalid deferredBefore date format", async () => {
@@ -50,15 +51,16 @@ describe("queryDeferred", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_DATE_FORMAT);
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid date options", async () => {
       const mockTasks = [createMockTask()];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred({
         deferredAfter: "2024-01-01",
@@ -66,21 +68,21 @@ describe("queryDeferred", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("successful queries", () => {
     it("should return deferred tasks with default options", async () => {
       const mockTasks = [
-        createMockTask({ id: "task-1", deferDate: "2024-06-01" }),
-        createMockTask({ id: "task-2", deferDate: "2024-07-01" }),
+        createMockTask({ id: "task-1", deferDate: "2024-06-01T00:00:00.000Z" }),
+        createMockTask({ id: "task-2", deferDate: "2024-07-01T00:00:00.000Z" }),
       ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred();
 
@@ -89,12 +91,14 @@ describe("queryDeferred", () => {
     });
 
     it("should filter by deferredAfter", async () => {
-      const mockTasks = [createMockTask({ deferDate: "2024-07-01" })];
+      const mockTasks = [
+        createMockTask({ deferDate: "2024-07-01T00:00:00.000Z" }),
+      ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred({ deferredAfter: "2024-06-01" });
 
@@ -102,12 +106,14 @@ describe("queryDeferred", () => {
     });
 
     it("should filter by deferredBefore", async () => {
-      const mockTasks = [createMockTask({ deferDate: "2024-05-01" })];
+      const mockTasks = [
+        createMockTask({ deferDate: "2024-05-01T00:00:00.000Z" }),
+      ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred({ deferredBefore: "2024-06-01" });
 
@@ -116,13 +122,13 @@ describe("queryDeferred", () => {
 
     it("should filter blocked only tasks", async () => {
       const mockTasks = [
-        createMockTask({ deferDate: "2025-12-01" }), // Future date
+        createMockTask({ deferDate: "2025-12-01T00:00:00.000Z" }), // Future date
       ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockTasks,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred({ blockedOnly: true });
 
@@ -130,10 +136,10 @@ describe("queryDeferred", () => {
     });
 
     it("should return empty array when no deferred tasks exist", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: [],
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred();
 
@@ -142,10 +148,10 @@ describe("queryDeferred", () => {
     });
 
     it("should return empty array on undefined data", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred();
 
@@ -156,13 +162,13 @@ describe("queryDeferred", () => {
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred();
 
@@ -171,15 +177,30 @@ describe("queryDeferred", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OFTask[]>);
+      } as OmniJSResult<OFTask[]>);
 
       const result = await queryDeferred();
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+    });
+
+    it("should handle OmniJS script error", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: false,
+        error: {
+          code: ErrorCode.APPLESCRIPT_ERROR,
+          message: "OmniJS script error: ReferenceError: flattenedTasks is not defined",
+        },
+      } as OmniJSResult<OFTask[]>);
+
+      const result = await queryDeferred();
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
     });
   });
 });

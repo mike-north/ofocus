@@ -12,9 +12,7 @@ import {
   validateId,
   validatePaginationParams,
 } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runComposedScript } from "../applescript.js";
-import { loadScriptContentCached } from "../asset-loader.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Create a new folder in OmniFocus.
@@ -42,38 +40,51 @@ export async function createFolder(
   const parentNameError = validateFolderName(options.parentFolderName);
   if (parentNameError) return failure(parentNameError);
 
-  // Build script based on whether we're placing in a parent folder
-  let findParent = "";
-  let makeFolder = "";
+  // Build script body based on whether we're placing in a parent folder
+  let findParentAndCreate: string;
 
   if (options.parentFolderId) {
-    findParent = `set parentFolder to first flattened folder whose id is "${escapeAppleScript(options.parentFolderId)}"`;
-    makeFolder = `set newFolder to make new folder at end of folders of parentFolder with properties {name:"${escapeAppleScript(name)}"}`;
+    findParentAndCreate = `
+var parentFolder = flattenedFolders.filter(function(f) {
+  return f.id.primaryKey === "${escapeJSString(options.parentFolderId)}";
+})[0];
+if (!parentFolder) {
+  throw new Error("Parent folder not found: ${escapeJSString(options.parentFolderId)}");
+}
+var newFolder = new Folder("${escapeJSString(name)}", parentFolder);`;
   } else if (options.parentFolderName) {
-    findParent = `set parentFolder to first flattened folder whose name is "${escapeAppleScript(options.parentFolderName)}"`;
-    makeFolder = `set newFolder to make new folder at end of folders of parentFolder with properties {name:"${escapeAppleScript(name)}"}`;
+    findParentAndCreate = `
+var parentFolder = flattenedFolders.filter(function(f) {
+  return f.name === "${escapeJSString(options.parentFolderName)}";
+})[0];
+if (!parentFolder) {
+  throw new Error("Parent folder not found: ${escapeJSString(options.parentFolderName)}");
+}
+var newFolder = new Folder("${escapeJSString(name)}", parentFolder);`;
   } else {
-    findParent = "";
-    makeFolder = `set newFolder to make new folder with properties {name:"${escapeAppleScript(name)}"}`;
+    findParentAndCreate = `var newFolder = new Folder("${escapeJSString(name)}");`;
   }
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, folderSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/folder.applescript"),
-  ]);
-
   const body = `
-    ${findParent}
-    ${makeFolder}
+${findParentAndCreate}
 
-    return my serializeFolder(newFolder)
-  `;
+var parentId = null;
+var parentName = null;
+if (newFolder.parent) {
+  parentId = newFolder.parent.id.primaryKey;
+  parentName = newFolder.parent.name;
+}
 
-  const result = await runComposedScript<OFFolder>(
-    [jsonHelpers, folderSerializer],
-    body
-  );
+return JSON.stringify({
+  id: newFolder.id.primaryKey,
+  name: newFolder.name,
+  parentId: parentId,
+  parentName: parentName,
+  projectCount: newFolder.projects.length,
+  folderCount: newFolder.folders.length
+});`;
+
+  const result = await runOmniJSWrapped<OFFolder>(body);
 
   if (!result.success) {
     return failure(
@@ -112,71 +123,51 @@ export async function queryFolders(
   const limit = options.limit ?? 100;
   const offset = options.offset ?? 0;
 
-  // Load external AppleScript helpers
-  const [jsonHelpers, folderSerializer] = await Promise.all([
-    loadScriptContentCached("helpers/json.applescript"),
-    loadScriptContentCached("serializers/folder.applescript"),
-  ]);
+  // Build filter condition
+  let filterExpr: string;
+  if (options.parent !== undefined) {
+    filterExpr = `(f.parent && f.parent.name === "${escapeJSString(options.parent)}")`;
+  } else {
+    filterExpr = "true";
+  }
 
   const body = `
-    set output to "{\\"items\\": ["
-    set isFirst to true
-    set totalCount to 0
-    set returnedCount to 0
-    set currentIndex to 0
+var allFolders = flattenedFolders.filter(function(f) {
+  return ${filterExpr};
+});
 
-    set allFolders to flattened folders
+var totalCount = allFolders.length;
+var pageOffset = ${String(offset)};
+var pageLimit = ${String(limit)};
+var paged = allFolders.slice(pageOffset, pageOffset + pageLimit);
 
-    repeat with f in allFolders
-      set shouldInclude to true
+var items = paged.map(function(f) {
+  var parentId = null;
+  var parentName = null;
+  if (f.parent) {
+    parentId = f.parent.id.primaryKey;
+    parentName = f.parent.name;
+  }
+  return {
+    id: f.id.primaryKey,
+    name: f.name,
+    parentId: parentId,
+    parentName: parentName,
+    projectCount: f.projects.length,
+    folderCount: f.folders.length
+  };
+});
 
-      -- Get parent info first (we need this for filtering)
-      set parentId to ""
-      set parentName to ""
-      try
-        set p to container of f
-        if class of p is folder then
-          set parentId to id of p
-          set parentName to name of p
-        end if
-      end try
+return JSON.stringify({
+  items: items,
+  totalCount: totalCount,
+  returnedCount: paged.length,
+  hasMore: totalCount > (pageOffset + paged.length),
+  offset: pageOffset,
+  limit: pageLimit
+});`;
 
-      ${options.parent ? `-- Filter by parent folder` : ""}
-      ${options.parent ? `if parentName is not "${escapeAppleScript(options.parent)}" then set shouldInclude to false` : ""}
-
-      if shouldInclude then
-        set totalCount to totalCount + 1
-
-        -- Check if within pagination range
-        if currentIndex >= ${String(offset)} and returnedCount < ${String(limit)} then
-          if not isFirst then set output to output & ","
-          set isFirst to false
-          set returnedCount to returnedCount + 1
-
-          set output to output & (my serializeFolder(f))
-        end if
-
-        set currentIndex to currentIndex + 1
-      end if
-    end repeat
-
-    set hasMore to (totalCount > (${String(offset)} + returnedCount))
-
-    set output to output & "]," & ¬
-      "\\"totalCount\\": " & totalCount & "," & ¬
-      "\\"returnedCount\\": " & returnedCount & "," & ¬
-      "\\"hasMore\\": " & hasMore & "," & ¬
-      "\\"offset\\": ${String(offset)}," & ¬
-      "\\"limit\\": ${String(limit)}" & ¬
-      "}"
-
-    return output
-  `;
-
-  const result = await runComposedScript<PaginatedResult<OFFolder>>(
-    [jsonHelpers, folderSerializer],
-    body
-  );
+  const result = await runOmniJSWrapped<PaginatedResult<OFFolder>>(body);
 
   if (!result.success) {
     return failure(

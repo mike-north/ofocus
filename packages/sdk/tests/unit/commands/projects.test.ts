@@ -1,23 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFProject, PaginatedResult } from "../../../src/types.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runComposedScript: vi.fn(),
-}));
-
-// Mock the asset-loader module
-vi.mock("../../../src/asset-loader.js", () => ({
-  loadScriptContentCached: vi.fn().mockResolvedValue("-- mocked script"),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
 import { queryProjects } from "../../../src/commands/projects.js";
-import { runComposedScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunComposedScript = vi.mocked(runComposedScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 const createMockProject = (overrides: Partial<OFProject> = {}): OFProject => ({
   id: "project-123",
@@ -56,7 +52,7 @@ describe("queryProjects", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
-      expect(mockRunComposedScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject negative offset", async () => {
@@ -76,15 +72,15 @@ describe("queryProjects", () => {
     it("should accept valid options", async () => {
       const mockResult = createMockPaginatedResult([createMockProject()]);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects({ limit: 50, offset: 0 });
 
       expect(result.success).toBe(true);
-      expect(mockRunComposedScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -96,10 +92,10 @@ describe("queryProjects", () => {
       ];
       const mockResult = createMockPaginatedResult(mockProjects);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects();
 
@@ -112,10 +108,10 @@ describe("queryProjects", () => {
       const mockProjects = [createMockProject({ status: "on-hold" })];
       const mockResult = createMockPaginatedResult(mockProjects);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects({ status: "on-hold" });
 
@@ -126,10 +122,10 @@ describe("queryProjects", () => {
       const mockProjects = [createMockProject({ sequential: true })];
       const mockResult = createMockPaginatedResult(mockProjects);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects({ sequential: true });
 
@@ -140,10 +136,10 @@ describe("queryProjects", () => {
       const mockProjects = [createMockProject({ folderName: "Work" })];
       const mockResult = createMockPaginatedResult(mockProjects);
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects({ folder: "Work" });
 
@@ -160,10 +156,10 @@ describe("queryProjects", () => {
         limit: 1,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects({ offset: 50, limit: 1 });
 
@@ -179,10 +175,10 @@ describe("queryProjects", () => {
         hasMore: false,
       });
 
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects({ folder: "Nonexistent" });
 
@@ -192,10 +188,10 @@ describe("queryProjects", () => {
     });
 
     it("should return default empty result on undefined data", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects();
 
@@ -207,13 +203,13 @@ describe("queryProjects", () => {
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects();
 
@@ -222,10 +218,10 @@ describe("queryProjects", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunComposedScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<PaginatedResult<OFProject>>);
+      } as OmniJSResult<PaginatedResult<OFProject>>);
 
       const result = await queryProjects();
 

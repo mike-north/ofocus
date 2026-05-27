@@ -2,8 +2,7 @@ import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateDateString } from "../validation.js";
-import { toAppleScriptDate } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runOmniJSWrapped, toOmniJSDate } from "../omnijs.js";
 
 /**
  * Options for querying forecast tasks.
@@ -47,127 +46,78 @@ export async function queryForecast(
     );
   }
 
-  // Build date range logic in AppleScript
-  const startDateRaw = options.start ?? "today";
-  // Convert start date (could be "today" or ISO date)
-  const startDate =
-    startDateRaw === "today" ? startDateRaw : toAppleScriptDate(startDateRaw);
   const includeDeferred = options.includeDeferred === true;
 
-  // Calculate end date based on days or explicit end
-  let endDateLogic: string;
+  // Build start date expression for OmniJS
+  const startDateExpr =
+    options.start !== undefined
+      ? toOmniJSDate(options.start)
+      : "new Date()";
+
+  // Build end date expression for OmniJS
+  let endDateExpr: string;
   if (options.end !== undefined) {
-    endDateLogic = `set endDate to date "${toAppleScriptDate(options.end)}"`;
+    endDateExpr = toOmniJSDate(options.end);
   } else if (options.days !== undefined) {
-    endDateLogic = `set endDate to startDate + (${String(options.days)} * days)`;
+    endDateExpr = `new Date(startDate.getTime() + ${String(options.days)} * 86400000)`;
   } else {
     // Default to 7 days
-    endDateLogic = `set endDate to startDate + (7 * days)`;
+    endDateExpr = `new Date(startDate.getTime() + 7 * 86400000)`;
   }
 
-  const script = `
-    set startDate to date "${startDate}"
-    ${endDateLogic}
+  // Build task inclusion logic
+  const deferredCheck = includeDeferred
+    ? `
+  if (!shouldInclude && t.deferDate != null) {
+    shouldInclude = t.deferDate >= startDate && t.deferDate <= endDate;
+  }`
+    : "";
 
-    set output to "["
-    set isFirst to true
+  const body = `
+var startDate = ${startDateExpr};
+var endDate = ${endDateExpr};
 
-    set allTasks to flattened tasks where completed is false and effectively dropped is false
+var allTasks = flattenedTasks.filter(function(t) {
+  return !t.completed && !t.effectivelyDropped;
+});
 
-    repeat with t in allTasks
-      set shouldInclude to false
+var matchedTasks = allTasks.filter(function(t) {
+  var shouldInclude = false;
 
-      -- Check due date
-      try
-        set taskDue to due date of t
-        if taskDue >= startDate and taskDue <= endDate then
-          set shouldInclude to true
-        end if
-      end try
+  if (t.dueDate != null) {
+    shouldInclude = t.dueDate >= startDate && t.dueDate <= endDate;
+  }
+${deferredCheck}
 
-      ${
-        includeDeferred
-          ? `
-      -- Check defer date
-      if not shouldInclude then
-        try
-          set taskDefer to defer date of t
-          if taskDefer >= startDate and taskDefer <= endDate then
-            set shouldInclude to true
-          end if
-        end try
-      end if
-      `
-          : ""
-      }
+  return shouldInclude;
+});
 
-      if shouldInclude then
-        if not isFirst then set output to output & ","
-        set isFirst to false
+var items = matchedTasks.map(function(t) {
+  var projId = null;
+  var projName = null;
+  if (t.containingProject) {
+    projId = t.containingProject.id.primaryKey;
+    projName = t.containingProject.name;
+  }
+  return {
+    id: t.id.primaryKey,
+    name: t.name,
+    note: t.note || null,
+    flagged: t.flagged,
+    completed: t.completed,
+    dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+    deferDate: t.deferDate ? t.deferDate.toISOString() : null,
+    completionDate: t.completionDate ? t.completionDate.toISOString() : null,
+    projectId: projId,
+    projectName: projName,
+    tags: t.tags.map(function(tg) { return tg.name; }),
+    estimatedMinutes: t.estimatedMinutes != null ? t.estimatedMinutes : null
+  };
+});
 
-        set taskId to id of t
-        set taskName to name of t
-        set taskNote to note of t
-        set taskFlagged to flagged of t
-        set taskCompleted to completed of t
+return JSON.stringify(items);`;
 
-        set dueStr to ""
-        try
-          set dueStr to (due date of t) as string
-        end try
-
-        set deferStr to ""
-        try
-          set deferStr to (defer date of t) as string
-        end try
-
-        set completionStr to ""
-        try
-          set completionStr to (completion date of t) as string
-        end try
-
-        set projId to ""
-        set projName to ""
-        try
-          set proj to containing project of t
-          set projId to id of proj
-          set projName to name of proj
-        end try
-
-        set tagNames to {}
-        repeat with tg in tags of t
-          set end of tagNames to name of tg
-        end repeat
-
-        set estMinutes to 0
-        try
-          set estMinutes to estimated minutes of t
-          if estMinutes is missing value then set estMinutes to 0
-        end try
-
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & taskId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-          "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-          "\\"flagged\\": " & taskFlagged & "," & ¬
-          "\\"completed\\": " & taskCompleted & "," & ¬
-          "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-          "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-          "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-          "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-          "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-          "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-          "\\"estimatedMinutes\\": " & estMinutes & ¬
-          "}"
-      end if
-    end repeat
-
-    return output & "]"
-  `;
-
-  const result = await runAppleScript<OFTask[]>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<OFTask[]>(body);
 
   if (!result.success) {
     return failure(

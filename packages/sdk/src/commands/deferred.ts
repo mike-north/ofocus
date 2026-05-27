@@ -1,9 +1,8 @@
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { runOmniJSWrapped, toOmniJSDate } from "../omnijs.js";
 import { validateDateString } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
 
 /**
  * Options for querying deferred tasks.
@@ -39,131 +38,63 @@ export async function queryDeferred(
   }
 
   const blockedOnly = options.blockedOnly === true;
-  const escapedDeferredAfter = options.deferredAfter
-    ? escapeAppleScript(options.deferredAfter)
-    : null;
-  const escapedDeferredBefore = options.deferredBefore
-    ? escapeAppleScript(options.deferredBefore)
-    : null;
 
-  const script = `
-    set output to "["
-    set isFirst to true
-    set rightNow to current date
+  // Build filter conditions as JavaScript expressions
+  const conditions: string[] = [
+    "t.deferDate != null",
+    "!t.completed",
+    "!t.effectivelyDropped",
+  ];
 
-    set allTasks to flattened tasks where completed is false and effectively dropped is false
+  if (blockedOnly) {
+    conditions.push("t.deferDate > new Date()");
+  }
 
-    repeat with t in allTasks
-      set shouldInclude to false
+  if (options.deferredAfter !== undefined) {
+    conditions.push(
+      `t.deferDate >= ${toOmniJSDate(options.deferredAfter)}`
+    );
+  }
 
-      -- Check if task has defer date
-      try
-        set taskDefer to defer date of t
-        if taskDefer is not missing value then
-          set shouldInclude to true
+  if (options.deferredBefore !== undefined) {
+    conditions.push(
+      `t.deferDate <= ${toOmniJSDate(options.deferredBefore)}`
+    );
+  }
 
-          ${
-            blockedOnly
-              ? `
-          -- Only include if defer date is in the future (currently blocked)
-          if taskDefer <= rightNow then
-            set shouldInclude to false
-          end if
-          `
-              : ""
-          }
+  const filterExpr = conditions.join(" && ");
 
-          ${
-            escapedDeferredAfter
-              ? `
-          -- Filter by deferred after
-          if shouldInclude and taskDefer < date "${escapedDeferredAfter}" then
-            set shouldInclude to false
-          end if
-          `
-              : ""
-          }
+  const body = `
+var allTasks = flattenedTasks.filter(function(t) {
+  return ${filterExpr};
+});
 
-          ${
-            escapedDeferredBefore
-              ? `
-          -- Filter by deferred before
-          if shouldInclude and taskDefer > date "${escapedDeferredBefore}" then
-            set shouldInclude to false
-          end if
-          `
-              : ""
-          }
-        end if
-      end try
+var items = allTasks.map(function(t) {
+  var projId = null;
+  var projName = null;
+  if (t.containingProject) {
+    projId = t.containingProject.id.primaryKey;
+    projName = t.containingProject.name;
+  }
+  return {
+    id: t.id.primaryKey,
+    name: t.name,
+    note: t.note || null,
+    flagged: t.flagged,
+    completed: t.completed,
+    dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+    deferDate: t.deferDate ? t.deferDate.toISOString() : null,
+    completionDate: t.completionDate ? t.completionDate.toISOString() : null,
+    projectId: projId,
+    projectName: projName,
+    tags: t.tags.map(function(tg) { return tg.name; }),
+    estimatedMinutes: t.estimatedMinutes != null ? t.estimatedMinutes : null
+  };
+});
 
-      if shouldInclude then
-        if not isFirst then set output to output & ","
-        set isFirst to false
+return JSON.stringify(items);`;
 
-        set taskId to id of t
-        set taskName to name of t
-        set taskNote to note of t
-        set taskFlagged to flagged of t
-        set taskCompleted to completed of t
-
-        set dueStr to ""
-        try
-          set dueStr to (due date of t) as string
-        end try
-
-        set deferStr to ""
-        try
-          set deferStr to (defer date of t) as string
-        end try
-
-        set completionStr to ""
-        try
-          set completionStr to (completion date of t) as string
-        end try
-
-        set projId to ""
-        set projName to ""
-        try
-          set proj to containing project of t
-          set projId to id of proj
-          set projName to name of proj
-        end try
-
-        set tagNames to {}
-        repeat with tg in tags of t
-          set end of tagNames to name of tg
-        end repeat
-
-        set estMinutes to 0
-        try
-          set estMinutes to estimated minutes of t
-          if estMinutes is missing value then set estMinutes to 0
-        end try
-
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & taskId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-          "\\"note\\": " & (my jsonString(taskNote)) & "," & ¬
-          "\\"flagged\\": " & taskFlagged & "," & ¬
-          "\\"completed\\": " & taskCompleted & "," & ¬
-          "\\"dueDate\\": " & (my jsonString(dueStr)) & "," & ¬
-          "\\"deferDate\\": " & (my jsonString(deferStr)) & "," & ¬
-          "\\"completionDate\\": " & (my jsonString(completionStr)) & "," & ¬
-          "\\"projectId\\": " & (my jsonString(projId)) & "," & ¬
-          "\\"projectName\\": " & (my jsonString(projName)) & "," & ¬
-          "\\"tags\\": " & (my jsonArray(tagNames)) & "," & ¬
-          "\\"estimatedMinutes\\": " & estMinutes & ¬
-          "}"
-      end if
-    end repeat
-
-    return output & "]"
-  `;
-
-  const result = await runAppleScript<OFTask[]>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<OFTask[]>(body);
 
   if (!result.success) {
     return failure(
