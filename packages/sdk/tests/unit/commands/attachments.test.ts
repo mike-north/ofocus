@@ -1,22 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type {
   AddAttachmentResult,
   ListAttachmentsResult,
   RemoveAttachmentResult,
 } from "../../../src/commands/attachments.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
-// Mock the fs module
+// Mock the fs module (sync API used for file validation and reading)
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
   statSync: vi.fn(),
+  readFileSync: vi.fn(),
 }));
 
 // Import after mocking
@@ -25,12 +26,23 @@ import {
   listAttachments,
   removeAttachment,
 } from "../../../src/commands/attachments.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 import * as fs from "node:fs";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockStatSync = vi.mocked(fs.statSync);
+const mockReadFileSync = vi.mocked(fs.readFileSync);
+
+/** Shared helper: configure fs mocks to simulate an existing, readable file. */
+function setupExistingFile(): void {
+  mockExistsSync.mockReturnValue(true);
+  mockStatSync.mockReturnValue({ isFile: () => true } as ReturnType<
+    typeof fs.statSync
+  >);
+  // Return a Buffer with fake file contents so base64 encoding succeeds
+  mockReadFileSync.mockReturnValue(Buffer.from("fake file contents") as never);
+}
 
 describe("addAttachment", () => {
   beforeEach(() => {
@@ -43,7 +55,7 @@ describe("addAttachment", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject invalid task ID format", async () => {
@@ -78,10 +90,7 @@ describe("addAttachment", () => {
     });
 
     it("should accept valid task ID and file path", async () => {
-      mockExistsSync.mockReturnValue(true);
-      mockStatSync.mockReturnValue({ isFile: () => true } as ReturnType<
-        typeof fs.statSync
-      >);
+      setupExistingFile();
 
       const mockResult: AddAttachmentResult = {
         taskId: "task-123",
@@ -90,24 +99,21 @@ describe("addAttachment", () => {
         attached: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<AddAttachmentResult>);
+      } as OmniJSResult<AddAttachmentResult>);
 
       const result = await addAttachment("task-123", "/path/to/document.pdf");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("successful attachment", () => {
     beforeEach(() => {
-      mockExistsSync.mockReturnValue(true);
-      mockStatSync.mockReturnValue({ isFile: () => true } as ReturnType<
-        typeof fs.statSync
-      >);
+      setupExistingFile();
     });
 
     it("should add attachment to task", async () => {
@@ -118,10 +124,10 @@ describe("addAttachment", () => {
         attached: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<AddAttachmentResult>);
+      } as OmniJSResult<AddAttachmentResult>);
 
       const result = await addAttachment("task-123", "/path/to/report.pdf");
 
@@ -129,24 +135,40 @@ describe("addAttachment", () => {
       expect(result.data?.attached).toBe(true);
       expect(result.data?.fileName).toBe("report.pdf");
     });
+
+    it("should read the file and pass it to OmniJS", async () => {
+      const mockResult: AddAttachmentResult = {
+        taskId: "task-123",
+        taskName: "Test Task",
+        fileName: "image.png",
+        attached: true,
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockResult,
+      } as OmniJSResult<AddAttachmentResult>);
+
+      await addAttachment("task-123", "/path/to/image.png");
+
+      // The implementation must read the file to produce base64 for OmniJS
+      expect(mockReadFileSync).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("error handling", () => {
     beforeEach(() => {
-      mockExistsSync.mockReturnValue(true);
-      mockStatSync.mockReturnValue({ isFile: () => true } as ReturnType<
-        typeof fs.statSync
-      >);
+      setupExistingFile();
     });
 
     it("should handle task not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<AddAttachmentResult>);
+      } as OmniJSResult<AddAttachmentResult>);
 
       const result = await addAttachment("nonexistent", "/path/to/file.pdf");
 
@@ -155,10 +177,10 @@ describe("addAttachment", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<AddAttachmentResult>);
+      } as OmniJSResult<AddAttachmentResult>);
 
       const result = await addAttachment("task-123", "/path/to/file.pdf");
 
@@ -167,10 +189,10 @@ describe("addAttachment", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<AddAttachmentResult>);
+      } as OmniJSResult<AddAttachmentResult>);
 
       const result = await addAttachment("task-123", "/path/to/file.pdf");
 
@@ -207,15 +229,15 @@ describe("listAttachments", () => {
         taskId: "task-123",
         taskName: "Test Task",
         attachments: [
-          { id: "att-1", name: "file1.pdf", size: null, type: null },
-          { id: "att-2", name: "file2.png", size: null, type: null },
+          { id: "file1.pdf", name: "file1.pdf", size: null, type: null },
+          { id: "file2.png", name: "file2.png", size: null, type: null },
         ],
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ListAttachmentsResult>);
+      } as OmniJSResult<ListAttachmentsResult>);
 
       const result = await listAttachments("task-123");
 
@@ -230,27 +252,48 @@ describe("listAttachments", () => {
         attachments: [],
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ListAttachmentsResult>);
+      } as OmniJSResult<ListAttachmentsResult>);
 
       const result = await listAttachments("task-123");
 
       expect(result.success).toBe(true);
       expect(result.data?.attachments).toEqual([]);
     });
+
+    it("should expose attachment id equal to attachment name for removeAttachment compatibility", async () => {
+      const mockResult: ListAttachmentsResult = {
+        taskId: "task-123",
+        taskName: "Test Task",
+        attachments: [
+          { id: "notes.txt", name: "notes.txt", size: null, type: null },
+        ],
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockResult,
+      } as OmniJSResult<ListAttachmentsResult>);
+
+      const result = await listAttachments("task-123");
+
+      expect(result.success).toBe(true);
+      const att = result.data?.attachments[0];
+      expect(att?.id).toBe(att?.name);
+    });
   });
 
   describe("error handling", () => {
     it("should handle task not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.TASK_NOT_FOUND,
           message: "Task not found",
         },
-      } as AppleScriptResult<ListAttachmentsResult>);
+      } as OmniJSResult<ListAttachmentsResult>);
 
       const result = await listAttachments("nonexistent");
 
@@ -259,10 +302,10 @@ describe("listAttachments", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<ListAttachmentsResult>);
+      } as OmniJSResult<ListAttachmentsResult>);
 
       const result = await listAttachments("task-123");
 
@@ -308,35 +351,36 @@ describe("removeAttachment", () => {
   });
 
   describe("successful removal", () => {
-    it("should remove attachment by ID", async () => {
+    it("should remove attachment by name", async () => {
       const mockResult: RemoveAttachmentResult = {
         taskId: "task-123",
         attachmentName: "document.pdf",
         removed: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<RemoveAttachmentResult>);
+      } as OmniJSResult<RemoveAttachmentResult>);
 
-      const result = await removeAttachment("task-123", "att-456");
+      const result = await removeAttachment("task-123", "document.pdf");
 
       expect(result.success).toBe(true);
       expect(result.data?.removed).toBe(true);
     });
 
-    it("should remove attachment by name", async () => {
+    it("should remove attachment using id returned by listAttachments", async () => {
+      // OmniJS uses filename as the id (id === name from listAttachments)
       const mockResult: RemoveAttachmentResult = {
         taskId: "task-123",
         attachmentName: "notes.txt",
         removed: true,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<RemoveAttachmentResult>);
+      } as OmniJSResult<RemoveAttachmentResult>);
 
       const result = await removeAttachment("task-123", "notes.txt");
 
@@ -346,13 +390,13 @@ describe("removeAttachment", () => {
 
   describe("error handling", () => {
     it("should handle attachment not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
           message: "Attachment not found",
         },
-      } as AppleScriptResult<RemoveAttachmentResult>);
+      } as OmniJSResult<RemoveAttachmentResult>);
 
       const result = await removeAttachment("task-123", "nonexistent");
 
@@ -360,10 +404,10 @@ describe("removeAttachment", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<RemoveAttachmentResult>);
+      } as OmniJSResult<RemoveAttachmentResult>);
 
       const result = await removeAttachment("task-123", "att-456");
 
@@ -372,10 +416,10 @@ describe("removeAttachment", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<RemoveAttachmentResult>);
+      } as OmniJSResult<RemoveAttachmentResult>);
 
       const result = await removeAttachment("task-123", "att-456");
 

@@ -4,8 +4,7 @@ import type { CliOutput } from "../types.js";
 import { success, failure, failureMessage } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Attachment information.
@@ -85,30 +84,30 @@ export async function addAttachment(
 
   const fileName = path.basename(absolutePath);
 
-  // OmniFocus AppleScript for adding attachment
-  // Note: OmniFocus uses POSIX file paths for attachments
-  const script = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-    set taskName to name of theTask
+  // Read the file and convert to base64 for embedding in the OmniJS script.
+  // OmniJS does not support POSIX file paths directly — the file must be
+  // passed as base64 data and reconstructed via Data.fromBase64 + FileWrapper.
+  const fileBuffer = fs.readFileSync(absolutePath);
+  const base64Contents = fileBuffer.toString("base64");
 
-    -- Add attachment using POSIX file path
-    set theFile to POSIX file "${escapeAppleScript(absolutePath)}"
+  // Base64 strings contain only [A-Za-z0-9+/=], so escapeJSString is safe
+  // but not strictly required. We pass through it for defensive consistency.
+  const body = `
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}
+var fileData = Data.fromBase64("${escapeJSString(base64Contents)}");
+var wrapper = FileWrapper.withContents("${escapeJSString(fileName)}", fileData);
+task.addAttachment(wrapper);
+return JSON.stringify({
+  taskId: task.id.primaryKey,
+  taskName: task.name,
+  fileName: "${escapeJSString(fileName)}",
+  attached: true
+});`;
 
-    tell theTask
-      make new attachment with properties {file:theFile}
-    end tell
-
-    return "{" & ¬
-      "\\"taskId\\": \\"" & (id of theTask) & "\\"," & ¬
-      "\\"taskName\\": \\"" & (my escapeJson(taskName)) & "\\"," & ¬
-      "\\"fileName\\": \\"" & "${escapeAppleScript(fileName)}" & "\\"," & ¬
-      "\\"attached\\": true" & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<AddAttachmentResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<AddAttachmentResult>(body);
 
   if (!result.success) {
     return failure(
@@ -136,40 +135,30 @@ export async function listAttachments(
   const idError = validateId(taskId, "task");
   if (idError) return failure(idError);
 
-  const script = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-    set taskName to name of theTask
-    set taskId to id of theTask
+  // OmniJS FileWrapper does not expose a stable opaque id property.
+  // We use the preferredFilename as the attachment id so that callers
+  // can pass the returned id to removeAttachment (which looks up by name).
+  const body = `
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}
+var atts = task.attachments.map(function(a) {
+  var name = a.preferredFilename || a.filename || "";
+  return {
+    id: name,
+    name: name,
+    size: null,
+    type: null
+  };
+});
+return JSON.stringify({
+  taskId: task.id.primaryKey,
+  taskName: task.name,
+  attachments: atts
+});`;
 
-    set output to "{\\"taskId\\": \\"" & taskId & "\\","
-    set output to output & "\\"taskName\\": \\"" & (my escapeJson(taskName)) & "\\","
-    set output to output & "\\"attachments\\": ["
-
-    set isFirst to true
-    set taskAttachments to attachments of theTask
-
-    repeat with att in taskAttachments
-      if not isFirst then set output to output & ","
-      set isFirst to false
-
-      set attId to id of att
-      set attName to name of att
-
-      set output to output & "{"
-      set output to output & "\\"id\\": \\"" & attId & "\\","
-      set output to output & "\\"name\\": \\"" & (my escapeJson(attName)) & "\\","
-      set output to output & "\\"size\\": null,"
-      set output to output & "\\"type\\": null"
-      set output to output & "}"
-    end repeat
-
-    set output to output & "]}"
-    return output
-  `;
-
-  const result = await runAppleScript<ListAttachmentsResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<ListAttachmentsResult>(body);
 
   if (!result.success) {
     return failure(
@@ -190,7 +179,7 @@ export async function listAttachments(
 /**
  * Remove an attachment from a task.
  * @param taskId - Task ID to remove attachment from
- * @param attachmentIdOrName - Attachment ID or name to remove
+ * @param attachmentIdOrName - Attachment name (as returned by listAttachments) or filename
  */
 export async function removeAttachment(
   taskId: string,
@@ -203,42 +192,38 @@ export async function removeAttachment(
     return failureMessage("Attachment ID or name is required");
   }
 
-  const script = `
-    set theTask to first flattened task whose id is "${escapeAppleScript(taskId)}"
-    set attachmentToRemove to missing value
-    set attName to ""
+  // OmniJS exposes task.removeAttachmentAtIndex(index) for removal.
+  // We find the attachment by matching preferredFilename or filename
+  // against the provided identifier (which may be an id or a name —
+  // listAttachments sets id === name, so both lookups are equivalent).
+  const body = `
+var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+if (!task) {
+  throw new Error("Task not found: ${escapeJSString(taskId)}");
+}
+var identifier = "${escapeJSString(attachmentIdOrName)}";
+var atts = task.attachments;
+var foundIndex = -1;
+var foundName = "";
+for (var i = 0; i < atts.length; i++) {
+  var name = atts[i].preferredFilename || atts[i].filename || "";
+  if (name === identifier) {
+    foundIndex = i;
+    foundName = name;
+    break;
+  }
+}
+if (foundIndex === -1) {
+  throw new Error("Attachment not found: " + identifier);
+}
+task.removeAttachmentAtIndex(foundIndex);
+return JSON.stringify({
+  taskId: task.id.primaryKey,
+  attachmentName: foundName,
+  removed: true
+});`;
 
-    -- Try to find attachment by ID first, then by name
-    set taskAttachments to attachments of theTask
-
-    repeat with att in taskAttachments
-      if id of att is "${escapeAppleScript(attachmentIdOrName)}" then
-        set attachmentToRemove to att
-        set attName to name of att
-        exit repeat
-      else if name of att is "${escapeAppleScript(attachmentIdOrName)}" then
-        set attachmentToRemove to att
-        set attName to name of att
-        exit repeat
-      end if
-    end repeat
-
-    if attachmentToRemove is missing value then
-      error "Attachment not found: ${escapeAppleScript(attachmentIdOrName)}"
-    end if
-
-    delete attachmentToRemove
-
-    return "{" & ¬
-      "\\"taskId\\": \\"" & (id of theTask) & "\\"," & ¬
-      "\\"attachmentName\\": \\"" & (my escapeJson(attName)) & "\\"," & ¬
-      "\\"removed\\": true" & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<RemoveAttachmentResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<RemoveAttachmentResult>(body);
 
   if (!result.success) {
     return failure(
