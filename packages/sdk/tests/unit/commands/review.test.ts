@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFProject, ReviewResult } from "../../../src/types.js";
 import type { ReviewIntervalResult } from "../../../src/commands/review.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
 }));
 
 // Import after mocking
@@ -17,9 +17,9 @@ import {
   getReviewInterval,
   setReviewInterval,
 } from "../../../src/commands/review.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("reviewProject", () => {
   beforeEach(() => {
@@ -32,7 +32,7 @@ describe("reviewProject", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject project ID with dangerous characters", async () => {
@@ -40,7 +40,7 @@ describe("reviewProject", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject project ID with newlines", async () => {
@@ -48,40 +48,40 @@ describe("reviewProject", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid project ID", async () => {
       const mockResult: ReviewResult = {
         projectId: "proj-123",
         projectName: "Test project",
-        lastReviewed: "2024-01-15 10:30:00",
-        nextReviewDate: "2024-02-15 10:30:00",
+        lastReviewed: "2024-01-15T10:30:00.000Z",
+        nextReviewDate: "2024-02-15T10:30:00.000Z",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should accept project ID with underscores", async () => {
       const mockResult: ReviewResult = {
         projectId: "proj_with_underscores",
         projectName: "Test project",
-        lastReviewed: "2024-01-15 10:30:00",
-        nextReviewDate: "2024-02-15 10:30:00",
+        lastReviewed: "2024-01-15T10:30:00.000Z",
+        nextReviewDate: "2024-02-15T10:30:00.000Z",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj_with_underscores");
 
@@ -94,14 +94,14 @@ describe("reviewProject", () => {
       const mockResult: ReviewResult = {
         projectId: "proj-789",
         projectName: "Reviewed Project",
-        lastReviewed: "2024-01-20 14:30:00",
-        nextReviewDate: "2024-02-20 14:30:00",
+        lastReviewed: "2024-01-20T14:30:00.000Z",
+        nextReviewDate: "2024-02-20T14:30:00.000Z",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-789");
 
@@ -109,8 +109,8 @@ describe("reviewProject", () => {
       expect(result.data).toEqual({
         projectId: "proj-789",
         projectName: "Reviewed Project",
-        lastReviewed: "2024-01-20 14:30:00",
-        nextReviewDate: "2024-02-20 14:30:00",
+        lastReviewed: "2024-01-20T14:30:00.000Z",
+        nextReviewDate: "2024-02-20T14:30:00.000Z",
       });
       expect(result.error).toBeNull();
     });
@@ -119,14 +119,14 @@ describe("reviewProject", () => {
       const mockResult: ReviewResult = {
         projectId: "proj-123",
         projectName: "Project",
-        lastReviewed: "2024-01-20 14:30:00",
+        lastReviewed: "2024-01-20T14:30:00.000Z",
         nextReviewDate: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-123");
 
@@ -138,14 +138,14 @@ describe("reviewProject", () => {
       const mockResult: ReviewResult = {
         projectId: "proj-123",
         projectName: 'Project with "quotes"',
-        lastReviewed: "2024-01-20 14:30:00",
-        nextReviewDate: "2024-02-20 14:30:00",
+        lastReviewed: "2024-01-20T14:30:00.000Z",
+        nextReviewDate: "2024-02-20T14:30:00.000Z",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-123");
 
@@ -157,14 +157,14 @@ describe("reviewProject", () => {
       const mockResult: ReviewResult = {
         projectId: "proj-with-hyphens",
         projectName: "Project",
-        lastReviewed: "2024-01-20 14:30:00",
-        nextReviewDate: "2024-02-20 14:30:00",
+        lastReviewed: "2024-01-20T14:30:00.000Z",
+        nextReviewDate: "2024-02-20T14:30:00.000Z",
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-with-hyphens");
 
@@ -174,13 +174,13 @@ describe("reviewProject", () => {
 
   describe("error handling", () => {
     it("should handle project not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.PROJECT_NOT_FOUND,
           message: "Project not found",
         },
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("nonexistent-project");
 
@@ -189,13 +189,13 @@ describe("reviewProject", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-123");
 
@@ -203,15 +203,15 @@ describe("reviewProject", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript execution error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should handle OmniJS execution error", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
+          message: "OmniJS execution failed",
           details: "Review error",
         },
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-123");
 
@@ -221,10 +221,10 @@ describe("reviewProject", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-123");
 
@@ -234,10 +234,10 @@ describe("reviewProject", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<ReviewResult>);
+      } as OmniJSResult<ReviewResult>);
 
       const result = await reviewProject("proj-123");
 
@@ -296,23 +296,23 @@ describe("queryProjectsForReview", () => {
         },
       ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockProjects,
-      } as AppleScriptResult<OFProject[]>);
+      } as OmniJSResult<OFProject[]>);
 
       const result = await queryProjectsForReview();
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockProjects);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should return empty array when no projects need review", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: [],
-      } as AppleScriptResult<OFProject[]>);
+      } as OmniJSResult<OFProject[]>);
 
       const result = await queryProjectsForReview();
 
@@ -321,10 +321,10 @@ describe("queryProjectsForReview", () => {
     });
 
     it("should handle undefined data as empty array", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<OFProject[]>);
+      } as OmniJSResult<OFProject[]>);
 
       const result = await queryProjectsForReview();
 
@@ -347,10 +347,10 @@ describe("queryProjectsForReview", () => {
         },
       ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockProjects,
-      } as AppleScriptResult<OFProject[]>);
+      } as OmniJSResult<OFProject[]>);
 
       const result = await queryProjectsForReview();
 
@@ -377,10 +377,10 @@ describe("queryProjectsForReview", () => {
         },
       ];
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockProjects,
-      } as AppleScriptResult<OFProject[]>);
+      } as OmniJSResult<OFProject[]>);
 
       const result = await queryProjectsForReview();
 
@@ -391,13 +391,13 @@ describe("queryProjectsForReview", () => {
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<OFProject[]>);
+      } as OmniJSResult<OFProject[]>);
 
       const result = await queryProjectsForReview();
 
@@ -405,14 +405,14 @@ describe("queryProjectsForReview", () => {
       expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
     });
 
-    it("should handle AppleScript execution error", async () => {
-      mockRunAppleScript.mockResolvedValue({
+    it("should handle OmniJS execution error", async () => {
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.APPLESCRIPT_ERROR,
-          message: "AppleScript execution failed",
+          message: "OmniJS execution failed",
         },
-      } as AppleScriptResult<OFProject[]>);
+      } as OmniJSResult<OFProject[]>);
 
       const result = await queryProjectsForReview();
 
@@ -421,10 +421,10 @@ describe("queryProjectsForReview", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<OFProject[]>);
+      } as OmniJSResult<OFProject[]>);
 
       const result = await queryProjectsForReview();
 
@@ -446,7 +446,7 @@ describe("getReviewInterval", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject project ID with dangerous characters", async () => {
@@ -454,7 +454,7 @@ describe("getReviewInterval", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject project ID with newlines", async () => {
@@ -462,7 +462,7 @@ describe("getReviewInterval", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid project ID", async () => {
@@ -472,15 +472,15 @@ describe("getReviewInterval", () => {
         reviewIntervalDays: 30,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await getReviewInterval("proj-123");
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -492,10 +492,10 @@ describe("getReviewInterval", () => {
         reviewIntervalDays: 7,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await getReviewInterval("proj-789");
 
@@ -510,10 +510,10 @@ describe("getReviewInterval", () => {
         reviewIntervalDays: 0,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await getReviewInterval("proj-123");
 
@@ -528,10 +528,10 @@ describe("getReviewInterval", () => {
         reviewIntervalDays: 30,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await getReviewInterval("proj-123");
 
@@ -542,13 +542,13 @@ describe("getReviewInterval", () => {
 
   describe("error handling", () => {
     it("should handle project not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.PROJECT_NOT_FOUND,
           message: "Project not found",
         },
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await getReviewInterval("nonexistent-project");
 
@@ -557,13 +557,13 @@ describe("getReviewInterval", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await getReviewInterval("proj-123");
 
@@ -572,10 +572,10 @@ describe("getReviewInterval", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await getReviewInterval("proj-123");
 
@@ -585,10 +585,10 @@ describe("getReviewInterval", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await getReviewInterval("proj-123");
 
@@ -610,7 +610,7 @@ describe("setReviewInterval", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject project ID with dangerous characters", async () => {
@@ -618,7 +618,7 @@ describe("setReviewInterval", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject project ID with newlines", async () => {
@@ -626,7 +626,7 @@ describe("setReviewInterval", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject non-integer days", async () => {
@@ -635,7 +635,7 @@ describe("setReviewInterval", () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(result.error?.message).toContain("positive integer");
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject zero days", async () => {
@@ -644,7 +644,7 @@ describe("setReviewInterval", () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(result.error?.message).toContain("positive integer");
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject negative days", async () => {
@@ -653,7 +653,7 @@ describe("setReviewInterval", () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(result.error?.message).toContain("positive integer");
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should accept valid project ID and days", async () => {
@@ -663,15 +663,15 @@ describe("setReviewInterval", () => {
         reviewIntervalDays: 7,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("proj-123", 7);
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -683,10 +683,10 @@ describe("setReviewInterval", () => {
         reviewIntervalDays: 7,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("proj-789", 7);
 
@@ -701,10 +701,10 @@ describe("setReviewInterval", () => {
         reviewIntervalDays: 30,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("proj-123", 30);
 
@@ -719,10 +719,10 @@ describe("setReviewInterval", () => {
         reviewIntervalDays: 1,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("proj-123", 1);
 
@@ -737,10 +737,10 @@ describe("setReviewInterval", () => {
         reviewIntervalDays: 365,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("proj-123", 365);
 
@@ -751,13 +751,13 @@ describe("setReviewInterval", () => {
 
   describe("error handling", () => {
     it("should handle project not found", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.PROJECT_NOT_FOUND,
           message: "Project not found",
         },
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("nonexistent-project", 7);
 
@@ -766,13 +766,13 @@ describe("setReviewInterval", () => {
     });
 
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("proj-123", 7);
 
@@ -781,10 +781,10 @@ describe("setReviewInterval", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("proj-123", 7);
 
@@ -794,10 +794,10 @@ describe("setReviewInterval", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<ReviewIntervalResult>);
+      } as OmniJSResult<ReviewIntervalResult>);
 
       const result = await setReviewInterval("proj-123", 7);
 

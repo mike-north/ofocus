@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ErrorCode } from "../../../src/errors.js";
-import type { AppleScriptResult } from "../../../src/applescript.js";
+import type { OmniJSResult } from "../../../src/omnijs.js";
 import type {
   ArchiveResult,
   CompactResult,
 } from "../../../src/commands/archive.js";
 
-// Mock the applescript module
-vi.mock("../../../src/applescript.js", () => ({
-  runAppleScript: vi.fn(),
-  omniFocusScriptWithHelpers: vi.fn((body: string) => body),
+// Mock the omnijs module
+vi.mock("../../../src/omnijs.js", () => ({
+  runOmniJSWrapped: vi.fn(),
+  escapeJSString: vi.fn((s: string) => s),
+  toOmniJSDate: vi.fn((d: string) => `new Date("${d}")`),
 }));
 
 // Import after mocking
@@ -17,9 +18,9 @@ import {
   archiveTasks,
   compactDatabase,
 } from "../../../src/commands/archive.js";
-import { runAppleScript } from "../../../src/applescript.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
-const mockRunAppleScript = vi.mocked(runAppleScript);
+const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
 describe("archiveTasks", () => {
   beforeEach(() => {
@@ -35,7 +36,7 @@ describe("archiveTasks", () => {
       expect(result.error?.message).toContain(
         "At least one of --completed-before or --dropped-before"
       );
-      expect(mockRunAppleScript).not.toHaveBeenCalled();
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
     it("should reject invalid completedBefore date format", async () => {
@@ -60,15 +61,15 @@ describe("archiveTasks", () => {
         archivePath: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({ completedBefore: "2024-01-01" });
 
       expect(result.success).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
 
     it("should accept valid droppedBefore date", async () => {
@@ -79,10 +80,10 @@ describe("archiveTasks", () => {
         archivePath: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({ droppedBefore: "December 31, 2023" });
 
@@ -99,10 +100,10 @@ describe("archiveTasks", () => {
         archivePath: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({ completedBefore: "2024-01-01" });
 
@@ -119,10 +120,10 @@ describe("archiveTasks", () => {
         archivePath: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({
         completedBefore: "2024-01-01",
@@ -141,10 +142,10 @@ describe("archiveTasks", () => {
         archivePath: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({
         completedBefore: "2024-01-01",
@@ -162,10 +163,10 @@ describe("archiveTasks", () => {
         archivePath: null,
       };
 
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: mockResult,
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({
         completedBefore: "2024-01-01",
@@ -178,13 +179,13 @@ describe("archiveTasks", () => {
 
   describe("error handling", () => {
     it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
           code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
           message: "OmniFocus is not running",
         },
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({ completedBefore: "2024-01-01" });
 
@@ -193,10 +194,10 @@ describe("archiveTasks", () => {
     });
 
     it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: true,
         data: undefined,
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({ completedBefore: "2024-01-01" });
 
@@ -205,10 +206,10 @@ describe("archiveTasks", () => {
     });
 
     it("should handle null error in failure response", async () => {
-      mockRunAppleScript.mockResolvedValue({
+      mockRunOmniJS.mockResolvedValue({
         success: false,
         error: undefined,
-      } as AppleScriptResult<ArchiveResult>);
+      } as OmniJSResult<ArchiveResult>);
 
       const result = await archiveTasks({ completedBefore: "2024-01-01" });
 
@@ -223,52 +224,37 @@ describe("compactDatabase", () => {
     vi.clearAllMocks();
   });
 
-  describe("successful compact", () => {
-    it("should trigger database compaction", async () => {
-      const mockResult: CompactResult = {
-        compacted: true,
-        message: "Database compaction triggered",
-      };
-
-      mockRunAppleScript.mockResolvedValue({
-        success: true,
-        data: mockResult,
-      } as AppleScriptResult<CompactResult>);
-
+  /**
+   * OmniJS does not expose a compact() method — OmniFocus handles database
+   * compaction internally and does not surface it through JavaScript
+   * automation. compactDatabase() now returns a structured "not supported"
+   * result (compacted: false) instead of fabricating success.
+   *
+   * Behavioral change from AppleScript: previously returned { compacted: true }
+   * by calling AppleScript's `compact` command. Now returns { compacted: false }
+   * with an explanatory message. Callers should check compacted === false and
+   * treat it as a no-op rather than an error.
+   */
+  describe("not supported via OmniJS", () => {
+    it("should return compacted: false with an explanatory message", async () => {
       const result = await compactDatabase();
 
       expect(result.success).toBe(true);
-      expect(result.data?.compacted).toBe(true);
-      expect(mockRunAppleScript).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("error handling", () => {
-    it("should handle OmniFocus not running", async () => {
-      mockRunAppleScript.mockResolvedValue({
-        success: false,
-        error: {
-          code: ErrorCode.OMNIFOCUS_NOT_RUNNING,
-          message: "OmniFocus is not running",
-        },
-      } as AppleScriptResult<CompactResult>);
-
-      const result = await compactDatabase();
-
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
+      expect(result.data?.compacted).toBe(false);
+      expect(result.data?.message).toContain("not supported via OmniJS");
+      // compactDatabase no longer calls OmniJS — it returns synchronously
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
 
-    it("should handle undefined data response", async () => {
-      mockRunAppleScript.mockResolvedValue({
-        success: true,
-        data: undefined,
-      } as AppleScriptResult<CompactResult>);
+    it("should always succeed (never throw or return failure)", async () => {
+      // Called multiple times to confirm no side-effects or error states
+      const result1 = await compactDatabase();
+      const result2 = await compactDatabase();
 
-      const result = await compactDatabase();
-
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+      expect(result1.success).toBe(true);
+      expect(result2.success).toBe(true);
+      expect(result1.data?.compacted).toBe(false);
+      expect(result2.data?.compacted).toBe(false);
     });
   });
 });

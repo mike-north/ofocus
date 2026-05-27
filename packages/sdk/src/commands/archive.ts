@@ -1,8 +1,7 @@
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
-import { escapeAppleScript } from "../escape.js";
+import { runOmniJSWrapped, escapeJSString, toOmniJSDate } from "../omnijs.js";
 import { validateDateString } from "../validation.js";
 
 /**
@@ -45,7 +44,13 @@ export interface CompactResult {
 
 /**
  * Archive completed/dropped tasks and projects.
- * Note: OmniFocus archives are stored in ~/Library/Containers/com.omnigroup.OmniFocus3/Data/Library/Application Support/OmniFocus/Archive/
+ *
+ * In OmniJS, this scans `flattenedTasks` for completed/dropped tasks matching
+ * the date filters and counts them. OmniFocus automatically archives old
+ * completed tasks to ~/Library/Containers/.../OmniFocus/Archive/; this
+ * command does not delete tasks because the AppleScript implementation also
+ * did not delete them — it only called `compact` as a DB-optimization step.
+ *
  * @param options - Archive options
  */
 export async function archiveTasks(
@@ -67,24 +72,8 @@ export async function archiveTasks(
     }
   }
 
-  // Build date filter conditions
-  const conditions: string[] = [];
-
-  if (completedBefore) {
-    conditions.push(
-      `completion date of t is not missing value and completion date of t < (my parseDate("${escapeAppleScript(completedBefore)}"))`
-    );
-  }
-
-  if (droppedBefore) {
-    // Dropped tasks have a specific property in OmniFocus
-    conditions.push(
-      `dropped of t is true and modification date of t < (my parseDate("${escapeAppleScript(droppedBefore)}"))`
-    );
-  }
-
   // If no date conditions, require at least one
-  if (conditions.length === 0) {
+  if (!completedBefore && !droppedBefore) {
     return failure(
       createError(
         ErrorCode.VALIDATION_ERROR,
@@ -93,70 +82,65 @@ export async function archiveTasks(
     );
   }
 
-  const conditionStr = conditions.join(" or ");
-  const projectFilter = project
-    ? `containing project of t is not missing value and name of containing project of t is "${escapeAppleScript(project)}"`
+  // Build OmniJS date filter conditions
+  const taskConditions: string[] = [];
+
+  if (completedBefore) {
+    taskConditions.push(
+      `(t.completed && t.completionDate && t.completionDate < ${toOmniJSDate(completedBefore)})`
+    );
+  }
+
+  if (droppedBefore) {
+    taskConditions.push(
+      `(t.dropped && t.completionDate && t.completionDate < ${toOmniJSDate(droppedBefore)})`
+    );
+  }
+
+  const taskConditionExpr = taskConditions.join(" || ");
+
+  const projectFilterExpr = project
+    ? `t.containingProject && t.containingProject.name === "${escapeJSString(project)}"`
     : "true";
 
-  const script = `
-    set taskCount to 0
-    set projectCount to 0
-    set dryRun to ${dryRun ? "true" : "false"}
+  const body = `
+var completedBeforeDate = ${completedBefore ? toOmniJSDate(completedBefore) : "null"};
+var droppedBeforeDate = ${droppedBefore ? toOmniJSDate(droppedBefore) : "null"};
+var dryRun = ${dryRun ? "true" : "false"};
 
-    -- Helper to parse ISO date
-    on parseDate(dateStr)
-      set theDate to current date
-      try
-        -- Handle ISO 8601 format (YYYY-MM-DD)
-        set {year:y, month:m, day:d} to {text 1 thru 4 of dateStr as integer, text 6 thru 7 of dateStr as integer, text 9 thru 10 of dateStr as integer}
-        set year of theDate to y
-        set month of theDate to m
-        set day of theDate to d
-        set hours of theDate to 0
-        set minutes of theDate to 0
-        set seconds of theDate to 0
-      end try
-      return theDate
-    end parseDate
+var taskCount = 0;
+var tasksToProcess = flattenedTasks.filter(function(t) {
+  var matchesDate = ${taskConditionExpr};
+  var matchesProject = ${projectFilterExpr};
+  return matchesDate && matchesProject;
+});
 
-    -- Find tasks to archive
-    set tasksToArchive to {}
-    repeat with t in flattened tasks
-      try
-        if (${conditionStr}) and (${projectFilter}) then
-          set end of tasksToArchive to t
-          set taskCount to taskCount + 1
-        end if
-      end try
-    end repeat
+taskCount = tasksToProcess.length;
 
-    -- Archive if not dry run
-    if not dryRun and (count of tasksToArchive) > 0 then
-      -- OmniFocus auto-archives completed tasks, but we can trigger it
-      -- by accessing the archive functionality
-      compact
-    end if
+// OmniJS does not expose a direct "archive" operation — OmniFocus archives
+// automatically. The original AppleScript also did not delete tasks; it
+// only called compact() as a DB-optimization step (which is unavailable
+// in OmniJS). For non-dry-run we simply report the count of archivable
+// tasks, matching the original behaviour.
 
-    -- Find completed/dropped projects to count
-    repeat with p in flattened projects
-      try
-        if status of p is done status or status of p is dropped status then
-          set projectCount to projectCount + 1
-        end if
-      end try
-    end repeat
+// Count completed/dropped projects
+var projectCount = 0;
+var allProjects = flattenedProjects;
+for (var i = 0; i < allProjects.length; i++) {
+  var p = allProjects[i];
+  if (p.status === Project.Status.Done || p.status === Project.Status.Dropped) {
+    projectCount++;
+  }
+}
 
-    return "{" & ¬
-      "\\"tasksArchived\\": " & taskCount & "," & ¬
-      "\\"projectsArchived\\": " & projectCount & "," & ¬
-      "\\"dryRun\\": " & (dryRun as string) & "," & ¬
-      "\\"archivePath\\": null" & ¬
-      "}"
-  `;
+return JSON.stringify({
+  tasksArchived: taskCount,
+  projectsArchived: projectCount,
+  dryRun: dryRun,
+  archivePath: null
+});`;
 
-  const result = await runAppleScript<ArchiveResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<ArchiveResult>(body);
 
   if (!result.success) {
     return failure(
@@ -176,35 +160,21 @@ export async function archiveTasks(
 
 /**
  * Trigger database compaction in OmniFocus.
- * Compaction removes deleted items and optimizes the database.
+ *
+ * The AppleScript `compact` command has no equivalent in OmniJS — OmniFocus
+ * handles database compaction internally and does not expose it to JavaScript
+ * automation. This function returns a structured result documenting this
+ * limitation rather than fabricating success or silently failing.
+ *
+ * @see https://omni-automation.com/omnifocus/document-window.html
  */
 export async function compactDatabase(): Promise<CliOutput<CompactResult>> {
-  const script = `
-    -- Trigger database compaction
-    compact
-
-    return "{" & ¬
-      "\\"compacted\\": true," & ¬
-      "\\"message\\": \\"Database compaction triggered\\"" & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<CompactResult>(
-    omniFocusScriptWithHelpers(script)
-  );
-
-  if (!result.success) {
-    return failure(
-      result.error ??
-        createError(ErrorCode.UNKNOWN_ERROR, "Failed to compact database")
-    );
-  }
-
-  if (result.data === undefined) {
-    return failure(
-      createError(ErrorCode.UNKNOWN_ERROR, "No result data returned")
-    );
-  }
-
-  return success(result.data);
+  // OmniJS does not expose a compact() method. Return a structured "not
+  // supported" result with compacted: false so callers can detect the
+  // limitation without throwing.
+  return success({
+    compacted: false,
+    message:
+      "Database compaction is not supported via OmniJS automation. OmniFocus manages compaction internally.",
+  });
 }

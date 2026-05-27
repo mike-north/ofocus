@@ -2,8 +2,7 @@ import type { CliOutput, OFProject, ReviewResult } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
-import { escapeAppleScript } from "../escape.js";
-import { runAppleScript, omniFocusScriptWithHelpers } from "../applescript.js";
+import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 
 /**
  * Result from getting or setting review interval.
@@ -16,6 +15,7 @@ export interface ReviewIntervalResult {
 
 /**
  * Mark a project as reviewed in OmniFocus.
+ * Sets the lastReviewDate to now, which OmniFocus uses to recompute nextReviewDate.
  */
 export async function reviewProject(
   projectId: string
@@ -24,36 +24,23 @@ export async function reviewProject(
   const idError = validateId(projectId, "project");
   if (idError) return failure(idError);
 
-  const script = `
-    set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
+  const body = `
+var theProject = Project.byIdentifier("${escapeJSString(projectId)}");
+if (!theProject) {
+  throw new Error("Project not found: ${escapeJSString(projectId)}");
+}
 
-    -- Mark as reviewed by setting last review date to now
-    set last review date of theProject to current date
+// Mark as reviewed by setting lastReviewDate to now
+theProject.lastReviewDate = new Date();
 
-    set projId to id of theProject
-    set projName to name of theProject
+return JSON.stringify({
+  projectId: theProject.id.primaryKey,
+  projectName: theProject.name,
+  lastReviewed: theProject.lastReviewDate ? theProject.lastReviewDate.toISOString() : new Date().toISOString(),
+  nextReviewDate: theProject.nextReviewDate ? theProject.nextReviewDate.toISOString() : null
+});`;
 
-    set lastReviewStr to ""
-    try
-      set lastReviewStr to (last review date of theProject) as string
-    end try
-
-    set nextReviewStr to ""
-    try
-      set nextReviewStr to (next review date of theProject) as string
-    end try
-
-    return "{" & ¬
-      "\\"projectId\\": \\"" & projId & "\\"," & ¬
-      "\\"projectName\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-      "\\"lastReviewed\\": " & (my jsonString(lastReviewStr)) & "," & ¬
-      "\\"nextReviewDate\\": " & (my jsonString(nextReviewStr)) & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<ReviewResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<ReviewResult>(body);
 
   if (!result.success) {
     return failure(
@@ -71,85 +58,58 @@ export async function reviewProject(
 
 /**
  * Query projects that are due for review in OmniFocus.
+ * Returns active (and on-hold) projects whose nextReviewDate is in the past or today.
  */
 export async function queryProjectsForReview(): Promise<
   CliOutput<OFProject[]>
 > {
-  const script = `
-    set output to "["
-    set isFirst to true
-    set currentDate to current date
+  const body = `
+var now = new Date();
+var results = [];
 
-    set allProjects to flattened projects
+flattenedProjects.forEach(function(p) {
+  // Skip dropped and completed projects
+  if (p.status === Project.Status.Dropped || p.status === Project.Status.Done) {
+    return;
+  }
 
-    repeat with p in allProjects
-      set shouldInclude to false
+  // Include only if nextReviewDate is set and in the past/today
+  if (!p.nextReviewDate || p.nextReviewDate > now) {
+    return;
+  }
 
-      -- Check if project needs review (next review date is in the past or today)
-      try
-        set theStatus to status of p
-        if theStatus is not dropped and theStatus is not done then
-          set nextReview to next review date of p
-          if nextReview is not missing value then
-            if nextReview <= currentDate then
-              set shouldInclude to true
-            end if
-          end if
-        end if
-      end try
+  var folderId = null;
+  var folderName = null;
+  if (p.parentFolder) {
+    folderId = p.parentFolder.id.primaryKey;
+    folderName = p.parentFolder.name;
+  }
 
-      if shouldInclude then
-        if not isFirst then set output to output & ","
-        set isFirst to false
+  var statusStr = "active";
+  if (p.status === Project.Status.OnHold) {
+    statusStr = "on-hold";
+  } else if (p.status === Project.Status.Done) {
+    statusStr = "completed";
+  } else if (p.status === Project.Status.Dropped) {
+    statusStr = "dropped";
+  }
 
-        set projId to id of p
-        set projName to name of p
-        set projNote to note of p
-        set projSeq to sequential of p
+  results.push({
+    id: p.id.primaryKey,
+    name: p.name,
+    note: p.note || null,
+    status: statusStr,
+    sequential: p.sequential,
+    folderId: folderId,
+    folderName: folderName,
+    taskCount: p.tasks.length,
+    remainingTaskCount: p.tasks.filter(function(t) { return !t.completed; }).length
+  });
+});
 
-        set projStatus to "active"
-        try
-          set theStatus to status of p
-          if theStatus is on hold status then
-            set projStatus to "on-hold"
-          else if theStatus is done status then
-            set projStatus to "completed"
-          else if theStatus is dropped status then
-            set projStatus to "dropped"
-          end if
-        end try
+return JSON.stringify(results);`;
 
-        set folderId to ""
-        set folderName to ""
-        try
-          set f to folder of p
-          set folderId to id of f
-          set folderName to name of f
-        end try
-
-        set taskCount to count of tasks of p
-        set remainingCount to count of (tasks of p where completed is false)
-
-        set output to output & "{" & ¬
-          "\\"id\\": \\"" & projId & "\\"," & ¬
-          "\\"name\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-          "\\"note\\": " & (my jsonString(projNote)) & "," & ¬
-          "\\"status\\": \\"" & projStatus & "\\"," & ¬
-          "\\"sequential\\": " & projSeq & "," & ¬
-          "\\"folderId\\": " & (my jsonString(folderId)) & "," & ¬
-          "\\"folderName\\": " & (my jsonString(folderName)) & "," & ¬
-          "\\"taskCount\\": " & taskCount & "," & ¬
-          "\\"remainingTaskCount\\": " & remainingCount & ¬
-          "}"
-      end if
-    end repeat
-
-    return output & "]"
-  `;
-
-  const result = await runAppleScript<OFProject[]>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<OFProject[]>(body);
 
   if (!result.success) {
     return failure(
@@ -164,12 +124,9 @@ export async function queryProjectsForReview(): Promise<
   return success(result.data ?? []);
 }
 
-// Seconds per day for review interval conversion
-const SECONDS_PER_DAY = 86400;
-
 /**
  * Get the review interval for a project in OmniFocus.
- * Returns the interval in days.
+ * Returns the interval in days (approximating months as 30 days, years as 365 days).
  */
 export async function getReviewInterval(
   projectId: string
@@ -178,31 +135,38 @@ export async function getReviewInterval(
   const idError = validateId(projectId, "project");
   if (idError) return failure(idError);
 
-  const script = `
-    set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
+  const body = `
+var theProject = Project.byIdentifier("${escapeJSString(projectId)}");
+if (!theProject) {
+  throw new Error("Project not found: ${escapeJSString(projectId)}");
+}
 
-    set projId to id of theProject
-    set projName to name of theProject
+var intervalDays = 0;
+var ri = theProject.reviewInterval;
+if (ri) {
+  var steps = ri.steps || 0;
+  var unit = ri.unit || "days";
+  // Convert to days: weeks->*7, months->*30, years->*365
+  if (unit === "day" || unit === "days") {
+    intervalDays = steps;
+  } else if (unit === "week" || unit === "weeks") {
+    intervalDays = steps * 7;
+  } else if (unit === "month" || unit === "months") {
+    intervalDays = steps * 30;
+  } else if (unit === "year" || unit === "years") {
+    intervalDays = steps * 365;
+  } else {
+    intervalDays = steps;
+  }
+}
 
-    -- Review interval is stored in seconds
-    set intervalSecs to 0
-    try
-      set intervalSecs to review interval of theProject
-    end try
+return JSON.stringify({
+  projectId: theProject.id.primaryKey,
+  projectName: theProject.name,
+  reviewIntervalDays: intervalDays
+});`;
 
-    -- Convert to days (integer division)
-    set intervalDays to intervalSecs div ${String(SECONDS_PER_DAY)}
-
-    return "{" & ¬
-      "\\"projectId\\": \\"" & projId & "\\"," & ¬
-      "\\"projectName\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-      "\\"reviewIntervalDays\\": " & intervalDays & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<ReviewIntervalResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<ReviewIntervalResult>(body);
 
   if (!result.success) {
     return failure(
@@ -220,7 +184,7 @@ export async function getReviewInterval(
 
 /**
  * Set the review interval for a project in OmniFocus.
- * The interval is specified in days.
+ * The interval is specified in days and stored as a {steps, unit} object using "days" as the unit.
  */
 export async function setReviewInterval(
   projectId: string,
@@ -240,32 +204,50 @@ export async function setReviewInterval(
     );
   }
 
-  // Convert days to seconds
-  const intervalSeconds = days * SECONDS_PER_DAY;
+  const body = `
+var theProject = Project.byIdentifier("${escapeJSString(projectId)}");
+if (!theProject) {
+  throw new Error("Project not found: ${escapeJSString(projectId)}");
+}
 
-  const script = `
-    set theProject to first flattened project whose id is "${escapeAppleScript(projectId)}"
+// Set review interval using the {steps, unit} object shape
+// We always store as days to preserve the exact day count
+var ri = theProject.reviewInterval;
+if (ri) {
+  ri.steps = ${String(days)};
+  ri.unit = "days";
+  theProject.reviewInterval = ri;
+} else {
+  // If no existing interval object, create one — assign a plain object and let OmniFocus coerce it
+  theProject.reviewInterval = { steps: ${String(days)}, unit: "days" };
+}
 
-    -- Set review interval (stored in seconds)
-    set review interval of theProject to ${String(intervalSeconds)}
+// Read back what was actually set
+var intervalDays = 0;
+var updatedRi = theProject.reviewInterval;
+if (updatedRi) {
+  var steps = updatedRi.steps || 0;
+  var unit = updatedRi.unit || "days";
+  if (unit === "day" || unit === "days") {
+    intervalDays = steps;
+  } else if (unit === "week" || unit === "weeks") {
+    intervalDays = steps * 7;
+  } else if (unit === "month" || unit === "months") {
+    intervalDays = steps * 30;
+  } else if (unit === "year" || unit === "years") {
+    intervalDays = steps * 365;
+  } else {
+    intervalDays = steps;
+  }
+}
 
-    set projId to id of theProject
-    set projName to name of theProject
+return JSON.stringify({
+  projectId: theProject.id.primaryKey,
+  projectName: theProject.name,
+  reviewIntervalDays: intervalDays
+});`;
 
-    -- Get the updated interval
-    set intervalSecs to review interval of theProject
-    set intervalDays to intervalSecs div ${String(SECONDS_PER_DAY)}
-
-    return "{" & ¬
-      "\\"projectId\\": \\"" & projId & "\\"," & ¬
-      "\\"projectName\\": \\"" & (my escapeJson(projName)) & "\\"," & ¬
-      "\\"reviewIntervalDays\\": " & intervalDays & ¬
-      "}"
-  `;
-
-  const result = await runAppleScript<ReviewIntervalResult>(
-    omniFocusScriptWithHelpers(script)
-  );
+  const result = await runOmniJSWrapped<ReviewIntervalResult>(body);
 
   if (!result.success) {
     return failure(
