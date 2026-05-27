@@ -53,9 +53,10 @@ export function validateDateString(dateStr: string): CliError | null {
     );
   }
 
-  // Basic format check - should look like a date. Accept ISO 8601 plus
-  // common natural variants ("January 1, 2024", "1/1/2024 5:00 PM").
-  const datePattern = /^[a-zA-Z0-9\s/:,.-]+$/;
+  // Basic format check - should look like a date. Accept ISO 8601 (including
+  // `Z` and `±HH:MM` timezone designators) plus common natural variants
+  // ("January 1, 2024", "1/1/2024 5:00 PM").
+  const datePattern = /^[a-zA-Z0-9\s/:,.+-]+$/;
   if (!datePattern.test(dateStr)) {
     return createError(
       ErrorCode.INVALID_DATE_FORMAT,

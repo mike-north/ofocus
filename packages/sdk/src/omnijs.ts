@@ -221,10 +221,18 @@ export function toOmniJSDate(dateStr: string): string {
     /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?$/;
   const match = isoLocalPattern.exec(dateStr);
 
-  if (match) {
-    const year = match[1] ?? "2026";
-    const month = String(parseInt(match[2] ?? "1", 10) - 1); // JS months are 0-indexed
-    const day = String(parseInt(match[3] ?? "1", 10));
+  // Year/month/day are mandatory capture groups in the regex above, so if the
+  // pattern matches at all the destructured values are guaranteed strings.
+  // The explicit undefined check satisfies `noUncheckedIndexedAccess` without
+  // resorting to non-null assertions, and would only fire on a regex bug.
+  if (
+    match?.[1] !== undefined &&
+    match[2] !== undefined &&
+    match[3] !== undefined
+  ) {
+    const year = match[1];
+    const month = String(parseInt(match[2], 10) - 1); // JS months are 0-indexed
+    const day = String(parseInt(match[3], 10));
     const hours = String(parseInt(match[4] ?? "0", 10));
     const minutes = String(parseInt(match[5] ?? "0", 10));
     const seconds = String(parseInt(match[6] ?? "0", 10));

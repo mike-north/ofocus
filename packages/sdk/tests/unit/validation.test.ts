@@ -111,6 +111,18 @@ describe("validateDateString", () => {
     it("should accept time-only", () => {
       expect(validateDateString("5:00 PM")).toBeNull();
     });
+
+    it("should accept ISO datetime with a Z (UTC) suffix", () => {
+      expect(validateDateString("2024-06-15T14:30:00Z")).toBeNull();
+    });
+
+    it("should accept ISO datetime with a positive UTC offset", () => {
+      expect(validateDateString("2024-06-15T14:30:00+05:00")).toBeNull();
+    });
+
+    it("should accept ISO datetime with a negative UTC offset", () => {
+      expect(validateDateString("2024-06-15T14:30:00-08:00")).toBeNull();
+    });
   });
 
   describe("invalid date strings", () => {
