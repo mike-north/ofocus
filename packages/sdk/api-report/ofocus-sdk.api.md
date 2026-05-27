@@ -4,6 +4,8 @@
 
 ```ts
 
+import type { z } from 'zod';
+
 // @public
 export function addAttachment(taskId: string, filePath: string): Promise<CliOutput<AddAttachmentResult>>;
 
@@ -135,6 +137,16 @@ export interface CliOutput<T> {
     error: CliError | null;
     // (undocumented)
     success: boolean;
+}
+
+// @public
+export interface CommandDescriptor<TInput = unknown, TOutput = unknown, TSchema extends z.AnyZodObject = z.AnyZodObject> {
+    cliName?: string;
+    description: string;
+    handler: (input: TInput) => Promise<CliOutput<TOutput>>;
+    inputSchema: TSchema;
+    mcpName?: string;
+    name: string;
 }
 
 // @public
@@ -349,6 +361,16 @@ export function deferTask(taskId: string, options?: DeferOptions): Promise<CliOu
 
 // @public
 export function deferTasks(taskIds: string[], options?: DeferOptions): Promise<CliOutput<BatchResult<BatchDeferItem>>>;
+
+// @public
+export function defineCommand<TSchema extends z.AnyZodObject, TOutput>(spec: {
+    name: string;
+    cliName?: string;
+    mcpName?: string;
+    description: string;
+    inputSchema: TSchema;
+    handler: (input: z.infer<TSchema>) => Promise<CliOutput<TOutput>>;
+}): Required<Pick<CommandDescriptor<z.infer<TSchema>, TOutput, TSchema>, "name" | "cliName" | "mcpName" | "description" | "inputSchema" | "handler">>;
 
 // @public
 export function deleteFolder(folderId: string): Promise<CliOutput<DeleteFolderResult>>;
@@ -1365,7 +1387,13 @@ export interface TemplateTask {
 }
 
 // @public
+export function toKebabCase(name: string): string;
+
+// @public
 export function toOmniJSDate(dateStr: string): string;
+
+// @public
+export function toSnakeCase(name: string): string;
 
 // @public
 export function triggerSync(): Promise<CliOutput<SyncResult>>;
@@ -1439,6 +1467,9 @@ export interface UrlResult {
     // (undocumented)
     url: string;
 }
+
+// @public
+export function validateCanonicalName(name: string): string | null;
 
 // @public
 export function validateDateString(dateStr: string): CliError | null;
