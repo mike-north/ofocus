@@ -132,8 +132,13 @@ export { completeTasks, updateTasks, deleteTasks } from "./commands/batch.js";
 export type { BatchCompleteItem, BatchDeleteItem } from "./commands/batch.js";
 
 // Phase 3: Repetition helpers
+// `buildRepetitionRuleScript` is part of the public API but has been deprecated
+// in favor of the OmniJS repetition rule path used by updateTask/addToInbox.
+// The re-export is kept for backwards compatibility through the deprecation
+// window — its @deprecated tag still propagates to consumers.
 export {
   buildRRule,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   buildRepetitionRuleScript,
 } from "./commands/repetition.js";
 

@@ -12,6 +12,9 @@ import {
 import { escapeAppleScript, toAppleScriptDate } from "../escape.js";
 import { runComposedScript } from "../applescript.js";
 import { loadScriptContentCached } from "../asset-loader.js";
+// batch.ts still emits AppleScript and intentionally uses the deprecated
+// AppleScript repetition helpers. It will be migrated to OmniJS in a follow-up;
+// until then, the no-deprecated rule is suppressed at the call sites below.
 import {
   buildRepetitionRuleScript,
   buildClearRepetitionScript,
@@ -220,11 +223,15 @@ export async function updateTasks(
     updates.push(`set estimated minutes of theTask to missing value`);
   }
 
-  // Handle repetition
+  // Handle repetition — batch.ts is still AppleScript-based; the OmniJS-based
+  // path lives in commands/update.ts. Remove these suppressions when batch.ts
+  // migrates to OmniJS.
   let repetitionScript = "";
   if (options.clearRepeat === true) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     repetitionScript = buildClearRepetitionScript("theTask");
   } else if (options.repeat !== undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     repetitionScript = buildRepetitionRuleScript("theTask", options.repeat);
   }
 
