@@ -278,7 +278,7 @@ describe("updateProject", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error",
           details: "Syntax error",
         },
@@ -287,7 +287,7 @@ describe("updateProject", () => {
       const result = await updateProject("proj-123", { name: "New Name" });
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Syntax error");
     });
 
@@ -531,7 +531,7 @@ describe("deleteProject", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error",
           details: "Permission denied",
         },
@@ -540,7 +540,7 @@ describe("deleteProject", () => {
       const result = await deleteProject("proj-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Permission denied");
     });
 
@@ -782,7 +782,7 @@ describe("dropProject", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error",
           details: "Runtime error",
         },
@@ -791,7 +791,7 @@ describe("dropProject", () => {
       const result = await dropProject("proj-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Runtime error");
     });
 
@@ -825,7 +825,7 @@ describe("dropProject", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Access denied",
         },
       } as OmniJSResult<DropProjectResult>);
@@ -833,7 +833,7 @@ describe("dropProject", () => {
       const result = await dropProject("proj-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
   });
 

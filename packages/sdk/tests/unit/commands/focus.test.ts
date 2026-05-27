@@ -27,7 +27,7 @@ describe("focusOn", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Target not found: ",
         },
       } as OmniJSResult<FocusResult>);
@@ -135,7 +135,7 @@ describe("focusOn", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Target not found",
         },
       } as OmniJSResult<FocusResult>);

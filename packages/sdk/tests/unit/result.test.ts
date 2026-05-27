@@ -73,7 +73,7 @@ describe("failure", () => {
 
   it("should preserve error details", () => {
     const error = createError(
-      ErrorCode.APPLESCRIPT_ERROR,
+      ErrorCode.SCRIPT_ERROR,
       "Script failed",
       "Line 42: syntax error"
     );
@@ -83,7 +83,7 @@ describe("failure", () => {
       success: false,
       data: null,
       error: {
-        code: "APPLESCRIPT_ERROR",
+        code: "SCRIPT_ERROR",
         message: "Script failed",
         details: "Line 42: syntax error",
       },
@@ -98,7 +98,7 @@ describe("failure", () => {
       ErrorCode.OMNIFOCUS_NOT_RUNNING,
       ErrorCode.INVALID_DATE_FORMAT,
       ErrorCode.INVALID_ID_FORMAT,
-      ErrorCode.APPLESCRIPT_ERROR,
+      ErrorCode.SCRIPT_ERROR,
       ErrorCode.JSON_PARSE_ERROR,
       ErrorCode.VALIDATION_ERROR,
       ErrorCode.UNKNOWN_ERROR,

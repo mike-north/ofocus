@@ -57,7 +57,7 @@ function succeededDeleteResult(
 function errorResult(message = "OmniFocus not running"): OmniJSResult<never> {
   return {
     success: false,
-    error: { code: ErrorCode.APPLESCRIPT_ERROR, message },
+    error: { code: ErrorCode.SCRIPT_ERROR, message },
   };
 }
 

@@ -1,6 +1,6 @@
 # @ofocus/sdk
 
-Core SDK for interacting with OmniFocus via AppleScript.
+Core SDK for interacting with OmniFocus via the [OmniJS](https://omni-automation.com/omnifocus/) automation API.
 
 ## Installation
 
@@ -143,11 +143,17 @@ interface PaginatedResult<T> {
 
 - `ErrorCode` - Enum of error codes for semantic error handling
 - `createError(code, message, details?)` - Create a structured error
-- `parseAppleScriptError(rawError)` - Parse AppleScript errors
+- `parseScriptError(rawError)` - Parse script-layer errors into structured form
+
+### Script execution
+
+- `runOmniJS(script)` / `runOmniJSWrapped(body)` - Execute an OmniJS body inside OmniFocus
+- `wrapOmniJS(body)` - Wrap a body in the standard try/catch + JSON envelope
+- `escapeJSString(str)` - Escape a string for safe interpolation into an OmniJS literal
+- `toOmniJSDate(isoString)` - Emit a JS `new Date(...)` expression for an ISO date string
 
 ### Utilities
 
-- `escapeAppleScript(str)` - Escape strings for AppleScript
 - `validateId(id, type)` - Validate OmniFocus IDs
 - `validateDateString(dateStr)` - Validate date strings
 - `validateTags(tags)` - Validate tag names

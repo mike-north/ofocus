@@ -184,7 +184,7 @@ return JSON.stringify({
 
 /**
  * Set the review interval for a project in OmniFocus.
- * The interval is specified in days and stored as a {steps, unit} object using "days" as the unit.
+ * The interval is specified in days and stored as a `{ steps, unit }` object using "days" as the unit.
  */
 export async function setReviewInterval(
   projectId: string,

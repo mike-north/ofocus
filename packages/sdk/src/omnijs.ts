@@ -4,7 +4,7 @@ import {
   type CliError,
   ErrorCode,
   createError,
-  parseAppleScriptError,
+  parseScriptError,
 } from "./errors.js";
 
 const execFileAsync = promisify(execFile);
@@ -59,7 +59,7 @@ export async function runOmniJS<T>(script: string): Promise<OmniJSResult<T>> {
       return {
         success: false,
         error: createError(
-          ErrorCode.APPLESCRIPT_ERROR,
+          ErrorCode.SCRIPT_ERROR,
           "OmniJS returned empty response"
         ),
       };
@@ -73,7 +73,7 @@ export async function runOmniJS<T>(script: string): Promise<OmniJSResult<T>> {
       return {
         success: false,
         error: createError(
-          ErrorCode.APPLESCRIPT_ERROR,
+          ErrorCode.SCRIPT_ERROR,
           `Unexpected non-JSON output: ${trimmed.slice(0, 200)}`
         ),
       };
@@ -88,7 +88,7 @@ export async function runOmniJS<T>(script: string): Promise<OmniJSResult<T>> {
       return {
         success: false,
         error: createError(
-          ErrorCode.APPLESCRIPT_ERROR,
+          ErrorCode.SCRIPT_ERROR,
           "OmniJS script timed out after 30 seconds"
         ),
       };
@@ -119,10 +119,11 @@ export function escapeJSForAppleScript(js: string): string {
 
 /**
  * Parse an OmniJS error message into a structured CliError.
- * Reuses AppleScript error parsing since errors come through the same osascript channel.
+ *
+ * Recognises JS-specific runtime errors and falls back to the shared
+ * script-error parser for entity-not-found and transport errors.
  */
 function parseOmniJSError(rawError: string): CliError {
-  // Check for OmniJS-specific errors first
   const errorLower = rawError.toLowerCase();
 
   if (
@@ -132,14 +133,13 @@ function parseOmniJSError(rawError: string): CliError {
     errorLower.includes("is not defined")
   ) {
     return createError(
-      ErrorCode.APPLESCRIPT_ERROR,
+      ErrorCode.SCRIPT_ERROR,
       "OmniJS script error",
       rawError
     );
   }
 
-  // Fall back to the existing AppleScript error parser
-  return parseAppleScriptError(rawError);
+  return parseScriptError(rawError);
 }
 
 /**

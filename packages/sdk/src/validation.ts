@@ -31,11 +31,11 @@ export function validateId(
 }
 
 /**
- * Validate a date string for use with AppleScript.
+ * Validate a date string before it is forwarded to `toOmniJSDate`.
  * Returns null if valid (or empty), or a CliError if invalid.
  *
- * Note: We do basic validation here; the actual date parsing
- * is done by AppleScript and more detailed errors come from there.
+ * This is a cheap pre-flight check. The OmniJS layer ultimately calls
+ * the JS `Date` constructor, which produces the authoritative error.
  */
 export function validateDateString(dateStr: string): CliError | null {
   // Empty dates are valid (used to clear a date)
@@ -43,8 +43,8 @@ export function validateDateString(dateStr: string): CliError | null {
     return null;
   }
 
-  // Check for obvious injection attempts
-  // AppleScript date strings should not contain quotes or backslashes
+  // Reject obvious injection attempts before we interpolate into the
+  // OmniJS script body.
   if (dateStr.includes('"') || dateStr.includes("\\")) {
     return createError(
       ErrorCode.INVALID_DATE_FORMAT,
@@ -53,9 +53,8 @@ export function validateDateString(dateStr: string): CliError | null {
     );
   }
 
-  // Basic format check - should look like a date
-  // AppleScript accepts various formats like "January 1, 2024" or "1/1/2024 5:00 PM"
-  // We allow letters, numbers, spaces, slashes, colons, commas, and dashes
+  // Basic format check - should look like a date. Accept ISO 8601 plus
+  // common natural variants ("January 1, 2024", "1/1/2024 5:00 PM").
   const datePattern = /^[a-zA-Z0-9\s/:,.-]+$/;
   if (!datePattern.test(dateStr)) {
     return createError(

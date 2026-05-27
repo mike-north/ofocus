@@ -235,7 +235,7 @@ describe("updateFolder", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS execution failed",
           details: "Permission denied",
         },
@@ -244,7 +244,7 @@ describe("updateFolder", () => {
       const result = await updateFolder("folder-123", { name: "New Name" });
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Permission denied");
     });
 
@@ -527,7 +527,7 @@ describe("deleteFolder", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS execution failed",
           details: "Access denied",
         },
@@ -536,7 +536,7 @@ describe("deleteFolder", () => {
       const result = await deleteFolder("folder-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Access denied");
     });
 
@@ -570,7 +570,7 @@ describe("deleteFolder", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Cannot delete folder with contents",
         },
       } as OmniJSResult<DeleteFolderResult>);
@@ -578,7 +578,7 @@ describe("deleteFolder", () => {
       const result = await deleteFolder("folder-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
   });
 

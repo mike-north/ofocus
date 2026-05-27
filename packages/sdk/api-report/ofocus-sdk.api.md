@@ -19,13 +19,6 @@ export interface AddAttachmentResult {
 export function addToInbox(title: string, options?: InboxOptions): Promise<CliOutput<OFTask>>;
 
 // @public
-export interface AppleScriptResult<T> {
-    data?: T;
-    error?: CliError;
-    success: boolean;
-}
-
-// @public
 export interface ArchiveOptions {
     completedBefore?: string | undefined;
     droppedBefore?: string | undefined;
@@ -85,14 +78,8 @@ export interface BatchResult<T> {
     totalSucceeded: number;
 }
 
-// @public @deprecated
-export function buildRepetitionRuleScript(taskVar: string, rule: RepetitionRule): string;
-
 // @public
 export function buildRRule(rule: RepetitionRule): string;
-
-// @public
-export function clearScriptCache(): void;
 
 // @public
 export interface CliError {
@@ -150,9 +137,6 @@ export function completeTask(taskId: string): Promise<CliOutput<CompleteResult>>
 export function completeTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
 
 // @public
-export function composeScript(handlers: string[], body: string): string;
-
-// @public
 export function createError(code: ErrorCode, message: string, details?: string): CliError;
 
 // @public
@@ -182,6 +166,20 @@ export interface CreateFromTemplateResult {
     projectId: string;
     projectName: string;
     tasksCreated: number;
+}
+
+// @public
+export function createPerspective(_name: string, _options: CreatePerspectiveOptions): Promise<CliOutput<CreatePerspectiveResult>>;
+
+// @public
+export interface CreatePerspectiveOptions {
+    archivePayload: string;
+}
+
+// @public
+export interface CreatePerspectiveResult {
+    // (undocumented)
+    perspective: OFPerspective;
 }
 
 // @public
@@ -259,6 +257,19 @@ export interface DeleteFolderResult {
     deleted: true;
     // (undocumented)
     folderId: string;
+}
+
+// @public
+export function deletePerspective(idOrName: string): Promise<CliOutput<DeletePerspectiveResult>>;
+
+// @public
+export interface DeletePerspectiveResult {
+    // (undocumented)
+    deleted: true;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    name: string;
 }
 
 // @public
@@ -363,7 +374,7 @@ const ErrorCode: {
     readonly INVALID_DATE_FORMAT: "INVALID_DATE_FORMAT";
     readonly INVALID_ID_FORMAT: "INVALID_ID_FORMAT";
     readonly INVALID_REPETITION_RULE: "INVALID_REPETITION_RULE";
-    readonly APPLESCRIPT_ERROR: "APPLESCRIPT_ERROR";
+    readonly SCRIPT_ERROR: "SCRIPT_ERROR";
     readonly JSON_PARSE_ERROR: "JSON_PARSE_ERROR";
     readonly VALIDATION_ERROR: "VALIDATION_ERROR";
     readonly UNKNOWN_ERROR: "UNKNOWN_ERROR";
@@ -373,9 +384,6 @@ const ErrorCode: {
 type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 export { ErrorCode }
 export { ErrorCode as ErrorCodeType }
-
-// @public
-export function escapeAppleScript(str: string): string;
 
 // @public
 export function escapeJSString(str: string): string;
@@ -430,9 +438,6 @@ export function getFocused(): Promise<CliOutput<FocusResult>>;
 export function getReviewInterval(projectId: string): Promise<CliOutput<ReviewIntervalResult>>;
 
 // @public
-export function getScriptPath(relativePath: string): string;
-
-// @public
 export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
 
 // @public
@@ -463,9 +468,6 @@ export interface InboxOptions {
 }
 
 // @public
-export const jsonHelpers = "\non jsonString(val)\n  if val is \"\" or val is missing value or val is \"missing value\" then\n    return \"null\"\n  else\n    return \"\\\"\" & my escapeJson(val) & \"\\\"\"\n  end if\nend jsonString\n\non jsonArray(theList)\n  if (count of theList) is 0 then\n    return \"[]\"\n  end if\n  set output to \"[\"\n  repeat with i from 1 to count of theList\n    if i > 1 then set output to output & \",\"\n    set output to output & \"\\\"\" & (my escapeJson(item i of theList)) & \"\\\"\"\n  end repeat\n  return output & \"]\"\nend jsonArray\n\non escapeJson(str)\n  set output to \"\"\n  set quoteChar to \"\\\"\"\n  set bslashChar to \"\\\\\"\n  set tabChar to tab\n  repeat with c in characters of (str as string)\n    set ch to c as string\n    if ch is quoteChar then\n      set output to output & \"\\\\\\\"\"\n    else if ch is bslashChar then\n      set output to output & \"\\\\\\\\\"\n    else if ch is return then\n      set output to output & \"\\\\n\"\n    else if ch is linefeed then\n      set output to output & \"\\\\n\"\n    else if ch is tabChar then\n      set output to output & \"\\\\t\"\n    else\n      -- Check for other control characters (ASCII 0-31) and skip them\n      set charCode to id of ch\n      if charCode < 32 then\n        -- Skip control characters\n      else\n        set output to output & ch\n      end if\n    end if\n  end repeat\n  return output\nend escapeJson\n";
-
-// @public
 export function listAttachments(taskId: string): Promise<CliOutput<ListAttachmentsResult>>;
 
 // @public
@@ -485,12 +487,6 @@ export function listTemplates(): CliOutput<ListTemplatesResult>;
 export interface ListTemplatesResult {
     templates: TemplateSummary[];
 }
-
-// @public
-export function loadScriptContent(relativePath: string): Promise<string>;
-
-// @public
-export function loadScriptContentCached(relativePath: string): Promise<string>;
 
 // @public
 export const MAX_PAGINATION_LIMIT = 10000;
@@ -525,9 +521,8 @@ export interface OFFolder {
 // @public
 export interface OFPerspective {
     // (undocumented)
-    custom: boolean;
-    // (undocumented)
     id: string;
+    kind: "builtin" | "custom";
     // (undocumented)
     name: string;
 }
@@ -609,12 +604,6 @@ export interface OFTaskWithChildren extends OFTask {
 }
 
 // @public
-export function omniFocusScript(body: string): string;
-
-// @public
-export function omniFocusScriptWithHelpers(body: string): string;
-
-// @public
 export interface OmniJSResult<T> {
     data?: T;
     error?: CliError;
@@ -653,9 +642,6 @@ export interface PaginationOptions {
 }
 
 // @public
-export function parseAppleScriptError(rawError: string): CliError;
-
-// @public
 export interface ParsedQuickInput {
     // (undocumented)
     defer: string | null;
@@ -679,6 +665,9 @@ export interface ParsedQuickInput {
 
 // @public
 export function parseQuickInput(input: string): ParsedQuickInput;
+
+// @public
+export function parseScriptError(rawError: string): CliError;
 
 // @public
 export interface PerspectiveQueryOptions {
@@ -754,6 +743,15 @@ export interface RemoveAttachmentResult {
 }
 
 // @public
+export function renamePerspective(idOrName: string, _newName: string): Promise<CliOutput<RenamePerspectiveResult>>;
+
+// @public
+export interface RenamePerspectiveResult {
+    // (undocumented)
+    perspective: OFPerspective;
+}
+
+// @public
 export interface RepetitionRule {
     // (undocumented)
     dayOfMonth?: number | undefined;
@@ -791,15 +789,6 @@ export interface ReviewResult {
     // (undocumented)
     projectName: string;
 }
-
-// @public
-export function runAppleScript<T>(script: string): Promise<AppleScriptResult<T>>;
-
-// @public
-export function runAppleScriptFile<T>(filePath: string, args?: string[]): Promise<AppleScriptResult<T>>;
-
-// @public
-export function runComposedScript<T>(handlers: string[], body: string): Promise<AppleScriptResult<T>>;
 
 // @public
 export function runOmniJS<T>(script: string): Promise<OmniJSResult<T>>;

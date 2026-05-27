@@ -605,7 +605,7 @@ describe("saveTemplate", () => {
       mockQueryProjects.mockResolvedValue({
         success: false,
         data: null,
-        error: { message: "OmniFocus error", code: "APPLESCRIPT_ERROR" },
+        error: { message: "OmniFocus error", code: "SCRIPT_ERROR" },
       });
 
       const result = await saveTemplate({
@@ -659,7 +659,7 @@ describe("saveTemplate", () => {
       mockQueryTasks.mockResolvedValue({
         success: false,
         data: null,
-        error: { message: "Task query failed", code: "APPLESCRIPT_ERROR" },
+        error: { message: "Task query failed", code: "SCRIPT_ERROR" },
       });
 
       const result = await saveTemplate({

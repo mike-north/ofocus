@@ -169,13 +169,13 @@ describe("listPerspectives", () => {
 
     it("should handle OmniJS script error", async () => {
       mockRunOmniJS.mockResolvedValue(
-        omniFailure(ErrorCode.APPLESCRIPT_ERROR, "OmniJS script error")
+        omniFailure(ErrorCode.SCRIPT_ERROR, "OmniJS script error")
       );
 
       const result = await listPerspectives();
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
 
     it("should handle null error in failure response with UNKNOWN_ERROR", async () => {

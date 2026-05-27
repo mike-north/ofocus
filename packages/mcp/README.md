@@ -266,7 +266,7 @@ Once configured with Claude Desktop, you can use natural language to interact wi
 
 - **Transport:** stdio (standard input/output)
 - **MCP SDK:** @modelcontextprotocol/sdk ^1.11.0
-- **OmniFocus Integration:** AppleScript via @ofocus/sdk
+- **OmniFocus Integration:** OmniJS automation API via @ofocus/sdk
 
 ## License
 

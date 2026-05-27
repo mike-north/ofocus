@@ -162,7 +162,7 @@ describe("createFolder", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Folder not found",
         },
       } as OmniJSResult<OFFolder>);

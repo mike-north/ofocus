@@ -312,7 +312,7 @@ describe("openItem", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error",
           details: "URL scheme error",
         },
@@ -321,7 +321,7 @@ describe("openItem", () => {
       const result = await openItem("item-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("URL scheme error");
     });
 
@@ -355,7 +355,7 @@ describe("openItem", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Cannot activate OmniFocus",
         },
       } as OmniJSResult<OpenResult>);
@@ -363,7 +363,7 @@ describe("openItem", () => {
       const result = await openItem("item-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
   });
 

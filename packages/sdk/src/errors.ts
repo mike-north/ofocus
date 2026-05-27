@@ -12,7 +12,7 @@ export const ErrorCode = {
   INVALID_DATE_FORMAT: "INVALID_DATE_FORMAT",
   INVALID_ID_FORMAT: "INVALID_ID_FORMAT",
   INVALID_REPETITION_RULE: "INVALID_REPETITION_RULE",
-  APPLESCRIPT_ERROR: "APPLESCRIPT_ERROR",
+  SCRIPT_ERROR: "SCRIPT_ERROR",
   JSON_PARSE_ERROR: "JSON_PARSE_ERROR",
   VALIDATION_ERROR: "VALIDATION_ERROR",
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
@@ -41,13 +41,17 @@ export function createError(
 }
 
 /**
- * Parse an AppleScript error message into a structured CliError.
- * Detects common error patterns and maps them to appropriate error codes.
+ * Parse a script-layer error message (from the OmniJS execution bridge or the
+ * underlying osascript host) into a structured CliError.
+ *
+ * Recognized message shapes:
+ * - `Error: <Entity> not found` — thrown from inside the OmniJS body when
+ *   `Task.byIdentifier(...)` or similar returns `null`.
+ * - osascript transport errors when OmniFocus is not running.
  */
-export function parseAppleScriptError(rawError: string): CliError {
+export function parseScriptError(rawError: string): CliError {
   const errorLower = rawError.toLowerCase();
 
-  // OmniFocus not running
   if (
     errorLower.includes("application isn't running") ||
     errorLower.includes("connection is invalid") ||
@@ -60,21 +64,11 @@ export function parseAppleScriptError(rawError: string): CliError {
     );
   }
 
-  // Task not found
-  if (
-    errorLower.includes("can't get first flattened task") ||
-    errorLower.includes("no task") ||
-    (errorLower.includes("task") && errorLower.includes("doesn't exist"))
-  ) {
+  if (errorLower.includes("task not found")) {
     return createError(ErrorCode.TASK_NOT_FOUND, "Task not found", rawError);
   }
 
-  // Project not found
-  if (
-    errorLower.includes("can't get first flattened project") ||
-    errorLower.includes("no project") ||
-    (errorLower.includes("project") && errorLower.includes("doesn't exist"))
-  ) {
+  if (errorLower.includes("project not found")) {
     return createError(
       ErrorCode.PROJECT_NOT_FOUND,
       "Project not found",
@@ -82,22 +76,11 @@ export function parseAppleScriptError(rawError: string): CliError {
     );
   }
 
-  // Tag not found
-  if (
-    errorLower.includes("can't get first flattened tag") ||
-    errorLower.includes("no tag") ||
-    (errorLower.includes("tag") && errorLower.includes("doesn't exist"))
-  ) {
+  if (errorLower.includes("tag not found")) {
     return createError(ErrorCode.TAG_NOT_FOUND, "Tag not found", rawError);
   }
 
-  // Folder not found
-  if (
-    errorLower.includes("can't get first flattened folder") ||
-    errorLower.includes("can't get folder") ||
-    errorLower.includes("no folder") ||
-    (errorLower.includes("folder") && errorLower.includes("doesn't exist"))
-  ) {
+  if (errorLower.includes("folder not found")) {
     return createError(
       ErrorCode.FOLDER_NOT_FOUND,
       "Folder not found",
@@ -105,12 +88,7 @@ export function parseAppleScriptError(rawError: string): CliError {
     );
   }
 
-  // Perspective not found
-  if (
-    errorLower.includes("can't get perspective") ||
-    errorLower.includes("no perspective") ||
-    (errorLower.includes("perspective") && errorLower.includes("doesn't exist"))
-  ) {
+  if (errorLower.includes("perspective not found")) {
     return createError(
       ErrorCode.PERSPECTIVE_NOT_FOUND,
       "Perspective not found",
@@ -118,22 +96,5 @@ export function parseAppleScriptError(rawError: string): CliError {
     );
   }
 
-  // Invalid date
-  if (
-    errorLower.includes("can't make") &&
-    errorLower.includes("into type date")
-  ) {
-    return createError(
-      ErrorCode.INVALID_DATE_FORMAT,
-      "Invalid date format",
-      rawError
-    );
-  }
-
-  // Generic AppleScript error
-  return createError(
-    ErrorCode.APPLESCRIPT_ERROR,
-    "AppleScript execution failed",
-    rawError
-  );
+  return createError(ErrorCode.SCRIPT_ERROR, "Script execution failed", rawError);
 }

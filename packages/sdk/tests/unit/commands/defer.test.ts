@@ -279,7 +279,7 @@ describe("deferTasks", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Script failed",
         },
       } as OmniJSResult<BatchResult<BatchDeferItem>>);

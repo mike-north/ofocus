@@ -320,7 +320,7 @@ describe("createProject", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Folder not found",
         },
       } as OmniJSResult<OFProject>);
@@ -351,7 +351,7 @@ describe("createProject", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error",
           details: "TypeError: undefined is not a function",
         },
@@ -360,7 +360,7 @@ describe("createProject", () => {
       const result = await createProject("New Project");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
 
     it("should handle undefined data response", async () => {

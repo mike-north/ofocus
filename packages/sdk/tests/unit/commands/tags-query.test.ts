@@ -191,7 +191,7 @@ describe("queryTags", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error",
         },
       } as OmniJSResult<PaginatedResult<OFTag>>);
@@ -199,7 +199,7 @@ describe("queryTags", () => {
       const result = await queryTags();
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
 
     it("should handle null error in failure response", async () => {

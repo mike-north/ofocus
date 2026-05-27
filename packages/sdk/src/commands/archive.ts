@@ -168,13 +168,12 @@ return JSON.stringify({
  *
  * @see https://omni-automation.com/omnifocus/document-window.html
  */
-export async function compactDatabase(): Promise<CliOutput<CompactResult>> {
-  // OmniJS does not expose a compact() method. Return a structured "not
-  // supported" result with compacted: false so callers can detect the
-  // limitation without throwing.
-  return success({
-    compacted: false,
-    message:
-      "Database compaction is not supported via OmniJS automation. OmniFocus manages compaction internally.",
-  });
+export function compactDatabase(): Promise<CliOutput<CompactResult>> {
+  return Promise.resolve(
+    success({
+      compacted: false,
+      message:
+        "Database compaction is not supported via OmniJS automation. OmniFocus manages compaction internally.",
+    })
+  );
 }

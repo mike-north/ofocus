@@ -207,7 +207,7 @@ describe("reviewProject", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS execution failed",
           details: "Review error",
         },
@@ -216,7 +216,7 @@ describe("reviewProject", () => {
       const result = await reviewProject("proj-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Review error");
     });
 
@@ -409,7 +409,7 @@ describe("queryProjectsForReview", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS execution failed",
         },
       } as OmniJSResult<OFProject[]>);
@@ -417,7 +417,7 @@ describe("queryProjectsForReview", () => {
       const result = await queryProjectsForReview();
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
 
     it("should handle null error in failure response", async () => {

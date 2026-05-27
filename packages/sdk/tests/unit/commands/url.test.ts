@@ -191,7 +191,7 @@ describe("generateUrl", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Item not found with ID: nonexistent",
         },
       } as OmniJSResult<UrlResult>);

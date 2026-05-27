@@ -159,7 +159,7 @@ describe("completeTask", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error",
           details: "Some error details",
         },
@@ -168,7 +168,7 @@ describe("completeTask", () => {
       const result = await completeTask("task-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Some error details");
     });
 

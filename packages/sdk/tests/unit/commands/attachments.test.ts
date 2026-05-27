@@ -393,7 +393,7 @@ describe("removeAttachment", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Attachment not found",
         },
       } as OmniJSResult<RemoveAttachmentResult>);

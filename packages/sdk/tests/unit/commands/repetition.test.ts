@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  buildRRule,
-  buildRepetitionRuleScript,
-} from "../../../src/commands/repetition.js";
+import { buildRRule } from "../../../src/commands/repetition.js";
 import type { RepetitionRule } from "../../../src/types.js";
 
 describe("buildRRule", () => {
@@ -179,50 +176,3 @@ describe("buildRRule", () => {
   });
 });
 
-describe("buildRepetitionRuleScript", () => {
-  it("should generate AppleScript for due-again method", () => {
-    const rule: RepetitionRule = {
-      frequency: "daily",
-      interval: 1,
-      repeatMethod: "due-again",
-    };
-    const script = buildRepetitionRuleScript("theTask", rule);
-    expect(script).toContain("repetition rule of theTask");
-    expect(script).toContain("repetition method:due again");
-    expect(script).toContain('recurrence:"FREQ=DAILY"');
-  });
-
-  it("should generate AppleScript for defer-another method", () => {
-    const rule: RepetitionRule = {
-      frequency: "weekly",
-      interval: 1,
-      repeatMethod: "defer-another",
-    };
-    const script = buildRepetitionRuleScript("theTask", rule);
-    expect(script).toContain("repetition method:defer another");
-    expect(script).toContain('recurrence:"FREQ=WEEKLY"');
-  });
-
-  it("should use correct task variable name", () => {
-    const rule: RepetitionRule = {
-      frequency: "daily",
-      interval: 1,
-      repeatMethod: "due-again",
-    };
-    const script = buildRepetitionRuleScript("myCustomVar", rule);
-    expect(script).toContain("repetition rule of myCustomVar");
-  });
-
-  it("should include complex RRULE in script", () => {
-    const rule: RepetitionRule = {
-      frequency: "weekly",
-      interval: 2,
-      repeatMethod: "due-again",
-      daysOfWeek: [1, 3, 5],
-    };
-    const script = buildRepetitionRuleScript("theTask", rule);
-    expect(script).toContain(
-      'recurrence:"FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"'
-    );
-  });
-});

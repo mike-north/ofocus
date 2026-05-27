@@ -55,7 +55,7 @@ describe("output", () => {
 
     it("should include error details in JSON output", () => {
       const error = createError(
-        ErrorCode.APPLESCRIPT_ERROR,
+        ErrorCode.SCRIPT_ERROR,
         "Failed",
         "Details here"
       );
@@ -77,7 +77,7 @@ describe("output", () => {
 
     it("should output error details to stderr", () => {
       const error = createError(
-        ErrorCode.APPLESCRIPT_ERROR,
+        ErrorCode.SCRIPT_ERROR,
         "Script failed",
         "syntax error on line 5"
       );

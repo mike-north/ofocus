@@ -230,7 +230,7 @@ describe("searchTasks", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error",
         },
       } as OmniJSResult<OFTask[]>);
@@ -238,7 +238,7 @@ describe("searchTasks", () => {
       const result = await searchTasks("test");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
 
     it("should handle undefined data response", async () => {

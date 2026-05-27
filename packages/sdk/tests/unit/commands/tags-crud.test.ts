@@ -167,7 +167,7 @@ describe("createTag", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Tag not found",
         },
       } as OmniJSResult<OFTag>);
@@ -423,7 +423,7 @@ describe("updateTag", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS execution failed",
           details: "Permission denied",
         },
@@ -432,7 +432,7 @@ describe("updateTag", () => {
       const result = await updateTag("tag-123", { name: "New Name" });
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Permission denied");
     });
 
@@ -677,7 +677,7 @@ describe("deleteTag", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS execution failed",
           details: "Access denied",
         },
@@ -686,7 +686,7 @@ describe("deleteTag", () => {
       const result = await deleteTag("tag-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Access denied");
     });
 

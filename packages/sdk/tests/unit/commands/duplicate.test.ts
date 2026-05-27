@@ -315,7 +315,7 @@ describe("duplicateTask", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS execution failed",
           details: "Duplication error",
         },
@@ -324,7 +324,7 @@ describe("duplicateTask", () => {
       const result = await duplicateTask("task-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
       expect(result.error?.details).toBe("Duplication error");
     });
 
@@ -358,7 +358,7 @@ describe("duplicateTask", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Permission denied",
         },
       } as OmniJSResult<DuplicateTaskResult>);
@@ -366,7 +366,7 @@ describe("duplicateTask", () => {
       const result = await duplicateTask("task-123");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
   });
 

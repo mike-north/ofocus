@@ -373,7 +373,7 @@ describe("exportTaskPaper", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Script execution failed",
         },
       } as OmniJSResult<MockExportResult>);
@@ -381,7 +381,7 @@ describe("exportTaskPaper", () => {
       const result = await exportTaskPaper();
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
 
     it("should handle undefined error in failure response", async () => {
@@ -757,7 +757,7 @@ describe("importTaskPaper", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Execution failed",
         },
       } as OmniJSResult<MockImportResult>);
@@ -765,7 +765,7 @@ describe("importTaskPaper", () => {
       const result = await importTaskPaper("- Task\n");
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
 
     it("should handle undefined error in failure response", async () => {

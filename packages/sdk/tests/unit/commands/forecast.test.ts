@@ -231,7 +231,7 @@ describe("queryForecast", () => {
       mockRunOmniJS.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "OmniJS script error: TypeError: flattenedTasks is not a function",
         },
       } as OmniJSResult<OFTask[]>);
@@ -239,7 +239,7 @@ describe("queryForecast", () => {
       const result = await queryForecast();
 
       expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.APPLESCRIPT_ERROR);
+      expect(result.error?.code).toBe(ErrorCode.SCRIPT_ERROR);
     });
   });
 });

@@ -343,7 +343,7 @@ describe("getStats", () => {
       mockQueryProjects.mockResolvedValue({
         success: false,
         error: {
-          code: ErrorCode.APPLESCRIPT_ERROR,
+          code: ErrorCode.SCRIPT_ERROR,
           message: "Query failed",
         },
       });
