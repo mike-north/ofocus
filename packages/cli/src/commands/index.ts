@@ -106,19 +106,20 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Create a subtask under an existing task in OmniFocus. Subtasks inherit context from their parent task and create action groups. Supports all standard task options like note, due date, defer date, flags, and tags.",
     usage:
-      "ofocus subtask <title> --parent <task-id> [--note <text>] [--due <date>] [--defer <date>] [--flag] [--tag <name>...]",
+      "ofocus subtask <title> --parent-task-id <task-id> [--note <text>] [--due <date>] [--defer <date>] [--flag] [--tags <name...>] [--estimated-minutes <n>]",
   },
   {
     name: "subtasks",
     description:
       "Query subtasks of a parent task in OmniFocus. Returns immediate children of the specified task. Supports filtering by completion state and flagged status. Use this to explore task hierarchies.",
-    usage: "ofocus subtasks <parent-task-id> [--completed] [--flagged]",
+    usage:
+      "ofocus subtasks <parent-task-id> [--completed] [--no-completed] [--flagged] [--no-flagged]",
   },
   {
     name: "move-to-parent",
     description:
       "Move an existing task to become a subtask of another task. This restructures task hierarchies by making one task a child of another. Both task IDs are required. The moved task becomes part of an action group.",
-    usage: "ofocus move-to-parent <task-id> --parent <parent-task-id>",
+    usage: "ofocus move-to-parent <task-id> --parent-task-id <parent-task-id>",
   },
   {
     name: "complete-batch",

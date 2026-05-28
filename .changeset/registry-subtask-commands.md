@@ -22,6 +22,7 @@ These three subtask commands now flow from a single descriptor in the SDK that d
 - `ofocus subtask`: `--parent <id>` is now `--parent-task-id <id>`; `--tag <name...>` is now `--tags <name...>`; `--estimate <minutes>` is now `--estimated-minutes <minutes>`. The short aliases `-n`, `-d`, `-f`, `-t`, and `-e` are removed — use the long forms `--note`, `--due`, `--flag`, `--tags`, `--estimated-minutes`.
 - `ofocus move-to-parent`: `--parent <id>` is now `--parent-task-id <id>`.
 - `ofocus subtasks`: the boolean `--completed` and `--flagged` filters now also accept negated `--no-completed` and `--no-flagged` forms.
+- `ofocus list-commands` output is updated so the advertised usage for these three commands matches the new flags.
 
 **MCP behavior change**:
 
