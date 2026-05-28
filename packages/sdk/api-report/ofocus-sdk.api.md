@@ -1774,14 +1774,14 @@ export function updateTasks(taskIds: string[], options: TaskUpdateOptions): Prom
 // @public
 export const updateTasksDescriptor: ResolvedCommandDescriptor<    {
 taskIds: string[];
-defer?: string | undefined;
 project?: string | undefined;
-title?: string | undefined;
 note?: string | undefined;
-due?: string | undefined;
-flag?: boolean | undefined;
-tags?: string[] | undefined;
 estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
 }, BatchResult<BatchCompleteItem>, z.ZodObject<{
 taskIds: z.ZodArray<z.ZodString, "many">;
 title: z.ZodOptional<z.ZodString>;
@@ -1794,24 +1794,24 @@ tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
 estimatedMinutes: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
 taskIds: string[];
-defer?: string | undefined;
 project?: string | undefined;
-title?: string | undefined;
 note?: string | undefined;
-due?: string | undefined;
-flag?: boolean | undefined;
-tags?: string[] | undefined;
 estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
 }, {
 taskIds: string[];
-defer?: string | undefined;
 project?: string | undefined;
-title?: string | undefined;
 note?: string | undefined;
-due?: string | undefined;
-flag?: boolean | undefined;
-tags?: string[] | undefined;
 estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
 }>>;
 
 // @public
