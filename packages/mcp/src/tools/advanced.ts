@@ -6,12 +6,12 @@ import {
   moveTaskToParent,
   listPerspectives,
   queryPerspective,
-  queryForecast,
+  queryForecastDescriptor,
   focusOn,
   unfocus,
   getFocused,
-  queryDeferred,
-  quickCapture,
+  queryDeferredDescriptor,
+  quickCaptureDescriptor,
   getStats,
   getSyncStatus,
   triggerSync,
@@ -30,6 +30,7 @@ import {
   generateUrl,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
+import { registerMcpTool } from "../registry-adapter.js";
 
 export function registerAdvancedTools(server: McpServer): void {
   // Subtasks
@@ -128,32 +129,8 @@ export function registerAdvancedTools(server: McpServer): void {
     }
   );
 
-  // Forecast
-  server.registerTool(
-    "forecast",
-    {
-      description: "Query tasks due within N days (forecast view)",
-      inputSchema: {
-        days: z
-          .number()
-          .int()
-          .min(1)
-          .optional()
-          .describe("Number of days ahead to include (default: 7)"),
-        includeDeferred: z
-          .boolean()
-          .optional()
-          .describe("Include tasks deferred to the same window"),
-      },
-    },
-    async (params) => {
-      const result = await queryForecast({
-        days: params.days,
-        includeDeferred: params.includeDeferred,
-      });
-      return formatResult(result);
-    }
-  );
+  // forecast — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, queryForecastDescriptor);
 
   // Focus
   server.registerTool(
@@ -198,57 +175,11 @@ export function registerAdvancedTools(server: McpServer): void {
     }
   );
 
-  // Deferred
-  server.registerTool(
-    "deferred_list",
-    {
-      description: "List deferred tasks",
-      inputSchema: {
-        deferredAfter: z
-          .string()
-          .optional()
-          .describe("Include tasks deferred until after this date"),
-        deferredBefore: z
-          .string()
-          .optional()
-          .describe("Include tasks deferred until before this date"),
-        blockedOnly: z
-          .boolean()
-          .optional()
-          .describe("Only show tasks currently blocked by defer date"),
-      },
-    },
-    async (params) => {
-      const result = await queryDeferred({
-        deferAfter: params.deferredAfter,
-        deferBefore: params.deferredBefore,
-        blockedOnly: params.blockedOnly,
-      });
-      return formatResult(result);
-    }
-  );
+  // deferred_list — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, queryDeferredDescriptor);
 
-  // Quick capture
-  server.registerTool(
-    "quick_add",
-    {
-      description: "Add a task using natural language quick entry syntax",
-      inputSchema: {
-        input: z
-          .string()
-          .describe(
-            "Natural language input (e.g., 'Buy milk @errands #shopping ::tomorrow')"
-          ),
-        note: z.string().optional().describe("Additional note text to add"),
-      },
-    },
-    async (params) => {
-      const result = await quickCapture(params.input, {
-        note: params.note,
-      });
-      return formatResult(result);
-    }
-  );
+  // quick_add — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, quickCaptureDescriptor);
 
   // Statistics
   server.registerTool(

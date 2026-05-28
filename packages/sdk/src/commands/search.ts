@@ -1,9 +1,11 @@
+import { z } from "zod";
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateSearchQuery } from "../validation.js";
 import { validatePaginationParams } from "../validation.js";
 import { runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 import {
   buildListQueryBody,
   compileAggregate,
@@ -127,6 +129,47 @@ export async function searchTasks(
 
   return success(result.data);
 }
+
+/**
+ * Centralized descriptor for the search command.
+ *
+ * Drives the CLI subcommand `search` and the MCP tool `search`. The schema
+ * intentionally exposes only the search-specific knobs (scope, limit,
+ * includeCompleted) — the richer query vocabulary remains available through
+ * the {@link searchTasks} SDK function for callers that need it.
+ *
+ * @public
+ */
+export const searchTasksDescriptor = defineCommand({
+  name: "searchTasks",
+  cliName: "search",
+  mcpName: "search",
+  description: "Search tasks by name or note content.",
+  cliPositional: ["query"],
+  inputSchema: z.object({
+    query: z.string().describe("Search query text"),
+    scope: z
+      .enum(["name", "note", "both"])
+      .optional()
+      .describe("Where to search (default: both)"),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Maximum results to return (default: 100)"),
+    includeCompleted: z
+      .boolean()
+      .optional()
+      .describe("Include completed tasks in the results"),
+  }),
+  handler: async (input) =>
+    searchTasks(input.query, {
+      scope: input.scope,
+      limit: input.limit,
+      includeCompleted: input.includeCompleted,
+    }),
+});
 
 function makeEmptyResult(
   shape: ReturnType<typeof compileAggregate>["shape"],

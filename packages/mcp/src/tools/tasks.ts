@@ -6,9 +6,9 @@ import {
   dropTaskDescriptor,
   deleteTaskDescriptor,
   duplicateTaskDescriptor,
+  searchTasksDescriptor,
   queryTasks,
   updateTask,
-  searchTasks,
   completeTasks,
   updateTasks,
   deleteTasks,
@@ -120,33 +120,8 @@ export function registerTaskTools(server: McpServer): void {
   registerMcpTool(server, dropTaskDescriptor);
   registerMcpTool(server, deleteTaskDescriptor);
 
-  // search - Search tasks by text
-  server.registerTool(
-    "search",
-    {
-      description: "Search tasks by text in OmniFocus",
-      inputSchema: {
-        query: z.string().describe("Search query text"),
-        scope: z
-          .enum(["name", "note", "both"])
-          .optional()
-          .describe("Where to search (default: both)"),
-        limit: z.number().optional().describe("Maximum results to return"),
-        includeCompleted: z
-          .boolean()
-          .optional()
-          .describe("Include completed tasks in search"),
-      },
-    },
-    async (params) => {
-      const result = await searchTasks(params.query, {
-        scope: params.scope,
-        limit: params.limit,
-        includeCompleted: params.includeCompleted,
-      });
-      return formatResult(result);
-    }
-  );
+  // search — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, searchTasksDescriptor);
 
   // task_defer - Defer a single task
   server.registerTool(

@@ -1,6 +1,8 @@
+import { z } from "zod";
 import type { CliOutput, OFTask, RepetitionRule } from "../types.js";
 import { failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
+import { defineCommand } from "../registry/define.js";
 import { addToInbox } from "./inbox.js";
 
 /**
@@ -320,3 +322,29 @@ export async function quickCapture(
     repeat: parsed.repeat ?? undefined,
   });
 }
+
+/**
+ * Centralized descriptor for the quick-capture command.
+ *
+ * Drives the CLI subcommand `quick` and the MCP tool `quick_add`. The
+ * positional `input` carries the natural-language entry string; `note`
+ * appends extra note text.
+ *
+ * @public
+ */
+export const quickCaptureDescriptor = defineCommand({
+  name: "quickCapture",
+  cliName: "quick",
+  mcpName: "quick_add",
+  description: "Quick-capture a task using natural-language entry syntax.",
+  cliPositional: ["input"],
+  inputSchema: z.object({
+    input: z
+      .string()
+      .describe(
+        "Natural language input (e.g., 'Buy milk @errands #shopping due:tomorrow')"
+      ),
+    note: z.string().optional().describe("Additional note text to add"),
+  }),
+  handler: async (input) => quickCapture(input.input, { note: input.note }),
+});

@@ -6,6 +6,10 @@ import {
   dropTaskDescriptor,
   deleteTaskDescriptor,
   duplicateTaskDescriptor,
+  searchTasksDescriptor,
+  queryForecastDescriptor,
+  queryDeferredDescriptor,
+  quickCaptureDescriptor,
   queryTasks,
   queryProjects,
   queryTags,
@@ -22,22 +26,18 @@ import {
   completeTasks,
   updateTasks,
   deleteTasks,
-  searchTasks,
   listPerspectives,
   queryPerspective,
   reviewProject,
   queryProjectsForReview,
   // Phase 5
-  queryForecast,
   focusOn,
   unfocus,
   getFocused,
-  queryDeferred,
   generateUrl,
   deferTask,
   deferTasks,
   // Phase 6
-  quickCapture,
   exportTaskPaper,
   importTaskPaper,
   getStats,
@@ -177,38 +177,17 @@ interface BatchUpdateOptions {
   estimate?: number | undefined;
 }
 
-interface SearchOptions {
-  scope?: string | undefined;
-  limit?: number | undefined;
-  includeCompleted?: boolean | undefined;
-}
-
 interface PerspectiveOptions {
   limit?: number | undefined;
-}
-
-interface ForecastCommandOptions {
-  days?: number | undefined;
-  includeDeferred?: boolean | undefined;
 }
 
 interface FocusCommandOptions {
   byId?: boolean | undefined;
 }
 
-interface DeferredCommandOptions {
-  deferredAfter?: string | undefined;
-  deferredBefore?: string | undefined;
-  blockedOnly?: boolean | undefined;
-}
-
 interface DeferCommandOptions {
   days?: number | undefined;
   to?: string | undefined;
-}
-
-interface QuickCommandOptions {
-  note?: string | undefined;
 }
 
 interface ExportCommandOptions {
@@ -741,25 +720,9 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 4: Search
   // ===========================================
 
-  // search
-  program
-    .command("search")
-    .description("Search tasks by name or note content")
-    .argument("<query>", "Search query")
-    .option("--scope <scope>", "Search scope (name, note, both)", "both")
-    .option("--limit <n>", "Maximum results to return", parseInt, 100)
-    .option("--include-completed", "Include completed tasks in results")
-    .action(async (query: string, options: SearchOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const scope = options.scope as "name" | "note" | "both" | undefined;
-      const result = await searchTasks(query, {
-        scope,
-        limit: options.limit,
-        includeCompleted: options.includeCompleted,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  registerCliCommand(program, searchTasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 4: Perspectives
@@ -822,21 +785,9 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 5: Forecast, Focus, Deferred
   // ===========================================
 
-  // forecast
-  program
-    .command("forecast")
-    .description("Query tasks due within N days (like OmniFocus Forecast view)")
-    .option("--days <n>", "Number of days ahead to include (default: 7)", parseInt)
-    .option("--include-deferred", "Include tasks deferred to the same window")
-    .action(async (options: ForecastCommandOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await queryForecast({
-        days: options.days,
-        includeDeferred: options.includeDeferred,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  registerCliCommand(program, queryForecastDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // focus
   program
@@ -875,23 +826,9 @@ Use --human flag for human-readable output (default is JSON).
       if (!result.success) process.exitCode = 1;
     });
 
-  // deferred
-  program
-    .command("deferred")
-    .description("List tasks with defer dates")
-    .option("--deferred-after <date>", "Only tasks deferred after this date")
-    .option("--deferred-before <date>", "Only tasks deferred before this date")
-    .option("--blocked-only", "Only show tasks currently blocked by defer date")
-    .action(async (options: DeferredCommandOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await queryDeferred({
-        deferAfter: options.deferredAfter,
-        deferBefore: options.deferredBefore,
-        blockedOnly: options.blockedOnly,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  registerCliCommand(program, queryDeferredDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 5b: Utility Commands
@@ -951,22 +888,9 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 6: Quick Capture
   // ===========================================
 
-  // quick
-  program
-    .command("quick")
-    .description("Quick capture with natural language parsing")
-    .argument("<input>", "Natural language task input (use quotes)")
-    .option("-n, --note <text>", "Additional note text")
-    .action(
-      async (input: string, options: QuickCommandOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await quickCapture(input, {
-          note: options.note,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  registerCliCommand(program, quickCaptureDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 6: TaskPaper Import/Export

@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validatePaginationParams } from "../validation.js";
 import { runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 import {
   buildListQueryBody,
   compileAggregate,
@@ -141,6 +143,38 @@ export async function queryForecast(
 
   return success(result.data);
 }
+
+/**
+ * Centralized descriptor for the forecast command.
+ *
+ * Drives the CLI subcommand `forecast` and the MCP tool `forecast`.
+ *
+ * @public
+ */
+export const queryForecastDescriptor = defineCommand({
+  name: "queryForecast",
+  cliName: "forecast",
+  mcpName: "forecast",
+  description:
+    "Query tasks due within N days (like the OmniFocus Forecast view).",
+  inputSchema: z.object({
+    days: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Number of days ahead to include (default: 7)"),
+    includeDeferred: z
+      .boolean()
+      .optional()
+      .describe("Include tasks deferred to the same window"),
+  }),
+  handler: async (input) =>
+    queryForecast({
+      days: input.days,
+      includeDeferred: input.includeDeferred,
+    }),
+});
 
 function makeEmptyResult(
   shape: ReturnType<typeof compileAggregate>["shape"],

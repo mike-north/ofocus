@@ -174,9 +174,8 @@ export const commandRegistry: CommandInfo[] = [
   {
     name: "forecast",
     description:
-      "Query tasks by date range, similar to OmniFocus Forecast view. Returns tasks due or deferred within a specified date range. Defaults to 7 days from today. Use for daily and weekly planning to see what's coming up.",
-    usage:
-      "ofocus forecast [--start <date>] [--end <date>] [--days <n>] [--include-deferred]",
+      "Query tasks due within the next N days, similar to OmniFocus Forecast view. Defaults to 7 days from today. Use --include-deferred to also include tasks deferred to the same window. Use for daily and weekly planning to see what's coming up.",
+    usage: "ofocus forecast [--days <n>] [--include-deferred]",
   },
   {
     name: "focus",
