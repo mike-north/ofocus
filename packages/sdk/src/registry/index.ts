@@ -20,3 +20,4 @@ export {
   validateCanonicalName,
 } from "./naming.js";
 export { defineCommand } from "./define.js";
+export type { ResolvedCommandDescriptor } from "./define.js";

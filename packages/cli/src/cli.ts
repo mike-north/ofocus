@@ -1,7 +1,7 @@
 import { Command, Option, Help } from "commander";
 import { isAgenticTui } from "is-agentic-tui";
 import {
-  addToInbox,
+  addToInboxDescriptor,
   queryTasks,
   queryProjects,
   queryTags,
@@ -68,22 +68,11 @@ import {
 import type { RepetitionRule } from "@ofocus/sdk";
 import { listCommands } from "./commands/list-commands.js";
 import { output, outputJson, outputHuman } from "./output.js";
+import { registerCliCommand } from "./registry-adapter.js";
 
 interface GlobalOptions {
   json?: boolean | undefined;
   human?: boolean | undefined;
-}
-
-interface InboxCommandOptions {
-  note?: string | undefined;
-  due?: string | undefined;
-  defer?: string | undefined;
-  flag?: boolean | undefined;
-  tag?: string[] | undefined;
-  estimate?: number | undefined;
-  repeat?: string | undefined;
-  every?: number | undefined;
-  repeatMethod?: string | undefined;
 }
 
 interface TasksCommandOptions {
@@ -342,50 +331,10 @@ Use --human flag for human-readable output (default is JSON).
       output(result, getOutputFormat(globalOpts));
     });
 
-  // inbox
-  program
-    .command("inbox")
-    .description("Add a task to the OmniFocus inbox")
-    .argument("<title>", "Task title")
-    .option("-n, --note <text>", "Task note")
-    .option("-d, --due <date>", "Due date")
-    .option("--defer <date>", "Defer date")
-    .option("-f, --flag", "Flag the task")
-    .option("-t, --tag <name...>", "Tags to apply")
-    .option(
-      "-e, --estimate <minutes>",
-      "Estimated duration in minutes",
-      parseInt
-    )
-    .option(
-      "--repeat <frequency>",
-      "Repeat frequency (daily, weekly, monthly, yearly)"
-    )
-    .option("--every <n>", "Repeat every N periods (default: 1)", parseInt)
-    .option(
-      "--repeat-method <method>",
-      "Repeat method (due-again, defer-another)"
-    )
-    .action(
-      async (title: string, options: InboxCommandOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await addToInbox(title, {
-          note: options.note,
-          due: options.due,
-          defer: options.defer,
-          flag: options.flag,
-          tags: options.tag,
-          estimatedMinutes: options.estimate,
-          repeat: parseRepetitionOptions(
-            options.repeat,
-            options.every,
-            options.repeatMethod
-          ),
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // inbox — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, addToInboxDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // tasks
   program

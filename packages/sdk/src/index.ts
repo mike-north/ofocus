@@ -264,4 +264,10 @@ export {
   toSnakeCase,
   validateCanonicalName,
 } from "./registry/index.js";
-export type { CommandDescriptor } from "./registry/index.js";
+export type {
+  CommandDescriptor,
+  ResolvedCommandDescriptor,
+} from "./registry/index.js";
+
+// Command descriptors (migrated to the centralized registry).
+export { addToInboxDescriptor } from "./commands/inbox.js";
