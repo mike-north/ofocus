@@ -23,6 +23,8 @@ import {
   createSubtask,
   querySubtasks,
   moveTaskToParent,
+  createSubtaskDescriptor,
+  moveTaskToParentDescriptor,
 } from "../../../src/commands/subtasks.js";
 import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
@@ -512,5 +514,89 @@ describe("moveTaskToParent", () => {
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
     });
+  });
+});
+
+// ── descriptor handlers ───────────────────────────────────────────────────────
+
+// Regression: the MCP wrapper previously called
+// createSubtask(params.parentTaskId, params.title, ...) — arguments swapped vs
+// the SDK signature createSubtask(title, parentTaskId, ...). The centralized
+// descriptor handler must map title → task name and parentTaskId → parent
+// lookup, not the reverse. These tests assert the generated OmniJS body so a
+// future re-introduction of the swap fails loudly.
+describe("createSubtaskDescriptor.handler — argument order regression", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("maps title to the new Task name and parentTaskId to the parent lookup", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: createMockTaskWithChildren({ name: "My Subtask" }),
+    } as OmniJSResult<OFTaskWithChildren>);
+
+    await createSubtaskDescriptor.handler({
+      title: "My Subtask",
+      parentTaskId: "parent-xyz",
+    });
+
+    const body = getScriptBody();
+    // title becomes the task name
+    expect(body).toContain('new Task("My Subtask"');
+    // parentTaskId is the lookup, not the title
+    expect(body).toContain('flattenedTasks.byId("parent-xyz")');
+    // and crucially NOT the swapped form
+    expect(body).not.toContain('new Task("parent-xyz"');
+    expect(body).not.toContain('flattenedTasks.byId("My Subtask")');
+  });
+
+  it("forwards optional fields to the SDK function", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: createMockTaskWithChildren({ name: "My Subtask", flagged: true }),
+    } as OmniJSResult<OFTaskWithChildren>);
+
+    await createSubtaskDescriptor.handler({
+      title: "My Subtask",
+      parentTaskId: "parent-xyz",
+      note: "a note",
+      flag: true,
+      estimatedMinutes: 15,
+    });
+
+    const body = getScriptBody();
+    expect(body).toContain('task.note = "a note"');
+    expect(body).toContain("task.flagged = true");
+    expect(body).toContain("task.estimatedMinutes = 15");
+  });
+});
+
+describe("moveTaskToParentDescriptor.handler — argument order", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("maps taskId to the moved task and parentTaskId to the destination", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: createMockTaskWithChildren({
+        id: "task-abc",
+        parentTaskId: "parent-def",
+      }),
+    } as OmniJSResult<OFTaskWithChildren>);
+
+    await moveTaskToParentDescriptor.handler({
+      taskId: "task-abc",
+      parentTaskId: "parent-def",
+    });
+
+    const body = getScriptBody();
+    // First byId lookup is the task being moved; second is the destination parent
+    const taskIdx = body.indexOf('flattenedTasks.byId("task-abc")');
+    const parentIdx = body.indexOf('flattenedTasks.byId("parent-def")');
+    expect(taskIdx).toBeGreaterThanOrEqual(0);
+    expect(parentIdx).toBeGreaterThanOrEqual(0);
+    expect(taskIdx).toBeLessThan(parentIdx);
   });
 });

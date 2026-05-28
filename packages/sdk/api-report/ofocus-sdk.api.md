@@ -388,6 +388,45 @@ export interface CreateProjectOptions {
 export function createSubtask(title: string, parentTaskId: string, options?: InboxOptions): Promise<CliOutput<OFTaskWithChildren>>;
 
 // @public
+export const createSubtaskDescriptor: ResolvedCommandDescriptor<    {
+parentTaskId: string;
+title: string;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+}, OFTaskWithChildren, z.ZodObject<{
+title: z.ZodString;
+parentTaskId: z.ZodString;
+note: z.ZodOptional<z.ZodString>;
+due: z.ZodOptional<z.ZodString>;
+defer: z.ZodOptional<z.ZodString>;
+flag: z.ZodOptional<z.ZodBoolean>;
+tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+estimatedMinutes: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+parentTaskId: string;
+title: string;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+}, {
+parentTaskId: string;
+title: string;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+}>>;
+
+// @public
 export function createTag(name: string, options?: CreateTagOptions): Promise<CliOutput<OFTag>>;
 
 // @public
@@ -768,6 +807,21 @@ export const MAX_PAGINATION_LIMIT = 10000;
 export function moveTaskToParent(taskId: string, parentTaskId: string): Promise<CliOutput<OFTaskWithChildren>>;
 
 // @public
+export const moveTaskToParentDescriptor: ResolvedCommandDescriptor<    {
+parentTaskId: string;
+taskId: string;
+}, OFTaskWithChildren, z.ZodObject<{
+taskId: z.ZodString;
+parentTaskId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+parentTaskId: string;
+taskId: string;
+}, {
+parentTaskId: string;
+taskId: string;
+}>>;
+
+// @public
 export type NumericRange = readonly [number, number];
 
 // @public
@@ -1140,6 +1194,25 @@ export type QueryResult<T> = {
 
 // @public
 export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
+
+// @public
+export const querySubtasksDescriptor: ResolvedCommandDescriptor<    {
+parentTaskId: string;
+completed?: boolean | undefined;
+flagged?: boolean | undefined;
+}, QueryResult<OFTask>, z.ZodObject<{
+parentTaskId: z.ZodString;
+completed: z.ZodOptional<z.ZodBoolean>;
+flagged: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+parentTaskId: string;
+completed?: boolean | undefined;
+flagged?: boolean | undefined;
+}, {
+parentTaskId: string;
+completed?: boolean | undefined;
+flagged?: boolean | undefined;
+}>>;
 
 // @public
 export function queryTags(options?: TagQueryOptions): Promise<CliOutput<QueryResult<OFTag>>>;
