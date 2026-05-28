@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from dropping a task.
@@ -101,3 +103,42 @@ return JSON.stringify({ taskId: "${escapeJSString(taskId)}", deleted: true });`;
 
   return success(result.data as DeleteResult);
 }
+
+
+/**
+ * Centralized descriptor for the `drop` command.
+ *
+ * Drives the CLI subcommand `drop` and the MCP tool `task_drop`.
+ *
+ * @public
+ */
+export const dropTaskDescriptor = defineCommand({
+  name: "dropTask",
+  cliName: "drop",
+  mcpName: "task_drop",
+  description: "Drop a task (marks it as dropped but preserves history).",
+  cliPositional: ["taskId"],
+  inputSchema: z.object({
+    taskId: z.string().describe("The ID of the task to drop"),
+  }),
+  handler: async (input) => dropTask(input.taskId),
+});
+
+/**
+ * Centralized descriptor for the `delete` command.
+ *
+ * Drives the CLI subcommand `delete` and the MCP tool `task_delete`.
+ *
+ * @public
+ */
+export const deleteTaskDescriptor = defineCommand({
+  name: "deleteTask",
+  cliName: "delete",
+  mcpName: "task_delete",
+  description: "Permanently delete a task from OmniFocus. Cannot be undone.",
+  cliPositional: ["taskId"],
+  inputSchema: z.object({
+    taskId: z.string().describe("The ID of the task to delete"),
+  }),
+  handler: async (input) => deleteTask(input.taskId),
+});

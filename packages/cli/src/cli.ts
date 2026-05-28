@@ -2,16 +2,17 @@ import { Command, Option, Help } from "commander";
 import { isAgenticTui } from "is-agentic-tui";
 import {
   addToInboxDescriptor,
+  completeTaskDescriptor,
+  dropTaskDescriptor,
+  deleteTaskDescriptor,
+  duplicateTaskDescriptor,
   queryTasks,
   queryProjects,
   queryTags,
-  completeTask,
   updateTask,
   createProject,
   createFolder,
   queryFolders,
-  dropTask,
-  deleteTask,
   createTag,
   updateTag,
   deleteTag,
@@ -60,7 +61,6 @@ import {
   dropProject,
   updateFolder,
   deleteFolder,
-  duplicateTask,
   openItem,
   getReviewInterval,
   setReviewInterval,
@@ -415,17 +415,10 @@ Use --human flag for human-readable output (default is JSON).
       if (!result.success) process.exitCode = 1;
     });
 
-  // complete
-  program
-    .command("complete")
-    .description("Mark a task as complete")
-    .argument("<task-id>", "Task ID to complete")
-    .action(async (taskId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await completeTask(taskId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // complete — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, completeTaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // update
   program
@@ -556,29 +549,13 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 1: Drop/Delete Tasks
   // ===========================================
 
-  // drop
-  program
-    .command("drop")
-    .description("Drop a task (marks as dropped but keeps history)")
-    .argument("<task-id>", "Task ID to drop")
-    .action(async (taskId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await dropTask(taskId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
-
-  // delete
-  program
-    .command("delete")
-    .description("Delete a task permanently (cannot be undone)")
-    .argument("<task-id>", "Task ID to delete")
-    .action(async (taskId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await deleteTask(taskId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // drop / delete — registered from centralized descriptors in @ofocus/sdk
+  registerCliCommand(program, dropTaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, deleteTaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 1: Tags CRUD
@@ -1404,27 +1381,10 @@ Use --human flag for human-readable output (default is JSON).
       if (!result.success) process.exitCode = 1;
     });
 
-  // duplicate
-  program
-    .command("duplicate")
-    .description("Duplicate a task with all its properties")
-    .argument("<task-id>", "Task ID to duplicate")
-    .option("--include-subtasks", "Include subtasks in duplicate (default)")
-    .option("--no-include-subtasks", "Exclude subtasks from duplicate")
-    .action(
-      async (
-        taskId: string,
-        options: { includeSubtasks?: boolean },
-        cmd: Command
-      ) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await duplicateTask(taskId, {
-          includeSubtasks: options.includeSubtasks,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // duplicate — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, duplicateTaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // open
   program

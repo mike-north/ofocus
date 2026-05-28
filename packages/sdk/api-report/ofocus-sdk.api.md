@@ -304,6 +304,17 @@ export interface CompleteResult {
 export function completeTask(taskId: string): Promise<CliOutput<CompleteResult>>;
 
 // @public
+export const completeTaskDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+}, CompleteResult, z.ZodObject<{
+taskId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+}, {
+taskId: string;
+}>>;
+
+// @public
 export function completeTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
 
 // @public
@@ -487,6 +498,17 @@ export interface DeleteTagResult {
 export function deleteTask(taskId: string): Promise<CliOutput<DeleteResult>>;
 
 // @public
+export const deleteTaskDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+}, DeleteResult, z.ZodObject<{
+taskId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+}, {
+taskId: string;
+}>>;
+
+// @public
 export function deleteTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchDeleteItem>>>;
 
 // @public
@@ -525,7 +547,33 @@ export interface DropResult {
 export function dropTask(taskId: string): Promise<CliOutput<DropResult>>;
 
 // @public
+export const dropTaskDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+}, DropResult, z.ZodObject<{
+taskId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+}, {
+taskId: string;
+}>>;
+
+// @public
 export function duplicateTask(taskId: string, options?: DuplicateTaskOptions): Promise<CliOutput<DuplicateTaskResult>>;
+
+// @public
+export const duplicateTaskDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+includeSubtasks?: boolean | undefined;
+}, DuplicateTaskResult, z.ZodObject<{
+taskId: z.ZodString;
+includeSubtasks: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+includeSubtasks?: boolean | undefined;
+}, {
+taskId: string;
+includeSubtasks?: boolean | undefined;
+}>>;
 
 // @public
 export interface DuplicateTaskOptions {

@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from completing a task.
@@ -51,3 +53,23 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+
+/**
+ * Centralized descriptor for the `complete` command.
+ *
+ * Drives the CLI subcommand `complete` and the MCP tool `task_complete`.
+ *
+ * @public
+ */
+export const completeTaskDescriptor = defineCommand({
+  name: "completeTask",
+  cliName: "complete",
+  mcpName: "task_complete",
+  description: "Mark a task as complete in OmniFocus.",
+  cliPositional: ["taskId"],
+  inputSchema: z.object({
+    taskId: z.string().describe("The ID of the task to complete"),
+  }),
+  handler: async (input) => completeTask(input.taskId),
+});

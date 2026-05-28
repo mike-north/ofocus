@@ -368,7 +368,7 @@ export const commandRegistry: CommandInfo[] = [
     name: "duplicate",
     description:
       "Create a copy of an existing task in OmniFocus. The duplicated task inherits all properties: title, note, due/defer dates, flags, tags, and estimated duration. By default includes subtasks; use --no-include-subtasks to exclude them.",
-    usage: "ofocus duplicate <task-id> [--no-include-subtasks]",
+    usage: "ofocus duplicate <task-id> [--include-subtasks] [--no-include-subtasks]",
   },
   {
     name: "open",

@@ -258,6 +258,34 @@ describe("registerCliCommand", () => {
     expect(handler).toHaveBeenCalledWith({ days: [1, 2, 3] });
   });
 
+  it("registers --no-name as the negation form for boolean fields", async () => {
+    const handler = vi.fn(
+      async (input: { active?: boolean }) =>
+        await Promise.resolve(success(input.active))
+    );
+
+    const program = new Command();
+    const cmd = defineCommand({
+      name: "thing",
+      description: "Do.",
+      inputSchema: z.object({ active: z.boolean().optional() }),
+      handler,
+    });
+
+    registerCliCommand(program, cmd, () => undefined);
+
+    // Positive form sets the field to true.
+    await program.parseAsync(["node", "test", "thing", "--active"]);
+    expect(handler).toHaveBeenLastCalledWith({ active: true });
+
+    // Negation form sets the field to false.
+    handler.mockClear();
+    const program2 = new Command();
+    registerCliCommand(program2, cmd, () => undefined);
+    await program2.parseAsync(["node", "test", "thing", "--no-active"]);
+    expect(handler).toHaveBeenLastCalledWith({ active: false });
+  });
+
   it("routes invalid numeric input through the VALIDATION_ERROR path (not Commander's own error)", async () => {
     const handler = vi.fn(
       async () => await Promise.resolve(success({ ok: true }))

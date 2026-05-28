@@ -177,6 +177,10 @@ function addOptionForField(
 
   if (inner instanceof z.ZodBoolean) {
     cmd.option(flag, description);
+    // Negation form so callers can explicitly set the field to false.
+    // Commander stores both under the camelCase field name; `--no-foo`
+    // sets `foo: false`, matching the old hand-written CLI conventions.
+    cmd.option(`--no-${toKebabCase(fieldName)}`, `Disable --${toKebabCase(fieldName)}`);
     return;
   }
 
