@@ -281,3 +281,8 @@ export { searchTasksDescriptor } from "./commands/search.js";
 export { queryForecastDescriptor } from "./commands/forecast.js";
 export { queryDeferredDescriptor } from "./commands/deferred.js";
 export { quickCaptureDescriptor } from "./commands/quick.js";
+export {
+  createSubtaskDescriptor,
+  querySubtasksDescriptor,
+  moveTaskToParentDescriptor,
+} from "./commands/subtasks.js";

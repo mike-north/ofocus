@@ -10,6 +10,9 @@ import {
   queryForecastDescriptor,
   queryDeferredDescriptor,
   quickCaptureDescriptor,
+  createSubtaskDescriptor,
+  querySubtasksDescriptor,
+  moveTaskToParentDescriptor,
   queryTasks,
   queryProjects,
   queryTags,
@@ -20,9 +23,6 @@ import {
   createTag,
   updateTag,
   deleteTag,
-  createSubtask,
-  querySubtasks,
-  moveTaskToParent,
   completeTasks,
   updateTasks,
   deleteTasks,
@@ -147,25 +147,6 @@ interface UpdateTagOptions {
   name?: string | undefined;
   parent?: string | undefined;
   parentId?: string | undefined;
-}
-
-interface SubtaskOptions {
-  parent: string;
-  note?: string | undefined;
-  due?: string | undefined;
-  defer?: string | undefined;
-  flag?: boolean | undefined;
-  tag?: string[] | undefined;
-  estimate?: number | undefined;
-}
-
-interface SubtasksQueryOptions {
-  completed?: boolean | undefined;
-  flagged?: boolean | undefined;
-}
-
-interface MoveToParentOptions {
-  parent: string;
 }
 
 interface BatchUpdateOptions {
@@ -592,73 +573,20 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 2: Subtasks
   // ===========================================
 
-  // subtask
-  program
-    .command("subtask")
-    .description("Create a subtask under a parent task")
-    .argument("<title>", "Subtask title")
-    .requiredOption("--parent <task-id>", "Parent task ID")
-    .option("-n, --note <text>", "Task note")
-    .option("-d, --due <date>", "Due date")
-    .option("--defer <date>", "Defer date")
-    .option("-f, --flag", "Flag the task")
-    .option("-t, --tag <name...>", "Tags to apply")
-    .option(
-      "-e, --estimate <minutes>",
-      "Estimated duration in minutes",
-      parseInt
-    )
-    .action(async (title: string, options: SubtaskOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await createSubtask(title, options.parent, {
-        note: options.note,
-        due: options.due,
-        defer: options.defer,
-        flag: options.flag,
-        tags: options.tag,
-        estimatedMinutes: options.estimate,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // subtask — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, createSubtaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // subtasks
-  program
-    .command("subtasks")
-    .description("Query subtasks of a parent task")
-    .argument("<parent-task-id>", "Parent task ID")
-    .option("--completed", "Show only completed subtasks")
-    .option("--flagged", "Show only flagged subtasks")
-    .action(
-      async (
-        parentTaskId: string,
-        options: SubtasksQueryOptions,
-        cmd: Command
-      ) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await querySubtasks(parentTaskId, {
-          completed: options.completed,
-          flagged: options.flagged,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // subtasks — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, querySubtasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // move-to-parent
-  program
-    .command("move-to-parent")
-    .description("Move a task to become a subtask of another task")
-    .argument("<task-id>", "Task ID to move")
-    .requiredOption("--parent <parent-task-id>", "New parent task ID")
-    .action(
-      async (taskId: string, options: MoveToParentOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await moveTaskToParent(taskId, options.parent);
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // move-to-parent — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, moveTaskToParentDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 3: Batch Operations

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type {
   CliOutput,
   InboxOptions,
@@ -17,6 +18,7 @@ import {
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 import { buildRRule } from "./repetition.js";
 import { sanitizeVarName } from "../utils/sanitize.js";
+import { defineCommand } from "../registry/define.js";
 import {
   buildListQueryBody,
   compileAggregate,
@@ -366,3 +368,90 @@ return JSON.stringify(serializeTaskWithChildren(task, parentTask));`;
 
   return success(result.data);
 }
+
+/**
+ * Centralized descriptor for the `subtask` command.
+ *
+ * Drives the CLI subcommand `subtask` and the MCP tool `subtask_create`.
+ *
+ * @public
+ */
+export const createSubtaskDescriptor = defineCommand({
+  name: "createSubtask",
+  cliName: "subtask",
+  mcpName: "subtask_create",
+  description: "Create a subtask under an existing parent task.",
+  cliPositional: ["title"],
+  inputSchema: z.object({
+    title: z.string().describe("Subtask title"),
+    parentTaskId: z.string().describe("ID of the parent task"),
+    note: z.string().optional().describe("Subtask note"),
+    due: z.string().optional().describe("Due date"),
+    defer: z.string().optional().describe("Defer date"),
+    flag: z.boolean().optional().describe("Flag the subtask"),
+    tags: z.array(z.string()).optional().describe("Tags to apply"),
+    estimatedMinutes: z
+      .number()
+      .optional()
+      .describe("Estimated duration in minutes"),
+  }),
+  handler: async (input) =>
+    createSubtask(input.title, input.parentTaskId, {
+      note: input.note,
+      due: input.due,
+      defer: input.defer,
+      flag: input.flag,
+      tags: input.tags,
+      estimatedMinutes: input.estimatedMinutes,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `subtasks` command.
+ *
+ * Drives the CLI subcommand `subtasks` and the MCP tool `subtasks_list`.
+ *
+ * @public
+ */
+export const querySubtasksDescriptor = defineCommand({
+  name: "querySubtasks",
+  cliName: "subtasks",
+  mcpName: "subtasks_list",
+  description: "List subtasks of a parent task.",
+  cliPositional: ["parentTaskId"],
+  inputSchema: z.object({
+    parentTaskId: z.string().describe("ID of the parent task"),
+    completed: z
+      .boolean()
+      .optional()
+      .describe(
+        "Filter by completion status (true = only completed, false = only incomplete)"
+      ),
+    flagged: z.boolean().optional().describe("Filter by flagged status"),
+  }),
+  handler: async (input) =>
+    querySubtasks(input.parentTaskId, {
+      completed: input.completed,
+      flagged: input.flagged,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `move-to-parent` command.
+ *
+ * Drives the CLI subcommand `move-to-parent` and the MCP tool `task_move`.
+ *
+ * @public
+ */
+export const moveTaskToParentDescriptor = defineCommand({
+  name: "moveTaskToParent",
+  cliName: "move-to-parent",
+  mcpName: "task_move",
+  description: "Move a task to become a subtask of another task.",
+  cliPositional: ["taskId"],
+  inputSchema: z.object({
+    taskId: z.string().describe("ID of the task to move"),
+    parentTaskId: z.string().describe("ID of the new parent task"),
+  }),
+  handler: async (input) => moveTaskToParent(input.taskId, input.parentTaskId),
+});

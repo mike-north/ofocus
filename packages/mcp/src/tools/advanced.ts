@@ -1,9 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
-  createSubtask,
-  querySubtasks,
-  moveTaskToParent,
+  createSubtaskDescriptor,
+  querySubtasksDescriptor,
+  moveTaskToParentDescriptor,
   listPerspectives,
   queryPerspective,
   queryForecastDescriptor,
@@ -33,71 +33,10 @@ import { formatResult } from "../utils.js";
 import { registerMcpTool } from "../registry-adapter.js";
 
 export function registerAdvancedTools(server: McpServer): void {
-  // Subtasks
-  server.registerTool(
-    "subtask_create",
-    {
-      description: "Create a subtask under an existing task",
-      inputSchema: {
-        parentTaskId: z.string().describe("ID of the parent task"),
-        title: z.string().describe("Subtask title"),
-        note: z.string().optional().describe("Subtask note"),
-        due: z.string().optional().describe("Due date"),
-        defer: z.string().optional().describe("Defer date"),
-        flag: z.boolean().optional().describe("Flag the subtask"),
-        tags: z.array(z.string()).optional().describe("Tags to apply"),
-        estimatedMinutes: z.number().optional().describe("Estimated duration"),
-      },
-    },
-    async (params) => {
-      const result = await createSubtask(params.parentTaskId, params.title, {
-        note: params.note,
-        due: params.due,
-        defer: params.defer,
-        flag: params.flag,
-        tags: params.tags,
-        estimatedMinutes: params.estimatedMinutes,
-      });
-      return formatResult(result);
-    }
-  );
-
-  server.registerTool(
-    "subtasks_list",
-    {
-      description: "List subtasks of a parent task",
-      inputSchema: {
-        parentTaskId: z.string().describe("ID of the parent task"),
-        completed: z
-          .boolean()
-          .optional()
-          .describe("Include completed subtasks"),
-        flagged: z.boolean().optional().describe("Filter by flagged status"),
-      },
-    },
-    async (params) => {
-      const result = await querySubtasks(params.parentTaskId, {
-        completed: params.completed,
-        flagged: params.flagged,
-      });
-      return formatResult(result);
-    }
-  );
-
-  server.registerTool(
-    "task_move",
-    {
-      description: "Move a task to a new parent task (make it a subtask)",
-      inputSchema: {
-        taskId: z.string().describe("ID of the task to move"),
-        newParentId: z.string().describe("ID of the new parent task"),
-      },
-    },
-    async (params) => {
-      const result = await moveTaskToParent(params.taskId, params.newParentId);
-      return formatResult(result);
-    }
-  );
+  // Subtasks — registered from centralized descriptors in @ofocus/sdk
+  registerMcpTool(server, createSubtaskDescriptor);
+  registerMcpTool(server, querySubtasksDescriptor);
+  registerMcpTool(server, moveTaskToParentDescriptor);
 
   // Perspectives
   server.registerTool(
