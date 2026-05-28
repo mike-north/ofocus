@@ -271,3 +271,9 @@ export type {
 
 // Command descriptors (migrated to the centralized registry).
 export { addToInboxDescriptor } from "./commands/inbox.js";
+export { completeTaskDescriptor } from "./commands/complete.js";
+export {
+  dropTaskDescriptor,
+  deleteTaskDescriptor,
+} from "./commands/drop.js";
+export { duplicateTaskDescriptor } from "./commands/duplicate.js";

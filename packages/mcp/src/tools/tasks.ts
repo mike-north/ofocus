@@ -2,18 +2,18 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
   addToInboxDescriptor,
+  completeTaskDescriptor,
+  dropTaskDescriptor,
+  deleteTaskDescriptor,
+  duplicateTaskDescriptor,
   queryTasks,
-  completeTask,
   updateTask,
-  dropTask,
-  deleteTask,
   searchTasks,
   completeTasks,
   updateTasks,
   deleteTasks,
   deferTask,
   deferTasks,
-  duplicateTask,
   openItem,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
@@ -69,20 +69,8 @@ export function registerTaskTools(server: McpServer): void {
     }
   );
 
-  // task_complete - Mark a task as complete
-  server.registerTool(
-    "task_complete",
-    {
-      description: "Mark a task as complete in OmniFocus",
-      inputSchema: {
-        taskId: z.string().describe("The ID of the task to complete"),
-      },
-    },
-    async (params) => {
-      const result = await completeTask(params.taskId);
-      return formatResult(result);
-    }
-  );
+  // task_complete — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, completeTaskDescriptor);
 
   // task_update - Update task properties
   server.registerTool(
@@ -128,35 +116,9 @@ export function registerTaskTools(server: McpServer): void {
     }
   );
 
-  // task_drop - Drop a task
-  server.registerTool(
-    "task_drop",
-    {
-      description: "Drop (cancel) a task in OmniFocus",
-      inputSchema: {
-        taskId: z.string().describe("The ID of the task to drop"),
-      },
-    },
-    async (params) => {
-      const result = await dropTask(params.taskId);
-      return formatResult(result);
-    }
-  );
-
-  // task_delete - Delete a task permanently
-  server.registerTool(
-    "task_delete",
-    {
-      description: "Permanently delete a task from OmniFocus",
-      inputSchema: {
-        taskId: z.string().describe("The ID of the task to delete"),
-      },
-    },
-    async (params) => {
-      const result = await deleteTask(params.taskId);
-      return formatResult(result);
-    }
-  );
+  // task_drop / task_delete — registered from centralized descriptors
+  registerMcpTool(server, dropTaskDescriptor);
+  registerMcpTool(server, deleteTaskDescriptor);
 
   // search - Search tasks by text
   server.registerTool(
@@ -304,26 +266,8 @@ export function registerTaskTools(server: McpServer): void {
     }
   );
 
-  // task_duplicate - Duplicate a task
-  server.registerTool(
-    "task_duplicate",
-    {
-      description: "Create a copy of an existing task with all its properties",
-      inputSchema: {
-        taskId: z.string().describe("The ID of the task to duplicate"),
-        includeSubtasks: z
-          .boolean()
-          .optional()
-          .describe("Include subtasks in the duplicate (default: true)"),
-      },
-    },
-    async (params) => {
-      const result = await duplicateTask(params.taskId, {
-        includeSubtasks: params.includeSubtasks,
-      });
-      return formatResult(result);
-    }
-  );
+  // task_duplicate — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, duplicateTaskDescriptor);
 
   // open - Open an item in OmniFocus UI
   server.registerTool(

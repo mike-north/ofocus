@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput, DuplicateTaskOptions } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from duplicating a task.
@@ -75,3 +77,34 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+
+/**
+ * Centralized descriptor for the `duplicate` command.
+ *
+ * Drives the CLI subcommand `duplicate` and the MCP tool `task_duplicate`.
+ *
+ * @public
+ */
+export const duplicateTaskDescriptor = defineCommand({
+  name: "duplicateTask",
+  cliName: "duplicate",
+  mcpName: "task_duplicate",
+  description:
+    "Duplicate an existing task, optionally including its subtasks.",
+  cliPositional: ["taskId"],
+  inputSchema: z.object({
+    taskId: z.string().describe("The ID of the task to duplicate"),
+    includeSubtasks: z
+      .boolean()
+      .optional()
+      .describe("Include subtasks in the duplicate (default: true)"),
+  }),
+  handler: async (input) => {
+    const options: DuplicateTaskOptions = {};
+    if (input.includeSubtasks !== undefined) {
+      options.includeSubtasks = input.includeSubtasks;
+    }
+    return duplicateTask(input.taskId, options);
+  },
+});
