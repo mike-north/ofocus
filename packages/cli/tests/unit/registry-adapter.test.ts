@@ -49,6 +49,62 @@ describe("registerCliCommand", () => {
     expect(positional?.[0]?.required).toBe(true);
   });
 
+  it("renders an array-typed cliPositional field as a variadic argument", () => {
+    const program = new Command();
+    const cmd = defineCommand({
+      name: "completeTasks",
+      cliName: "complete-batch",
+      description: "Complete many.",
+      cliPositional: ["taskIds"],
+      inputSchema: z.object({
+        taskIds: z.array(z.string()).min(1).describe("Task IDs"),
+      }),
+      handler: async () => await Promise.resolve(success({ ok: true })),
+    });
+
+    registerCliCommand(program, cmd, () => undefined);
+
+    const sub = program.commands.find((c) => c.name() === "complete-batch");
+    const positional = sub?.registeredArguments;
+    expect(positional?.[0]?.name()).toBe("taskIds");
+    expect(positional?.[0]?.variadic).toBe(true);
+    expect(positional?.[0]?.required).toBe(true);
+  });
+
+  it("passes a variadic positional array through to the handler", async () => {
+    const handler = vi.fn(
+      async (input: { taskIds: string[] }) =>
+        await Promise.resolve(success({ ids: input.taskIds }))
+    );
+
+    const program = new Command();
+    const cmd = defineCommand({
+      name: "completeTasks",
+      cliName: "complete-batch",
+      description: "Complete many.",
+      cliPositional: ["taskIds"],
+      inputSchema: z.object({
+        taskIds: z.array(z.string()).min(1).describe("Task IDs"),
+      }),
+      handler,
+    });
+
+    registerCliCommand(program, cmd, () => undefined);
+
+    await program.parseAsync([
+      "node",
+      "test",
+      "complete-batch",
+      "id-1",
+      "id-2",
+      "id-3",
+    ]);
+
+    expect(handler).toHaveBeenCalledWith({
+      taskIds: ["id-1", "id-2", "id-3"],
+    });
+  });
+
   it("registers each non-positional field as a --kebab-case flag", () => {
     const program = new Command();
     const cmd = defineCommand({

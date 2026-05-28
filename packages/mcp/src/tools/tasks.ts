@@ -7,13 +7,13 @@ import {
   deleteTaskDescriptor,
   duplicateTaskDescriptor,
   searchTasksDescriptor,
+  completeTasksDescriptor,
+  updateTasksDescriptor,
+  deleteTasksDescriptor,
+  deferTaskDescriptor,
+  deferTasksDescriptor,
   queryTasks,
   updateTask,
-  completeTasks,
-  updateTasks,
-  deleteTasks,
-  deferTask,
-  deferTasks,
   openItem,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
@@ -123,123 +123,13 @@ export function registerTaskTools(server: McpServer): void {
   // search — registered from the centralized descriptor in @ofocus/sdk
   registerMcpTool(server, searchTasksDescriptor);
 
-  // task_defer - Defer a single task
-  server.registerTool(
-    "task_defer",
-    {
-      description: "Defer a task to a later date",
-      inputSchema: {
-        taskId: z.string().describe("The ID of the task to defer"),
-        days: z
-          .number()
-          .int()
-          .min(1)
-          .optional()
-          .describe("Defer for this many days from today"),
-        to: z.string().optional().describe("Defer to a specific date"),
-      },
-    },
-    async (params) => {
-      const result = await deferTask(params.taskId, {
-        days: params.days,
-        to: params.to,
-      });
-      return formatResult(result);
-    }
-  );
-
-  // Batch operations
-  server.registerTool(
-    "tasks_complete_batch",
-    {
-      description: "Complete multiple tasks at once",
-      inputSchema: {
-        taskIds: z.array(z.string()).describe("Array of task IDs to complete"),
-      },
-    },
-    async (params) => {
-      const result = await completeTasks(params.taskIds);
-      return formatResult(result);
-    }
-  );
-
-  server.registerTool(
-    "tasks_update_batch",
-    {
-      description: "Update multiple tasks with the same properties",
-      inputSchema: {
-        taskIds: z.array(z.string()).describe("Array of task IDs to update"),
-        title: z.string().optional().describe("New title for all tasks"),
-        note: z.string().optional().describe("New note for all tasks"),
-        due: z.string().optional().describe("New due date for all tasks"),
-        defer: z.string().optional().describe("New defer date for all tasks"),
-        flag: z.boolean().optional().describe("Flag or unflag all tasks"),
-        project: z
-          .string()
-          .optional()
-          .describe("Move all tasks to this project"),
-        tags: z
-          .array(z.string())
-          .optional()
-          .describe("Replace tags on all tasks"),
-        estimatedMinutes: z
-          .number()
-          .optional()
-          .describe("Estimated duration for all tasks"),
-      },
-    },
-    async (params) => {
-      const result = await updateTasks(params.taskIds, {
-        title: params.title,
-        note: params.note,
-        due: params.due,
-        defer: params.defer,
-        flag: params.flag,
-        project: params.project,
-        tags: params.tags,
-        estimatedMinutes: params.estimatedMinutes,
-      });
-      return formatResult(result);
-    }
-  );
-
-  server.registerTool(
-    "tasks_delete_batch",
-    {
-      description: "Delete multiple tasks at once",
-      inputSchema: {
-        taskIds: z.array(z.string()).describe("Array of task IDs to delete"),
-      },
-    },
-    async (params) => {
-      const result = await deleteTasks(params.taskIds);
-      return formatResult(result);
-    }
-  );
-
-  server.registerTool(
-    "tasks_defer_batch",
-    {
-      description: "Defer multiple tasks to the same date",
-      inputSchema: {
-        taskIds: z.array(z.string()).describe("Array of task IDs to defer"),
-        days: z
-          .number()
-          .int()
-          .min(1)
-          .optional()
-          .describe("Defer for this many days from today"),
-        to: z.string().optional().describe("Defer to a specific date"),
-      },
-    },
-    async (params) => {
-      const result = await deferTasks(params.taskIds, {
-        days: params.days,
-        to: params.to,
-      });
-      return formatResult(result);
-    }
-  );
+  // task_defer + batch operations — registered from the centralized
+  // descriptors in @ofocus/sdk.
+  registerMcpTool(server, deferTaskDescriptor);
+  registerMcpTool(server, completeTasksDescriptor);
+  registerMcpTool(server, updateTasksDescriptor);
+  registerMcpTool(server, deleteTasksDescriptor);
+  registerMcpTool(server, deferTasksDescriptor);
 
   // task_duplicate — registered from the centralized descriptor in @ofocus/sdk
   registerMcpTool(server, duplicateTaskDescriptor);

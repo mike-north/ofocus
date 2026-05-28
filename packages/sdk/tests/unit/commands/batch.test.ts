@@ -3,6 +3,9 @@ import {
   completeTasks,
   updateTasks,
   deleteTasks,
+  completeTasksDescriptor,
+  updateTasksDescriptor,
+  deleteTasksDescriptor,
 } from "../../../src/commands/batch.js";
 import { ErrorCode } from "../../../src/errors.js";
 import type { OmniJSResult } from "../../../src/omnijs.js";
@@ -633,5 +636,109 @@ describe("deleteTasks", () => {
         deleteTasks(["abc123ABC-xyz789XYZ-12345678"])
       ).rejects.toThrow("OmniFocus not running");
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Registry descriptors
+// ---------------------------------------------------------------------------
+
+const ID_A = "abc123ABC-xyz789XYZ-12345678";
+const ID_B = "def456DEF-uvw012UVW-87654321";
+
+function getScriptBody(): string {
+  const call = mockRunOmniJS.mock.calls[0];
+  if (!call) throw new Error("runOmniJSWrapped was not called");
+  return call[0] as string;
+}
+
+describe("batch-ops descriptors — metadata", () => {
+  it("complete-batch descriptor maps to the right CLI/MCP names", () => {
+    expect(completeTasksDescriptor.name).toBe("completeTasks");
+    expect(completeTasksDescriptor.cliName).toBe("complete-batch");
+    expect(completeTasksDescriptor.mcpName).toBe("tasks_complete_batch");
+    expect(completeTasksDescriptor.cliPositional).toEqual(["taskIds"]);
+  });
+
+  it("update-batch descriptor maps to the right CLI/MCP names", () => {
+    expect(updateTasksDescriptor.name).toBe("updateTasks");
+    expect(updateTasksDescriptor.cliName).toBe("update-batch");
+    expect(updateTasksDescriptor.mcpName).toBe("tasks_update_batch");
+    expect(updateTasksDescriptor.cliPositional).toEqual(["taskIds"]);
+  });
+
+  it("delete-batch descriptor maps to the right CLI/MCP names", () => {
+    expect(deleteTasksDescriptor.name).toBe("deleteTasks");
+    expect(deleteTasksDescriptor.cliName).toBe("delete-batch");
+    expect(deleteTasksDescriptor.mcpName).toBe("tasks_delete_batch");
+    expect(deleteTasksDescriptor.cliPositional).toEqual(["taskIds"]);
+  });
+
+  it("rejects an empty taskIds array at the schema boundary", () => {
+    // Regression: the variadic positional must require at least one ID so the
+    // CLI/MCP surfaces fail validation rather than running an empty no-op.
+    const parsed = completeTasksDescriptor.inputSchema.safeParse({
+      taskIds: [],
+    });
+    expect(parsed.success).toBe(false);
+  });
+});
+
+describe("batch-ops descriptors — handler forwarding", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("completeTasksDescriptor forwards taskIds to completeTasks", async () => {
+    mockRunOmniJS.mockResolvedValue(succeededCompleteResult([ID_A, ID_B]));
+
+    await completeTasksDescriptor.handler({ taskIds: [ID_A, ID_B] });
+
+    const body = getScriptBody();
+    expect(body).toContain(JSON.stringify([ID_A, ID_B]));
+    expect(body).toContain("markComplete()");
+  });
+
+  it("deleteTasksDescriptor forwards taskIds to deleteTasks", async () => {
+    mockRunOmniJS.mockResolvedValue(succeededDeleteResult([ID_A]));
+
+    await deleteTasksDescriptor.handler({ taskIds: [ID_A] });
+
+    const body = getScriptBody();
+    expect(body).toContain(JSON.stringify([ID_A]));
+    expect(body).toContain("deleteObject(task)");
+  });
+
+  it("updateTasksDescriptor forwards the scalar update options", async () => {
+    mockRunOmniJS.mockResolvedValue(succeededCompleteResult([ID_A]));
+
+    await updateTasksDescriptor.handler({
+      taskIds: [ID_A],
+      title: "Renamed",
+      note: "a note",
+      flag: true,
+      due: "2026-01-01",
+      estimatedMinutes: 30,
+    });
+
+    const body = getScriptBody();
+    expect(body).toContain('task.name = "Renamed"');
+    expect(body).toContain('task.note = "a note"');
+    expect(body).toContain("task.flagged = true");
+    expect(body).toContain("task.estimatedMinutes = 30");
+  });
+
+  it("updateTasksDescriptor forwards tags as a clear-and-readd", async () => {
+    mockRunOmniJS.mockResolvedValue(succeededCompleteResult([ID_A]));
+
+    await updateTasksDescriptor.handler({
+      taskIds: [ID_A],
+      tags: ["Work", "Home"],
+    });
+
+    const body = getScriptBody();
+    expect(body).toContain("task.clearTags()");
+    expect(body).toContain('flattenedTags.byName("Work")');
+    expect(body).toContain('flattenedTags.byName("Home")');
   });
 });

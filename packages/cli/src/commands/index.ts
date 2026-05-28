@@ -125,20 +125,20 @@ export const commandRegistry: CommandInfo[] = [
     name: "complete-batch",
     description:
       "Mark multiple tasks as complete in a single operation. Accepts one or more task IDs. Returns a batch result showing which tasks succeeded and which failed. More efficient than completing tasks individually.",
-    usage: "ofocus complete-batch <task-id>...",
+    usage: "ofocus complete-batch <task-ids...>",
   },
   {
     name: "update-batch",
     description:
-      "Update multiple tasks with the same changes in a single operation. Accepts task IDs and update options. Supports flagging, due dates, defer dates, and project assignment. Returns batch results.",
+      "Update multiple tasks with the same changes in a single operation. Accepts task IDs and update options. Supports title, note, flagging, due dates, defer dates, project assignment, tags, and estimated duration. Returns batch results.",
     usage:
-      "ofocus update-batch <task-id>... [--flag] [--no-flag] [--due <date>] [--defer <date>] [--project <name>]",
+      "ofocus update-batch <task-ids...> [--title <text>] [--note <text>] [--due <date>] [--defer <date>] [--flag] [--no-flag] [--project <name>] [--tags <name...>] [--estimated-minutes <n>]",
   },
   {
     name: "delete-batch",
     description:
       "Permanently delete multiple tasks in a single operation. Accepts one or more task IDs. Returns batch results showing successes and failures. This action cannot be undone. Use with caution.",
-    usage: "ofocus delete-batch <task-id>...",
+    usage: "ofocus delete-batch <task-ids...>",
   },
   {
     name: "search",
@@ -220,7 +220,7 @@ export const commandRegistry: CommandInfo[] = [
     name: "defer-batch",
     description:
       "Defer multiple tasks by the same amount. Accepts multiple task IDs and defers them all by the specified days or to the same date. More efficient than deferring tasks individually. Returns batch results.",
-    usage: "ofocus defer-batch <task-id>... [--days <n>] [--to <date>]",
+    usage: "ofocus defer-batch <task-ids...> [--days <n>] [--to <date>]",
   },
   // Phase 6: Quick Capture
   {
