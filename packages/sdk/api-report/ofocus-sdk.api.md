@@ -1062,10 +1062,44 @@ export interface ProjectTemplate {
 export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
+export const queryDeferredDescriptor: ResolvedCommandDescriptor<    {
+blockedOnly?: boolean | undefined;
+deferredAfter?: string | undefined;
+deferredBefore?: string | undefined;
+}, QueryResult<OFTask>, z.ZodObject<{
+deferredAfter: z.ZodOptional<z.ZodString>;
+deferredBefore: z.ZodOptional<z.ZodString>;
+blockedOnly: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+blockedOnly?: boolean | undefined;
+deferredAfter?: string | undefined;
+deferredBefore?: string | undefined;
+}, {
+blockedOnly?: boolean | undefined;
+deferredAfter?: string | undefined;
+deferredBefore?: string | undefined;
+}>>;
+
+// @public
 export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<QueryResult<OFFolder>>>;
 
 // @public
 export function queryForecast(options?: ForecastOptions): Promise<CliOutput<QueryResult<OFTask>>>;
+
+// @public
+export const queryForecastDescriptor: ResolvedCommandDescriptor<    {
+days?: number | undefined;
+includeDeferred?: boolean | undefined;
+}, QueryResult<OFTask>, z.ZodObject<{
+days: z.ZodOptional<z.ZodNumber>;
+includeDeferred: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+days?: number | undefined;
+includeDeferred?: boolean | undefined;
+}, {
+days?: number | undefined;
+includeDeferred?: boolean | undefined;
+}>>;
 
 // @public
 export function queryPerspective(name: string, options?: PerspectiveQueryOptions): Promise<CliOutput<OFTask[]>>;
@@ -1115,6 +1149,21 @@ export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<QueryR
 
 // @public
 export function quickCapture(input: string, options?: QuickOptions): Promise<CliOutput<OFTask>>;
+
+// @public
+export const quickCaptureDescriptor: ResolvedCommandDescriptor<    {
+input: string;
+note?: string | undefined;
+}, OFTask, z.ZodObject<{
+input: z.ZodString;
+note: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+input: string;
+note?: string | undefined;
+}, {
+input: string;
+note?: string | undefined;
+}>>;
 
 // @public
 export interface QuickOptions {
@@ -1215,6 +1264,29 @@ export interface SearchOptions extends BaseListQueryOptions {
 
 // @public
 export function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<QueryResult<OFTask>>>;
+
+// @public
+export const searchTasksDescriptor: ResolvedCommandDescriptor<    {
+query: string;
+limit?: number | undefined;
+scope?: "name" | "note" | "both" | undefined;
+includeCompleted?: boolean | undefined;
+}, QueryResult<OFTask>, z.ZodObject<{
+query: z.ZodString;
+scope: z.ZodOptional<z.ZodEnum<["name", "note", "both"]>>;
+limit: z.ZodOptional<z.ZodNumber>;
+includeCompleted: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+query: string;
+limit?: number | undefined;
+scope?: "name" | "note" | "both" | undefined;
+includeCompleted?: boolean | undefined;
+}, {
+query: string;
+limit?: number | undefined;
+scope?: "name" | "note" | "both" | undefined;
+includeCompleted?: boolean | undefined;
+}>>;
 
 // @public
 export function setReviewInterval(projectId: string, days: number): Promise<CliOutput<ReviewIntervalResult>>;

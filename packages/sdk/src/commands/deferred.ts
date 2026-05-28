@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validatePaginationParams } from "../validation.js";
 import { runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 import {
   buildListQueryBody,
   compileAggregate,
@@ -124,6 +126,43 @@ export async function queryDeferred(
 
   return success(result.data);
 }
+
+/**
+ * Centralized descriptor for the deferred-list command.
+ *
+ * Drives the CLI subcommand `deferred` and the MCP tool `deferred_list`. The
+ * schema field names (`deferredAfter`, `deferredBefore`) match the historical
+ * CLI/MCP surface; the handler maps them onto the SDK's canonical
+ * `deferAfter` / `deferBefore` option names.
+ *
+ * @public
+ */
+export const queryDeferredDescriptor = defineCommand({
+  name: "queryDeferred",
+  cliName: "deferred",
+  mcpName: "deferred_list",
+  description: "List tasks with defer dates.",
+  inputSchema: z.object({
+    deferredAfter: z
+      .string()
+      .optional()
+      .describe("Only tasks deferred after this date"),
+    deferredBefore: z
+      .string()
+      .optional()
+      .describe("Only tasks deferred before this date"),
+    blockedOnly: z
+      .boolean()
+      .optional()
+      .describe("Only show tasks currently blocked by their defer date"),
+  }),
+  handler: async (input) =>
+    queryDeferred({
+      deferAfter: input.deferredAfter,
+      deferBefore: input.deferredBefore,
+      blockedOnly: input.blockedOnly,
+    }),
+});
 
 function makeEmptyResult(
   shape: ReturnType<typeof compileAggregate>["shape"],
