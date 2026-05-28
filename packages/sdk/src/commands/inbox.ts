@@ -146,6 +146,7 @@ export const addToInboxDescriptor = defineCommand({
   cliName: "inbox",
   mcpName: "inbox_add",
   description: "Add a new task to the OmniFocus inbox.",
+  cliPositional: ["title"],
   inputSchema: z.object({
     title: z.string().describe("Task title"),
     note: z.string().optional().describe("Task note / description"),

@@ -24,11 +24,11 @@ export function addToInbox(title: string, options?: InboxOptions): Promise<CliOu
 export const addToInboxDescriptor: ResolvedCommandDescriptor<    {
 title: string;
 note?: string | undefined;
-estimatedMinutes?: number | undefined;
-tags?: string[] | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
+tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
 repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
 repeatInterval?: number | undefined;
 repeatMethod?: "due-again" | "defer-another" | undefined;
@@ -50,11 +50,11 @@ repeatDayOfMonth: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
 title: string;
 note?: string | undefined;
-estimatedMinutes?: number | undefined;
-tags?: string[] | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
+tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
 repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
 repeatInterval?: number | undefined;
 repeatMethod?: "due-again" | "defer-another" | undefined;
@@ -63,11 +63,11 @@ repeatDayOfMonth?: number | undefined;
 }, {
 title: string;
 note?: string | undefined;
-estimatedMinutes?: number | undefined;
-tags?: string[] | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
+tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
 repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
 repeatInterval?: number | undefined;
 repeatMethod?: "due-again" | "defer-another" | undefined;

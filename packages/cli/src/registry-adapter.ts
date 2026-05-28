@@ -26,10 +26,18 @@ export type CliOutputHandler = (
  * | Zod type                    | Commander shape                |
  * | --------------------------- | ------------------------------ |
  * | `z.string()`                | `--name <value>`               |
- * | `z.number()`                | `--name <value>` with parseInt |
+ * | `z.number()`                | `--name <value>`               |
  * | `z.boolean()`               | `--name`                       |
  * | `z.enum([...])`             | `--name <value>` (choices)     |
  * | `z.array(z.string())`       | `--name <values...>`           |
+ * | `z.array(z.number())`       | `--name <values...>`           |
+ *
+ * Commander itself stores all option values as strings; the adapter coerces
+ * to numbers (for `ZodNumber` fields and `ZodArray<ZodNumber>` elements)
+ * before handing the raw input to Zod. Uncoercible values are passed
+ * through so Zod surfaces them through the standard validation path
+ * (`ErrorCode.VALIDATION_ERROR`) rather than aborting via Commander's own
+ * parser-error code path.
  *
  * Optional and default wrappers are unwrapped before inspection. Unknown
  * Zod types fall through to a plain `--name <value>` string option.
@@ -84,10 +92,15 @@ export function registerCliCommand<TSchema extends z.AnyZodObject>(
       }
     });
 
+    // Commander stores option values as strings; coerce to numbers where
+    // the schema expects them so Zod doesn't fail with "expected number,
+    // received string". Bad coercions are left as the raw string so the
+    // schema produces a clean VALIDATION_ERROR instead of throwing.
+    coerceInputForSchema(rawInput, shape);
+
     // Re-key option names — Commander stores `--repeat-frequency` as
     // `repeatFrequency` already (camelCase) for kebab-flagged options, so
-    // no remapping is needed. Empty strings on optional positionals become
-    // undefined so the schema treats them as "not provided".
+    // no remapping is needed.
     const parsed = descriptor.inputSchema.safeParse(rawInput);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
@@ -168,7 +181,10 @@ function addOptionForField(
   }
 
   if (inner instanceof z.ZodNumber) {
-    cmd.option(`${flag} <value>`, description, parseNumber);
+    // No custom parser — accept the raw string; coerceInputForSchema converts
+    // before safeParse. This keeps invalid input on the safeParse → handler
+    // path (VALIDATION_ERROR) instead of Commander's own error path.
+    cmd.option(`${flag} <value>`, description);
     return;
   }
 
@@ -189,10 +205,46 @@ function addOptionForField(
   cmd.option(`${flag} <value>`, description);
 }
 
-function parseNumber(value: string): number {
-  const parsed = Number(value);
-  if (Number.isNaN(parsed)) {
-    throw new Error(`Expected a number, got "${value}"`);
+/**
+ * Coerce string-typed CLI values to the JS shapes the descriptor's schema
+ * expects. Mutates `input` in place.
+ *
+ * Commander stores every option as a string (or array of strings for
+ * variadic options). Without coercion, a schema field like `z.number()`
+ * would fail with "expected number, received string" before the value
+ * reached the handler. We coerce here so the schema sees the JS type it
+ * expects, and uncoercible values are left as strings so Zod produces a
+ * clean validation error rather than aborting.
+ */
+function coerceInputForSchema(
+  input: Record<string, unknown>,
+  shape: Record<string, z.ZodTypeAny>
+): void {
+  for (const [field, schema] of Object.entries(shape)) {
+    const value = input[field];
+    if (value === undefined) continue;
+    const { inner } = unwrapField(schema);
+
+    if (inner instanceof z.ZodNumber && typeof value === "string") {
+      const num = Number(value);
+      if (!Number.isNaN(num)) {
+        input[field] = num;
+      }
+      // NaN: leave as string; z.number() will reject it cleanly.
+      continue;
+    }
+
+    if (inner instanceof z.ZodArray && Array.isArray(value)) {
+      const elementInner = unwrapField(
+        (inner as z.ZodArray<z.ZodTypeAny>).element
+      ).inner;
+      if (elementInner instanceof z.ZodNumber) {
+        input[field] = (value as unknown[]).map((v): unknown => {
+          if (typeof v !== "string") return v;
+          const num = Number(v);
+          return Number.isNaN(num) ? v : num;
+        });
+      }
+    }
   }
-  return parsed;
 }

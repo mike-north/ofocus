@@ -227,4 +227,65 @@ describe("registerCliCommand", () => {
 
     expect(handler).toHaveBeenCalledWith({ count: 42 });
   });
+
+  it("coerces numeric array elements (e.g., z.array(z.number()))", async () => {
+    const handler = vi.fn(
+      async (input: { days?: number[] }) =>
+        await Promise.resolve(success(input.days ?? []))
+    );
+
+    const program = new Command();
+    const cmd = defineCommand({
+      name: "thing",
+      description: "Do.",
+      inputSchema: z.object({
+        days: z.array(z.number().int()).optional(),
+      }),
+      handler,
+    });
+
+    registerCliCommand(program, cmd, () => undefined);
+    await program.parseAsync([
+      "node",
+      "test",
+      "thing",
+      "--days",
+      "1",
+      "2",
+      "3",
+    ]);
+
+    expect(handler).toHaveBeenCalledWith({ days: [1, 2, 3] });
+  });
+
+  it("routes invalid numeric input through the VALIDATION_ERROR path (not Commander's own error)", async () => {
+    const handler = vi.fn(
+      async () => await Promise.resolve(success({ ok: true }))
+    );
+    const onOutput = vi.fn();
+
+    const program = new Command();
+    const cmd = defineCommand({
+      name: "thing",
+      description: "Do.",
+      inputSchema: z.object({ count: z.number() }),
+      handler,
+    });
+
+    registerCliCommand(program, cmd, onOutput);
+
+    // Should not throw — Commander accepts the value as a string, the adapter
+    // leaves it uncoerced because Number("abc") is NaN, Zod rejects it and
+    // the failure flows through handleOutput.
+    await program.parseAsync(["node", "test", "thing", "--count", "abc"]);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(onOutput).toHaveBeenCalledOnce();
+    const [result] = onOutput.mock.calls[0]!;
+    expect((result as { success: boolean }).success).toBe(false);
+    expect(
+      (result as { error?: { code: string } }).error?.code
+    ).toBe(ErrorCode.VALIDATION_ERROR);
+    expect(process.exitCode).toBe(1);
+  });
 });
