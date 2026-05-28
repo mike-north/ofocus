@@ -255,3 +255,13 @@ export type { SyncStatus, SyncResult } from "./commands/sync.js";
 
 // Repetition helpers
 export { buildRRule } from "./commands/repetition.js";
+
+// Centralized command registry — drives CLI subcommands and MCP tools
+// from a single descriptor per command.
+export {
+  defineCommand,
+  toKebabCase,
+  toSnakeCase,
+  validateCanonicalName,
+} from "./registry/index.js";
+export type { CommandDescriptor } from "./registry/index.js";
