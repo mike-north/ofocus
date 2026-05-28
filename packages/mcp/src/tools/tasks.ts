@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
-  addToInbox,
+  addToInboxDescriptor,
   queryTasks,
   completeTask,
   updateTask,
@@ -17,6 +17,7 @@ import {
   openItem,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
+import { registerMcpTool } from "../registry-adapter.js";
 
 const RepetitionRuleSchema = z.object({
   frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
@@ -27,46 +28,8 @@ const RepetitionRuleSchema = z.object({
 });
 
 export function registerTaskTools(server: McpServer): void {
-  // inbox_add - Add a task to inbox
-  server.registerTool(
-    "inbox_add",
-    {
-      description: "Add a new task to the OmniFocus inbox",
-      inputSchema: {
-        title: z.string().describe("Task title"),
-        note: z.string().optional().describe("Task note/description"),
-        due: z
-          .string()
-          .optional()
-          .describe(
-            "Due date (ISO format or natural language like 'tomorrow')"
-          ),
-        defer: z
-          .string()
-          .optional()
-          .describe("Defer date (ISO format or natural language)"),
-        flag: z.boolean().optional().describe("Flag the task"),
-        tags: z.array(z.string()).optional().describe("Tags to apply"),
-        estimatedMinutes: z
-          .number()
-          .optional()
-          .describe("Estimated duration in minutes"),
-        repeat: RepetitionRuleSchema.optional().describe("Repetition rule"),
-      },
-    },
-    async (params) => {
-      const result = await addToInbox(params.title, {
-        note: params.note,
-        due: params.due,
-        defer: params.defer,
-        flag: params.flag,
-        tags: params.tags,
-        estimatedMinutes: params.estimatedMinutes,
-        repeat: params.repeat,
-      });
-      return formatResult(result);
-    }
-  );
+  // inbox_add — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, addToInboxDescriptor);
 
   // tasks_list - Query tasks with filters
   server.registerTool(

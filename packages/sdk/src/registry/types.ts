@@ -47,6 +47,20 @@ export interface CommandDescriptor<
   mcpName?: string;
 
   /**
+   * Ordered list of input-schema field names that should be exposed as
+   * **positional** arguments on the CLI rather than `--flag` options. The
+   * remaining fields are registered as options. MCP ignores this field
+   * because tools have no positional concept — every field is keyed.
+   *
+   * @example
+   * ```ts
+   * cliPositional: ["title"]
+   * // CLI: ofocus inbox "<title>" [--note ...]
+   * ```
+   */
+  cliPositional?: readonly string[];
+
+  /**
    * One- or two-sentence description used as both CLI help text and MCP tool
    * description. Keep it tight — verbose descriptions inflate every agent
    * call's token budget. Examples and flag details live in the

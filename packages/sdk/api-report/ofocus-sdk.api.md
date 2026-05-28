@@ -4,7 +4,7 @@
 
 ```ts
 
-import type { z } from 'zod';
+import { z } from 'zod';
 
 // @public
 export function addAttachment(taskId: string, filePath: string): Promise<CliOutput<AddAttachmentResult>>;
@@ -19,6 +19,61 @@ export interface AddAttachmentResult {
 
 // @public
 export function addToInbox(title: string, options?: InboxOptions): Promise<CliOutput<OFTask>>;
+
+// @public
+export const addToInboxDescriptor: ResolvedCommandDescriptor<    {
+title: string;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
+repeatInterval?: number | undefined;
+repeatMethod?: "due-again" | "defer-another" | undefined;
+repeatDaysOfWeek?: number[] | undefined;
+repeatDayOfMonth?: number | undefined;
+}, OFTask, z.ZodObject<{
+title: z.ZodString;
+note: z.ZodOptional<z.ZodString>;
+due: z.ZodOptional<z.ZodString>;
+defer: z.ZodOptional<z.ZodString>;
+flag: z.ZodOptional<z.ZodBoolean>;
+tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+estimatedMinutes: z.ZodOptional<z.ZodNumber>;
+repeatFrequency: z.ZodOptional<z.ZodEnum<["daily", "weekly", "monthly", "yearly"]>>;
+repeatInterval: z.ZodOptional<z.ZodNumber>;
+repeatMethod: z.ZodOptional<z.ZodEnum<["due-again", "defer-another"]>>;
+repeatDaysOfWeek: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
+repeatDayOfMonth: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+title: string;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
+repeatInterval?: number | undefined;
+repeatMethod?: "due-again" | "defer-another" | undefined;
+repeatDaysOfWeek?: number[] | undefined;
+repeatDayOfMonth?: number | undefined;
+}, {
+title: string;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
+repeatInterval?: number | undefined;
+repeatMethod?: "due-again" | "defer-another" | undefined;
+repeatDaysOfWeek?: number[] | undefined;
+repeatDayOfMonth?: number | undefined;
+}>>;
 
 // @public
 export type AggregateShape = "list" | "count" | "ids" | "single-first" | "single-last" | "groups";
@@ -142,6 +197,7 @@ export interface CliOutput<T> {
 // @public
 export interface CommandDescriptor<TInput = unknown, TOutput = unknown, TSchema extends z.AnyZodObject = z.AnyZodObject> {
     cliName?: string;
+    cliPositional?: readonly string[];
     description: string;
     handler: (input: TInput) => Promise<CliOutput<TOutput>>;
     inputSchema: TSchema;
@@ -369,8 +425,9 @@ export function defineCommand<TSchema extends z.AnyZodObject, TOutput>(spec: {
     mcpName?: string;
     description: string;
     inputSchema: TSchema;
+    cliPositional?: readonly string[];
     handler: (input: z.infer<TSchema>) => Promise<CliOutput<TOutput>>;
-}): Required<Pick<CommandDescriptor<z.infer<TSchema>, TOutput, TSchema>, "name" | "cliName" | "mcpName" | "description" | "inputSchema" | "handler">>;
+}): ResolvedCommandDescriptor<z.infer<TSchema>, TOutput, TSchema>;
 
 // @public
 export function deleteFolder(folderId: string): Promise<CliOutput<DeleteFolderResult>>;
@@ -1048,6 +1105,11 @@ export interface RepetitionRule {
     // (undocumented)
     repeatMethod: "due-again" | "defer-another";
 }
+
+// @public
+export type ResolvedCommandDescriptor<TInput, TOutput, TSchema extends z.AnyZodObject> = Omit<Required<CommandDescriptor<TInput, TOutput, TSchema>>, "cliPositional"> & {
+    cliPositional: readonly string[];
+};
 
 // @public
 export interface ReviewIntervalResult {

@@ -14,9 +14,9 @@ export const commandRegistry: CommandInfo[] = [
   {
     name: "inbox",
     description:
-      "Add a new task to the OmniFocus inbox. Supports setting title, note, due date, defer date, flags, and tags. Use this when you need to quickly capture a task without assigning it to a specific project. The task can be organized later from within OmniFocus.",
+      "Add a new task to the OmniFocus inbox. Supports setting title, note, due date, defer date, flags, tags, and a recurrence rule. Use this when you need to quickly capture a task without assigning it to a specific project. The task can be organized later from within OmniFocus.",
     usage:
-      "ofocus inbox <title> [--note <text>] [--due <date>] [--defer <date>] [--flag] [--tag <name>...]",
+      "ofocus inbox <title> [--note <text>] [--due <date>] [--defer <date>] [--flag] [--tags <name...>] [--estimated-minutes <n>] [--repeat-frequency <daily|weekly|monthly|yearly>] [--repeat-interval <n>] [--repeat-method <due-again|defer-another>] [--repeat-days-of-week <0..6...>] [--repeat-day-of-month <1..31>]",
   },
   {
     name: "tasks",
