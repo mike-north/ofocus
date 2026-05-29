@@ -9,7 +9,7 @@ Result of listing templates.
 **Signature:**
 
 ```typescript
-export interface ListTemplatesResult
+export interface ListTemplatesResult 
 ```
 
 ## Properties
@@ -18,32 +18,41 @@ export interface ListTemplatesResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [templates](./sdk.listtemplatesresult.templates.md)
 
+
 </td><td>
+
 
 </td><td>
 
 [TemplateSummary](./sdk.templatesummary.md)<!-- -->\[\]
 
+
 </td><td>
 
 Available templates
 
+
 </td></tr>
 </tbody></table>
+

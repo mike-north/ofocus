@@ -4,14 +4,14 @@
 
 ## queryFolders() function
 
-Query folders from OmniFocus with optional filters and pagination.
+Query folders from OmniFocus with the full shared-query vocabulary.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
 
 **Signature:**
 
 ```typescript
-export declare function queryFolders(
-  options?: FolderQueryOptions
-): Promise<CliOutput<PaginatedResult<OFFolder>>>;
+export declare function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<QueryResult<OFFolder>>>;
 ```
 
 ## Parameters
@@ -20,30 +20,37 @@ export declare function queryFolders(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [FolderQueryOptions](./sdk.folderqueryoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[PaginatedResult](./sdk.paginatedresult.md)<!-- -->&lt;[OFFolder](./sdk.offolder.md)<!-- -->&gt;&gt;&gt;
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[QueryResult](./sdk.queryresult.md)<!-- -->&lt;[OFFolder](./sdk.offolder.md)<!-- -->&gt;&gt;&gt;
+

@@ -4,7 +4,11 @@
 
 ## buildRRule() function
 
-Build iCalendar RRULE string from a RepetitionRule.
+Build an iCalendar RRULE string from a RepetitionRule.
+
+The output is the value passed as the first argument of `new Task.RepetitionRule(ruleString, method)` inside an OmniJS script. The `repeatMethod` field is intentionally \*not\* encoded here — it maps to the second constructor argument via [repeatMethodToOmniJS()](./sdk.repeatmethodtoomnijs.md)<!-- -->.
+
+Supported RRULE combinations: - FREQ=DAILY\[;INTERVAL=N\] - FREQ=WEEKLY\[;INTERVAL=N\]\[;BYDAY=MO,WE,...\] - FREQ=MONTHLY\[;INTERVAL=N\]\[;BYMONTHDAY=15\] - FREQ=MONTHLY\[;INTERVAL=N\]\[;BYDAY=1MO,-1MO,...\] (Nth-weekday form) - FREQ=YEARLY\[;INTERVAL=N\]\[;BYMONTH=3,6\]\[;BYMONTHDAY=25\]
 
 **Signature:**
 
@@ -18,24 +22,30 @@ export declare function buildRRule(rule: RepetitionRule): string;
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 rule
 
+
 </td><td>
 
 [RepetitionRule](./sdk.repetitionrule.md)
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -43,3 +53,4 @@ rule
 **Returns:**
 
 string
+

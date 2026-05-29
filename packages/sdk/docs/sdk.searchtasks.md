@@ -4,15 +4,14 @@
 
 ## searchTasks() function
 
-Search tasks in OmniFocus.
+Search tasks in OmniFocus by name, note, or both.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
 
 **Signature:**
 
 ```typescript
-export declare function searchTasks(
-  query: string,
-  options?: SearchOptions
-): Promise<CliOutput<OFTask[]>>;
+export declare function searchTasks(query: string, options?: SearchOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 ```
 
 ## Parameters
@@ -21,41 +20,51 @@ export declare function searchTasks(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 query
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [SearchOptions](./sdk.searchoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->\[\]&gt;&gt;
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[QueryResult](./sdk.queryresult.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->&gt;&gt;&gt;
+

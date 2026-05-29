@@ -9,7 +9,7 @@ Options for creating a project.
 **Signature:**
 
 ```typescript
-export interface CreateProjectOptions
+export interface CreateProjectOptions 
 ```
 
 ## Properties
@@ -18,122 +18,155 @@ export interface CreateProjectOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [deferDate?](./sdk.createprojectoptions.deferdate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [dueDate?](./sdk.createprojectoptions.duedate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [folderId?](./sdk.createprojectoptions.folderid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [folderName?](./sdk.createprojectoptions.foldername.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [note?](./sdk.createprojectoptions.note.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [sequential?](./sdk.createprojectoptions.sequential.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [status?](./sdk.createprojectoptions.status.md)
 
+
 </td><td>
+
 
 </td><td>
 
 "active" \| "on-hold" \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
 </td></tr>
 </tbody></table>
+

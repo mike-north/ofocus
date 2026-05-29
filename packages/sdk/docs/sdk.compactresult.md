@@ -9,7 +9,7 @@ Result of compact operation.
 **Signature:**
 
 ```typescript
-export interface CompactResult
+export interface CompactResult 
 ```
 
 ## Properties
@@ -18,47 +18,60 @@ export interface CompactResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [compacted](./sdk.compactresult.compacted.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
 
 Whether compact was triggered
+
 
 </td></tr>
 <tr><td>
 
 [message](./sdk.compactresult.message.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Message about the operation
 
+
 </td></tr>
 </tbody></table>
+

@@ -4,7 +4,7 @@
 
 ## DeferredQueryOptions.blockedOnly property
 
-Only show tasks that are currently blocked by defer date
+When `true`<!-- -->, only include tasks whose defer date is strictly in the future — i.e., tasks actively blocked by their defer date.
 
 **Signature:**
 

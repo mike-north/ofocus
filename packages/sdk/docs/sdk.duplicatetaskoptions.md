@@ -9,7 +9,7 @@ Options for duplicating a task.
 **Signature:**
 
 ```typescript
-export interface DuplicateTaskOptions
+export interface DuplicateTaskOptions 
 ```
 
 ## Properties
@@ -18,32 +18,41 @@ export interface DuplicateTaskOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [includeSubtasks?](./sdk.duplicatetaskoptions.includesubtasks.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
 </td></tr>
 </tbody></table>
+

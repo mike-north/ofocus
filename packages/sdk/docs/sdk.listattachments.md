@@ -9,9 +9,7 @@ List attachments of a task.
 **Signature:**
 
 ```typescript
-export declare function listAttachments(
-  taskId: string
-): Promise<CliOutput<ListAttachmentsResult>>;
+export declare function listAttachments(taskId: string): Promise<CliOutput<ListAttachmentsResult>>;
 ```
 
 ## Parameters
@@ -20,26 +18,32 @@ export declare function listAttachments(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
 
 Task ID to list attachments for
+
 
 </td></tr>
 </tbody></table>
@@ -47,3 +51,4 @@ Task ID to list attachments for
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[ListAttachmentsResult](./sdk.listattachmentsresult.md)<!-- -->&gt;&gt;
+

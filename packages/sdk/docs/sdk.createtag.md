@@ -9,10 +9,7 @@ Create a new tag in OmniFocus.
 **Signature:**
 
 ```typescript
-export declare function createTag(
-  name: string,
-  options?: CreateTagOptions
-): Promise<CliOutput<OFTag>>;
+export declare function createTag(name: string, options?: CreateTagOptions): Promise<CliOutput<OFTag>>;
 ```
 
 ## Parameters
@@ -21,37 +18,46 @@ export declare function createTag(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 name
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [CreateTagOptions](./sdk.createtagoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -59,3 +65,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTag](./sdk.oftag.md)<!-- -->&gt;&gt;
+

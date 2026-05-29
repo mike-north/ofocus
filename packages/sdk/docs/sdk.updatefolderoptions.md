@@ -9,7 +9,7 @@ Options for updating a folder.
 **Signature:**
 
 ```typescript
-export interface UpdateFolderOptions
+export interface UpdateFolderOptions 
 ```
 
 ## Properties
@@ -18,62 +18,79 @@ export interface UpdateFolderOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [name?](./sdk.updatefolderoptions.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [parentFolderId?](./sdk.updatefolderoptions.parentfolderid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [parentFolderName?](./sdk.updatefolderoptions.parentfoldername.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
 </td></tr>
 </tbody></table>
+

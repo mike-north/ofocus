@@ -9,9 +9,7 @@ Delete a project permanently from OmniFocus. Note: This cannot be undone.
 **Signature:**
 
 ```typescript
-export declare function deleteProject(
-  projectId: string
-): Promise<CliOutput<DeleteProjectResult>>;
+export declare function deleteProject(projectId: string): Promise<CliOutput<DeleteProjectResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function deleteProject(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 projectId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DeleteProjectResult](./sdk.deleteprojectresult.md)<!-- -->&gt;&gt;
+

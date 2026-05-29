@@ -9,7 +9,7 @@ Options for saving a template.
 **Signature:**
 
 ```typescript
-export interface SaveTemplateOptions
+export interface SaveTemplateOptions 
 ```
 
 ## Properties
@@ -18,62 +18,79 @@ export interface SaveTemplateOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [description?](./sdk.savetemplateoptions.description.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Template description
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.savetemplateoptions.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Template name
+
 
 </td></tr>
 <tr><td>
 
 [sourceProject](./sdk.savetemplateoptions.sourceproject.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Source project ID or name
 
+
 </td></tr>
 </tbody></table>
+

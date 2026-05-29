@@ -6,13 +6,12 @@
 
 Import tasks from TaskPaper format.
 
+The TypeScript-side TaskPaper parser (parseTaskPaperLine) is preserved exactly. After parsing, a single OmniJS script creates all projects and tasks in one execution rather than one round-trip per item.
+
 **Signature:**
 
 ```typescript
-export declare function importTaskPaper(
-  content: string,
-  options?: TaskPaperImportOptions
-): Promise<CliOutput<TaskPaperImportResult>>;
+export declare function importTaskPaper(content: string, options?: TaskPaperImportOptions): Promise<CliOutput<TaskPaperImportResult>>;
 ```
 
 ## Parameters
@@ -21,37 +20,46 @@ export declare function importTaskPaper(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 content
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [TaskPaperImportOptions](./sdk.taskpaperimportoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -59,3 +67,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[TaskPaperImportResult](./sdk.taskpaperimportresult.md)<!-- -->&gt;&gt;
+

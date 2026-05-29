@@ -9,7 +9,7 @@ OmniFocus perspective representation.
 **Signature:**
 
 ```typescript
-export interface OFPerspective
+export interface OFPerspective 
 ```
 
 ## Properties
@@ -18,56 +18,75 @@ export interface OFPerspective
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
 
+
 </th></tr></thead>
 <tbody><tr><td>
 
-[custom](./sdk.ofperspective.custom.md)
-
-</td><td>
-
-</td><td>
-
-boolean
-
-</td><td>
-
-</td></tr>
-<tr><td>
-
 [id](./sdk.ofperspective.id.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[kind](./sdk.ofperspective.kind.md)
+
+
+</td><td>
+
+
+</td><td>
+
+"builtin" \| "custom"
+
+
+</td><td>
+
+Whether this is a built-in or user-created custom perspective.
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.ofperspective.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

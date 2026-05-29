@@ -9,7 +9,7 @@ Options for updating a tag.
 **Signature:**
 
 ```typescript
-export interface UpdateTagOptions
+export interface UpdateTagOptions 
 ```
 
 ## Properties
@@ -18,62 +18,79 @@ export interface UpdateTagOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [name?](./sdk.updatetagoptions.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [parentTagId?](./sdk.updatetagoptions.parenttagid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [parentTagName?](./sdk.updatetagoptions.parenttagname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
 </td></tr>
 </tbody></table>
+

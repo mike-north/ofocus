@@ -11,7 +11,7 @@ List all available templates.
 ```typescript
 export declare function listTemplates(): CliOutput<ListTemplatesResult>;
 ```
-
 **Returns:**
 
 [CliOutput](./sdk.clioutput.md)<!-- -->&lt;[ListTemplatesResult](./sdk.listtemplatesresult.md)<!-- -->&gt;
+

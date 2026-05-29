@@ -4,15 +4,16 @@
 
 ## TaskQueryOptions interface
 
-Options for querying tasks.
+Options for querying tasks. Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) with the full predicate vocabulary supported by the OmniJS task query compiler.
+
+Every field is optional; only fields that are explicitly set contribute a filter condition to the compiled query.
 
 **Signature:**
 
 ```typescript
-export interface TaskQueryOptions extends PaginationOptions
+export interface TaskQueryOptions extends BaseListQueryOptions 
 ```
-
-**Extends:** [PaginationOptions](./sdk.paginationoptions.md)
+**Extends:** [BaseListQueryOptions](./sdk.baselistqueryoptions.md)
 
 ## Properties
 
@@ -20,122 +21,934 @@ export interface TaskQueryOptions extends PaginationOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [available?](./sdk.taskqueryoptions.available.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[blocked?](./sdk.taskqueryoptions.blocked.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[caseSensitive?](./sdk.taskqueryoptions.casesensitive.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Case sensitivity for `nameContains` / `nameStarts` / `noteContains`<!-- -->. Default: `false`<!-- -->.
+
 
 </td></tr>
 <tr><td>
 
 [completed?](./sdk.taskqueryoptions.completed.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[completedAfter?](./sdk.taskqueryoptions.completedafter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[completedBefore?](./sdk.taskqueryoptions.completedbefore.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[deferAfter?](./sdk.taskqueryoptions.deferafter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[deferBefore?](./sdk.taskqueryoptions.deferbefore.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[deferOn?](./sdk.taskqueryoptions.deferon.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[deferredToFuture?](./sdk.taskqueryoptions.deferredtofuture.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ When `true`<!-- -->, matches tasks whose `deferDate` is non-null and in the future (`t.deferDate > new Date()`<!-- -->). Used by `queryDeferred` `blockedOnly: true`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deferWithin?](./sdk.taskqueryoptions.deferwithin.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[dropped?](./sdk.taskqueryoptions.dropped.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [dueAfter?](./sdk.taskqueryoptions.dueafter.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [dueBefore?](./sdk.taskqueryoptions.duebefore.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
+</td><td>
+
+_(Optional)_ Each accepts ISO 8601 or a relative expression (see `parseDate`<!-- -->).
+
+
+</td></tr>
+<tr><td>
+
+[dueOn?](./sdk.taskqueryoptions.dueon.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match tasks whose dueDate falls on the given calendar day (UTC).
+
+
+</td></tr>
+<tr><td>
+
+[dueOrDeferWithin?](./sdk.taskqueryoptions.dueordeferwithin.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_ Duration string like `7d`<!-- -->/`1w` — matches tasks whose dueDate OR deferDate falls within `now..now+duration`<!-- -->. Used by `queryForecast` when `includeDeferred: true`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[dueWithin?](./sdk.taskqueryoptions.duewithin.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_ Duration string like `7d`<!-- -->/`1w` — `dueDate` must be within `now + duration`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[effectivelyCompleted?](./sdk.taskqueryoptions.effectivelycompleted.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
 </td><td>
 
 _(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[effectivelyDropped?](./sdk.taskqueryoptions.effectivelydropped.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[estimateBetween?](./sdk.taskqueryoptions.estimatebetween.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[NumericRange](./sdk.numericrange.md) \| undefined
+
+
+</td><td>
+
+_(Optional)_ Inclusive `[min, max]`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[estimateEq?](./sdk.taskqueryoptions.estimateeq.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[estimateGt?](./sdk.taskqueryoptions.estimategt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[estimateLt?](./sdk.taskqueryoptions.estimatelt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [flagged?](./sdk.taskqueryoptions.flagged.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[folder?](./sdk.taskqueryoptions.folder.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Folder name(s). A task matches if its containing project's folder chain contains any of the named folders (transitive).
+
+
+</td></tr>
+<tr><td>
+
+[hasAttachments?](./sdk.taskqueryoptions.hasattachments.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[hasDefer?](./sdk.taskqueryoptions.hasdefer.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[hasDue?](./sdk.taskqueryoptions.hasdue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[hasNote?](./sdk.taskqueryoptions.hasnote.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[hasRepetition?](./sdk.taskqueryoptions.hasrepetition.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[hasSubtasks?](./sdk.taskqueryoptions.hassubtasks.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[inInbox?](./sdk.taskqueryoptions.ininbox.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameContains?](./sdk.taskqueryoptions.namecontains.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameEquals?](./sdk.taskqueryoptions.nameequals.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameOrNoteContains?](./sdk.taskqueryoptions.nameornotecontains.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_ Matches tasks whose name OR note contains the given substring (case-insensitive). Used by `searchTasks` scope="both".
+
+
+</td></tr>
+<tr><td>
+
+[nameRegex?](./sdk.taskqueryoptions.nameregex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameStarts?](./sdk.taskqueryoptions.namestarts.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[noDue?](./sdk.taskqueryoptions.nodue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[notCompleted?](./sdk.taskqueryoptions.notcompleted.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[notDropped?](./sdk.taskqueryoptions.notdropped.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[noteContains?](./sdk.taskqueryoptions.notecontains.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[noteRegex?](./sdk.taskqueryoptions.noteregex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[notFlagged?](./sdk.taskqueryoptions.notflagged.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[parentTaskId?](./sdk.taskqueryoptions.parenttaskid.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match tasks whose direct parent task has the given primary key. Accepts a single ID or an array (any-of). Used by `querySubtasks`<!-- -->.
+
 
 </td></tr>
 <tr><td>
 
 [project?](./sdk.taskqueryoptions.project.md)
 
-</td><td>
 
 </td><td>
 
-string \| undefined
+
+</td><td>
+
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Project name(s). When an array is provided, semantics are "any of".
+
+
+</td></tr>
+<tr><td>
+
+[status?](./sdk.taskqueryoptions.status.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[TaskStatus](./sdk.taskstatus.md) \| undefined
+
 
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [tag?](./sdk.taskqueryoptions.tag.md)
 
-</td><td>
 
 </td><td>
 
-string \| undefined
 
 </td><td>
 
-_(Optional)_
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Tag name(s). Combine with `tagMode` to control matching.
+
+
+</td></tr>
+<tr><td>
+
+[tagMode?](./sdk.taskqueryoptions.tagmode.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[TagMode](./sdk.tagmode.md) \| undefined
+
+
+</td><td>
+
+_(Optional)_ Tag-matching mode. Default: `"all"`<!-- -->.
+
 
 </td></tr>
 </tbody></table>
+

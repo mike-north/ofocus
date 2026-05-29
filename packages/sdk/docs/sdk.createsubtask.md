@@ -9,11 +9,7 @@ Create a subtask under a parent task in OmniFocus.
 **Signature:**
 
 ```typescript
-export declare function createSubtask(
-  title: string,
-  parentTaskId: string,
-  options?: InboxOptions
-): Promise<CliOutput<OFTaskWithChildren>>;
+export declare function createSubtask(title: string, parentTaskId: string, options?: InboxOptions): Promise<CliOutput<OFTaskWithChildren>>;
 ```
 
 ## Parameters
@@ -22,48 +18,60 @@ export declare function createSubtask(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 title
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 parentTaskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [InboxOptions](./sdk.inboxoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -71,3 +79,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTaskWithChildren](./sdk.oftaskwithchildren.md)<!-- -->&gt;&gt;
+

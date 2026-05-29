@@ -9,7 +9,7 @@ Quick capture options.
 **Signature:**
 
 ```typescript
-export interface QuickOptions
+export interface QuickOptions 
 ```
 
 ## Properties
@@ -18,32 +18,41 @@ export interface QuickOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [note?](./sdk.quickoptions.note.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Additional note text to add
 
+
 </td></tr>
 </tbody></table>
+

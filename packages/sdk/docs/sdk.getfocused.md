@@ -11,7 +11,7 @@ Get the current focus state in OmniFocus.
 ```typescript
 export declare function getFocused(): Promise<CliOutput<FocusResult>>;
 ```
-
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[FocusResult](./sdk.focusresult.md)<!-- -->&gt;&gt;
+

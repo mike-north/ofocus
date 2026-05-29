@@ -9,7 +9,7 @@ Paginated result wrapper with metadata.
 **Signature:**
 
 ```typescript
-export interface PaginatedResult<T>
+export interface PaginatedResult<T> 
 ```
 
 ## Properties
@@ -18,107 +18,136 @@ export interface PaginatedResult<T>
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [hasMore](./sdk.paginatedresult.hasmore.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
 
 Whether there are more items after this page
+
 
 </td></tr>
 <tr><td>
 
 [items](./sdk.paginatedresult.items.md)
 
+
 </td><td>
+
 
 </td><td>
 
 T\[\]
 
+
 </td><td>
 
 The items for this page
+
 
 </td></tr>
 <tr><td>
 
 [limit](./sdk.paginatedresult.limit.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
 
 The limit used for this query
+
 
 </td></tr>
 <tr><td>
 
 [offset](./sdk.paginatedresult.offset.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
 
 The offset used for this query
+
 
 </td></tr>
 <tr><td>
 
 [returnedCount](./sdk.paginatedresult.returnedcount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
 
 Number of items returned in this page
+
 
 </td></tr>
 <tr><td>
 
 [totalCount](./sdk.paginatedresult.totalcount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
 
 Total number of items matching the query (before pagination)
 
+
 </td></tr>
 </tbody></table>
+

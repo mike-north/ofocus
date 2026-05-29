@@ -9,9 +9,7 @@ Drop a project in OmniFocus (marks as dropped but keeps history).
 **Signature:**
 
 ```typescript
-export declare function dropProject(
-  projectId: string
-): Promise<CliOutput<DropProjectResult>>;
+export declare function dropProject(projectId: string): Promise<CliOutput<DropProjectResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function dropProject(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 projectId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DropProjectResult](./sdk.dropprojectresult.md)<!-- -->&gt;&gt;
+

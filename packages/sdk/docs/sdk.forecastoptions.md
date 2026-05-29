@@ -6,11 +6,14 @@
 
 Options for querying forecast tasks.
 
+Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) so callers get the full shared-query vocabulary (sort, fields, count, groupBy, etc.) in addition to the forecast-specific predicates.
+
 **Signature:**
 
 ```typescript
-export interface ForecastOptions
+export interface ForecastOptions extends BaseListQueryOptions 
 ```
+**Extends:** [BaseListQueryOptions](./sdk.baselistqueryoptions.md)
 
 ## Properties
 
@@ -18,77 +21,60 @@ export interface ForecastOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [days?](./sdk.forecastoptions.days.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number \| undefined
 
-</td><td>
-
-_(Optional)_ Number of days from start to include (alternative to end)
-
-</td></tr>
-<tr><td>
-
-[end?](./sdk.forecastoptions.end.md)
 
 </td><td>
 
-</td><td>
+_(Optional)_ Number of days from today to include in the forecast window. Default: `7`<!-- -->. Must be a positive integer.
 
-string \| undefined
-
-</td><td>
-
-_(Optional)_ End date for the forecast range
 
 </td></tr>
 <tr><td>
 
 [includeDeferred?](./sdk.forecastoptions.includedeferred.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
-</td><td>
-
-_(Optional)_ Include tasks with no due date but deferred to the range
-
-</td></tr>
-<tr><td>
-
-[start?](./sdk.forecastoptions.start.md)
 
 </td><td>
 
-</td><td>
+_(Optional)_ When `true`<!-- -->, tasks whose deferDate falls within the forecast window are also included (in addition to tasks due within the window). Default: `false`<!-- -->.
 
-string \| undefined
-
-</td><td>
-
-_(Optional)_ Start date for the forecast range (defaults to today)
 
 </td></tr>
 </tbody></table>
+

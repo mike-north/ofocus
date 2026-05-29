@@ -4,7 +4,7 @@
 
 ## ForecastOptions.days property
 
-Number of days from start to include (alternative to end)
+Number of days from today to include in the forecast window. Default: `7`<!-- -->. Must be a positive integer.
 
 **Signature:**
 

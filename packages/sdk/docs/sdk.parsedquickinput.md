@@ -9,7 +9,7 @@ Parsed result from quick capture input.
 **Signature:**
 
 ```typescript
-export interface ParsedQuickInput
+export interface ParsedQuickInput 
 ```
 
 ## Properties
@@ -18,134 +18,175 @@ export interface ParsedQuickInput
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [defer](./sdk.parsedquickinput.defer.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [due](./sdk.parsedquickinput.due.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [estimatedMinutes](./sdk.parsedquickinput.estimatedminutes.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [flagged](./sdk.parsedquickinput.flagged.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [note](./sdk.parsedquickinput.note.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [project](./sdk.parsedquickinput.project.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [repeat](./sdk.parsedquickinput.repeat.md)
 
+
 </td><td>
+
 
 </td><td>
 
 [RepetitionRule](./sdk.repetitionrule.md) \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [tags](./sdk.parsedquickinput.tags.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string\[\]
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [title](./sdk.parsedquickinput.title.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

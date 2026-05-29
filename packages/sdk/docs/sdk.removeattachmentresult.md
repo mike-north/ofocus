@@ -9,7 +9,7 @@ Result of removing an attachment.
 **Signature:**
 
 ```typescript
-export interface RemoveAttachmentResult
+export interface RemoveAttachmentResult 
 ```
 
 ## Properties
@@ -18,62 +18,79 @@ export interface RemoveAttachmentResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [attachmentName](./sdk.removeattachmentresult.attachmentname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Attachment name
+
 
 </td></tr>
 <tr><td>
 
 [removed](./sdk.removeattachmentresult.removed.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
 
 Success status
+
 
 </td></tr>
 <tr><td>
 
 [taskId](./sdk.removeattachmentresult.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Task ID
 
+
 </td></tr>
 </tbody></table>
+

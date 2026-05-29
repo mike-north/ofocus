@@ -9,7 +9,7 @@ Result from deleting a folder.
 **Signature:**
 
 ```typescript
-export interface DeleteFolderResult
+export interface DeleteFolderResult 
 ```
 
 ## Properties
@@ -18,43 +18,56 @@ export interface DeleteFolderResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [deleted](./sdk.deletefolderresult.deleted.md)
 
+
 </td><td>
+
 
 </td><td>
 
 true
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [folderId](./sdk.deletefolderresult.folderid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

@@ -18,24 +18,30 @@ export declare function validateSearchQuery(query: string): CliError | null;
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 query
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -43,3 +49,4 @@ string
 **Returns:**
 
 [CliError](./sdk.clierror.md) \| null
+

@@ -9,7 +9,7 @@ Options for creating a folder.
 **Signature:**
 
 ```typescript
-export interface CreateFolderOptions
+export interface CreateFolderOptions 
 ```
 
 ## Properties
@@ -18,47 +18,60 @@ export interface CreateFolderOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [parentFolderId?](./sdk.createfolderoptions.parentfolderid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [parentFolderName?](./sdk.createfolderoptions.parentfoldername.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
 </td></tr>
 </tbody></table>
+

@@ -9,7 +9,7 @@ Item in batch defer result.
 **Signature:**
 
 ```typescript
-export interface BatchDeferItem
+export interface BatchDeferItem 
 ```
 
 ## Properties
@@ -18,69 +18,90 @@ export interface BatchDeferItem
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [newDeferDate](./sdk.batchdeferitem.newdeferdate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [previousDeferDate](./sdk.batchdeferitem.previousdeferdate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskId](./sdk.batchdeferitem.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskName](./sdk.batchdeferitem.taskname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

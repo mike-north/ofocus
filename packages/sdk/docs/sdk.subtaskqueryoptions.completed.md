@@ -4,6 +4,8 @@
 
 ## SubtaskQueryOptions.completed property
 
+When set, filter by completion status.
+
 **Signature:**
 
 ```typescript

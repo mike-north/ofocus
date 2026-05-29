@@ -4,6 +4,8 @@
 
 ## SubtaskQueryOptions.flagged property
 
+When set, filter by flagged status.
+
 **Signature:**
 
 ```typescript

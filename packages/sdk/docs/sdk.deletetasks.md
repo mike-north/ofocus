@@ -9,9 +9,7 @@ Delete multiple tasks permanently in a single operation.
 **Signature:**
 
 ```typescript
-export declare function deleteTasks(
-  taskIds: string[]
-): Promise<CliOutput<BatchResult<BatchDeleteItem>>>;
+export declare function deleteTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchDeleteItem>>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function deleteTasks(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskIds
 
+
 </td><td>
 
 string\[\]
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string\[\]
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[BatchResult](./sdk.batchresult.md)<!-- -->&lt;[BatchDeleteItem](./sdk.batchdeleteitem.md)<!-- -->&gt;&gt;&gt;
+

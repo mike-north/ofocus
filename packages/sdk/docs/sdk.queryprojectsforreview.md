@@ -4,16 +4,14 @@
 
 ## queryProjectsForReview() function
 
-Query projects that are due for review in OmniFocus.
+Query projects that are due for review in OmniFocus. Returns active (and on-hold) projects whose nextReviewDate is in the past or today.
 
 **Signature:**
 
 ```typescript
-export declare function queryProjectsForReview(): Promise<
-  CliOutput<OFProject[]>
->;
+export declare function queryProjectsForReview(): Promise<CliOutput<OFProject[]>>;
 ```
-
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFProject](./sdk.ofproject.md)<!-- -->\[\]&gt;&gt;
+

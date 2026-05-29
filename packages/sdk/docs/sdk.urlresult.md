@@ -9,7 +9,7 @@ Result from URL generation.
 **Signature:**
 
 ```typescript
-export interface UrlResult
+export interface UrlResult 
 ```
 
 ## Properties
@@ -18,69 +18,90 @@ export interface UrlResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [id](./sdk.urlresult.id.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.urlresult.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [type](./sdk.urlresult.type.md)
 
+
 </td><td>
+
 
 </td><td>
 
 "task" \| "project" \| "folder" \| "tag"
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [url](./sdk.urlresult.url.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

@@ -4,14 +4,14 @@
 
 ## queryTags() function
 
-Query tags from OmniFocus with optional filters and pagination.
+Query tags from OmniFocus with the full shared-query vocabulary.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
 
 **Signature:**
 
 ```typescript
-export declare function queryTags(
-  options?: TagQueryOptions
-): Promise<CliOutput<PaginatedResult<OFTag>>>;
+export declare function queryTags(options?: TagQueryOptions): Promise<CliOutput<QueryResult<OFTag>>>;
 ```
 
 ## Parameters
@@ -20,30 +20,37 @@ export declare function queryTags(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [TagQueryOptions](./sdk.tagqueryoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[PaginatedResult](./sdk.paginatedresult.md)<!-- -->&lt;[OFTag](./sdk.oftag.md)<!-- -->&gt;&gt;&gt;
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[QueryResult](./sdk.queryresult.md)<!-- -->&lt;[OFTag](./sdk.oftag.md)<!-- -->&gt;&gt;&gt;
+
