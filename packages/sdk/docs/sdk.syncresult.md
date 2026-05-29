@@ -9,7 +9,7 @@ Result of sync operation.
 **Signature:**
 
 ```typescript
-export interface SyncResult
+export interface SyncResult 
 ```
 
 ## Properties
@@ -18,47 +18,60 @@ export interface SyncResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [message](./sdk.syncresult.message.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Message about the operation
+
 
 </td></tr>
 <tr><td>
 
 [triggered](./sdk.syncresult.triggered.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
 
 Whether sync was triggered
 
+
 </td></tr>
 </tbody></table>
+

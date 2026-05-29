@@ -4,14 +4,16 @@
 
 ## compactDatabase() function
 
-Trigger database compaction in OmniFocus. Compaction removes deleted items and optimizes the database.
+Trigger database compaction in OmniFocus.
+
+The AppleScript `compact` command has no equivalent in OmniJS — OmniFocus handles database compaction internally and does not expose it to JavaScript automation. This function returns a structured result documenting this limitation rather than fabricating success or silently failing.
 
 **Signature:**
 
 ```typescript
 export declare function compactDatabase(): Promise<CliOutput<CompactResult>>;
 ```
-
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[CompactResult](./sdk.compactresult.md)<!-- -->&gt;&gt;
+

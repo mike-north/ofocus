@@ -9,7 +9,7 @@ Options for querying a perspective.
 **Signature:**
 
 ```typescript
-export interface PerspectiveQueryOptions
+export interface PerspectiveQueryOptions 
 ```
 
 ## Properties
@@ -18,32 +18,41 @@ export interface PerspectiveQueryOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [limit?](./sdk.perspectivequeryoptions.limit.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
 </td></tr>
 </tbody></table>
+

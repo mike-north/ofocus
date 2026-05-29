@@ -9,7 +9,7 @@ Result of a TaskPaper export.
 **Signature:**
 
 ```typescript
-export interface TaskPaperExportResult
+export interface TaskPaperExportResult 
 ```
 
 ## Properties
@@ -18,56 +18,73 @@ export interface TaskPaperExportResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [content](./sdk.taskpaperexportresult.content.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectCount](./sdk.taskpaperexportresult.projectcount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskCount](./sdk.taskpaperexportresult.taskcount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

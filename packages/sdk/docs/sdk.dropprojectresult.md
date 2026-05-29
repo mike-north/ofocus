@@ -9,7 +9,7 @@ Result from dropping a project.
 **Signature:**
 
 ```typescript
-export interface DropProjectResult
+export interface DropProjectResult 
 ```
 
 ## Properties
@@ -18,56 +18,73 @@ export interface DropProjectResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [dropped](./sdk.dropprojectresult.dropped.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectId](./sdk.dropprojectresult.projectid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectName](./sdk.dropprojectresult.projectname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

@@ -4,8 +4,10 @@
 
 ## TaskQueryOptions.tag property
 
+Tag name(s). Combine with `tagMode` to control matching.
+
 **Signature:**
 
 ```typescript
-tag?: string | undefined;
+tag?: string | string[] | undefined;
 ```

@@ -9,7 +9,7 @@ Options for creating a tag.
 **Signature:**
 
 ```typescript
-export interface CreateTagOptions
+export interface CreateTagOptions 
 ```
 
 ## Properties
@@ -18,47 +18,60 @@ export interface CreateTagOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [parentTagId?](./sdk.createtagoptions.parenttagid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [parentTagName?](./sdk.createtagoptions.parenttagname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
 </td></tr>
 </tbody></table>
+

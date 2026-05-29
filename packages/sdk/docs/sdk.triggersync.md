@@ -6,12 +6,14 @@
 
 Trigger a sync operation.
 
+`document.sync()` fires sync in the background and returns immediately. There is no OmniJS primitive to await completion.
+
 **Signature:**
 
 ```typescript
 export declare function triggerSync(): Promise<CliOutput<SyncResult>>;
 ```
-
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[SyncResult](./sdk.syncresult.md)<!-- -->&gt;&gt;
+

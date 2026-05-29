@@ -4,14 +4,14 @@
 
 ## archiveTasks() function
 
-Archive completed/dropped tasks and projects. Note: OmniFocus archives are stored in \~/Library/Containers/com.omnigroup.OmniFocus3/Data/Library/Application Support/OmniFocus/Archive/
+Archive completed/dropped tasks and projects.
+
+In OmniJS, this scans `flattenedTasks` for completed/dropped tasks matching the date filters and counts them. OmniFocus automatically archives old completed tasks to \~/Library/Containers/.../OmniFocus/Archive/; this command does not delete tasks because the AppleScript implementation also did not delete them — it only called `compact` as a DB-optimization step.
 
 **Signature:**
 
 ```typescript
-export declare function archiveTasks(
-  options?: ArchiveOptions
-): Promise<CliOutput<ArchiveResult>>;
+export declare function archiveTasks(options?: ArchiveOptions): Promise<CliOutput<ArchiveResult>>;
 ```
 
 ## Parameters
@@ -20,26 +20,32 @@ export declare function archiveTasks(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [ArchiveOptions](./sdk.archiveoptions.md)
 
+
 </td><td>
 
 _(Optional)_ Archive options
+
 
 </td></tr>
 </tbody></table>
@@ -47,3 +53,4 @@ _(Optional)_ Archive options
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[ArchiveResult](./sdk.archiveresult.md)<!-- -->&gt;&gt;
+

@@ -9,10 +9,7 @@ Create a new folder in OmniFocus.
 **Signature:**
 
 ```typescript
-export declare function createFolder(
-  name: string,
-  options?: CreateFolderOptions
-): Promise<CliOutput<OFFolder>>;
+export declare function createFolder(name: string, options?: CreateFolderOptions): Promise<CliOutput<OFFolder>>;
 ```
 
 ## Parameters
@@ -21,37 +18,46 @@ export declare function createFolder(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 name
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [CreateFolderOptions](./sdk.createfolderoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -59,3 +65,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFFolder](./sdk.offolder.md)<!-- -->&gt;&gt;
+

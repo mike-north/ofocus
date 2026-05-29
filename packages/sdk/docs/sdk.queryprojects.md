@@ -4,14 +4,14 @@
 
 ## queryProjects() function
 
-Query projects from OmniFocus with optional filters and pagination.
+Query projects from OmniFocus with the full shared-query vocabulary.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
 
 **Signature:**
 
 ```typescript
-export declare function queryProjects(
-  options?: ProjectQueryOptions
-): Promise<CliOutput<PaginatedResult<OFProject>>>;
+export declare function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<QueryResult<OFProject>>>;
 ```
 
 ## Parameters
@@ -20,30 +20,37 @@ export declare function queryProjects(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [ProjectQueryOptions](./sdk.projectqueryoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[PaginatedResult](./sdk.paginatedresult.md)<!-- -->&lt;[OFProject](./sdk.ofproject.md)<!-- -->&gt;&gt;&gt;
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[QueryResult](./sdk.queryresult.md)<!-- -->&lt;[OFProject](./sdk.ofproject.md)<!-- -->&gt;&gt;&gt;
+

@@ -4,14 +4,16 @@
 
 ## queryDeferred() function
 
-Query all deferred tasks from OmniFocus. Returns tasks that have a defer date set.
+Query all deferred tasks from OmniFocus.
+
+The preset for this command includes: hasDefer, completed: false, and effectivelyDropped: false. Additional predicates can be added via the options object.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
 
 **Signature:**
 
 ```typescript
-export declare function queryDeferred(
-  options?: DeferredQueryOptions
-): Promise<CliOutput<OFTask[]>>;
+export declare function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 ```
 
 ## Parameters
@@ -20,30 +22,37 @@ export declare function queryDeferred(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [DeferredQueryOptions](./sdk.deferredqueryoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->\[\]&gt;&gt;
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[QueryResult](./sdk.queryresult.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->&gt;&gt;&gt;
+

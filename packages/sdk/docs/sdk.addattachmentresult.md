@@ -9,7 +9,7 @@ Result of adding an attachment.
 **Signature:**
 
 ```typescript
-export interface AddAttachmentResult
+export interface AddAttachmentResult 
 ```
 
 ## Properties
@@ -18,77 +18,98 @@ export interface AddAttachmentResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [attached](./sdk.addattachmentresult.attached.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
 
 Success status
+
 
 </td></tr>
 <tr><td>
 
 [fileName](./sdk.addattachmentresult.filename.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Attached file name
+
 
 </td></tr>
 <tr><td>
 
 [taskId](./sdk.addattachmentresult.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Task ID
+
 
 </td></tr>
 <tr><td>
 
 [taskName](./sdk.addattachmentresult.taskname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Task name
 
+
 </td></tr>
 </tbody></table>
+

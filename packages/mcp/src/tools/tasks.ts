@@ -14,9 +14,9 @@ import {
   deferTasksDescriptor,
   applyRepetitionRuleDescriptor,
   clearRepetitionRuleDescriptor,
+  openItemDescriptor,
   queryTasks,
   updateTask,
-  openItem,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
 import { registerMcpTool } from "../registry-adapter.js";
@@ -57,6 +57,24 @@ export function registerTaskTools(server: McpServer): void {
           .boolean()
           .optional()
           .describe("Only show available (actionable) tasks"),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe("Maximum number of results to return"),
+        offset: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe("Number of results to skip for pagination"),
+        all: z
+          .boolean()
+          .optional()
+          .describe(
+            "When true, return every matching task ignoring limit/offset. Mutually exclusive with limit and offset."
+          ),
       },
     },
     async (params) => {
@@ -68,6 +86,9 @@ export function registerTaskTools(server: McpServer): void {
         flagged: params.flagged,
         completed: params.completed,
         available: params.available,
+        limit: params.limit,
+        offset: params.offset,
+        all: params.all,
       });
       return formatResult(result);
     }
@@ -143,21 +164,6 @@ export function registerTaskTools(server: McpServer): void {
   registerMcpTool(server, applyRepetitionRuleDescriptor);
   registerMcpTool(server, clearRepetitionRuleDescriptor);
 
-  // open - Open an item in OmniFocus UI
-  server.registerTool(
-    "open",
-    {
-      description:
-        "Open an item in the OmniFocus user interface (task, project, folder, or tag)",
-      inputSchema: {
-        id: z
-          .string()
-          .describe("The ID of the item to open (auto-detects type)"),
-      },
-    },
-    async (params) => {
-      const result = await openItem(params.id);
-      return formatResult(result);
-    }
-  );
+  // open — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, openItemDescriptor);
 }

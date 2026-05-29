@@ -9,10 +9,7 @@ Remove an attachment from a task.
 **Signature:**
 
 ```typescript
-export declare function removeAttachment(
-  taskId: string,
-  attachmentIdOrName: string
-): Promise<CliOutput<RemoveAttachmentResult>>;
+export declare function removeAttachment(taskId: string, attachmentIdOrName: string): Promise<CliOutput<RemoveAttachmentResult>>;
 ```
 
 ## Parameters
@@ -21,39 +18,48 @@ export declare function removeAttachment(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
 
 Task ID to remove attachment from
+
 
 </td></tr>
 <tr><td>
 
 attachmentIdOrName
 
+
 </td><td>
 
 string
 
+
 </td><td>
 
-Attachment ID or name to remove
+Attachment name (as returned by listAttachments) or filename
+
 
 </td></tr>
 </tbody></table>
@@ -61,3 +67,4 @@ Attachment ID or name to remove
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[RemoveAttachmentResult](./sdk.removeattachmentresult.md)<!-- -->&gt;&gt;
+

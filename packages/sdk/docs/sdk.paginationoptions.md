@@ -9,7 +9,7 @@ Common pagination options for query functions.
 **Signature:**
 
 ```typescript
-export interface PaginationOptions
+export interface PaginationOptions 
 ```
 
 ## Properties
@@ -18,47 +18,79 @@ export interface PaginationOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
 
+
 </th></tr></thead>
 <tbody><tr><td>
 
-[limit?](./sdk.paginationoptions.limit.md)
+[all?](./sdk.paginationoptions.all.md)
+
 
 </td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ When true, return every matching item ignoring --limit/--offset. Safe for queries that fit in memory; the entire match set is materialized server-side. Mutually exclusive with `limit` and `offset`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[limit?](./sdk.paginationoptions.limit.md)
+
+
+</td><td>
+
 
 </td><td>
 
 number \| undefined
 
+
 </td><td>
 
 _(Optional)_ Maximum number of results to return. Defaults to 100.
+
 
 </td></tr>
 <tr><td>
 
 [offset?](./sdk.paginationoptions.offset.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number \| undefined
 
+
 </td><td>
 
 _(Optional)_ Number of results to skip (for pagination). Defaults to 0.
 
+
 </td></tr>
 </tbody></table>
+

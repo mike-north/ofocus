@@ -4,8 +4,10 @@
 
 ## ProjectQueryOptions.folder property
 
+Folder name(s) or id(s). A project matches if its folder chain contains any of the named folders (transitive).
+
 **Signature:**
 
 ```typescript
-folder?: string | undefined;
+folder?: string | string[] | undefined;
 ```

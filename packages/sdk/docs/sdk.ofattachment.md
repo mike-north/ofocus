@@ -9,7 +9,7 @@ Attachment information.
 **Signature:**
 
 ```typescript
-export interface OFAttachment
+export interface OFAttachment 
 ```
 
 ## Properties
@@ -18,77 +18,98 @@ export interface OFAttachment
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [id](./sdk.ofattachment.id.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Attachment ID
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.ofattachment.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Attachment name (filename)
+
 
 </td></tr>
 <tr><td>
 
 [size](./sdk.ofattachment.size.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number \| null
 
+
 </td><td>
 
 File size in bytes (if available)
+
 
 </td></tr>
 <tr><td>
 
 [type](./sdk.ofattachment.type.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
 
 MIME type or file type (if available)
 
+
 </td></tr>
 </tbody></table>
+

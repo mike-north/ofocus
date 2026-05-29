@@ -9,9 +9,7 @@ Delete a template.
 **Signature:**
 
 ```typescript
-export declare function deleteTemplate(
-  name: string
-): CliOutput<DeleteTemplateResult>;
+export declare function deleteTemplate(name: string): CliOutput<DeleteTemplateResult>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function deleteTemplate(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 name
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 [CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DeleteTemplateResult](./sdk.deletetemplateresult.md)<!-- -->&gt;
+

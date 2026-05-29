@@ -6,10 +6,14 @@
 
 Repetition rule for recurring tasks.
 
+Maps to OmniFocus's `Task.RepetitionRule` constructor: `new Task.RepetitionRule(ruleString, method)`
+
+Supported combinations (per RFC 5545 §3.3.10): - \*\*Daily\*\*: `{ frequency: "daily", interval: N }` - \*\*Weekly with days\*\*: `{ frequency: "weekly", daysOfWeek: [1,3,5] }` → `FREQ=WEEKLY;BYDAY=MO,WE,FR` - \*\*Monthly by day-of-month\*\*: `{ frequency: "monthly", dayOfMonth: 15 }` → `FREQ=MONTHLY;BYMONTHDAY=15` - \*\*Monthly by Nth weekday\*\*: `{ frequency: "monthly", daysOfWeek: [1], daysOfWeekPositions: [1] }` → `FREQ=MONTHLY;BYDAY=1MO` (first Monday) - \*\*Monthly cross-product\*\*: `{ frequency: "monthly", daysOfWeek: [1,3], daysOfWeekPositions: [1,-1] }` → `FREQ=MONTHLY;BYDAY=1MO,1WE,-1MO,-1WE` (first and last Monday and Wednesday) - \*\*Yearly\*\*: `{ frequency: "yearly" }` - \*\*Yearly with months\*\*: `{ frequency: "yearly", monthsOfYear: [3,6,9,12] }` → `FREQ=YEARLY;BYMONTH=3,6,9,12`
+
 **Signature:**
 
 ```typescript
-export interface RepetitionRule
+export interface RepetitionRule 
 ```
 
 ## Properties
@@ -18,86 +22,155 @@ export interface RepetitionRule
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [dayOfMonth?](./sdk.repetitionrule.dayofmonth.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [daysOfWeek?](./sdk.repetitionrule.daysofweek.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number\[\] \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[daysOfWeekPositions?](./sdk.repetitionrule.daysofweekpositions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Positional prefix for BYDAY when `frequency` is `"monthly"`<!-- -->.
+
+Values must be integers in `[-5, -1] ∪ [1, 5]` (RFC 5545 allows up to the 5th occurrence within a month). Positions apply to \*\*all\*\* listed `daysOfWeek` entries — the emitted BYDAY is the cross-product.
+
 
 </td></tr>
 <tr><td>
 
 [frequency](./sdk.repetitionrule.frequency.md)
 
+
 </td><td>
+
 
 </td><td>
 
 "daily" \| "weekly" \| "monthly" \| "yearly"
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [interval](./sdk.repetitionrule.interval.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[monthsOfYear?](./sdk.repetitionrule.monthsofyear.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Month-of-year values for `BYMONTH=` in YEARLY recurrences.
+
+Values must be integers in `[1, 12]` (1 = January, 12 = December). Only valid when `frequency` is `"yearly"`<!-- -->.
+
 
 </td></tr>
 <tr><td>
 
 [repeatMethod](./sdk.repetitionrule.repeatmethod.md)
 
-</td><td>
 
 </td><td>
 
-"due-again" \| "defer-another"
 
 </td><td>
+
+"due-again" \| "defer-another" \| "scheduled"
+
+
+</td><td>
+
+How OmniFocus reschedules the task after completion.
+
 
 </td></tr>
 </tbody></table>
+

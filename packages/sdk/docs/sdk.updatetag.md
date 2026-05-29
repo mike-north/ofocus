@@ -9,10 +9,7 @@ Update an existing tag in OmniFocus.
 **Signature:**
 
 ```typescript
-export declare function updateTag(
-  tagId: string,
-  options: UpdateTagOptions
-): Promise<CliOutput<OFTag>>;
+export declare function updateTag(tagId: string, options: UpdateTagOptions): Promise<CliOutput<OFTag>>;
 ```
 
 ## Parameters
@@ -21,35 +18,44 @@ export declare function updateTag(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 tagId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [UpdateTagOptions](./sdk.updatetagoptions.md)
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -57,3 +63,4 @@ options
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTag](./sdk.oftag.md)<!-- -->&gt;&gt;
+

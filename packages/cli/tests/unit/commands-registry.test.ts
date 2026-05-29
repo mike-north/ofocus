@@ -82,6 +82,28 @@ describe("commandRegistry — batch-ops command usage strings", () => {
 // registry, short aliases were dropped and flag names were normalized to
 // kebab-case. The hand-maintained `list-commands` usage strings must reflect
 // the descriptor-derived surface so they can't drift.
+// Regression: tasks --all was never wired into the manual CLI registration, so
+// the README example `ofocus tasks --project "Work" --all` would fail with
+// "unknown option '--all'". This test ensures the usage string advertises all
+// three pagination surface fields (limit, offset, all).
+describe("commandRegistry — tasks command usage string", () => {
+  it("tasks advertises --limit, --offset, and --all for pagination", () => {
+    const usage = usageFor("tasks");
+    expect(usage).toContain("--limit");
+    expect(usage).toContain("--offset");
+    expect(usage).toContain("--all");
+  });
+
+  it("tasks advertises the core filter flags", () => {
+    const usage = usageFor("tasks");
+    expect(usage).toContain("--project");
+    expect(usage).toContain("--tag");
+    expect(usage).toContain("--flagged");
+    expect(usage).toContain("--completed");
+    expect(usage).toContain("--available");
+  });
+});
+
 describe("commandRegistry — project/folder/tag command usage strings", () => {
   it("projects advertises --folder, --status, --sequential and pagination", () => {
     const usage = usageFor("projects");
@@ -201,5 +223,154 @@ describe("commandRegistry — project/folder/tag command usage strings", () => {
   it("delete-folder advertises positional <folder-id> only", () => {
     const usage = usageFor("delete-folder");
     expect(usage).toContain("<folder-id>");
+  });
+});
+
+// Regression: when the advanced commands moved to the descriptor registry,
+// short aliases (-d, -p, -f) were dropped, CLI names were updated to reflect
+// the descriptor surface, and boolean flags gained --no- variants. The
+// hand-maintained `list-commands` registry must reflect the descriptor-derived
+// surface so it can't drift from the real flags.
+describe("commandRegistry — advanced command usage strings", () => {
+  it("perspectives advertises no flags", () => {
+    const usage = usageFor("perspectives");
+    // No positional or flag requirements
+    expect(usage).toContain("perspectives");
+  });
+
+  it("perspective advertises <name> positional and --limit", () => {
+    const usage = usageFor("perspective");
+    expect(usage).toContain("<name>");
+    expect(usage).toContain("--limit");
+    // Old --limit <n> syntax replaced with --limit <value>
+    expect(usage).not.toContain("--limit <n>");
+  });
+
+  it("review advertises <project-id> positional only", () => {
+    const usage = usageFor("review");
+    expect(usage).toContain("<project-id>");
+  });
+
+  it("projects-for-review advertises no flags", () => {
+    const usage = usageFor("projects-for-review");
+    expect(usage).toContain("projects-for-review");
+  });
+
+  it("focus advertises <target> positional and --by-id with negation", () => {
+    const usage = usageFor("focus");
+    expect(usage).toContain("<target>");
+    expect(usage).toContain("--by-id");
+    expect(usage).toContain("--no-by-id");
+    // Old short-form --by-id was just a plain flag; now has explicit negation
+    // Old usage used 'name' not 'target' as the positional label
+    expect(usage).not.toContain("<name>");
+  });
+
+  it("unfocus advertises no flags", () => {
+    const usage = usageFor("unfocus");
+    expect(usage).toContain("unfocus");
+  });
+
+  it("focused advertises no flags", () => {
+    const usage = usageFor("focused");
+    expect(usage).toContain("focused");
+  });
+
+  it("url advertises <id> positional only", () => {
+    const usage = usageFor("url");
+    expect(usage).toContain("<id>");
+  });
+
+  it("template-save advertises two positionals and --description (no -d)", () => {
+    const usage = usageFor("template-save");
+    expect(usage).toContain("<name>");
+    expect(usage).toContain("<source-project>");
+    expect(usage).toContain("--description");
+    // old short alias -d must not appear
+    expect(usage).not.toContain("-d ");
+  });
+
+  it("template-get advertises <template-name> positional", () => {
+    const usage = usageFor("template-get");
+    expect(usage).toContain("<template-name>");
+    // old usage was <name>, now <template-name>
+    expect(usage).not.toContain("<name>");
+  });
+
+  it("template-create advertises <template-name> and descriptor-derived flags (no -p or -f)", () => {
+    const usage = usageFor("template-create");
+    expect(usage).toContain("<template-name>");
+    expect(usage).toContain("--project-name");
+    expect(usage).toContain("--folder");
+    expect(usage).toContain("--base-date");
+    // old short aliases must not appear
+    expect(usage).not.toContain("-p ");
+    expect(usage).not.toContain("-f ");
+  });
+
+  it("template-delete advertises <template-name> positional", () => {
+    const usage = usageFor("template-delete");
+    expect(usage).toContain("<template-name>");
+  });
+
+  it("attach advertises <task-id> and <file-path> positionals", () => {
+    const usage = usageFor("attach");
+    expect(usage).toContain("<task-id>");
+    expect(usage).toContain("<file-path>");
+    // old positional was <file>, now <file-path>
+    expect(usage).not.toMatch(/<file>\b/);
+  });
+
+  it("attachments advertises <task-id> positional only", () => {
+    const usage = usageFor("attachments");
+    expect(usage).toContain("<task-id>");
+  });
+
+  it("detach advertises <task-id> and <attachment-name> positionals", () => {
+    const usage = usageFor("detach");
+    expect(usage).toContain("<task-id>");
+    expect(usage).toContain("<attachment-name>");
+    // old positional was <attachment-id-or-name>, now <attachment-name>
+    expect(usage).not.toContain("<attachment-id-or-name>");
+  });
+
+  it("archive advertises descriptor-derived flags with --dry-run negation", () => {
+    const usage = usageFor("archive");
+    expect(usage).toContain("--completed-before");
+    expect(usage).toContain("--dropped-before");
+    expect(usage).toContain("--project");
+    expect(usage).toContain("--dry-run");
+    expect(usage).toContain("--no-dry-run");
+  });
+
+  it("compact advertises no flags", () => {
+    const usage = usageFor("compact");
+    expect(usage).toContain("compact");
+  });
+
+  it("sync-status advertises no flags", () => {
+    const usage = usageFor("sync-status");
+    expect(usage).toContain("sync-status");
+  });
+
+  it("sync advertises no flags", () => {
+    const usage = usageFor("sync");
+    expect(usage).toContain("sync");
+  });
+
+  it("export advertises --include-completed with negation (no -p short alias)", () => {
+    const usage = usageFor("export");
+    expect(usage).toContain("--project");
+    expect(usage).toContain("--include-completed");
+    expect(usage).toContain("--no-include-completed");
+    expect(usage).toContain("--include-dropped");
+    expect(usage).toContain("--no-include-dropped");
+    // old short alias must not appear
+    expect(usage).not.toContain("-p ");
+  });
+
+  it("open advertises <id> positional only", () => {
+    const usage = usageFor("open");
+    expect(usage).toContain("<id>");
   });
 });

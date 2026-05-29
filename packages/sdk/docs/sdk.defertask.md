@@ -9,10 +9,7 @@ Defer a task by a number of days or to a specific date.
 **Signature:**
 
 ```typescript
-export declare function deferTask(
-  taskId: string,
-  options?: DeferOptions
-): Promise<CliOutput<DeferResult>>;
+export declare function deferTask(taskId: string, options?: DeferOptions): Promise<CliOutput<DeferResult>>;
 ```
 
 ## Parameters
@@ -21,37 +18,46 @@ export declare function deferTask(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [DeferOptions](./sdk.deferoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -59,3 +65,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DeferResult](./sdk.deferresult.md)<!-- -->&gt;&gt;
+

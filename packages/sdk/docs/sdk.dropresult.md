@@ -9,7 +9,7 @@ Result from dropping a task.
 **Signature:**
 
 ```typescript
-export interface DropResult
+export interface DropResult 
 ```
 
 ## Properties
@@ -18,56 +18,73 @@ export interface DropResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [dropped](./sdk.dropresult.dropped.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskId](./sdk.dropresult.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskName](./sdk.dropresult.taskname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

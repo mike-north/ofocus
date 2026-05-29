@@ -9,10 +9,7 @@ Duplicate a task in OmniFocus. Creates a copy of the task with all its propertie
 **Signature:**
 
 ```typescript
-export declare function duplicateTask(
-  taskId: string,
-  options?: DuplicateTaskOptions
-): Promise<CliOutput<DuplicateTaskResult>>;
+export declare function duplicateTask(taskId: string, options?: DuplicateTaskOptions): Promise<CliOutput<DuplicateTaskResult>>;
 ```
 
 ## Parameters
@@ -21,37 +18,46 @@ export declare function duplicateTask(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [DuplicateTaskOptions](./sdk.duplicatetaskoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -59,3 +65,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DuplicateTaskResult](./sdk.duplicatetaskresult.md)<!-- -->&gt;&gt;
+

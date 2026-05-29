@@ -9,7 +9,7 @@ Template summary info for listing.
 **Signature:**
 
 ```typescript
-export interface TemplateSummary
+export interface TemplateSummary 
 ```
 
 ## Properties
@@ -18,82 +18,107 @@ export interface TemplateSummary
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [createdAt](./sdk.templatesummary.createdat.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [description](./sdk.templatesummary.description.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.templatesummary.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [sourceProject](./sdk.templatesummary.sourceproject.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskCount](./sdk.templatesummary.taskcount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

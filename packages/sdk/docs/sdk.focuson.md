@@ -9,12 +9,9 @@ Focus on a specific project or folder in OmniFocus. This matches the OmniFocus U
 **Signature:**
 
 ```typescript
-export declare function focusOn(
-  target: string,
-  options?: {
+export declare function focusOn(target: string, options?: {
     byId?: boolean | undefined;
-  }
-): Promise<CliOutput<FocusResult>>;
+}): Promise<CliOutput<FocusResult>>;
 ```
 
 ## Parameters
@@ -23,37 +20,46 @@ export declare function focusOn(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 target
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 { byId?: boolean \| undefined; }
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -61,3 +67,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[FocusResult](./sdk.focusresult.md)<!-- -->&gt;&gt;
+

@@ -4,15 +4,16 @@
 
 ## FolderQueryOptions interface
 
-Options for querying folders.
+Options for querying folders. Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) with the full predicate vocabulary supported by the OmniJS folder query compiler.
+
+Every field is optional; only fields that are explicitly set contribute a filter condition to the compiled query.
 
 **Signature:**
 
 ```typescript
-export interface FolderQueryOptions extends PaginationOptions
+export interface FolderQueryOptions extends BaseListQueryOptions 
 ```
-
-**Extends:** [PaginationOptions](./sdk.paginationoptions.md)
+**Extends:** [BaseListQueryOptions](./sdk.baselistqueryoptions.md)
 
 ## Properties
 
@@ -20,32 +21,440 @@ export interface FolderQueryOptions extends PaginationOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
 
+
 </th></tr></thead>
 <tbody><tr><td>
 
-[parent?](./sdk.folderqueryoptions.parent.md)
+[ancestor?](./sdk.folderqueryoptions.ancestor.md)
+
 
 </td><td>
+
+
+</td><td>
+
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Transitive ancestor match — walks the parent chain looking for any folder whose name or primary key matches. When an array is given, semantics are "any of" (OR) across the whole chain.
+
+
+</td></tr>
+<tr><td>
+
+[caseSensitive?](./sdk.folderqueryoptions.casesensitive.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Case sensitivity for string predicates. Default: `false`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[flattenedProjectCountGt?](./sdk.folderqueryoptions.flattenedprojectcountgt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_ Recursive (flattened) project count is greater than this value.
+
+
+</td></tr>
+<tr><td>
+
+[flattenedProjectCountLt?](./sdk.folderqueryoptions.flattenedprojectcountlt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_ Recursive (flattened) project count is less than this value.
+
+
+</td></tr>
+<tr><td>
+
+[folderCountGt?](./sdk.folderqueryoptions.foldercountgt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_ Direct child folder count is greater than this value.
+
+
+</td></tr>
+<tr><td>
+
+[folderCountLt?](./sdk.folderqueryoptions.foldercountlt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_ Direct child folder count is less than this value.
+
+
+</td></tr>
+<tr><td>
+
+[hasProjects?](./sdk.folderqueryoptions.hasprojects.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Matches folders with at least one direct child project.
+
+
+</td></tr>
+<tr><td>
+
+[hasSubfolders?](./sdk.folderqueryoptions.hassubfolders.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Matches folders with at least one direct child subfolder.
+
+
+</td></tr>
+<tr><td>
+
+[isEmpty?](./sdk.folderqueryoptions.isempty.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Matches folders with neither projects nor subfolders.
+
+
+</td></tr>
+<tr><td>
+
+[isRoot?](./sdk.folderqueryoptions.isroot.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Matches folders with no parent (root-level folders).
+
+
+</td></tr>
+<tr><td>
+
+[nameContains?](./sdk.folderqueryoptions.namecontains.md)
+
+
+</td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
+</td></tr>
+<tr><td>
+
+[nameEquals?](./sdk.folderqueryoptions.nameequals.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameRegex?](./sdk.folderqueryoptions.nameregex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameStarts?](./sdk.folderqueryoptions.namestarts.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[noProjects?](./sdk.folderqueryoptions.noprojects.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Matches folders with no direct child projects.
+
+
+</td></tr>
+<tr><td>
+
+[noSubfolders?](./sdk.folderqueryoptions.nosubfolders.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Matches folders with no direct child subfolders.
+
+
+</td></tr>
+<tr><td>
+
+[notIsRoot?](./sdk.folderqueryoptions.notisroot.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Matches folders that have at least one parent.
+
+
+</td></tr>
+<tr><td>
+
+[parent?](./sdk.folderqueryoptions.parent.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Exact parent match — the folder's direct parent name or primary key. When an array is given, semantics are "any of" (OR). This is NOT transitive; use [FolderQueryOptions.ancestor](./sdk.folderqueryoptions.ancestor.md) for that.
+
+
+</td></tr>
+<tr><td>
+
+[projectCountEq?](./sdk.folderqueryoptions.projectcounteq.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_ Direct child project count equals this value.
+
+
+</td></tr>
+<tr><td>
+
+[projectCountGt?](./sdk.folderqueryoptions.projectcountgt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_ Direct child project count is greater than this value.
+
+
+</td></tr>
+<tr><td>
+
+[projectCountLt?](./sdk.folderqueryoptions.projectcountlt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_ Direct child project count is less than this value.
+
+
+</td></tr>
+<tr><td>
+
+[status?](./sdk.folderqueryoptions.status.md)
+
+
+</td><td>
+
+
+</td><td>
+
+FolderStatus \| undefined
+
+
+</td><td>
+
+_(Optional)_ Filter by folder status (`"active"` or `"dropped"`<!-- -->).
+
+
 </td></tr>
 </tbody></table>
+

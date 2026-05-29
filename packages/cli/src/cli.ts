@@ -32,49 +32,54 @@ import {
   deleteTagDescriptor,
   applyRepetitionRuleDescriptor,
   clearRepetitionRuleDescriptor,
+  evaluateScriptDescriptor,
+  // Batch 6: Advanced command descriptors
+  listPerspectivesDescriptor,
+  queryPerspectiveDescriptor,
+  reviewProjectDescriptor,
+  queryProjectsForReviewDescriptor,
+  focusOnDescriptor,
+  unfocusDescriptor,
+  getFocusedDescriptor,
+  generateUrlDescriptor,
+  exportTaskPaperDescriptor,
+  getSyncStatusDescriptor,
+  triggerSyncDescriptor,
+  saveTemplateDescriptor,
+  listTemplatesDescriptor,
+  getTemplateDescriptor,
+  createFromTemplateDescriptor,
+  deleteTemplateDescriptor,
+  addAttachmentDescriptor,
+  listAttachmentsDescriptor,
+  removeAttachmentDescriptor,
+  archiveTasksDescriptor,
+  compactDatabaseDescriptor,
+  openItemDescriptor,
+  getReviewIntervalDescriptor,
+  setReviewIntervalDescriptor,
   queryTasks,
   updateTask,
-  listPerspectives,
-  queryPerspective,
-  reviewProject,
-  queryProjectsForReview,
-  // Phase 5
-  focusOn,
-  unfocus,
-  getFocused,
-  generateUrl,
   // Phase 6
-  exportTaskPaper,
-  importTaskPaper,
   getStats,
-  // Phase 7
-  saveTemplate,
-  listTemplates,
-  getTemplate,
-  createFromTemplate,
-  deleteTemplate,
-  // Phase 8
-  addAttachment,
-  listAttachments,
-  removeAttachment,
-  archiveTasks,
-  compactDatabase,
-  getSyncStatus,
-  triggerSync,
   // Phase 9: Project/Folder CRUD & Utilities
   dropProject,
-  openItem,
-  getReviewInterval,
-  setReviewInterval,
+  importTaskPaper,
 } from "@ofocus/sdk";
 import type { RepetitionRule } from "@ofocus/sdk";
 import { listCommands } from "./commands/list-commands.js";
-import { output, outputJson, outputHuman } from "./output.js";
+import {
+  output,
+  outputJson,
+  outputHuman,
+  type OutputFormat,
+} from "./output.js";
 import { registerCliCommand } from "./registry-adapter.js";
 
 interface GlobalOptions {
   json?: boolean | undefined;
   human?: boolean | undefined;
+  format?: string | undefined;
 }
 
 interface TasksCommandOptions {
@@ -87,6 +92,7 @@ interface TasksCommandOptions {
   available?: boolean | undefined;
   limit?: number | undefined;
   offset?: number | undefined;
+  all?: boolean | undefined;
 }
 
 interface UpdateCommandOptions {
@@ -105,47 +111,11 @@ interface UpdateCommandOptions {
   clearRepeat?: boolean | undefined;
 }
 
-interface PerspectiveOptions {
-  limit?: number | undefined;
-}
-
-interface FocusCommandOptions {
-  byId?: boolean | undefined;
-}
-
-interface ExportCommandOptions {
-  project?: string | undefined;
-  includeCompleted?: boolean | undefined;
-  includeDropped?: boolean | undefined;
-}
-
-interface ImportCommandOptions {
-  createProjects?: boolean | undefined;
-  defaultProject?: string | undefined;
-}
-
 interface StatsCommandOptions {
   project?: string | undefined;
   period?: "day" | "week" | "month" | "year" | undefined;
   since?: string | undefined;
   until?: string | undefined;
-}
-
-interface TemplateSaveOptions {
-  description?: string | undefined;
-}
-
-interface TemplateCreateOptions {
-  projectName?: string | undefined;
-  folder?: string | undefined;
-  baseDate?: string | undefined;
-}
-
-interface ArchiveCommandOptions {
-  completedBefore?: string | undefined;
-  droppedBefore?: string | undefined;
-  project?: string | undefined;
-  dryRun?: boolean | undefined;
 }
 
 const AGENT_INSTRUCTIONS_URL =
@@ -177,7 +147,7 @@ Quick start:
   ofocus tasks            Query tasks
   ofocus complete <id>    Complete a task
 
-Use --human flag for human-readable output (default is JSON).
+Use --format json|toon for machine output (default: json). Use --human for human-readable output.
 `;
       }
       // Default help for humans - use the base Help class to avoid recursion
@@ -190,11 +160,45 @@ Use --human flag for human-readable output (default is JSON).
     new Option("--json", "Output as JSON (default)").default(true)
   );
   program.addOption(new Option("--human", "Output as human-readable text"));
+  program.addOption(
+    new Option(
+      "--format <fmt>",
+      "Machine output format: json or toon (default: json). Use --human for human-readable output."
+    ).default("json")
+  );
 
-  // Helper to get output format
-  function getOutputFormat(options: GlobalOptions): boolean {
-    // --human overrides --json
-    return options.human !== true;
+  /**
+   * Derive the effective output format from the resolved global options.
+   *
+   * Order of precedence (highest to lowest):
+   * 1. `--human`   → always selects the human-readable formatter
+   * 2. `--format`  → selects between `json` and `toon` (default: `json`)
+   *
+   * An unrecognised `--format` value is rejected with a structured error
+   * written to stdout so callers receive a machine-parseable envelope.
+   */
+  function getOutputFormat(options: GlobalOptions): OutputFormat {
+    if (options.human === true) {
+      return "human";
+    }
+    const fmt = options.format ?? "json";
+    if (fmt === "json" || fmt === "toon") {
+      return fmt;
+    }
+    // Unknown --format value: write structured error to stdout then exit 1.
+    // We fall back to JSON for the error itself because we can't trust the
+    // caller's requested format when the value is unrecognised. We call
+    // process.exit() immediately so the command action does not continue
+    // executing (which would produce a spurious second output block).
+    const errorEnvelope = {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: `Unknown --format value: "${fmt}". Valid values are: json, toon. Use --human for human-readable output.`,
+      },
+    };
+    console.log(JSON.stringify(errorEnvelope, null, 2));
+    process.exit(1);
   }
 
   // Helper to get global options with proper typing
@@ -251,6 +255,10 @@ Use --human flag for human-readable output (default is JSON).
     .option("--available", "Show only available (actionable) tasks")
     .option("--limit <n>", "Maximum results to return", parseInt)
     .option("--offset <n>", "Number of results to skip", parseInt)
+    .option(
+      "--all",
+      "Return every matching task, ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+    )
     .action(async (options: TasksCommandOptions, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = await queryTasks({
@@ -263,6 +271,7 @@ Use --human flag for human-readable output (default is JSON).
         available: options.available,
         limit: options.limit,
         offset: options.offset,
+        all: options.all,
       });
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;
@@ -431,58 +440,33 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 4: Perspectives
   // ===========================================
 
-  // perspectives
-  program
-    .command("perspectives")
-    .description("List all perspectives in OmniFocus")
-    .action(async (_opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await listPerspectives();
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // perspectives — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, listPerspectivesDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // perspective
-  program
-    .command("perspective")
-    .description("Query tasks from a perspective")
-    .argument("<name>", "Perspective name")
-    .option("--limit <n>", "Maximum results to return", parseInt, 100)
-    .action(async (name: string, options: PerspectiveOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await queryPerspective(name, {
-        limit: options.limit,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // perspective — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, queryPerspectiveDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 4: Review
   // ===========================================
 
-  // review
-  program
-    .command("review")
-    .description("Mark a project as reviewed")
-    .argument("<project-id>", "Project ID to mark as reviewed")
-    .action(async (projectId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await reviewProject(projectId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // review — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, reviewProjectDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // projects-for-review
-  program
-    .command("projects-for-review")
-    .description("List projects that are due for review")
-    .action(async (_opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await queryProjectsForReview();
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // projects-for-review — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(
+    program,
+    queryProjectsForReviewDescriptor,
+    (result, cmd) => {
+      output(result, getOutputFormat(getGlobalOpts(cmd)));
+    }
+  );
 
   // ===========================================
   // Phase 5: Forecast, Focus, Deferred
@@ -492,42 +476,20 @@ Use --human flag for human-readable output (default is JSON).
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 
-  // focus
-  program
-    .command("focus")
-    .description("Focus on a specific project or folder")
-    .argument("<target>", "Project or folder name (or ID with --by-id)")
-    .option("--by-id", "Interpret target as an ID instead of name")
-    .action(
-      async (target: string, options: FocusCommandOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await focusOn(target, { byId: options.byId });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // focus — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, focusOnDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // unfocus
-  program
-    .command("unfocus")
-    .description("Clear focus (show all items)")
-    .action(async (_opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await unfocus();
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // unfocus — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, unfocusDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // focused
-  program
-    .command("focused")
-    .description("Show current focus state")
-    .action(async (_opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await getFocused();
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // focused — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, getFocusedDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   registerCliCommand(program, queryDeferredDescriptor, (result, cmd) => {
     output(result, getOutputFormat(getGlobalOpts(cmd)));
@@ -537,17 +499,10 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 5b: Utility Commands
   // ===========================================
 
-  // url
-  program
-    .command("url")
-    .description("Generate OmniFocus URL scheme deep link for an item")
-    .argument("<id>", "Task, project, folder, or tag ID")
-    .action(async (id: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await generateUrl(id);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // url — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, generateUrlDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // defer / defer-batch — registered from the centralized descriptors in
   // @ofocus/sdk.
@@ -579,35 +534,30 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 6: TaskPaper Import/Export
   // ===========================================
 
-  // export
-  program
-    .command("export")
-    .description("Export tasks and projects to TaskPaper format")
-    .option("-p, --project <name>", "Export only a specific project")
-    .option("--include-completed", "Include completed tasks")
-    .option("--include-dropped", "Include dropped tasks")
-    .action(async (options: ExportCommandOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await exportTaskPaper({
-        project: options.project,
-        includeCompleted: options.includeCompleted,
-        includeDropped: options.includeDropped,
-      });
-      // For export, output raw TaskPaper content unless JSON is requested
-      if (getOutputFormat(globalOpts)) {
-        output(result, true);
-      } else if (result.success && result.data) {
-        console.log(result.data.content);
+  // export — registered from the centralized descriptor in @ofocus/sdk.
+  // Uses a custom output handler to emit raw TaskPaper text in --human mode.
+  registerCliCommand(program, exportTaskPaperDescriptor, (result, cmd) => {
+    const globalOpts = getGlobalOpts(cmd);
+    const fmt = getOutputFormat(globalOpts);
+    if (fmt === "human") {
+      if (result.success && result.data) {
+        const data = result.data as import("@ofocus/sdk").TaskPaperExportResult;
+        console.log(data.content);
         console.error(
-          `\nExported ${String(result.data.taskCount)} tasks from ${String(result.data.projectCount)} projects`
+          `\nExported ${String(data.taskCount)} tasks from ${String(data.projectCount)} projects`
         );
       } else {
-        output(result, false);
+        output(result, "human");
         process.exitCode = 1;
       }
-    });
+    } else {
+      output(result, fmt);
+    }
+  });
 
-  // import
+  // import — CLI reads a file path and passes its contents to importTaskPaperDescriptor.
+  // This hand-wired registration is needed because the MCP descriptor accepts
+  // raw content, while the CLI surface takes a file-path argument.
   program
     .command("import")
     .description("Import tasks from a TaskPaper format file")
@@ -615,13 +565,16 @@ Use --human flag for human-readable output (default is JSON).
     .option("--create-projects", "Create projects that don't exist")
     .option("--default-project <name>", "Default project for tasks without one")
     .action(
-      async (file: string, options: ImportCommandOptions, cmd: Command) => {
+      async (
+        file: string,
+        options: { createProjects?: boolean; defaultProject?: string },
+        cmd: Command
+      ) => {
         const globalOpts = getGlobalOpts(cmd);
-        // Read file content
-        const fs = await import("node:fs/promises");
+        const fsPromises = await import("node:fs/promises");
         let content: string;
         try {
-          content = await fs.readFile(file, "utf-8");
+          content = await fsPromises.readFile(file, "utf-8");
         } catch (err) {
           const errorMessage =
             err instanceof Error ? err.message : "Unknown error";
@@ -666,204 +619,69 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 7: Project Templates
   // ===========================================
 
-  // template save
-  program
-    .command("template-save")
-    .description("Save a project as a reusable template")
-    .argument("<name>", "Template name")
-    .argument("<source-project>", "Source project ID or name")
-    .option("-d, --description <text>", "Template description")
-    .action(
-      async (
-        name: string,
-        sourceProject: string,
-        options: TemplateSaveOptions,
-        cmd: Command
-      ) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await saveTemplate({
-          name,
-          sourceProject,
-          description: options.description,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // template-save — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, saveTemplateDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // template list
-  program
-    .command("template-list")
-    .description("List all available project templates")
-    .action((_opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = listTemplates();
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // template-list — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, listTemplatesDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // template get
-  program
-    .command("template-get")
-    .description("Get details of a specific template")
-    .argument("<name>", "Template name")
-    .action((name: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = getTemplate(name);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // template-get — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, getTemplateDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // template create
-  program
-    .command("template-create")
-    .description("Create a new project from a template")
-    .argument("<template-name>", "Template name to instantiate")
-    .option(
-      "-p, --project-name <name>",
-      "New project name (defaults to template name)"
-    )
-    .option("-f, --folder <name>", "Folder to create the project in")
-    .option(
-      "--base-date <date>",
-      "Base date for calculating date offsets (defaults to today)"
-    )
-    .action(
-      async (
-        templateName: string,
-        options: TemplateCreateOptions,
-        cmd: Command
-      ) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await createFromTemplate({
-          templateName,
-          projectName: options.projectName,
-          folder: options.folder,
-          baseDate: options.baseDate,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // template-create — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, createFromTemplateDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // template delete
-  program
-    .command("template-delete")
-    .description("Delete a project template")
-    .argument("<name>", "Template name to delete")
-    .action((name: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = deleteTemplate(name);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // template-delete — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, deleteTemplateDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 8: Attachments
   // ===========================================
 
-  // attach
-  program
-    .command("attach")
-    .description("Add a file attachment to a task")
-    .argument("<task-id>", "Task ID to attach file to")
-    .argument("<file>", "Path to the file to attach")
-    .action(
-      async (taskId: string, file: string, _opts: unknown, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await addAttachment(taskId, file);
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // attach — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, addAttachmentDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // attachments
-  program
-    .command("attachments")
-    .description("List attachments of a task")
-    .argument("<task-id>", "Task ID to list attachments for")
-    .action(async (taskId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await listAttachments(taskId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // attachments — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, listAttachmentsDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // detach
-  program
-    .command("detach")
-    .description("Remove an attachment from a task")
-    .argument("<task-id>", "Task ID to remove attachment from")
-    .argument("<attachment>", "Attachment ID or name to remove")
-    .action(
-      async (
-        taskId: string,
-        attachment: string,
-        _opts: unknown,
-        cmd: Command
-      ) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await removeAttachment(taskId, attachment);
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // detach — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, removeAttachmentDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // archive
-  program
-    .command("archive")
-    .description("Archive completed/dropped tasks and projects")
-    .option(
-      "--completed-before <date>",
-      "Archive tasks completed before this date"
-    )
-    .option("--dropped-before <date>", "Archive tasks dropped before this date")
-    .option("--project <name>", "Only archive tasks from this project")
-    .option("--dry-run", "Preview what would be archived without archiving")
-    .action(async (opts: ArchiveCommandOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await archiveTasks({
-        completedBefore: opts.completedBefore,
-        droppedBefore: opts.droppedBefore,
-        project: opts.project,
-        dryRun: opts.dryRun,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // archive — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, archiveTasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // compact
-  program
-    .command("compact")
-    .description("Trigger database compaction to optimize storage")
-    .action(async (_opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await compactDatabase();
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // compact — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, compactDatabaseDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // sync-status
-  program
-    .command("sync-status")
-    .description("Get the current sync status")
-    .action(async (_opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await getSyncStatus();
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // sync-status — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, getSyncStatusDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // sync
-  program
-    .command("sync")
-    .description("Trigger a sync operation")
-    .action(async (_opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await triggerSync();
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // sync — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, triggerSyncDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 9: Project/Folder CRUD & Utilities
@@ -904,19 +722,24 @@ Use --human flag for human-readable output (default is JSON).
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 
-  // open
-  program
-    .command("open")
-    .description("Open an item in the OmniFocus UI")
-    .argument("<id>", "Task, project, folder, or tag ID to open")
-    .action(async (id: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await openItem(id);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // ===========================================
+  // Eval escape hatch
+  // ===========================================
 
-  // review-interval
+  // eval — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, evaluateScriptDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+
+  // open — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, openItemDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+
+  // review-interval — kept hand-wired: it combines two MCP tools (get + set)
+  // into a single CLI command controlled by the --set flag. The descriptors
+  // getReviewIntervalDescriptor and setReviewIntervalDescriptor each handle
+  // the underlying MCP surfaces.
   program
     .command("review-interval")
     .description("Get or set the review interval for a project")
@@ -926,11 +749,16 @@ Use --human flag for human-readable output (default is JSON).
       async (projectId: string, options: { set?: number }, cmd: Command) => {
         const globalOpts = getGlobalOpts(cmd);
         if (options.set !== undefined) {
-          const result = await setReviewInterval(projectId, options.set);
+          const result = await setReviewIntervalDescriptor.handler({
+            projectId,
+            intervalDays: options.set,
+          });
           output(result, getOutputFormat(globalOpts));
           if (!result.success) process.exitCode = 1;
         } else {
-          const result = await getReviewInterval(projectId);
+          const result = await getReviewIntervalDescriptor.handler({
+            projectId,
+          });
           output(result, getOutputFormat(globalOpts));
           if (!result.success) process.exitCode = 1;
         }

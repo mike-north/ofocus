@@ -2,8 +2,11 @@ import { z } from "zod";
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { validateSearchQuery } from "../validation.js";
-import { validatePaginationParams } from "../validation.js";
+import {
+  validateSearchQuery,
+  validatePaginationParams,
+  validateAllFlag,
+} from "../validation.js";
 import { runOmniJSWrapped } from "../omnijs.js";
 import { defineCommand } from "../registry/define.js";
 import {
@@ -57,8 +60,27 @@ export async function searchTasks(
   const queryError = validateSearchQuery(query);
   if (queryError) return failure(queryError);
 
+  // Validate the --all flag (must not be combined with --limit, --offset, or
+  // shape modifiers that produce a scalar/single-item result).
+  const allFlagError = validateAllFlag(
+    options.all,
+    options.limit,
+    options.offset,
+    {
+      count: options.count,
+      first: options.first,
+      last: options.last,
+      idsOnly: options.idsOnly,
+      groupBy: options.groupBy,
+    }
+  );
+  if (allFlagError) return failure(allFlagError);
+
   // Validate pagination
-  const paginationError = validatePaginationParams(options.limit, options.offset);
+  const paginationError = validatePaginationParams(
+    options.limit,
+    options.offset
+  );
   if (paginationError) return failure(paginationError);
 
   const scope = options.scope ?? "both";
@@ -111,6 +133,7 @@ export async function searchTasks(
     aggregate: agg,
     limit,
     offset,
+    all: options.all,
     groupKey: agg.groupKey,
   });
 
@@ -162,12 +185,26 @@ export const searchTasksDescriptor = defineCommand({
       .boolean()
       .optional()
       .describe("Include completed tasks in the results"),
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("Number of results to skip for pagination"),
+    all: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+      ),
   }),
   handler: async (input) =>
     searchTasks(input.query, {
       scope: input.scope,
       limit: input.limit,
+      offset: input.offset,
       includeCompleted: input.includeCompleted,
+      all: input.all,
     }),
 });
 

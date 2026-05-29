@@ -9,9 +9,7 @@ Validate an estimated minutes value. Returns null if valid (or undefined), or a 
 **Signature:**
 
 ```typescript
-export declare function validateEstimatedMinutes(
-  minutes: number | undefined
-): CliError | null;
+export declare function validateEstimatedMinutes(minutes: number | undefined): CliError | null;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function validateEstimatedMinutes(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 minutes
 
+
 </td><td>
 
 number \| undefined
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ number \| undefined
 **Returns:**
 
 [CliError](./sdk.clierror.md) \| null
+

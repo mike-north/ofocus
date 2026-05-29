@@ -6,11 +6,14 @@
 
 Options for querying deferred tasks.
 
+Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) so callers get the full shared-query vocabulary (sort, fields, count, groupBy, etc.) in addition to the deferred-specific predicates.
+
 **Signature:**
 
 ```typescript
-export interface DeferredQueryOptions
+export interface DeferredQueryOptions extends BaseListQueryOptions 
 ```
+**Extends:** [BaseListQueryOptions](./sdk.baselistqueryoptions.md)
 
 ## Properties
 
@@ -18,62 +21,79 @@ export interface DeferredQueryOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [blockedOnly?](./sdk.deferredqueryoptions.blockedonly.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
-_(Optional)_ Only show tasks that are currently blocked by defer date
+_(Optional)_ When `true`<!-- -->, only include tasks whose defer date is strictly in the future — i.e., tasks actively blocked by their defer date.
+
 
 </td></tr>
 <tr><td>
 
-[deferredAfter?](./sdk.deferredqueryoptions.deferredafter.md)
+[deferAfter?](./sdk.deferredqueryoptions.deferafter.md)
+
 
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
-_(Optional)_ Include tasks deferred until after this date
+_(Optional)_ Include tasks deferred until after this date (ISO 8601 or relative).
+
 
 </td></tr>
 <tr><td>
 
-[deferredBefore?](./sdk.deferredqueryoptions.deferredbefore.md)
+[deferBefore?](./sdk.deferredqueryoptions.deferbefore.md)
+
 
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
-_(Optional)_ Include tasks deferred until before this date
+_(Optional)_ Include tasks deferred until before this date (ISO 8601 or relative).
+
 
 </td></tr>
 </tbody></table>
+

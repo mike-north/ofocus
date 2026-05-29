@@ -9,10 +9,7 @@ Update an existing folder in OmniFocus.
 **Signature:**
 
 ```typescript
-export declare function updateFolder(
-  folderId: string,
-  options: UpdateFolderOptions
-): Promise<CliOutput<OFFolder>>;
+export declare function updateFolder(folderId: string, options: UpdateFolderOptions): Promise<CliOutput<OFFolder>>;
 ```
 
 ## Parameters
@@ -21,35 +18,44 @@ export declare function updateFolder(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 folderId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [UpdateFolderOptions](./sdk.updatefolderoptions.md)
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -57,3 +63,4 @@ options
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFFolder](./sdk.offolder.md)<!-- -->&gt;&gt;
+

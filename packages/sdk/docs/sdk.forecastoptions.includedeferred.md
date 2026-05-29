@@ -4,7 +4,7 @@
 
 ## ForecastOptions.includeDeferred property
 
-Include tasks with no due date but deferred to the range
+When `true`<!-- -->, tasks whose deferDate falls within the forecast window are also included (in addition to tasks due within the window). Default: `false`<!-- -->.
 
 **Signature:**
 

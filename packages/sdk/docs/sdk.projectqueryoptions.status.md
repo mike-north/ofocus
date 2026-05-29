@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-status?: "active" | "on-hold" | "completed" | "dropped" | undefined;
+status?: ProjectStatus | undefined;
 ```

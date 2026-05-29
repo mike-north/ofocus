@@ -20,24 +20,30 @@ export declare function parseQuickInput(input: string): ParsedQuickInput;
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 input
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +51,4 @@ string
 **Returns:**
 
 [ParsedQuickInput](./sdk.parsedquickinput.md)
+

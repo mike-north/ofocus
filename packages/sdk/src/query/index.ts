@@ -32,6 +32,11 @@ export interface BuildListQueryBodyArgs {
   limit: number;
   offset: number;
   /**
+   * When true, skip pagination slicing and return the entire matched set.
+   * Overrides `limit` and `offset` for the list shape.
+   */
+  all?: boolean | undefined;
+  /**
    * Override for the groupBy key (advisory metadata for the result envelope).
    * The `aggregate.groupKeyExpr` is the canonical source for the OmniJS bucket
    * expression; this parameter is accepted for API symmetry.
@@ -65,6 +70,7 @@ export function buildListQueryBody(args: BuildListQueryBodyArgs): string {
     aggregate,
     limit,
     offset,
+    all,
   } = args;
 
   const filterExpr = conditions.length > 0 ? conditions.join(" && ") : "true";
@@ -89,6 +95,7 @@ rows.sort(${comparator});`
     itemVar,
     limit,
     offset,
+    all,
   });
 
   return `${header}${sortBlock}
@@ -103,11 +110,20 @@ interface RenderShapeArgs {
   itemVar: string;
   limit: number;
   offset: number;
+  all?: boolean | undefined;
 }
 
 function renderShape(args: RenderShapeArgs): string {
-  const { shape, groupKeyExpr, withStats, mapExpression, itemVar, limit, offset } =
-    args;
+  const {
+    shape,
+    groupKeyExpr,
+    withStats,
+    mapExpression,
+    itemVar,
+    limit,
+    offset,
+    all,
+  } = args;
 
   switch (shape) {
     case "count":
@@ -155,7 +171,7 @@ return JSON.stringify({
       });
 
     case "list":
-      return renderList({ mapExpression, itemVar, limit, offset });
+      return renderList({ mapExpression, itemVar, limit, offset, all });
 
     default: {
       const exhaustive: never = shape;
@@ -169,8 +185,27 @@ function renderList(args: {
   itemVar: string;
   limit: number;
   offset: number;
+  all?: boolean | undefined;
 }): string {
-  const { mapExpression, limit, offset } = args;
+  const { mapExpression, limit, offset, all } = args;
+
+  if (all === true) {
+    return `
+{
+  var __mapFn = ${mapExpression};
+  var __items = rows.map(__mapFn);
+  return JSON.stringify({
+    kind: "list",
+    items: __items,
+    totalCount: __items.length,
+    returnedCount: __items.length,
+    hasMore: false,
+    offset: 0,
+    limit: __items.length
+  });
+}`;
+  }
+
   return `
 {
   var __totalCount = rows.length;
@@ -255,7 +290,10 @@ export {
   tagGroupKeys,
   taskGroupKeys,
 } from "./fields.js";
-export type { CompiledProjection, CompileProjectionOptions } from "./projection.js";
+export type {
+  CompiledProjection,
+  CompileProjectionOptions,
+} from "./projection.js";
 export { compileProjection } from "./projection.js";
 export type { CompiledSort, CompileSortOptions } from "./sort.js";
 export { compileSort } from "./sort.js";

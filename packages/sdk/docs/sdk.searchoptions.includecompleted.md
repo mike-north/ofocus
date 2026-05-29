@@ -4,6 +4,8 @@
 
 ## SearchOptions.includeCompleted property
 
+When `true`<!-- -->, completed tasks are included in the results. Default: `false`<!-- -->.
+
 **Signature:**
 
 ```typescript

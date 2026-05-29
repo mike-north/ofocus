@@ -79,6 +79,14 @@ describe("listTagsDescriptor — metadata", () => {
     const parsed = listTagsDescriptor.inputSchema.safeParse({});
     expect(parsed.success).toBe(true);
   });
+
+  it("schema accepts all: true", () => {
+    const parsed = listTagsDescriptor.inputSchema.safeParse({ all: true });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.all).toBe(true);
+    }
+  });
 });
 
 describe("listTagsDescriptor — handler forwarding", () => {
@@ -115,6 +123,30 @@ describe("listTagsDescriptor — handler forwarding", () => {
 
     expect(result.success).toBe(false);
     expect(result.error?.code).toBe(ErrorCode.OMNIFOCUS_NOT_RUNNING);
+  });
+
+  it("rejects all=true combined with limit", async () => {
+    const result = await listTagsDescriptor.handler({ all: true, limit: 5 });
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    expect(mockRunOmniJS).not.toHaveBeenCalled();
+  });
+
+  it("rejects all=true combined with offset", async () => {
+    const result = await listTagsDescriptor.handler({ all: true, offset: 10 });
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    expect(mockRunOmniJS).not.toHaveBeenCalled();
+  });
+
+  it("accepts all=true and emits full-scan body without slice", async () => {
+    mockRunOmniJS.mockResolvedValue(makeListResult([makeTag()]));
+
+    await listTagsDescriptor.handler({ all: true });
+
+    const body = getScriptBody();
+    expect(body).toContain("rows.map(__mapFn)");
+    expect(body).not.toContain("__paged");
   });
 });
 

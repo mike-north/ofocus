@@ -9,9 +9,7 @@ Complete multiple tasks in a single operation.
 **Signature:**
 
 ```typescript
-export declare function completeTasks(
-  taskIds: string[]
-): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
+export declare function completeTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function completeTasks(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskIds
 
+
 </td><td>
 
 string\[\]
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string\[\]
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[BatchResult](./sdk.batchresult.md)<!-- -->&lt;[BatchCompleteItem](./sdk.batchcompleteitem.md)<!-- -->&gt;&gt;&gt;
+

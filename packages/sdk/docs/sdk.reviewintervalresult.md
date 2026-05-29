@@ -9,7 +9,7 @@ Result from getting or setting review interval.
 **Signature:**
 
 ```typescript
-export interface ReviewIntervalResult
+export interface ReviewIntervalResult 
 ```
 
 ## Properties
@@ -18,56 +18,73 @@ export interface ReviewIntervalResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [projectId](./sdk.reviewintervalresult.projectid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectName](./sdk.reviewintervalresult.projectname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [reviewIntervalDays](./sdk.reviewintervalresult.reviewintervaldays.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

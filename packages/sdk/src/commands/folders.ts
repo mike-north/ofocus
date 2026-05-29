@@ -6,6 +6,7 @@ import {
   validateFolderName,
   validateId,
   validatePaginationParams,
+  validateAllFlag,
 } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
 import {
@@ -50,12 +51,19 @@ export const listFoldersDescriptor = defineCommand({
       .min(0)
       .optional()
       .describe("Number of results to skip for pagination"),
+    all: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+      ),
   }),
   handler: async (input) =>
     queryFolders({
       parent: input.parent,
       limit: input.limit,
       offset: input.offset,
+      all: input.all,
     }),
 });
 
@@ -184,6 +192,22 @@ return JSON.stringify({
 export async function queryFolders(
   options: FolderQueryOptions = {}
 ): Promise<CliOutput<QueryResult<OFFolder>>> {
+  // Validate the --all flag (must not be combined with --limit, --offset, or
+  // shape modifiers that produce a scalar/single-item result).
+  const allFlagError = validateAllFlag(
+    options.all,
+    options.limit,
+    options.offset,
+    {
+      count: options.count,
+      first: options.first,
+      last: options.last,
+      idsOnly: options.idsOnly,
+      groupBy: options.groupBy,
+    }
+  );
+  if (allFlagError) return failure(allFlagError);
+
   // Pagination validation — invalid limits/offsets would produce nonsense in
   // the result envelope.
   const paginationError = validatePaginationParams(
@@ -222,6 +246,7 @@ export async function queryFolders(
     aggregate: agg,
     limit,
     offset,
+    all: options.all,
     groupKey: agg.groupKey,
   });
 

@@ -9,10 +9,7 @@ Quick capture - parse natural language input and add task to inbox.
 **Signature:**
 
 ```typescript
-export declare function quickCapture(
-  input: string,
-  options?: QuickOptions
-): Promise<CliOutput<OFTask>>;
+export declare function quickCapture(input: string, options?: QuickOptions): Promise<CliOutput<OFTask>>;
 ```
 
 ## Parameters
@@ -21,37 +18,46 @@ export declare function quickCapture(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 input
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [QuickOptions](./sdk.quickoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -59,3 +65,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->&gt;&gt;
+

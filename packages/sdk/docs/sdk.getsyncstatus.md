@@ -6,12 +6,14 @@
 
 Get the current sync status.
 
+OmniJS does not expose a `syncing` flag or account name directly. `document.lastSyncDate` is available for the last sync timestamp. `syncing` and `accountName` are returned as `false`<!-- -->/`null` because OmniJS provides no API to read them — this matches the AppleScript behaviour which also could not reliably determine these values.
+
 **Signature:**
 
 ```typescript
 export declare function getSyncStatus(): Promise<CliOutput<SyncStatus>>;
 ```
-
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[SyncStatus](./sdk.syncstatus.md)<!-- -->&gt;&gt;
+

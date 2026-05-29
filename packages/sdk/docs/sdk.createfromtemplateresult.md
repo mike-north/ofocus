@@ -9,7 +9,7 @@ Result of creating from a template.
 **Signature:**
 
 ```typescript
-export interface CreateFromTemplateResult
+export interface CreateFromTemplateResult 
 ```
 
 ## Properties
@@ -18,62 +18,79 @@ export interface CreateFromTemplateResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [projectId](./sdk.createfromtemplateresult.projectid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Project ID
+
 
 </td></tr>
 <tr><td>
 
 [projectName](./sdk.createfromtemplateresult.projectname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Created project name
+
 
 </td></tr>
 <tr><td>
 
 [tasksCreated](./sdk.createfromtemplateresult.taskscreated.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
 
 Number of tasks created
 
+
 </td></tr>
 </tbody></table>
+

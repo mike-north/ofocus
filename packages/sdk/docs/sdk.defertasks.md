@@ -9,10 +9,7 @@ Defer multiple tasks by a number of days or to a specific date.
 **Signature:**
 
 ```typescript
-export declare function deferTasks(
-  taskIds: string[],
-  options?: DeferOptions
-): Promise<CliOutput<BatchResult<BatchDeferItem>>>;
+export declare function deferTasks(taskIds: string[], options?: DeferOptions): Promise<CliOutput<BatchResult<BatchDeferItem>>>;
 ```
 
 ## Parameters
@@ -21,37 +18,46 @@ export declare function deferTasks(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskIds
 
+
 </td><td>
 
 string\[\]
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [DeferOptions](./sdk.deferoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -59,3 +65,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[BatchResult](./sdk.batchresult.md)<!-- -->&lt;[BatchDeferItem](./sdk.batchdeferitem.md)<!-- -->&gt;&gt;&gt;
+

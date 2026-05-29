@@ -9,7 +9,7 @@ Options for archiving tasks.
 **Signature:**
 
 ```typescript
-export interface ArchiveOptions
+export interface ArchiveOptions 
 ```
 
 ## Properties
@@ -18,77 +18,98 @@ export interface ArchiveOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [completedBefore?](./sdk.archiveoptions.completedbefore.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Archive tasks completed before this date (ISO 8601 format)
+
 
 </td></tr>
 <tr><td>
 
 [droppedBefore?](./sdk.archiveoptions.droppedbefore.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Archive tasks dropped before this date (ISO 8601 format)
+
 
 </td></tr>
 <tr><td>
 
 [dryRun?](./sdk.archiveoptions.dryrun.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_ Preview what would be archived without actually archiving
+
 
 </td></tr>
 <tr><td>
 
 [project?](./sdk.archiveoptions.project.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Only archive tasks from this project
 
+
 </td></tr>
 </tbody></table>
+

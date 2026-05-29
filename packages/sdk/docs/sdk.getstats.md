@@ -9,9 +9,7 @@ Get productivity statistics from OmniFocus.
 **Signature:**
 
 ```typescript
-export declare function getStats(
-  options?: StatsOptions
-): Promise<CliOutput<StatsResult>>;
+export declare function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
 ```
 
 ## Parameters
@@ -20,26 +18,32 @@ export declare function getStats(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [StatsOptions](./sdk.statsoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -47,3 +51,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[StatsResult](./sdk.statsresult.md)<!-- -->&gt;&gt;
+

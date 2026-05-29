@@ -9,7 +9,7 @@ Result from duplicating a task.
 **Signature:**
 
 ```typescript
-export interface DuplicateTaskResult
+export interface DuplicateTaskResult 
 ```
 
 ## Properties
@@ -18,56 +18,73 @@ export interface DuplicateTaskResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [newTaskId](./sdk.duplicatetaskresult.newtaskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [newTaskName](./sdk.duplicatetaskresult.newtaskname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [originalTaskId](./sdk.duplicatetaskresult.originaltaskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

@@ -9,7 +9,7 @@ Result from a review operation.
 **Signature:**
 
 ```typescript
-export interface ReviewResult
+export interface ReviewResult 
 ```
 
 ## Properties
@@ -18,69 +18,90 @@ export interface ReviewResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [lastReviewed](./sdk.reviewresult.lastreviewed.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [nextReviewDate](./sdk.reviewresult.nextreviewdate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectId](./sdk.reviewresult.projectid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectName](./sdk.reviewresult.projectname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

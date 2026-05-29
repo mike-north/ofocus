@@ -4,6 +4,8 @@
 
 ## TaskQueryOptions.dueBefore property
 
+Each accepts ISO 8601 or a relative expression (see `parseDate`<!-- -->).
+
 **Signature:**
 
 ```typescript

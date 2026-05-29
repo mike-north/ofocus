@@ -9,7 +9,7 @@ Options for exporting to TaskPaper format.
 **Signature:**
 
 ```typescript
-export interface TaskPaperExportOptions
+export interface TaskPaperExportOptions 
 ```
 
 ## Properties
@@ -18,62 +18,79 @@ export interface TaskPaperExportOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [includeCompleted?](./sdk.taskpaperexportoptions.includecompleted.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_ Include completed tasks
+
 
 </td></tr>
 <tr><td>
 
 [includeDropped?](./sdk.taskpaperexportoptions.includedropped.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_ Include dropped tasks
+
 
 </td></tr>
 <tr><td>
 
 [project?](./sdk.taskpaperexportoptions.project.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Export only a specific project by name
 
+
 </td></tr>
 </tbody></table>
+

@@ -4,8 +4,10 @@
 
 ## FolderQueryOptions.parent property
 
+Exact parent match — the folder's direct parent name or primary key. When an array is given, semantics are "any of" (OR). This is NOT transitive; use [FolderQueryOptions.ancestor](./sdk.folderqueryoptions.ancestor.md) for that.
+
 **Signature:**
 
 ```typescript
-parent?: string | undefined;
+parent?: string | string[] | undefined;
 ```

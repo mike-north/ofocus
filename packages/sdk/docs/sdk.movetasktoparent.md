@@ -9,10 +9,7 @@ Move a task to become a subtask of another task.
 **Signature:**
 
 ```typescript
-export declare function moveTaskToParent(
-  taskId: string,
-  parentTaskId: string
-): Promise<CliOutput<OFTaskWithChildren>>;
+export declare function moveTaskToParent(taskId: string, parentTaskId: string): Promise<CliOutput<OFTaskWithChildren>>;
 ```
 
 ## Parameters
@@ -21,35 +18,44 @@ export declare function moveTaskToParent(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 parentTaskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -57,3 +63,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTaskWithChildren](./sdk.oftaskwithchildren.md)<!-- -->&gt;&gt;
+

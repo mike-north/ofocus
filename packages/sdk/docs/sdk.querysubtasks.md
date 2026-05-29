@@ -4,15 +4,16 @@
 
 ## querySubtasks() function
 
-Query subtasks of a parent task in OmniFocus with pagination.
+Query subtasks of a parent task in OmniFocus.
+
+The preset for this command scopes results to children of the given parent task via the `parentTaskId` predicate. Default fields include id, name, completed, and flagged since that metadata is the primary reason to query subtasks.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
 
 **Signature:**
 
 ```typescript
-export declare function querySubtasks(
-  parentTaskId: string,
-  options?: SubtaskQueryOptions
-): Promise<CliOutput<PaginatedResult<OFTaskWithChildren>>>;
+export declare function querySubtasks(parentTaskId: string, options?: SubtaskQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 ```
 
 ## Parameters
@@ -21,41 +22,51 @@ export declare function querySubtasks(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 parentTaskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [SubtaskQueryOptions](./sdk.subtaskqueryoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[PaginatedResult](./sdk.paginatedresult.md)<!-- -->&lt;[OFTaskWithChildren](./sdk.oftaskwithchildren.md)<!-- -->&gt;&gt;&gt;
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[QueryResult](./sdk.queryresult.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->&gt;&gt;&gt;
+

@@ -4,14 +4,16 @@
 
 ## queryForecast() function
 
-Query tasks by date range, similar to OmniFocus Forecast view. Returns tasks that are due or deferred within the specified date range.
+Query tasks by date window, similar to OmniFocus Forecast view.
+
+By default returns tasks that are due within the next N days (default 7). When `includeDeferred: true`<!-- -->, also includes tasks deferred to the same window.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
 
 **Signature:**
 
 ```typescript
-export declare function queryForecast(
-  options?: ForecastOptions
-): Promise<CliOutput<OFTask[]>>;
+export declare function queryForecast(options?: ForecastOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 ```
 
 ## Parameters
@@ -20,30 +22,37 @@ export declare function queryForecast(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [ForecastOptions](./sdk.forecastoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->\[\]&gt;&gt;
+Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[QueryResult](./sdk.queryresult.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->&gt;&gt;&gt;
+

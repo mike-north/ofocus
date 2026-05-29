@@ -9,7 +9,7 @@ Result from opening an item.
 **Signature:**
 
 ```typescript
-export interface OpenResult
+export interface OpenResult 
 ```
 
 ## Properties
@@ -18,69 +18,90 @@ export interface OpenResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [id](./sdk.openresult.id.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.openresult.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [opened](./sdk.openresult.opened.md)
 
+
 </td><td>
+
 
 </td><td>
 
 true
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [type](./sdk.openresult.type.md)
 
+
 </td><td>
+
 
 </td><td>
 
 "task" \| "project" \| "folder" \| "tag"
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

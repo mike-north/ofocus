@@ -9,9 +9,7 @@ Create a new project from a template.
 **Signature:**
 
 ```typescript
-export declare function createFromTemplate(
-  options: CreateFromTemplateOptions
-): Promise<CliOutput<CreateFromTemplateResult>>;
+export declare function createFromTemplate(options: CreateFromTemplateOptions): Promise<CliOutput<CreateFromTemplateResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function createFromTemplate(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [CreateFromTemplateOptions](./sdk.createfromtemplateoptions.md)
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ options
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[CreateFromTemplateResult](./sdk.createfromtemplateresult.md)<!-- -->&gt;&gt;
+

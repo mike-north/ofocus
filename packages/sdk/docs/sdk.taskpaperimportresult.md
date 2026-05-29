@@ -9,7 +9,7 @@ Result of a TaskPaper import.
 **Signature:**
 
 ```typescript
-export interface TaskPaperImportResult
+export interface TaskPaperImportResult 
 ```
 
 ## Properties
@@ -18,56 +18,73 @@ export interface TaskPaperImportResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [errors](./sdk.taskpaperimportresult.errors.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string\[\]
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectsCreated](./sdk.taskpaperimportresult.projectscreated.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [tasksCreated](./sdk.taskpaperimportresult.taskscreated.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

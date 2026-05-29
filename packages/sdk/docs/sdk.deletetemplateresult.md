@@ -9,7 +9,7 @@ Result of deleting a template.
 **Signature:**
 
 ```typescript
-export interface DeleteTemplateResult
+export interface DeleteTemplateResult 
 ```
 
 ## Properties
@@ -18,47 +18,60 @@ export interface DeleteTemplateResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [deleted](./sdk.deletetemplateresult.deleted.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
 
 Whether the deletion was successful
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.deletetemplateresult.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Deleted template name
 
+
 </td></tr>
 </tbody></table>
+

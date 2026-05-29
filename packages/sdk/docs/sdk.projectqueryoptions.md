@@ -4,15 +4,16 @@
 
 ## ProjectQueryOptions interface
 
-Options for querying projects.
+Options for querying projects. Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) with the full predicate vocabulary supported by the OmniJS project query compiler.
+
+Every field is optional; only fields that are explicitly set contribute a filter condition to the compiled query.
 
 **Signature:**
 
 ```typescript
-export interface ProjectQueryOptions extends PaginationOptions
+export interface ProjectQueryOptions extends BaseListQueryOptions 
 ```
-
-**Extends:** [PaginationOptions](./sdk.paginationoptions.md)
+**Extends:** [BaseListQueryOptions](./sdk.baselistqueryoptions.md)
 
 ## Properties
 
@@ -20,62 +21,801 @@ export interface ProjectQueryOptions extends PaginationOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
 
+
 </th></tr></thead>
 <tbody><tr><td>
 
-[folder?](./sdk.projectqueryoptions.folder.md)
+[caseSensitive?](./sdk.projectqueryoptions.casesensitive.md)
+
 
 </td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Case sensitivity for string predicates. Default: `false`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[completedAfter?](./sdk.projectqueryoptions.completedafter.md)
+
+
+</td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[completedBefore?](./sdk.projectqueryoptions.completedbefore.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[containsSingletonActions?](./sdk.projectqueryoptions.containssingletonactions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[deferAfter?](./sdk.projectqueryoptions.deferafter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[deferBefore?](./sdk.projectqueryoptions.deferbefore.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[deferWithin?](./sdk.projectqueryoptions.deferwithin.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[dueAfter?](./sdk.projectqueryoptions.dueafter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[dueBefore?](./sdk.projectqueryoptions.duebefore.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_ Each accepts ISO 8601 or a relative expression (see `parseDate`<!-- -->).
+
+
+</td></tr>
+<tr><td>
+
+[dueForReview?](./sdk.projectqueryoptions.dueforreview.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Projects whose nextReviewDate is non-null and &lt;<!-- -->= now.
+
+
+</td></tr>
+<tr><td>
+
+[dueOn?](./sdk.projectqueryoptions.dueon.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match projects whose dueDate falls on the given calendar day (UTC).
+
+
+</td></tr>
+<tr><td>
+
+[dueWithin?](./sdk.projectqueryoptions.duewithin.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_ Duration string like `7d`<!-- -->/`1w` — `dueDate` must be within `now + duration`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[flagged?](./sdk.projectqueryoptions.flagged.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[folder?](./sdk.projectqueryoptions.folder.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Folder name(s) or id(s). A project matches if its folder chain contains any of the named folders (transitive).
+
+
+</td></tr>
+<tr><td>
+
+[hasDefer?](./sdk.projectqueryoptions.hasdefer.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[hasDue?](./sdk.projectqueryoptions.hasdue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[hasNextReview?](./sdk.projectqueryoptions.hasnextreview.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[hasNote?](./sdk.projectqueryoptions.hasnote.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[lastReviewedAfter?](./sdk.projectqueryoptions.lastreviewedafter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[lastReviewedBefore?](./sdk.projectqueryoptions.lastreviewedbefore.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameContains?](./sdk.projectqueryoptions.namecontains.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameEquals?](./sdk.projectqueryoptions.nameequals.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameRegex?](./sdk.projectqueryoptions.nameregex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameStarts?](./sdk.projectqueryoptions.namestarts.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nextReviewAfter?](./sdk.projectqueryoptions.nextreviewafter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nextReviewBefore?](./sdk.projectqueryoptions.nextreviewbefore.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nextReviewWithin?](./sdk.projectqueryoptions.nextreviewwithin.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_ Duration string — nextReviewDate must be within `now + duration`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[noDue?](./sdk.projectqueryoptions.nodue.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[notContainsSingletonActions?](./sdk.projectqueryoptions.notcontainssingletonactions.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[noteContains?](./sdk.projectqueryoptions.notecontains.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[noteRegex?](./sdk.projectqueryoptions.noteregex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[notFlagged?](./sdk.projectqueryoptions.notflagged.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[notSequential?](./sdk.projectqueryoptions.notsequential.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[remainingTaskCountEq?](./sdk.projectqueryoptions.remainingtaskcounteq.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[remainingTaskCountGt?](./sdk.projectqueryoptions.remainingtaskcountgt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[remainingTaskCountLt?](./sdk.projectqueryoptions.remainingtaskcountlt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [sequential?](./sdk.projectqueryoptions.sequential.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [status?](./sdk.projectqueryoptions.status.md)
 
-</td><td>
 
 </td><td>
 
-"active" \| "on-hold" \| "completed" \| "dropped" \| undefined
+
+</td><td>
+
+ProjectStatus \| undefined
+
 
 </td><td>
 
 _(Optional)_
 
+
+</td></tr>
+<tr><td>
+
+[taskCountEq?](./sdk.projectqueryoptions.taskcounteq.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[taskCountGt?](./sdk.projectqueryoptions.taskcountgt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[taskCountLt?](./sdk.projectqueryoptions.taskcountlt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
 </td></tr>
 </tbody></table>
+

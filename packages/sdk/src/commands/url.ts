@@ -1,7 +1,9 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from URL generation.
@@ -113,3 +115,27 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptor
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `url` command.
+ *
+ * Drives CLI subcommand `url` and MCP tool `generate_url`.
+ *
+ * @public
+ */
+export const generateUrlDescriptor = defineCommand({
+  name: "generateUrl",
+  cliName: "url",
+  mcpName: "generate_url",
+  description:
+    "Generate an OmniFocus URL scheme deep link for a task, project, folder, or tag",
+  cliPositional: ["id"] as const,
+  inputSchema: z.object({
+    id: z.string().describe("ID of the task, project, folder, or tag"),
+  }),
+  handler: async (input) => generateUrl(input.id),
+});
