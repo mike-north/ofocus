@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { validatePaginationParams } from "../validation.js";
+import { validatePaginationParams, validateAllFlag } from "../validation.js";
 import { runOmniJSWrapped } from "../omnijs.js";
 import { defineCommand } from "../registry/define.js";
 import {
@@ -67,8 +67,19 @@ export async function queryForecast(
     );
   }
 
+  // Validate the --all flag (must not be combined with --limit or --offset).
+  const allFlagError = validateAllFlag(
+    options.all,
+    options.limit,
+    options.offset
+  );
+  if (allFlagError) return failure(allFlagError);
+
   // Validate pagination
-  const paginationError = validatePaginationParams(options.limit, options.offset);
+  const paginationError = validatePaginationParams(
+    options.limit,
+    options.offset
+  );
   if (paginationError) return failure(paginationError);
 
   const days = options.days ?? 7;
@@ -125,6 +136,7 @@ export async function queryForecast(
     aggregate: agg,
     limit,
     offset,
+    all: options.all,
     groupKey: agg.groupKey,
   });
 
@@ -168,11 +180,32 @@ export const queryForecastDescriptor = defineCommand({
       .boolean()
       .optional()
       .describe("Include tasks deferred to the same window"),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Maximum number of results to return (default: 100)"),
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("Number of results to skip for pagination"),
+    all: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+      ),
   }),
   handler: async (input) =>
     queryForecast({
       days: input.days,
       includeDeferred: input.includeDeferred,
+      limit: input.limit,
+      offset: input.offset,
+      all: input.all,
     }),
 });
 

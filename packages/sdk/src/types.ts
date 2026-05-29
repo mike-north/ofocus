@@ -96,6 +96,12 @@ export interface PaginationOptions {
   limit?: number | undefined;
   /** Number of results to skip (for pagination). Defaults to 0. */
   offset?: number | undefined;
+  /**
+   * When true, return every matching item ignoring --limit/--offset. Safe for
+   * queries that fit in memory; the entire match set is materialized
+   * server-side. Mutually exclusive with `limit` and `offset`.
+   */
+  all?: boolean | undefined;
 }
 
 /**

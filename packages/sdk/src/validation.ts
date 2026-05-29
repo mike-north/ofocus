@@ -351,6 +351,33 @@ export function validateSearchQuery(query: string): CliError | null {
 }
 
 /**
+ * Validate the `all` pagination flag.
+ *
+ * `--all` is mutually exclusive with both `--limit` and `--offset` because
+ * combining them produces a meaningless or confusing result.  When `--count`
+ * is set the caller already receives a scalar, so `--all` is rejected in
+ * that combination as well.
+ *
+ * Returns null if valid, or a CliError if the combination is illegal.
+ */
+export function validateAllFlag(
+  all: boolean | undefined,
+  limit: number | undefined,
+  offset: number | undefined
+): CliError | null {
+  if (all !== true) return null;
+
+  if (limit !== undefined || offset !== undefined) {
+    return createError(
+      ErrorCode.VALIDATION_ERROR,
+      "Cannot combine --all with --limit or --offset"
+    );
+  }
+
+  return null;
+}
+
+/**
  * Maximum allowed limit for pagination queries.
  * Set high enough for legitimate use cases but low enough to prevent abuse.
  */

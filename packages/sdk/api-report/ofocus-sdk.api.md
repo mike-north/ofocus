@@ -211,6 +211,7 @@ export function buildListQueryBody(args: BuildListQueryBodyArgs): string;
 // @public
 export interface BuildListQueryBodyArgs {
     aggregate: CompiledAggregate;
+    all?: boolean | undefined;
     comparator: string | null;
     conditions: string[];
     groupKey?: string | undefined;
@@ -1065,6 +1066,7 @@ export interface ListAttachmentsResult {
 
 // @public
 export const listFoldersDescriptor: ResolvedCommandDescriptor<    {
+all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -1072,11 +1074,14 @@ offset?: number | undefined;
 parent: z.ZodOptional<z.ZodString>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, {
+all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -1087,6 +1092,7 @@ export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
 
 // @public
 export const listProjectsDescriptor: ResolvedCommandDescriptor<    {
+all?: boolean | undefined;
 status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
 folder?: string | undefined;
 sequential?: boolean | undefined;
@@ -1098,13 +1104,16 @@ status: z.ZodOptional<z.ZodEnum<["active", "on-hold", "completed", "dropped"]>>;
 sequential: z.ZodOptional<z.ZodBoolean>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+all?: boolean | undefined;
 status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
 folder?: string | undefined;
 sequential?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, {
+all?: boolean | undefined;
 status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
 folder?: string | undefined;
 sequential?: boolean | undefined;
@@ -1114,6 +1123,7 @@ offset?: number | undefined;
 
 // @public
 export const listTagsDescriptor: ResolvedCommandDescriptor<    {
+all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -1121,11 +1131,14 @@ offset?: number | undefined;
 parent: z.ZodOptional<z.ZodString>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, {
+all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -1306,6 +1319,7 @@ export interface PaginatedResult<T> {
 
 // @public
 export interface PaginationOptions {
+    all?: boolean | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
 }
@@ -1456,6 +1470,9 @@ export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput
 
 // @public
 export const queryDeferredDescriptor: ResolvedCommandDescriptor<    {
+all?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
@@ -1463,11 +1480,20 @@ deferredBefore?: string | undefined;
 deferredAfter: z.ZodOptional<z.ZodString>;
 deferredBefore: z.ZodOptional<z.ZodString>;
 blockedOnly: z.ZodOptional<z.ZodBoolean>;
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+all?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
 }, {
+all?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
@@ -1481,16 +1507,28 @@ export function queryForecast(options?: ForecastOptions): Promise<CliOutput<Quer
 
 // @public
 export const queryForecastDescriptor: ResolvedCommandDescriptor<    {
+all?: boolean | undefined;
 days?: number | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 includeDeferred?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
 days: z.ZodOptional<z.ZodNumber>;
 includeDeferred: z.ZodOptional<z.ZodBoolean>;
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+all?: boolean | undefined;
 days?: number | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 includeDeferred?: boolean | undefined;
 }, {
+all?: boolean | undefined;
 days?: number | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 includeDeferred?: boolean | undefined;
 }>>;
 
@@ -1537,20 +1575,32 @@ export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOption
 // @public
 export const querySubtasksDescriptor: ResolvedCommandDescriptor<    {
 parentTaskId: string;
+all?: boolean | undefined;
 completed?: boolean | undefined;
 flagged?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
 parentTaskId: z.ZodString;
 completed: z.ZodOptional<z.ZodBoolean>;
 flagged: z.ZodOptional<z.ZodBoolean>;
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 parentTaskId: string;
+all?: boolean | undefined;
 completed?: boolean | undefined;
 flagged?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 }, {
 parentTaskId: string;
+all?: boolean | undefined;
 completed?: boolean | undefined;
 flagged?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 }>>;
 
 // @public
@@ -1684,7 +1734,9 @@ export function searchTasks(query: string, options?: SearchOptions): Promise<Cli
 // @public
 export const searchTasksDescriptor: ResolvedCommandDescriptor<    {
 query: string;
+all?: boolean | undefined;
 limit?: number | undefined;
+offset?: number | undefined;
 scope?: "name" | "note" | "both" | undefined;
 includeCompleted?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
@@ -1692,14 +1744,20 @@ query: z.ZodString;
 scope: z.ZodOptional<z.ZodEnum<["name", "note", "both"]>>;
 limit: z.ZodOptional<z.ZodNumber>;
 includeCompleted: z.ZodOptional<z.ZodBoolean>;
+offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 query: string;
+all?: boolean | undefined;
 limit?: number | undefined;
+offset?: number | undefined;
 scope?: "name" | "note" | "both" | undefined;
 includeCompleted?: boolean | undefined;
 }, {
 query: string;
+all?: boolean | undefined;
 limit?: number | undefined;
+offset?: number | undefined;
 scope?: "name" | "note" | "both" | undefined;
 includeCompleted?: boolean | undefined;
 }>>;

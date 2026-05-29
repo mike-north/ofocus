@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { CliOutput, OFTag } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { validatePaginationParams } from "../validation.js";
+import { validatePaginationParams, validateAllFlag } from "../validation.js";
 import { runOmniJSWrapped } from "../omnijs.js";
 import {
   buildListQueryBody,
@@ -43,12 +43,19 @@ export const listTagsDescriptor = defineCommand({
       .min(0)
       .optional()
       .describe("Number of results to skip for pagination"),
+    all: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+      ),
   }),
   handler: async (input) =>
     queryTags({
       parent: input.parent,
       limit: input.limit,
       offset: input.offset,
+      all: input.all,
     }),
 });
 
@@ -64,6 +71,14 @@ export const listTagsDescriptor = defineCommand({
 export async function queryTags(
   options: TagQueryOptions = {}
 ): Promise<CliOutput<QueryResult<OFTag>>> {
+  // Validate the --all flag (must not be combined with --limit or --offset).
+  const allFlagError = validateAllFlag(
+    options.all,
+    options.limit,
+    options.offset
+  );
+  if (allFlagError) return failure(allFlagError);
+
   // Pagination validation (gated separately because invalid limits/offsets
   // would otherwise produce nonsense pagination in the result envelope).
   const paginationError = validatePaginationParams(
@@ -102,6 +117,7 @@ export async function queryTags(
     aggregate: agg,
     limit,
     offset,
+    all: options.all,
     groupKey: agg.groupKey,
   });
 
