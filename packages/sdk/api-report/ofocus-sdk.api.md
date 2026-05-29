@@ -99,9 +99,9 @@ export function applyRepetitionRule(taskId: string, rule: RepetitionRule): Promi
 // @public
 export const applyRepetitionRuleDescriptor: ResolvedCommandDescriptor<    {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-repeatMethod: "due-again" | "defer-another" | "scheduled";
 taskId: string;
 interval: number;
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
@@ -117,9 +117,9 @@ daysOfWeekPositions: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
 monthsOfYear: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
 }, "strip", z.ZodTypeAny, {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-repeatMethod: "due-again" | "defer-another" | "scheduled";
 taskId: string;
 interval: number;
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
@@ -131,8 +131,8 @@ daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
-repeatMethod?: "due-again" | "defer-another" | "scheduled" | undefined;
 interval?: number | undefined;
+repeatMethod?: "due-again" | "defer-another" | "scheduled" | undefined;
 }>>;
 
 // @public
@@ -1751,9 +1751,9 @@ reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
-blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
+blockedOnly?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
@@ -1773,9 +1773,9 @@ reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
-blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
+blockedOnly?: boolean | undefined;
 }, {
 fields?: unknown;
 excludeFields?: unknown;
@@ -1784,9 +1784,9 @@ reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
-blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
+blockedOnly?: boolean | undefined;
 }>>;
 
 // @public

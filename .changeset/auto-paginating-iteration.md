@@ -5,7 +5,7 @@
 
 Add auto-paginating async iteration over list queries
 
-Every list query (`queryTasks`, `queryProjects`, `queryTags`, `queryFolders`, `queryDeferred`, `queryForecast`, …) is offset/limit paginated. Consuming a full result set previously meant manually looping on `offset`/`hasMore`. Two new generic helpers do that for you with a `for await` loop, fully type-inferred from the query function (no type arguments needed). Queries with a required leading argument (`searchTasks`, `querySubtasks`) are supported by wrapping them in a single-`options` closure first.
+All SDK list queries are offset/limit paginated. Consuming a full result set previously meant manually looping on `offset`/`hasMore`. Two new generic helpers do that for you with a `for await` loop, fully type-inferred from the query function (no type arguments needed). Single-`options` queries (`queryTasks`, `queryProjects`, `queryTags`, `queryFolders`, `queryDeferred`, `queryForecast`, …) conform to the helper's shape directly. Queries that take required leading arguments (`searchTasks`, `querySubtasks`) must first be wrapped in a single-`options` arrow that closes over those arguments — e.g. `(options) => searchTasks("query", options)`.
 
 **New SDK exports**:
 

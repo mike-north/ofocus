@@ -15,15 +15,40 @@ const DEFAULT_PAGE_SIZE = 100;
  * a {@link CliOutput} wrapping a {@link QueryResult}.
  *
  * Single-`options` list queries — `queryTasks`, `queryProjects`, `queryTags`,
- * `queryFolders`, `queryDeferred`, `queryForecast`, … — conform directly, which
- * is what lets a single generic helper auto-paginate them. Queries that take a
- * required leading argument (e.g. `searchTasks(query, options)`,
- * `querySubtasks(parentTaskId, options)`) do not match this shape directly;
- * wrap them in a single-`options` closure first — e.g.
- * `paginate((options) => searchTasks(query, options))`.
+ * `queryFolders`, `queryDeferred`, `queryForecast`, … — conform to this shape
+ * directly and can be passed straight to {@link paginate} or
+ * {@link paginatePages}. Not every SDK list query conforms directly: queries
+ * that take required leading parameters (`searchTasks(query, options)`,
+ * `querySubtasks(parentTaskId, options)`) must be wrapped in a
+ * single-`options` arrow that closes over those leading arguments before being
+ * passed to the pagination helpers.
  *
  * @typeParam T - The entity type yielded by the query (e.g. `OFTask`).
  * @typeParam O - The query's options type (must extend {@link PaginationOptions}).
+ *
+ * @example Queries that conform directly (single `options` parameter only):
+ * ```ts
+ * for await (const task of paginate(queryTasks, { flagged: true })) {
+ *   console.log(task.name);
+ * }
+ * ```
+ *
+ * @example Queries that require wrapping (leading required parameters):
+ * ```ts
+ * // searchTasks(query, options) — close over the search string
+ * for await (const task of paginate(
+ *   (options) => searchTasks("invoice", options)
+ * )) {
+ *   console.log(task.name);
+ * }
+ *
+ * // querySubtasks(parentTaskId, options) — close over the parent ID
+ * for await (const task of paginate(
+ *   (options) => querySubtasks("abc123", options)
+ * )) {
+ *   console.log(task.name);
+ * }
+ * ```
  *
  * @public
  */
