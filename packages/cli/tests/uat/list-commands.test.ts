@@ -19,7 +19,7 @@ import type { CliOutput, CommandInfo } from "@ofocus/sdk";
  * This prevents the suite from running in CI environments where the dist may
  * not be present and no OmniFocus interaction is expected.
  */
-const skipCondition = !process.env.OFOCUS_UAT;
+const skipCondition = process.env.OFOCUS_UAT !== "1";
 
 describe.skipIf(skipCondition)("UAT: list-commands (subprocess)", () => {
   it("exits 0 with --json and stdout is valid JSON", async () => {

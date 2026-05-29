@@ -57,8 +57,28 @@ export function runCli(args: string[], timeoutMs = 10_000): Promise<CliResult> {
       stderrChunks.push(chunk);
     });
 
+    // Guard against double-settlement: the promise must resolve or reject
+    // exactly once even if both the timeout and the close event fire.
+    let settled = false;
+
     const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+
+      // Send SIGTERM first to allow graceful shutdown.
       child.kill("SIGTERM");
+
+      // Escalate to SIGKILL after 2 s if the process hasn't exited — a
+      // lingering child would keep the test runner alive indefinitely.
+      const killTimer = setTimeout(() => {
+        child.kill("SIGKILL");
+      }, 2_000);
+
+      // If the process exits during the grace period, cancel the SIGKILL.
+      child.once("close", () => {
+        clearTimeout(killTimer);
+      });
+
       reject(
         new Error(
           `CLI process timed out after ${timeoutMs} ms.\n` +
@@ -68,7 +88,12 @@ export function runCli(args: string[], timeoutMs = 10_000): Promise<CliResult> {
     }, timeoutMs);
 
     child.on("close", (code) => {
+      // Clear the timeout so it never fires after the process has exited.
       clearTimeout(timer);
+
+      if (settled) return;
+      settled = true;
+
       resolve_fn({
         stdout: Buffer.concat(stdoutChunks).toString("utf-8"),
         stderr: Buffer.concat(stderrChunks).toString("utf-8"),
@@ -78,6 +103,10 @@ export function runCli(args: string[], timeoutMs = 10_000): Promise<CliResult> {
 
     child.on("error", (err) => {
       clearTimeout(timer);
+
+      if (settled) return;
+      settled = true;
+
       reject(err);
     });
   });

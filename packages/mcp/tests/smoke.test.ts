@@ -5,10 +5,11 @@
  * InMemoryTransport, lists all registered tools, and round-trips a
  * representative call per tool category.
  *
- * Round-trip tests mock `runOmniJSWrapped` at the `@ofocus/sdk/omnijs` module
- * level so no OmniFocus process is required. Tests that cannot be made
- * CI-safe are wrapped in `describe.skipIf(!!process.env.CI)` or use
- * `it.skipIf` with a comment explaining why.
+ * Round-trip tests mock `runOmniJS` and `runOmniJSWrapped` at the `@ofocus/sdk`
+ * public-export boundary so no OmniFocus process is required for most tests.
+ * Tests that cannot be made CI-safe are wrapped in
+ * `describe.skipIf(!!process.env.CI)` or use `it.skipIf` with a comment
+ * explaining why.
  *
  * @see https://spec.modelcontextprotocol.io/specification/2024-11-05/
  * @see https://github.com/modelcontextprotocol/typescript-sdk
@@ -17,19 +18,28 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../src/index.js";
+import {
+  TASK_TOOLS,
+  PROJECT_TOOLS,
+  TAG_TOOLS,
+  FOLDER_TOOLS,
+  ADVANCED_TOOLS,
+} from "./fixtures/expected-tools.js";
 
 // ---------------------------------------------------------------------------
-// Mock the OmniJS bridge at the omnijs module boundary.
-// SDK commands import `runOmniJSWrapped` from `../omnijs.js` (a relative
-// internal import within @ofocus/sdk). We mock the whole SDK to intercept
-// calls at the public-export level where hoisting applies to ESM.
+// Mock the OmniJS bridge at the @ofocus/sdk public-export boundary.
 //
-// NOTE: The mock intercepts the re-exported names at the @ofocus/sdk boundary.
-// Commands that import directly from the internal omnijs module will call
-// through to the real implementation. In that case the round-trip tests assert
-// only on the response envelope shape (isError, content[0].type), not on the
-// data values, which makes them CI-safe even when OmniFocus is unavailable
-// (the MCP layer converts a failed osascript call to isError:true).
+// `vi.mock("@ofocus/sdk")` replaces the `runOmniJS` and `runOmniJSWrapped`
+// named exports with mock functions for any module that imports them from
+// `@ofocus/sdk` directly.
+//
+// IMPORTANT: SDK commands that import `runOmniJSWrapped` from the internal
+// relative path `../omnijs.js` are NOT affected by this mock — they call
+// through to the real implementation. For those commands the round-trip tests
+// assert only on the MCP response envelope shape (isError, content[0].type),
+// not on data values. This is still CI-safe because the MCP layer converts a
+// failed osascript call into an isError:true response rather than rejecting
+// the promise.
 // ---------------------------------------------------------------------------
 vi.mock("@ofocus/sdk", async (importOriginal) => {
   const real = await importOriginal<typeof import("@ofocus/sdk")>();
@@ -39,82 +49,6 @@ vi.mock("@ofocus/sdk", async (importOriginal) => {
     runOmniJSWrapped: vi.fn().mockResolvedValue({ success: true, data: null }),
   };
 });
-
-// ---------------------------------------------------------------------------
-// Known tool names per category — kept in sync with tools.test.ts
-// ---------------------------------------------------------------------------
-const TASK_TOOLS = [
-  "inbox_add",
-  "tasks_list",
-  "task_complete",
-  "task_update",
-  "task_drop",
-  "task_delete",
-  "task_defer",
-  "search",
-  "tasks_complete_batch",
-  "tasks_update_batch",
-  "tasks_delete_batch",
-  "tasks_defer_batch",
-  "task_duplicate",
-  "open",
-] as const;
-
-const PROJECT_TOOLS = [
-  "projects_list",
-  "project_create",
-  "project_review",
-  "projects_for_review",
-  "project_update",
-  "project_delete",
-  "project_drop",
-  "project_review_interval_get",
-  "project_review_interval_set",
-] as const;
-
-const TAG_TOOLS = [
-  "tags_list",
-  "tag_create",
-  "tag_update",
-  "tag_delete",
-] as const;
-
-const FOLDER_TOOLS = [
-  "folders_list",
-  "folder_create",
-  "folder_update",
-  "folder_delete",
-] as const;
-
-const ADVANCED_TOOLS = [
-  "subtask_create",
-  "subtasks_list",
-  "task_move",
-  "perspectives_list",
-  "perspective_query",
-  "forecast",
-  "focus_set",
-  "focus_clear",
-  "focus_get",
-  "deferred_list",
-  "quick_add",
-  "stats",
-  "sync_status",
-  "sync_trigger",
-  "template_save",
-  "templates_list",
-  "template_get",
-  "template_create_project",
-  "template_delete",
-  "attachment_add",
-  "attachments_list",
-  "attachment_remove",
-  "archive",
-  "compact_database",
-  "export_taskpaper",
-  "import_taskpaper",
-  "generate_url",
-] as const;
 
 const MINIMUM_TOOL_COUNT = 40;
 
@@ -165,9 +99,9 @@ describe("MCP smoke: tool listing", () => {
     expect(tools.length).toBeGreaterThanOrEqual(MINIMUM_TOOL_COUNT);
   });
 
-  it("registers exactly 58 tools (current count)", async () => {
+  it("registers exactly 61 tools (current count)", async () => {
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(58);
+    expect(tools).toHaveLength(61);
   });
 
   it("every tool has a non-empty name and description", async () => {
@@ -254,7 +188,10 @@ describe("MCP smoke: round-trip response envelope", () => {
   let cleanup: () => Promise<void>;
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    // clearAllMocks resets call history but preserves mock implementations
+    // (mockResolvedValue defaults set by vi.mock above). Using resetAllMocks
+    // here would wipe those defaults and could allow real osascript calls.
+    vi.clearAllMocks();
     ({ client, cleanup } = await createTestClient());
   });
 
