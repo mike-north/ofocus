@@ -203,6 +203,8 @@ describe("queryTasks", () => {
     });
 
     it("should filter by available status", async () => {
+      // available=true emits actionable statuses: Available, Next, DueSoon, Overdue.
+      // The old code used non-existent t.completed/t.effectivelyDropped/t.blocked.
       mockRunOmniJS.mockResolvedValue({
         success: true,
         data: createMockListResult([]),
@@ -212,9 +214,10 @@ describe("queryTasks", () => {
 
       expect(result.success).toBe(true);
       const body = mockRunOmniJS.mock.calls[0]?.[0];
-      expect(body).toContain("!t.completed");
-      expect(body).toContain("!t.effectivelyDropped");
-      expect(body).toContain("!t.blocked");
+      expect(body).toContain("Task.Status.Available");
+      expect(body).toContain("Task.Status.Next");
+      expect(body).toContain("Task.Status.DueSoon");
+      expect(body).toContain("Task.Status.Overdue");
     });
 
     it("should handle pagination with offset and limit", async () => {
