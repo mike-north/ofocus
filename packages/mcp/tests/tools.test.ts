@@ -17,6 +17,8 @@ const EXPECTED_TASK_TOOLS = [
   "tasks_delete_batch",
   "tasks_defer_batch",
   "task_duplicate",
+  "task_apply_repetition",
+  "task_clear_repetition",
   "open",
 ];
 
@@ -99,14 +101,14 @@ describe("Tool Registration", () => {
     expect(registeredTools.sort()).toEqual(ALL_EXPECTED_TOOLS.sort());
   });
 
-  it("should register exactly 58 tools", () => {
+  it("should register exactly 60 tools", () => {
     const mockServer = {
       registerTool: vi.fn(),
     } as unknown as McpServer;
 
     registerAllTools(mockServer);
 
-    expect(mockServer.registerTool).toHaveBeenCalledTimes(58);
+    expect(mockServer.registerTool).toHaveBeenCalledTimes(60);
   });
 
   describe("task tools", () => {
