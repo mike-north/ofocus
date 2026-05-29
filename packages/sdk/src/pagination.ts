@@ -14,10 +14,13 @@ const DEFAULT_PAGE_SIZE = 100;
  * options object (carrying at least {@link PaginationOptions}) and resolves to
  * a {@link CliOutput} wrapping a {@link QueryResult}.
  *
- * Every list-returning SDK query — `queryTasks`, `queryProjects`, `queryTags`,
- * `queryFolders`, `querySubtasks`, `queryDeferred`, `searchTasks`,
- * `queryForecast`, … — conforms to this shape, which is what lets a single
- * generic helper auto-paginate all of them.
+ * Single-`options` list queries — `queryTasks`, `queryProjects`, `queryTags`,
+ * `queryFolders`, `queryDeferred`, `queryForecast`, … — conform directly, which
+ * is what lets a single generic helper auto-paginate them. Queries that take a
+ * required leading argument (e.g. `searchTasks(query, options)`,
+ * `querySubtasks(parentTaskId, options)`) do not match this shape directly;
+ * wrap them in a single-`options` closure first — e.g.
+ * `paginate((options) => searchTasks(query, options))`.
  *
  * @typeParam T - The entity type yielded by the query (e.g. `OFTask`).
  * @typeParam O - The query's options type (must extend {@link PaginationOptions}).
@@ -177,7 +180,7 @@ async function* paginatePagesImpl<T, O extends PaginationOptions>(
       throw new PaginationError(
         createError(
           ErrorCode.VALIDATION_ERROR,
-          `paginate() requires a list query; got kind=${data.kind}`
+          `paginate()/paginatePages() require a list query; got kind=${data.kind}`
         )
       );
     }

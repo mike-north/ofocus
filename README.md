@@ -253,10 +253,9 @@ import {
 #### Auto-pagination
 
 Every list query (`queryTasks`, `queryProjects`, `queryTags`, `queryFolders`,
-`querySubtasks`, `queryDeferred`, `searchTasks`, `queryForecast`, …) is
-offset/limit paginated. Rather than stepping `offset` and checking `hasMore`
-yourself, wrap any of them in `paginate` to iterate every matching item with a
-`for await` loop:
+`queryDeferred`, `queryForecast`, …) is offset/limit paginated. Rather than
+stepping `offset` and checking `hasMore` yourself, pass any of them to
+`paginate` to iterate every matching item with a `for await` loop:
 
 ```typescript
 import {
@@ -279,9 +278,23 @@ for await (const page of paginatePages(queryTasks, { available: true }, 250)) {
 ```
 
 The element and options types are inferred from the query function — no type
-arguments needed. A failed page (or an options combination that does not produce
-a list, such as `count`/`idsOnly`/`first`/`last`/`groupBy`) throws a
-`PaginationError` carrying the underlying error code:
+arguments needed.
+
+Queries that take a required leading argument — `searchTasks(query, options)`
+and `querySubtasks(parentTaskId, options)` — don't match the single-`options`
+shape directly. Wrap them in a closure first:
+
+```typescript
+for await (const task of paginate((options) =>
+  searchTasks("invoice", options)
+)) {
+  console.log(task.name);
+}
+```
+
+A failed page (or an options combination that does not produce a list, such as
+`count`/`idsOnly`/`first`/`last`/`groupBy`) throws a `PaginationError` carrying
+the underlying error code:
 
 ```typescript
 try {
