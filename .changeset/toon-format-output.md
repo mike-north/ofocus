@@ -22,7 +22,7 @@ The `output()` function signature changes from `(result, json: boolean)` to `(re
 
 ## MCP: `format` parameter on all tools
 
-Every MCP tool registered through `registerMcpTool` gains an optional `format?: 'json' | 'toon'` parameter (default `'toon'`). The default is TOON because agents — the primary consumers of MCP tools — benefit from the token savings; humans rarely read MCP tool output directly.
+Every MCP tool registered through `registerMcpTool` gains an optional `format?: 'json' | 'toon'` parameter (default `'toon'`). The default is TOON because agents — the primary consumers of MCP tools — benefit from the token savings; humans rarely read MCP tool output directly. Note: the `'toon'` default applies only to tools registered via `registerMcpTool` (descriptor-routed tools); tools registered directly with `server.registerTool(...)` that call `formatResult` without a `format` argument continue to receive JSON output until they are migrated to the descriptor path.
 
 ```
 # In an MCP tool call:

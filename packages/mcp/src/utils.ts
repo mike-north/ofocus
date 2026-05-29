@@ -23,18 +23,20 @@ export type McpOutputFormat = "toon" | "json";
  * format expected by MCP clients. Successful results include the data payload,
  * while errors are marked with isError: true and include error details.
  *
- * The default format is `'toon'` because:
- * - Agents (the primary consumers of MCP tools) benefit from the ~40% token savings.
- * - Humans rarely read MCP tool output directly.
- * - Pass `format: 'json'` for callers that require standard JSON.
+ * The default format is `'json'` for broad compatibility with all callers,
+ * including direct `server.registerTool(...)` registrations that do not inject a
+ * `format` input parameter. Descriptor-routed tools (registered via
+ * {@link registerMcpTool} in `registry-adapter.ts`) always pass `format`
+ * explicitly (defaulting to `'toon'` at the adapter layer), so they are
+ * unaffected by this default.
  *
  * @param result - The result from an SDK function call
- * @param format - Serialization format (default: `'toon'`)
+ * @param format - Serialization format (default: `'json'`)
  * @returns MCP-formatted tool result with text content
  */
 export function formatResult<T>(
   result: CliOutput<T>,
-  format: McpOutputFormat = "toon"
+  format: McpOutputFormat = "json"
 ): CallToolResult {
   if (!result.success) {
     // Ensure error has expected structure

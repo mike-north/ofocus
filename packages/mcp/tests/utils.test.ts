@@ -214,28 +214,51 @@ describe("formatResult", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Default format (no format arg → 'toon')
+  // Default format (no format arg → 'json')
   // -------------------------------------------------------------------------
 
-  describe("Default format (omit format arg → defaults to toon)", () => {
-    it("should default to TOON format when no format is specified", () => {
-      // The default is 'toon' because agents benefit from ~40% token savings.
-      // @see https://toonformat.dev/
+  /**
+   * Regression guard for PR #39 Copilot finding:
+   * Changing formatResult's default to 'toon' silently flipped all direct
+   * server.registerTool(...) call sites (tasks.ts, projects.ts, folders.ts,
+   * tags.ts, advanced.ts) from JSON to TOON without any way for callers to
+   * opt back into JSON — because those registrations do not inject a `format`
+   * input parameter. The default is 'json' to preserve backward compatibility
+   * for direct registrations. Descriptor-routed tools (via registerMcpTool)
+   * receive TOON via the adapter's explicit `format ?? "toon"` default.
+   */
+  describe("Default format (omit format arg → defaults to json)", () => {
+    it("should default to JSON format when no format is specified", () => {
+      // Default is 'json' to avoid silently flipping direct registrations.
+      // Direct server.registerTool(...) callers do not inject a format param,
+      // so they must rely on this default. See PR #39 Copilot finding.
       const result = formatResult({
         success: true,
         data: { id: "123", name: "Default Test" },
       });
 
       const text = result.content[0].text as string;
-      // TOON objects use `key: value` lines, not JSON braces
-      expect(text).not.toMatch(/^\{/);
-      // String "123" is quoted in TOON output.
-      // @see https://toonformat.dev/ §1.3 "String quoting rules"
-      expect(text).toContain('id: "123"');
+      // JSON output: parseable and starts with `{`
+      const parsed = JSON.parse(text) as { id: string; name: string };
+      expect(parsed.id).toBe("123");
+      expect(parsed.name).toBe("Default Test");
     });
 
-    it("default TOON output is smaller than equivalent JSON for array results", () => {
-      // Validate the token-efficiency claim.
+    it("should default to JSON for error results when no format is specified", () => {
+      // Regression: error path must also produce JSON by default.
+      const result = formatResult({
+        success: false,
+        error: { code: "ERR", message: "fail" },
+      });
+
+      const text = result.content[0].text as string;
+      const parsed = JSON.parse(text) as { code: string; message: string };
+      expect(parsed.code).toBe("ERR");
+      expect(result.isError).toBe(true);
+    });
+
+    it("TOON output is smaller than JSON for array results (explicit format args)", () => {
+      // Validate the token-efficiency claim holds for explicit format usage.
       // @see https://toonformat.dev/ — ~40% smaller for uniform arrays
       const data = [
         { id: "1", name: "Alpha", flagged: false, completed: false },
