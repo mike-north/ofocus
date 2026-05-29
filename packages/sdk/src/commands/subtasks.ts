@@ -28,6 +28,8 @@ import {
   compileTaskPredicates,
   taskFieldSpec,
   taskGroupKeys,
+  listProjectionSchema,
+  listSortSchema,
   type QueryResult,
   type BaseListQueryOptions,
   type TaskQueryOptions,
@@ -448,6 +450,11 @@ export const querySubtasksDescriptor = defineCommand({
         "Filter by completion status (true = only completed, false = only incomplete)"
       ),
     flagged: z.boolean().optional().describe("Filter by flagged status"),
+    // ── Projection ───────────────────────────────────────────────────────────
+    ...listProjectionSchema,
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    ...listSortSchema,
+    // ── Pagination ───────────────────────────────────────────────────────────
     limit: z
       .number()
       .int()
@@ -471,6 +478,10 @@ export const querySubtasksDescriptor = defineCommand({
     querySubtasks(input.parentTaskId, {
       completed: input.completed,
       flagged: input.flagged,
+      fields: input.fields,
+      excludeFields: input.excludeFields,
+      sort: input.sort,
+      reverse: input.reverse,
       limit: input.limit,
       offset: input.offset,
       all: input.all,

@@ -13,6 +13,8 @@ import {
   compileTaskPredicates,
   taskFieldSpec,
   taskGroupKeys,
+  listProjectionSchema,
+  listSortSchema,
   type QueryResult,
   type BaseListQueryOptions,
   type TaskQueryOptions,
@@ -182,6 +184,11 @@ export const queryDeferredDescriptor = defineCommand({
       .boolean()
       .optional()
       .describe("Only show tasks currently blocked by their defer date"),
+    // ── Projection ───────────────────────────────────────────────────────────
+    ...listProjectionSchema,
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    ...listSortSchema,
+    // ── Pagination ───────────────────────────────────────────────────────────
     limit: z
       .number()
       .int()
@@ -206,6 +213,10 @@ export const queryDeferredDescriptor = defineCommand({
       deferAfter: input.deferredAfter,
       deferBefore: input.deferredBefore,
       blockedOnly: input.blockedOnly,
+      fields: input.fields,
+      excludeFields: input.excludeFields,
+      sort: input.sort,
+      reverse: input.reverse,
       limit: input.limit,
       offset: input.offset,
       all: input.all,

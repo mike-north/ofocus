@@ -12,6 +12,8 @@ import {
   compileTagPredicates,
   tagFieldSpec,
   tagGroupKeys,
+  listProjectionSchema,
+  listSortSchema,
   type QueryResult,
   type TagQueryOptions,
 } from "../query/index.js";
@@ -31,6 +33,11 @@ export const listTagsDescriptor = defineCommand({
   description: "List tags from OmniFocus",
   inputSchema: z.object({
     parent: z.string().optional().describe("Filter by parent tag name or ID"),
+    // ── Projection ───────────────────────────────────────────────────────────
+    ...listProjectionSchema,
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    ...listSortSchema,
+    // ── Pagination ───────────────────────────────────────────────────────────
     limit: z
       .number()
       .int()
@@ -53,6 +60,10 @@ export const listTagsDescriptor = defineCommand({
   handler: async (input) =>
     queryTags({
       parent: input.parent,
+      fields: input.fields,
+      excludeFields: input.excludeFields,
+      sort: input.sort,
+      reverse: input.reverse,
       limit: input.limit,
       offset: input.offset,
       all: input.all,

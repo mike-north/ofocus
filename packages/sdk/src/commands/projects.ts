@@ -12,6 +12,8 @@ import {
   compileProjectPredicates,
   projectFieldSpec,
   projectGroupKeys,
+  listProjectionSchema,
+  listSortSchema,
   type QueryResult,
   type ProjectQueryOptions,
 } from "../query/index.js";
@@ -132,6 +134,11 @@ export const listProjectsDescriptor = defineCommand({
       .boolean()
       .optional()
       .describe("Filter by sequential/parallel type"),
+    // ── Projection ───────────────────────────────────────────────────────────
+    ...listProjectionSchema,
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    ...listSortSchema,
+    // ── Pagination ───────────────────────────────────────────────────────────
     limit: z
       .number()
       .int()
@@ -156,6 +163,10 @@ export const listProjectsDescriptor = defineCommand({
       folder: input.folder,
       status: input.status,
       sequential: input.sequential,
+      fields: input.fields,
+      excludeFields: input.excludeFields,
+      sort: input.sort,
+      reverse: input.reverse,
       limit: input.limit,
       offset: input.offset,
       all: input.all,
