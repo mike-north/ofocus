@@ -58,8 +58,7 @@ function expectList(
 ): Extract<QueryResult<OFTask>, { kind: "list" }> {
   expect(result).toBeDefined();
   expect(result?.kind).toBe("list");
-  if (!result || result.kind !== "list")
-    throw new Error("Expected list shape");
+  if (!result || result.kind !== "list") throw new Error("Expected list shape");
   return result;
 }
 
@@ -469,6 +468,38 @@ describe("queryTasks", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+    });
+  });
+
+  describe("--all flag", () => {
+    it("rejects all=true combined with limit", async () => {
+      const result = await queryTasks({ all: true, limit: 5 });
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(result.error?.message).toContain("Cannot combine --all");
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    });
+
+    it("rejects all=true combined with offset", async () => {
+      const result = await queryTasks({ all: true, offset: 10 });
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    });
+
+    it("accepts all=true with no limit or offset and emits full-scan body", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: createMockListResult([createMockTask()]),
+      } as OmniJSResult<QueryResult<OFTask>>);
+
+      const result = await queryTasks({ all: true });
+
+      expect(result.success).toBe(true);
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      // full-scan body maps all rows without __paged slice
+      expect(body).toContain("rows.map(__mapFn)");
+      expect(body).not.toContain("__paged");
     });
   });
 });

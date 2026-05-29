@@ -300,6 +300,47 @@ return JSON.stringify({ moved: waiting.length });
 
 **Security note**: Scripts run unsandboxed in your OmniFocus and can mutate any task, project, folder, tag, or perspective. Scripts must end with `return <expression>;` and are capped at 64 KB.
 
+## Pagination
+
+All list commands (`tasks`, `projects`, `folders`, `tags`, `forecast`, `deferred`, `search`, `subtasks`) return a `PaginatedResult` envelope and support two pagination modes.
+
+### Page-by-page (`--limit` / `--offset`)
+
+Use `--limit <n>` and `--offset <n>` to page through results one window at a time:
+
+```bash
+ofocus tasks --limit 50 --offset 0   # first page
+ofocus tasks --limit 50 --offset 50  # second page
+```
+
+```typescript
+const page1 = await queryTasks({ limit: 50, offset: 0 });
+const page2 = await queryTasks({ limit: 50, offset: 50 });
+```
+
+### Full result set (`--all`)
+
+Use `--all` to return every matching item in a single call, bypassing pagination. This is the recommended approach when the query is bounded by filters (e.g., a specific project or tag) and the result set fits comfortably in memory. Because OmniFocus runs in-process via OmniJS, there are no network round-trips — server-side materialization is safe.
+
+```bash
+# All tasks in a project — no paging loop needed
+ofocus tasks --project "Work" --all
+
+# All active projects
+ofocus projects --status active --all
+```
+
+```typescript
+const result = await queryTasks({ project: "Work", all: true });
+// result.data.kind === "list"
+// result.data.hasMore === false  (nothing left to page)
+// result.data.items contains every matched task
+```
+
+`--all` is **mutually exclusive** with `--limit` and `--offset` — supplying both returns a validation error.
+
+For unbounded or extremely large queries (e.g., every task in a large database), prefer `--count` or `--group-by` to avoid materializing a very large array.
+
 ## Development
 
 ### Prerequisites

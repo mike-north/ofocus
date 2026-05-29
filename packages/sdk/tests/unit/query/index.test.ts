@@ -83,6 +83,61 @@ describe("buildListQueryBody", () => {
       expect(body).toContain("__offset = 50");
       expect(body).toContain("__limit = 25");
     });
+
+    describe("all flag", () => {
+      it("when all=true omits slice and maps the full rows array", () => {
+        const body = buildListQueryBody({
+          ...baseArgs,
+          conditions: [],
+          comparator: null,
+          aggregate: compileAggregate({}),
+          all: true,
+        });
+        // Must not use the paginated __offset/__limit/__paged pattern
+        expect(body).not.toContain("__offset");
+        expect(body).not.toContain("__paged");
+        // Must map the full rows array
+        expect(body).toContain("rows.map(__mapFn)");
+        expect(body).toContain('kind: "list"');
+      });
+
+      it("when all=true emits hasMore: false and offset: 0", () => {
+        const body = buildListQueryBody({
+          ...baseArgs,
+          conditions: [],
+          comparator: null,
+          aggregate: compileAggregate({}),
+          all: true,
+        });
+        expect(body).toContain("hasMore: false");
+        expect(body).toContain("offset: 0");
+        // limit equals items length, not a hard-coded integer
+        expect(body).toContain("limit: __items.length");
+      });
+
+      it("when all=false (default) uses normal paginated slice", () => {
+        const body = buildListQueryBody({
+          ...baseArgs,
+          conditions: [],
+          comparator: null,
+          aggregate: compileAggregate({}),
+          all: false,
+        });
+        expect(body).toContain("__paged = rows.slice");
+        expect(body).toContain("__offset = 0");
+        expect(body).toContain("__limit = 100");
+      });
+
+      it("when all is omitted uses normal paginated slice", () => {
+        const body = buildListQueryBody({
+          ...baseArgs,
+          conditions: [],
+          comparator: null,
+          aggregate: compileAggregate({}),
+        });
+        expect(body).toContain("__paged = rows.slice");
+      });
+    });
   });
 
   describe("count shape", () => {

@@ -57,6 +57,24 @@ export function registerTaskTools(server: McpServer): void {
           .boolean()
           .optional()
           .describe("Only show available (actionable) tasks"),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe("Maximum number of results to return"),
+        offset: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe("Number of results to skip for pagination"),
+        all: z
+          .boolean()
+          .optional()
+          .describe(
+            "When true, return every matching task ignoring limit/offset. Mutually exclusive with limit and offset."
+          ),
       },
     },
     async (params) => {
@@ -68,6 +86,9 @@ export function registerTaskTools(server: McpServer): void {
         flagged: params.flagged,
         completed: params.completed,
         available: params.available,
+        limit: params.limit,
+        offset: params.offset,
+        all: params.all,
       });
       return formatResult(result);
     }

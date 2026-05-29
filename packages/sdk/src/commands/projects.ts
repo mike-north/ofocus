@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { CliOutput, OFProject } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { validatePaginationParams } from "../validation.js";
+import { validatePaginationParams, validateAllFlag } from "../validation.js";
 import { runOmniJSWrapped } from "../omnijs.js";
 import {
   buildListQueryBody,
@@ -29,6 +29,22 @@ import { defineCommand } from "../registry/define.js";
 export async function queryProjects(
   options: ProjectQueryOptions = {}
 ): Promise<CliOutput<QueryResult<OFProject>>> {
+  // Validate the --all flag (must not be combined with --limit, --offset, or
+  // shape modifiers that produce a scalar/single-item result).
+  const allFlagError = validateAllFlag(
+    options.all,
+    options.limit,
+    options.offset,
+    {
+      count: options.count,
+      first: options.first,
+      last: options.last,
+      idsOnly: options.idsOnly,
+      groupBy: options.groupBy,
+    }
+  );
+  if (allFlagError) return failure(allFlagError);
+
   // Pagination validation (gated separately because invalid limits/offsets
   // would otherwise produce nonsense pagination in the result envelope).
   const paginationError = validatePaginationParams(
@@ -69,6 +85,7 @@ export async function queryProjects(
     aggregate: agg,
     limit,
     offset,
+    all: options.all,
     groupKey: agg.groupKey,
   });
 
@@ -127,6 +144,12 @@ export const listProjectsDescriptor = defineCommand({
       .min(0)
       .optional()
       .describe("Number of results to skip for pagination"),
+    all: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+      ),
   }),
   handler: async (input) =>
     queryProjects({
@@ -135,6 +158,7 @@ export const listProjectsDescriptor = defineCommand({
       sequential: input.sequential,
       limit: input.limit,
       offset: input.offset,
+      all: input.all,
     }),
 });
 

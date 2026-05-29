@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAllTools } from "../src/tools/index.js";
+import { registerTaskTools } from "../src/tools/tasks.js";
 
 // Expected tool names for each category
 const EXPECTED_TASK_TOOLS = [
@@ -195,5 +196,78 @@ describe("Tool Registration", () => {
         expect(registeredTools).toContain(tool);
       }
     });
+  });
+});
+
+describe("tasks_list MCP tool schema", () => {
+  /**
+   * Regression: tasks_list was manually registered without limit/offset/all,
+   * so the changeset's claim that tasks_list received --all support was false.
+   * This test guards that the full pagination surface is exposed.
+   */
+  it("exposes limit, offset, and all in its input schema", () => {
+    type RegisterToolArgs = [
+      name: string,
+      config: { description: string; inputSchema: Record<string, unknown> },
+      handler: unknown,
+    ];
+
+    const registeredConfigs = new Map<
+      string,
+      { inputSchema: Record<string, unknown> }
+    >();
+    const mockServer = {
+      registerTool: vi.fn((...args: unknown[]) => {
+        const [name, config] = args as RegisterToolArgs;
+        registeredConfigs.set(name, config);
+      }),
+    } as unknown as McpServer;
+
+    registerTaskTools(mockServer);
+
+    const tasksListConfig = registeredConfigs.get("tasks_list");
+    expect(tasksListConfig, "tasks_list must be registered").toBeDefined();
+
+    const schema = tasksListConfig!.inputSchema;
+    expect(
+      Object.keys(schema),
+      "tasks_list input schema must include pagination fields"
+    ).toEqual(expect.arrayContaining(["limit", "offset", "all"]));
+  });
+
+  it("exposes the core task filter fields (project, tag, flagged, etc.) in its input schema", () => {
+    type RegisterToolArgs = [
+      name: string,
+      config: { description: string; inputSchema: Record<string, unknown> },
+      handler: unknown,
+    ];
+
+    const registeredConfigs = new Map<
+      string,
+      { inputSchema: Record<string, unknown> }
+    >();
+    const mockServer = {
+      registerTool: vi.fn((...args: unknown[]) => {
+        const [name, config] = args as RegisterToolArgs;
+        registeredConfigs.set(name, config);
+      }),
+    } as unknown as McpServer;
+
+    registerTaskTools(mockServer);
+
+    const schema = registeredConfigs.get("tasks_list")!.inputSchema;
+    const expectedFields = [
+      "project",
+      "tag",
+      "dueBefore",
+      "dueAfter",
+      "flagged",
+      "completed",
+      "available",
+      "limit",
+      "offset",
+      "all",
+    ];
+    expect(Object.keys(schema).sort()).toEqual(expectedFields.sort());
   });
 });

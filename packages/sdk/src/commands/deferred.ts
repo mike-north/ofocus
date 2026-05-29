@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { CliOutput, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
-import { validatePaginationParams } from "../validation.js";
+import { validatePaginationParams, validateAllFlag } from "../validation.js";
 import { runOmniJSWrapped } from "../omnijs.js";
 import { defineCommand } from "../registry/define.js";
 import {
@@ -55,8 +55,27 @@ export interface DeferredQueryOptions extends BaseListQueryOptions {
 export async function queryDeferred(
   options: DeferredQueryOptions = {}
 ): Promise<CliOutput<QueryResult<OFTask>>> {
+  // Validate the --all flag (must not be combined with --limit, --offset, or
+  // shape modifiers that produce a scalar/single-item result).
+  const allFlagError = validateAllFlag(
+    options.all,
+    options.limit,
+    options.offset,
+    {
+      count: options.count,
+      first: options.first,
+      last: options.last,
+      idsOnly: options.idsOnly,
+      groupBy: options.groupBy,
+    }
+  );
+  if (allFlagError) return failure(allFlagError);
+
   // Validate pagination
-  const paginationError = validatePaginationParams(options.limit, options.offset);
+  const paginationError = validatePaginationParams(
+    options.limit,
+    options.offset
+  );
   if (paginationError) return failure(paginationError);
 
   // Build the task query options from deferred-specific fields
@@ -67,8 +86,12 @@ export async function queryDeferred(
     completed: false,
     effectivelyDropped: false,
     // Map deferred-specific date fields to the canonical predicate names
-    ...(options.deferAfter !== undefined ? { deferAfter: options.deferAfter } : {}),
-    ...(options.deferBefore !== undefined ? { deferBefore: options.deferBefore } : {}),
+    ...(options.deferAfter !== undefined
+      ? { deferAfter: options.deferAfter }
+      : {}),
+    ...(options.deferBefore !== undefined
+      ? { deferBefore: options.deferBefore }
+      : {}),
     // blockedOnly → deferredToFuture predicate
     ...(options.blockedOnly === true ? { deferredToFuture: true } : {}),
   };
@@ -77,7 +100,10 @@ export async function queryDeferred(
   const fieldSpec =
     options.fields !== undefined
       ? taskFieldSpec
-      : { ...taskFieldSpec, defaultFields: ["id", "name", "deferDate", "projectName"] };
+      : {
+          ...taskFieldSpec,
+          defaultFields: ["id", "name", "deferDate", "projectName"],
+        };
 
   // Compile each phase
   const pred = compileTaskPredicates(taskOptions);
@@ -108,6 +134,7 @@ export async function queryDeferred(
     aggregate: agg,
     limit,
     offset,
+    all: options.all,
     groupKey: agg.groupKey,
   });
 
@@ -155,12 +182,33 @@ export const queryDeferredDescriptor = defineCommand({
       .boolean()
       .optional()
       .describe("Only show tasks currently blocked by their defer date"),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Maximum number of results to return (default: 100)"),
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("Number of results to skip for pagination"),
+    all: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+      ),
   }),
   handler: async (input) =>
     queryDeferred({
       deferAfter: input.deferredAfter,
       deferBefore: input.deferredBefore,
       blockedOnly: input.blockedOnly,
+      limit: input.limit,
+      offset: input.offset,
+      all: input.all,
     }),
 });
 

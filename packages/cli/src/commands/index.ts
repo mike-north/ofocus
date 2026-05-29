@@ -23,7 +23,7 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Query and filter tasks from OmniFocus. Supports filtering by project, tag, due date range, flagged status, completion state, and availability. Returns task details including ID, title, dates, project, tags, and hierarchy. Use --available to see only actionable tasks.",
     usage:
-      "ofocus tasks [--project <name>] [--tag <name>] [--due-before <date>] [--due-after <date>] [--flagged] [--completed] [--available]",
+      "ofocus tasks [--project <name>] [--tag <name>] [--due-before <date>] [--due-after <date>] [--flagged] [--completed] [--available] [--limit <n>] [--offset <n>] [--all]",
   },
   {
     name: "projects",

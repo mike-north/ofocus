@@ -60,8 +60,7 @@ function expectList(
 ): Extract<QueryResult<OFTask>, { kind: "list" }> {
   expect(result).toBeDefined();
   expect(result?.kind).toBe("list");
-  if (!result || result.kind !== "list")
-    throw new Error("Expected list shape");
+  if (!result || result.kind !== "list") throw new Error("Expected list shape");
   return result;
 }
 
@@ -326,6 +325,59 @@ describe("queryForecast", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ErrorCode.UNKNOWN_ERROR);
+    });
+  });
+
+  describe("--all flag", () => {
+    it("rejects all=true combined with limit", async () => {
+      const result = await queryForecast({ all: true, limit: 5 });
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(result.error?.message).toContain("Cannot combine --all");
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    });
+
+    it("rejects all=true combined with offset", async () => {
+      const result = await queryForecast({ all: true, offset: 10 });
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    });
+
+    it("accepts all=true with no limit or offset and emits full-scan body", async () => {
+      const mockTask: OFTask = {
+        id: "t1",
+        name: "Due task",
+        note: null,
+        flagged: false,
+        completed: false,
+        dueDate: null,
+        deferDate: null,
+        completionDate: null,
+        projectId: null,
+        projectName: null,
+        tags: [],
+        estimatedMinutes: null,
+      };
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: {
+          kind: "list",
+          items: [mockTask],
+          totalCount: 1,
+          returnedCount: 1,
+          hasMore: false,
+          offset: 0,
+          limit: 1,
+        },
+      } as OmniJSResult<QueryResult<OFTask>>);
+
+      const result = await queryForecast({ all: true });
+
+      expect(result.success).toBe(true);
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("rows.map(__mapFn)");
+      expect(body).not.toContain("__paged");
     });
   });
 });

@@ -14,6 +14,7 @@ import {
   validateEstimatedMinutes,
   validateRepetitionRule,
   validatePaginationParams,
+  validateAllFlag,
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 import { buildRRule, repeatMethodToOmniJS } from "./repetition.js";
@@ -215,6 +216,22 @@ export async function querySubtasks(
   const idError = validateId(parentTaskId, "task");
   if (idError) return failure(idError);
 
+  // Validate the --all flag (must not be combined with --limit, --offset, or
+  // shape modifiers that produce a scalar/single-item result).
+  const allFlagError = validateAllFlag(
+    options.all,
+    options.limit,
+    options.offset,
+    {
+      count: options.count,
+      first: options.first,
+      last: options.last,
+      idsOnly: options.idsOnly,
+      groupBy: options.groupBy,
+    }
+  );
+  if (allFlagError) return failure(allFlagError);
+
   // Validate pagination
   const paginationError = validatePaginationParams(
     options.limit,
@@ -271,6 +288,7 @@ export async function querySubtasks(
     aggregate: agg,
     limit,
     offset,
+    all: options.all,
     groupKey: agg.groupKey,
   });
 
@@ -430,11 +448,32 @@ export const querySubtasksDescriptor = defineCommand({
         "Filter by completion status (true = only completed, false = only incomplete)"
       ),
     flagged: z.boolean().optional().describe("Filter by flagged status"),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Maximum number of results to return (default: 100)"),
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("Number of results to skip for pagination"),
+    all: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+      ),
   }),
   handler: async (input) =>
     querySubtasks(input.parentTaskId, {
       completed: input.completed,
       flagged: input.flagged,
+      limit: input.limit,
+      offset: input.offset,
+      all: input.all,
     }),
 });
 
