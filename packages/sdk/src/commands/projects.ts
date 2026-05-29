@@ -29,11 +29,19 @@ import { defineCommand } from "../registry/define.js";
 export async function queryProjects(
   options: ProjectQueryOptions = {}
 ): Promise<CliOutput<QueryResult<OFProject>>> {
-  // Validate the --all flag (must not be combined with --limit or --offset).
+  // Validate the --all flag (must not be combined with --limit, --offset, or
+  // shape modifiers that produce a scalar/single-item result).
   const allFlagError = validateAllFlag(
     options.all,
     options.limit,
-    options.offset
+    options.offset,
+    {
+      count: options.count,
+      first: options.first,
+      last: options.last,
+      idsOnly: options.idsOnly,
+      groupBy: options.groupBy,
+    }
   );
   if (allFlagError) return failure(allFlagError);
 

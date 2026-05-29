@@ -742,9 +742,31 @@ describe("validateAllFlag", () => {
     it("accepts all=undefined with limit and offset set (standard pagination)", () => {
       expect(validateAllFlag(undefined, 50, 100)).toBeNull();
     });
+
+    it("accepts all=true with no shape modifiers provided", () => {
+      expect(validateAllFlag(true, undefined, undefined, {})).toBeNull();
+    });
+
+    it("accepts all=true when shape modifiers are explicitly undefined", () => {
+      expect(
+        validateAllFlag(true, undefined, undefined, {
+          count: undefined,
+          first: undefined,
+          last: undefined,
+          idsOnly: undefined,
+          groupBy: undefined,
+        })
+      ).toBeNull();
+    });
+
+    it("accepts all=true when count=false (not a conflicting scalar shape)", () => {
+      expect(
+        validateAllFlag(true, undefined, undefined, { count: false })
+      ).toBeNull();
+    });
   });
 
-  describe("invalid combinations", () => {
+  describe("invalid combinations — pagination", () => {
     it("rejects all=true combined with limit", () => {
       const error = validateAllFlag(true, 5, undefined);
       expect(error).not.toBeNull();
@@ -770,6 +792,66 @@ describe("validateAllFlag", () => {
       expect(error?.message).toContain(
         "Cannot combine --all with --limit or --offset"
       );
+    });
+  });
+
+  describe("invalid combinations — shape modifiers (regression: --all + scalar shape is contradictory)", () => {
+    it("rejects all=true combined with count=true", () => {
+      // --all says 'materialise everything'; --count says 'give me only a number'.
+      // The two are contradictory — the result cannot be both a list and a scalar.
+      const error = validateAllFlag(true, undefined, undefined, {
+        count: true,
+      });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("Cannot combine --all with --count");
+    });
+
+    it("rejects all=true combined with first=true", () => {
+      const error = validateAllFlag(true, undefined, undefined, {
+        first: true,
+      });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("Cannot combine --all with --first");
+    });
+
+    it("rejects all=true combined with last=true", () => {
+      const error = validateAllFlag(true, undefined, undefined, { last: true });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("Cannot combine --all with --last");
+    });
+
+    it("rejects all=true combined with idsOnly=true", () => {
+      const error = validateAllFlag(true, undefined, undefined, {
+        idsOnly: true,
+      });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("Cannot combine --all with --ids-only");
+    });
+
+    it("rejects all=true combined with groupBy set to a field name", () => {
+      const error = validateAllFlag(true, undefined, undefined, {
+        groupBy: "project",
+      });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("Cannot combine --all with --group-by");
+    });
+
+    it("does not check shape modifiers when all=false", () => {
+      // Shape modifier validation only fires when all=true; false bypasses it.
+      expect(
+        validateAllFlag(false, undefined, undefined, { count: true })
+      ).toBeNull();
+    });
+
+    it("does not check shape modifiers when all=undefined", () => {
+      expect(
+        validateAllFlag(undefined, undefined, undefined, { count: true })
+      ).toBeNull();
     });
   });
 });

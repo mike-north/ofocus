@@ -351,19 +351,37 @@ export function validateSearchQuery(query: string): CliError | null {
 }
 
 /**
+ * Shape-modifier fields that are mutually exclusive with `--all`.
+ *
+ * `--all` changes how the result set is *sliced* (materialise everything).
+ * These modifiers change the *shape* of the response — they produce a scalar
+ * or single-item result that has no concept of "all items".  Combining them
+ * with `--all` is contradictory and rejected.
+ */
+export interface AllFlagShapeModifiers {
+  count?: boolean | undefined;
+  first?: boolean | undefined;
+  last?: boolean | undefined;
+  idsOnly?: boolean | undefined;
+  groupBy?: string | undefined;
+}
+
+/**
  * Validate the `all` pagination flag.
  *
- * `--all` is mutually exclusive with both `--limit` and `--offset` because
- * combining them produces a meaningless or confusing result.  When `--count`
- * is set the caller already receives a scalar, so `--all` is rejected in
- * that combination as well.
+ * `--all` is mutually exclusive with:
+ * - `--limit` / `--offset` — combining them produces a meaningless result.
+ * - `--count`, `--first`, `--last`, `--ids-only`, `--group-by` — these shape
+ *   modifiers change the response shape to a scalar or single item, making
+ *   `--all` (which controls list slicing) contradictory.
  *
  * Returns null if valid, or a CliError if the combination is illegal.
  */
 export function validateAllFlag(
   all: boolean | undefined,
   limit: number | undefined,
-  offset: number | undefined
+  offset: number | undefined,
+  shapeModifiers?: AllFlagShapeModifiers
 ): CliError | null {
   if (all !== true) return null;
 
@@ -372,6 +390,39 @@ export function validateAllFlag(
       ErrorCode.VALIDATION_ERROR,
       "Cannot combine --all with --limit or --offset"
     );
+  }
+
+  if (shapeModifiers) {
+    if (shapeModifiers.count === true) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "Cannot combine --all with --count"
+      );
+    }
+    if (shapeModifiers.first === true) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "Cannot combine --all with --first"
+      );
+    }
+    if (shapeModifiers.last === true) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "Cannot combine --all with --last"
+      );
+    }
+    if (shapeModifiers.idsOnly === true) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "Cannot combine --all with --ids-only"
+      );
+    }
+    if (shapeModifiers.groupBy !== undefined) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "Cannot combine --all with --group-by"
+      );
+    }
   }
 
   return null;
