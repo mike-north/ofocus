@@ -107,9 +107,9 @@ describe("compileTaskPredicates", () => {
       expect(compileTaskPredicates({ hasSubtasks: true }).conditions).toEqual([
         "(t.children.length > 0)",
       ]);
-      expect(
-        compileTaskPredicates({ hasRepetition: true }).conditions
-      ).toEqual(["(t.repetitionRule != null)"]);
+      expect(compileTaskPredicates({ hasRepetition: true }).conditions).toEqual(
+        ["(t.repetitionRule != null)"]
+      );
     });
 
     it("effective flags", () => {
@@ -446,12 +446,12 @@ describe("compileTagPredicates", () => {
 
     it("hasAvailableTasks: true → availableTaskCount > 0", () => {
       const r = compileTagPredicates({ hasAvailableTasks: true });
-      expect(r.conditions).toEqual(["(t.availableTaskCount > 0)"]);
+      expect(r.conditions).toEqual(["(t.availableTasks.length > 0)"]);
     });
 
     it("noAvailableTasks: true → availableTaskCount === 0", () => {
       const r = compileTagPredicates({ noAvailableTasks: true });
-      expect(r.conditions).toEqual(["(t.availableTaskCount === 0)"]);
+      expect(r.conditions).toEqual(["(t.availableTasks.length === 0)"]);
     });
   });
 
@@ -539,17 +539,17 @@ describe("compileTagPredicates", () => {
   describe("numeric predicates — availableTaskCount", () => {
     it("availableTaskCountLt", () => {
       const r = compileTagPredicates({ availableTaskCountLt: 5 });
-      expect(r.conditions[0]).toBe("(t.availableTaskCount < 5)");
+      expect(r.conditions[0]).toBe("(t.availableTasks.length < 5)");
     });
 
     it("availableTaskCountGt", () => {
       const r = compileTagPredicates({ availableTaskCountGt: 10 });
-      expect(r.conditions[0]).toBe("(t.availableTaskCount > 10)");
+      expect(r.conditions[0]).toBe("(t.availableTasks.length > 10)");
     });
 
     it("availableTaskCountEq", () => {
       const r = compileTagPredicates({ availableTaskCountEq: 3 });
-      expect(r.conditions[0]).toBe("(t.availableTaskCount === 3)");
+      expect(r.conditions[0]).toBe("(t.availableTasks.length === 3)");
     });
 
     it("rejects NaN for availableTaskCountLt", () => {
@@ -681,9 +681,15 @@ describe("compileProjectPredicates", () => {
     });
 
     it("sequential states", () => {
-      expect(compileProjectPredicates({ sequential: true }).conditions).toEqual(["t.sequential"]);
-      expect(compileProjectPredicates({ sequential: false }).conditions).toEqual(["!t.sequential"]);
-      expect(compileProjectPredicates({ notSequential: true }).conditions).toEqual(["!t.sequential"]);
+      expect(compileProjectPredicates({ sequential: true }).conditions).toEqual(
+        ["t.sequential"]
+      );
+      expect(
+        compileProjectPredicates({ sequential: false }).conditions
+      ).toEqual(["!t.sequential"]);
+      expect(
+        compileProjectPredicates({ notSequential: true }).conditions
+      ).toEqual(["!t.sequential"]);
     });
 
     it("containsSingletonActions states", () => {
@@ -691,7 +697,8 @@ describe("compileProjectPredicates", () => {
         compileProjectPredicates({ containsSingletonActions: true }).conditions
       ).toEqual(["t.containsSingletonActions"]);
       expect(
-        compileProjectPredicates({ notContainsSingletonActions: true }).conditions
+        compileProjectPredicates({ notContainsSingletonActions: true })
+          .conditions
       ).toEqual(["!t.containsSingletonActions"]);
     });
 
@@ -799,14 +806,18 @@ describe("compileProjectPredicates", () => {
 
   describe("date predicates", () => {
     it("dueBefore emits upper-bound condition", () => {
-      const r = compileProjectPredicates({ dueBefore: "2024-12-31T00:00:00.000Z" });
+      const r = compileProjectPredicates({
+        dueBefore: "2024-12-31T00:00:00.000Z",
+      });
       expect(r.validationErrors).toHaveLength(0);
       expect(r.conditions[0]).toContain("t.dueDate != null");
       expect(r.conditions[0]).toContain("t.dueDate <");
     });
 
     it("dueAfter emits lower-bound condition", () => {
-      const r = compileProjectPredicates({ dueAfter: "2024-01-01T00:00:00.000Z" });
+      const r = compileProjectPredicates({
+        dueAfter: "2024-01-01T00:00:00.000Z",
+      });
       expect(r.validationErrors).toHaveLength(0);
       expect(r.conditions[0]).toContain("t.dueDate > new Date");
     });
@@ -820,10 +831,12 @@ describe("compileProjectPredicates", () => {
 
     it("deferBefore / deferAfter / deferWithin", () => {
       expect(
-        compileProjectPredicates({ deferBefore: "2025-01-01T00:00:00.000Z" }).conditions[0]
+        compileProjectPredicates({ deferBefore: "2025-01-01T00:00:00.000Z" })
+          .conditions[0]
       ).toContain("t.deferDate != null");
       expect(
-        compileProjectPredicates({ deferAfter: "2025-01-01T00:00:00.000Z" }).conditions[0]
+        compileProjectPredicates({ deferAfter: "2025-01-01T00:00:00.000Z" })
+          .conditions[0]
       ).toContain("t.deferDate > new Date");
       expect(
         compileProjectPredicates({ deferWithin: "14d" }).conditions[0]
@@ -832,19 +845,26 @@ describe("compileProjectPredicates", () => {
 
     it("completedBefore / completedAfter", () => {
       expect(
-        compileProjectPredicates({ completedBefore: "2025-06-01T00:00:00.000Z" }).conditions[0]
+        compileProjectPredicates({
+          completedBefore: "2025-06-01T00:00:00.000Z",
+        }).conditions[0]
       ).toContain("t.completionDate != null");
       expect(
-        compileProjectPredicates({ completedAfter: "2025-01-01T00:00:00.000Z" }).conditions[0]
+        compileProjectPredicates({ completedAfter: "2025-01-01T00:00:00.000Z" })
+          .conditions[0]
       ).toContain("t.completionDate > new Date");
     });
 
     it("nextReviewBefore / nextReviewAfter / nextReviewWithin", () => {
       expect(
-        compileProjectPredicates({ nextReviewBefore: "2025-03-01T00:00:00.000Z" }).conditions[0]
+        compileProjectPredicates({
+          nextReviewBefore: "2025-03-01T00:00:00.000Z",
+        }).conditions[0]
       ).toContain("t.nextReviewDate != null");
       expect(
-        compileProjectPredicates({ nextReviewAfter: "2025-01-01T00:00:00.000Z" }).conditions[0]
+        compileProjectPredicates({
+          nextReviewAfter: "2025-01-01T00:00:00.000Z",
+        }).conditions[0]
       ).toContain("t.nextReviewDate > new Date");
       expect(
         compileProjectPredicates({ nextReviewWithin: "30d" }).conditions[0]
@@ -853,10 +873,14 @@ describe("compileProjectPredicates", () => {
 
     it("lastReviewedBefore / lastReviewedAfter", () => {
       expect(
-        compileProjectPredicates({ lastReviewedBefore: "2025-01-01T00:00:00.000Z" }).conditions[0]
+        compileProjectPredicates({
+          lastReviewedBefore: "2025-01-01T00:00:00.000Z",
+        }).conditions[0]
       ).toContain("t.lastReviewDate != null");
       expect(
-        compileProjectPredicates({ lastReviewedAfter: "2024-01-01T00:00:00.000Z" }).conditions[0]
+        compileProjectPredicates({
+          lastReviewedAfter: "2024-01-01T00:00:00.000Z",
+        }).conditions[0]
       ).toContain("t.lastReviewDate > new Date");
     });
 
@@ -882,14 +906,20 @@ describe("compileProjectPredicates", () => {
     });
 
     it("remainingTaskCountLt / remainingTaskCountGt / remainingTaskCountEq", () => {
-      const ltCond = compileProjectPredicates({ remainingTaskCountLt: 2 }).conditions[0] ?? "";
+      const ltCond =
+        compileProjectPredicates({ remainingTaskCountLt: 2 }).conditions[0] ??
+        "";
       expect(ltCond).toContain("!s.completed");
       expect(ltCond).toContain("< 2");
 
-      const gtCond = compileProjectPredicates({ remainingTaskCountGt: 0 }).conditions[0] ?? "";
+      const gtCond =
+        compileProjectPredicates({ remainingTaskCountGt: 0 }).conditions[0] ??
+        "";
       expect(gtCond).toContain("> 0");
 
-      const eqCond = compileProjectPredicates({ remainingTaskCountEq: 1 }).conditions[0] ?? "";
+      const eqCond =
+        compileProjectPredicates({ remainingTaskCountEq: 1 }).conditions[0] ??
+        "";
       expect(eqCond).toContain("=== 1");
     });
 
@@ -1133,16 +1163,12 @@ describe("compileFolderPredicates", () => {
   describe("numeric predicates: flattenedProjectCount", () => {
     it("flattenedProjectCountLt", () => {
       const r = compileFolderPredicates({ flattenedProjectCountLt: 10 });
-      expect(r.conditions).toEqual([
-        "(t.flattenedProjects.length < 10)",
-      ]);
+      expect(r.conditions).toEqual(["(t.flattenedProjects.length < 10)"]);
     });
 
     it("flattenedProjectCountGt", () => {
       const r = compileFolderPredicates({ flattenedProjectCountGt: 2 });
-      expect(r.conditions).toEqual([
-        "(t.flattenedProjects.length > 2)",
-      ]);
+      expect(r.conditions).toEqual(["(t.flattenedProjects.length > 2)"]);
     });
   });
 
@@ -1381,16 +1407,12 @@ describe("compileFolderPredicates", () => {
   describe("numeric predicates: flattenedProjectCount", () => {
     it("flattenedProjectCountLt", () => {
       const r = compileFolderPredicates({ flattenedProjectCountLt: 10 });
-      expect(r.conditions).toEqual([
-        "(t.flattenedProjects.length < 10)",
-      ]);
+      expect(r.conditions).toEqual(["(t.flattenedProjects.length < 10)"]);
     });
 
     it("flattenedProjectCountGt", () => {
       const r = compileFolderPredicates({ flattenedProjectCountGt: 2 });
-      expect(r.conditions).toEqual([
-        "(t.flattenedProjects.length > 2)",
-      ]);
+      expect(r.conditions).toEqual(["(t.flattenedProjects.length > 2)"]);
     });
   });
 

@@ -80,7 +80,7 @@ return JSON.stringify({
   name: newTag.name,
   parentId: parentId,
   parentName: parentName,
-  availableTaskCount: newTag.availableTaskCount
+  availableTaskCount: newTag.availableTasks.length
 });`);
 
   const body = scriptParts.join("\n");
@@ -181,7 +181,7 @@ return JSON.stringify({
   name: theTag.name,
   parentId: parentId,
   parentName: parentName,
-  availableTaskCount: theTag.availableTaskCount
+  availableTaskCount: theTag.availableTasks.length
 });`);
 
   const body = scriptParts.join("\n");

@@ -96,7 +96,9 @@ function validateNames(
 /**
  * Normalize a `string | string[]` to a non-empty array, or `null` if absent.
  */
-function toList(value: string | readonly string[] | undefined): string[] | null {
+function toList(
+  value: string | readonly string[] | undefined
+): string[] | null {
   if (value === undefined) return null;
   if (typeof value === "string") return [value];
   // value is `readonly string[]` per the input type.
@@ -129,6 +131,14 @@ export function compileTaskPredicates(
   if (options.completed === false) conditions.push("!t.completed");
   if (options.notCompleted === true) conditions.push("!t.completed");
 
+  // TODO: OmniJS Task has no `dropped` / `blocked` / `effectivelyDropped`
+  // boolean properties (they read back `undefined`), so these filters never
+  // match — e.g. `tasks --dropped` always returns 0. The correct expressions
+  // use the status enum, e.g. `t.taskStatus === Task.Status.Dropped` and
+  // `t.taskStatus === Task.Status.Blocked`. Deferred from the live-integration
+  // fix PR because it spans several predicates + their unit tests and is not
+  // exercised by a failing integration test. Verify with
+  // `tasks --dropped` returning a non-empty set once a dropped task exists.
   if (options.dropped === true) conditions.push("t.dropped");
   if (options.dropped === false) conditions.push("!t.dropped");
   if (options.notDropped === true) conditions.push("!t.dropped");
@@ -147,18 +157,16 @@ export function compileTaskPredicates(
     conditions.push("!t.effectivelyDropped");
 
   if (options.available === true) {
-    conditions.push(
-      "(!t.completed && !t.effectivelyDropped && !t.blocked)"
-    );
+    conditions.push("(!t.completed && !t.effectivelyDropped && !t.blocked)");
   }
   if (options.available === false) {
-    conditions.push(
-      "(t.completed || t.effectivelyDropped || t.blocked)"
-    );
+    conditions.push("(t.completed || t.effectivelyDropped || t.blocked)");
   }
 
-  if (options.inInbox === true) conditions.push("(t.containingProject == null)");
-  if (options.inInbox === false) conditions.push("(t.containingProject != null)");
+  if (options.inInbox === true)
+    conditions.push("(t.containingProject == null)");
+  if (options.inInbox === false)
+    conditions.push("(t.containingProject != null)");
 
   if (options.hasDue === true) conditions.push("(t.dueDate != null)");
   if (options.hasDue === false) conditions.push("(t.dueDate == null)");
@@ -167,8 +175,10 @@ export function compileTaskPredicates(
   if (options.hasDefer === true) conditions.push("(t.deferDate != null)");
   if (options.hasDefer === false) conditions.push("(t.deferDate == null)");
 
-  if (options.hasNote === true) conditions.push('(t.note != null && t.note !== "")');
-  if (options.hasNote === false) conditions.push('(t.note == null || t.note === "")');
+  if (options.hasNote === true)
+    conditions.push('(t.note != null && t.note !== "")');
+  if (options.hasNote === false)
+    conditions.push('(t.note == null || t.note === "")');
 
   if (options.hasAttachments === true)
     conditions.push("(t.attachments.length > 0)");
@@ -176,7 +186,8 @@ export function compileTaskPredicates(
     conditions.push("(t.attachments.length === 0)");
 
   if (options.hasSubtasks === true) conditions.push("(t.children.length > 0)");
-  if (options.hasSubtasks === false) conditions.push("(t.children.length === 0)");
+  if (options.hasSubtasks === false)
+    conditions.push("(t.children.length === 0)");
 
   if (options.hasRepetition === true)
     conditions.push("(t.repetitionRule != null)");
@@ -366,11 +377,7 @@ export function compileTaskPredicates(
     const dur = parseDuration(options.dueWithin);
     if (typeof dur !== "number") {
       validationErrors.push(
-        createError(
-          dur.code,
-          `Invalid dueWithin: ${dur.message}`,
-          dur.details
-        )
+        createError(dur.code, `Invalid dueWithin: ${dur.message}`, dur.details)
       );
     } else {
       const future = new Date(Date.now() + dur);
@@ -382,14 +389,20 @@ export function compileTaskPredicates(
 
   // deferDate
   if (options.deferBefore !== undefined) {
-    const expr = resolveDate(options.deferBefore, "deferBefore", validationErrors);
-    if (expr)
-      conditions.push(`(t.deferDate != null && t.deferDate < ${expr})`);
+    const expr = resolveDate(
+      options.deferBefore,
+      "deferBefore",
+      validationErrors
+    );
+    if (expr) conditions.push(`(t.deferDate != null && t.deferDate < ${expr})`);
   }
   if (options.deferAfter !== undefined) {
-    const expr = resolveDate(options.deferAfter, "deferAfter", validationErrors);
-    if (expr)
-      conditions.push(`(t.deferDate != null && t.deferDate > ${expr})`);
+    const expr = resolveDate(
+      options.deferAfter,
+      "deferAfter",
+      validationErrors
+    );
+    if (expr) conditions.push(`(t.deferDate != null && t.deferDate > ${expr})`);
   }
   if (options.deferOn !== undefined) {
     const parsed = parseDate(options.deferOn);
@@ -566,9 +579,7 @@ export function compileTaskPredicates(
     if (err) {
       validationErrors.push(err);
     } else if (caseSensitive) {
-      conditions.push(
-        `(t.name === "${escapeJSString(options.nameEquals)}")`
-      );
+      conditions.push(`(t.name === "${escapeJSString(options.nameEquals)}")`);
     } else {
       conditions.push(
         `(t.name.toLowerCase() === "${escapeJSString(options.nameEquals.toLowerCase())}")`
@@ -614,7 +625,10 @@ export function compileTaskPredicates(
 
   // nameOrNoteContains — used by searchTasks scope="both"
   if (options.nameOrNoteContains !== undefined) {
-    const err = validateNames([options.nameOrNoteContains], "nameOrNoteContains");
+    const err = validateNames(
+      [options.nameOrNoteContains],
+      "nameOrNoteContains"
+    );
     if (err) {
       validationErrors.push(err);
     } else {
@@ -705,10 +719,7 @@ function validateRegex(pattern: string, fieldLabel: string): CliError | null {
  * Validate a finite number for a numeric predicate. Returns a `CliError` on
  * failure, `null` on success.
  */
-function validateFinite(
-  value: number,
-  fieldLabel: string
-): CliError | null {
+function validateFinite(value: number, fieldLabel: string): CliError | null {
   if (!Number.isFinite(value)) {
     return createError(
       ErrorCode.VALIDATION_ERROR,
@@ -849,7 +860,11 @@ export function compileProjectPredicates(
     const parsed = parseDate(options.dueOn);
     if ("code" in parsed) {
       validationErrors.push(
-        createError(parsed.code, `Invalid dueOn: ${parsed.message}`, parsed.details)
+        createError(
+          parsed.code,
+          `Invalid dueOn: ${parsed.message}`,
+          parsed.details
+        )
       );
     } else {
       const start = new Date(parsed.iso);
@@ -858,7 +873,10 @@ export function compileProjectPredicates(
           start.getUTCFullYear(),
           start.getUTCMonth(),
           start.getUTCDate(),
-          0, 0, 0, 0
+          0,
+          0,
+          0,
+          0
         )
       );
       const endUtc = new Date(startUtc.getTime() + 86_400_000);
@@ -883,20 +901,30 @@ export function compileProjectPredicates(
 
   // ── Date predicates: deferDate ───────────────────────────────────────────
   if (options.deferBefore !== undefined) {
-    const expr = resolveDate(options.deferBefore, "deferBefore", validationErrors);
-    if (expr)
-      conditions.push(`(t.deferDate != null && t.deferDate < ${expr})`);
+    const expr = resolveDate(
+      options.deferBefore,
+      "deferBefore",
+      validationErrors
+    );
+    if (expr) conditions.push(`(t.deferDate != null && t.deferDate < ${expr})`);
   }
   if (options.deferAfter !== undefined) {
-    const expr = resolveDate(options.deferAfter, "deferAfter", validationErrors);
-    if (expr)
-      conditions.push(`(t.deferDate != null && t.deferDate > ${expr})`);
+    const expr = resolveDate(
+      options.deferAfter,
+      "deferAfter",
+      validationErrors
+    );
+    if (expr) conditions.push(`(t.deferDate != null && t.deferDate > ${expr})`);
   }
   if (options.deferWithin !== undefined) {
     const dur = parseDuration(options.deferWithin);
     if (typeof dur !== "number") {
       validationErrors.push(
-        createError(dur.code, `Invalid deferWithin: ${dur.message}`, dur.details)
+        createError(
+          dur.code,
+          `Invalid deferWithin: ${dur.message}`,
+          dur.details
+        )
       );
     } else {
       const future = new Date(Date.now() + dur);
@@ -1103,9 +1131,7 @@ export function compileProjectPredicates(
     if (err) {
       validationErrors.push(err);
     } else if (caseSensitive) {
-      conditions.push(
-        `(t.name === "${escapeJSString(options.nameEquals)}")`
-      );
+      conditions.push(`(t.name === "${escapeJSString(options.nameEquals)}")`);
     } else {
       conditions.push(
         `(t.name.toLowerCase() === "${escapeJSString(options.nameEquals.toLowerCase())}")`
@@ -1203,9 +1229,9 @@ export function compileTagPredicates(
     conditions.push("(t.allowsNextAction === false)");
 
   if (options.hasAvailableTasks === true)
-    conditions.push("(t.availableTaskCount > 0)");
+    conditions.push("(t.availableTasks.length > 0)");
   if (options.noAvailableTasks === true)
-    conditions.push("(t.availableTaskCount === 0)");
+    conditions.push("(t.availableTasks.length === 0)");
 
   // ── Status ────────────────────────────────────────────────────────────────
   if (options.status !== undefined) {
@@ -1282,43 +1308,89 @@ export function compileTagPredicates(
 
   // ── Numeric: availableTaskCount ──────────────────────────────────────────
   if (options.availableTaskCountLt !== undefined) {
-    const err = validateFinite(options.availableTaskCountLt, "availableTaskCountLt");
-    if (err) { validationErrors.push(err); }
-    else { conditions.push(`(t.availableTaskCount < ${String(options.availableTaskCountLt)})`); }
+    const err = validateFinite(
+      options.availableTaskCountLt,
+      "availableTaskCountLt"
+    );
+    if (err) {
+      validationErrors.push(err);
+    } else {
+      conditions.push(
+        `(t.availableTasks.length < ${String(options.availableTaskCountLt)})`
+      );
+    }
   }
   if (options.availableTaskCountGt !== undefined) {
-    const err = validateFinite(options.availableTaskCountGt, "availableTaskCountGt");
-    if (err) { validationErrors.push(err); }
-    else { conditions.push(`(t.availableTaskCount > ${String(options.availableTaskCountGt)})`); }
+    const err = validateFinite(
+      options.availableTaskCountGt,
+      "availableTaskCountGt"
+    );
+    if (err) {
+      validationErrors.push(err);
+    } else {
+      conditions.push(
+        `(t.availableTasks.length > ${String(options.availableTaskCountGt)})`
+      );
+    }
   }
   if (options.availableTaskCountEq !== undefined) {
-    const err = validateFinite(options.availableTaskCountEq, "availableTaskCountEq");
-    if (err) { validationErrors.push(err); }
-    else { conditions.push(`(t.availableTaskCount === ${String(options.availableTaskCountEq)})`); }
+    const err = validateFinite(
+      options.availableTaskCountEq,
+      "availableTaskCountEq"
+    );
+    if (err) {
+      validationErrors.push(err);
+    } else {
+      conditions.push(
+        `(t.availableTasks.length === ${String(options.availableTaskCountEq)})`
+      );
+    }
   }
 
   // ── Numeric: remainingTaskCount ──────────────────────────────────────────
   if (options.remainingTaskCountLt !== undefined) {
-    const err = validateFinite(options.remainingTaskCountLt, "remainingTaskCountLt");
-    if (err) { validationErrors.push(err); }
-    else { conditions.push(`(t.remainingTaskCount < ${String(options.remainingTaskCountLt)})`); }
+    const err = validateFinite(
+      options.remainingTaskCountLt,
+      "remainingTaskCountLt"
+    );
+    if (err) {
+      validationErrors.push(err);
+    } else {
+      conditions.push(
+        `(t.remainingTaskCount < ${String(options.remainingTaskCountLt)})`
+      );
+    }
   }
   if (options.remainingTaskCountGt !== undefined) {
-    const err = validateFinite(options.remainingTaskCountGt, "remainingTaskCountGt");
-    if (err) { validationErrors.push(err); }
-    else { conditions.push(`(t.remainingTaskCount > ${String(options.remainingTaskCountGt)})`); }
+    const err = validateFinite(
+      options.remainingTaskCountGt,
+      "remainingTaskCountGt"
+    );
+    if (err) {
+      validationErrors.push(err);
+    } else {
+      conditions.push(
+        `(t.remainingTaskCount > ${String(options.remainingTaskCountGt)})`
+      );
+    }
   }
 
   // ── Numeric: childTagCount ───────────────────────────────────────────────
   if (options.childTagCountLt !== undefined) {
     const err = validateFinite(options.childTagCountLt, "childTagCountLt");
-    if (err) { validationErrors.push(err); }
-    else { conditions.push(`(t.tags.length < ${String(options.childTagCountLt)})`); }
+    if (err) {
+      validationErrors.push(err);
+    } else {
+      conditions.push(`(t.tags.length < ${String(options.childTagCountLt)})`);
+    }
   }
   if (options.childTagCountGt !== undefined) {
     const err = validateFinite(options.childTagCountGt, "childTagCountGt");
-    if (err) { validationErrors.push(err); }
-    else { conditions.push(`(t.tags.length > ${String(options.childTagCountGt)})`); }
+    if (err) {
+      validationErrors.push(err);
+    } else {
+      conditions.push(`(t.tags.length > ${String(options.childTagCountGt)})`);
+    }
   }
 
   // ── String matching ──────────────────────────────────────────────────────
@@ -1421,14 +1493,12 @@ export function compileFolderPredicates(
   if (options.isRoot === false) conditions.push("(t.parent != null)");
   if (options.notIsRoot === true) conditions.push("(t.parent != null)");
 
-  if (options.hasProjects === true)
-    conditions.push("(t.projects.length > 0)");
+  if (options.hasProjects === true) conditions.push("(t.projects.length > 0)");
   if (options.hasProjects === false)
     conditions.push("(t.projects.length === 0)");
   if (options.noProjects === true) conditions.push("(t.projects.length === 0)");
 
-  if (options.hasSubfolders === true)
-    conditions.push("(t.folders.length > 0)");
+  if (options.hasSubfolders === true) conditions.push("(t.folders.length > 0)");
   if (options.hasSubfolders === false)
     conditions.push("(t.folders.length === 0)");
   if (options.noSubfolders === true)
@@ -1579,9 +1649,7 @@ export function compileFolderPredicates(
     if (err) {
       validationErrors.push(err);
     } else {
-      conditions.push(
-        `(t.folders.length < ${String(options.folderCountLt)})`
-      );
+      conditions.push(`(t.folders.length < ${String(options.folderCountLt)})`);
     }
   }
   if (options.folderCountGt !== undefined) {
@@ -1589,9 +1657,7 @@ export function compileFolderPredicates(
     if (err) {
       validationErrors.push(err);
     } else {
-      conditions.push(
-        `(t.folders.length > ${String(options.folderCountGt)})`
-      );
+      conditions.push(`(t.folders.length > ${String(options.folderCountGt)})`);
     }
   }
 
@@ -1627,9 +1693,7 @@ export function compileFolderPredicates(
     if (err) {
       validationErrors.push(err);
     } else if (caseSensitive) {
-      conditions.push(
-        `(t.name === "${escapeJSString(options.nameEquals)}")`
-      );
+      conditions.push(`(t.name === "${escapeJSString(options.nameEquals)}")`);
     } else {
       conditions.push(
         `(t.name.toLowerCase() === "${escapeJSString(options.nameEquals.toLowerCase())}")`

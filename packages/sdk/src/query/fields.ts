@@ -44,7 +44,9 @@ export const taskFieldSpec: EntityFieldSpec = {
     effectivelyDropped: { omnijsExpr: "t.effectivelyDropped" },
     blocked: { omnijsExpr: "t.blocked" },
     dueDate: { omnijsExpr: "(t.dueDate ? t.dueDate.toISOString() : null)" },
-    deferDate: { omnijsExpr: "(t.deferDate ? t.deferDate.toISOString() : null)" },
+    deferDate: {
+      omnijsExpr: "(t.deferDate ? t.deferDate.toISOString() : null)",
+    },
     completionDate: {
       omnijsExpr: "(t.completionDate ? t.completionDate.toISOString() : null)",
     },
@@ -100,13 +102,15 @@ export const projectFieldSpec: EntityFieldSpec = {
       omnijsExpr: "(t.dueDate ? t.dueDate.toISOString() : null)",
     },
     effectiveDueDate: {
-      omnijsExpr: "(t.effectiveDueDate ? t.effectiveDueDate.toISOString() : null)",
+      omnijsExpr:
+        "(t.effectiveDueDate ? t.effectiveDueDate.toISOString() : null)",
     },
     deferDate: {
       omnijsExpr: "(t.deferDate ? t.deferDate.toISOString() : null)",
     },
     effectiveDeferDate: {
-      omnijsExpr: "(t.effectiveDeferDate ? t.effectiveDeferDate.toISOString() : null)",
+      omnijsExpr:
+        "(t.effectiveDeferDate ? t.effectiveDeferDate.toISOString() : null)",
     },
     completionDate: {
       omnijsExpr: "(t.completionDate ? t.completionDate.toISOString() : null)",
@@ -158,8 +162,7 @@ export const folderFieldSpec: EntityFieldSpec = {
     flattenedProjectCount: { omnijsExpr: "t.flattenedProjects.length" },
     flattenedFolderCount: { omnijsExpr: "t.flattenedFolders.length" },
     status: {
-      omnijsExpr:
-        '(t.status === Folder.Status.Active ? "active" : "dropped")',
+      omnijsExpr: '(t.status === Folder.Status.Active ? "active" : "dropped")',
     },
   },
   defaultFields: ["id", "name", "parentName", "projectCount"],
@@ -185,7 +188,7 @@ export const tagFieldSpec: EntityFieldSpec = {
     parentName: {
       omnijsExpr: "(t.parent ? t.parent.name : null)",
     },
-    availableTaskCount: { omnijsExpr: "t.availableTaskCount" },
+    availableTaskCount: { omnijsExpr: "t.availableTasks.length" },
     remainingTaskCount: { omnijsExpr: "t.remainingTaskCount" },
     childTagCount: { omnijsExpr: "t.tags.length" },
     flattenedTagCount: { omnijsExpr: "t.flattenedTags.length" },
@@ -258,8 +261,7 @@ export const projectGroupKeys: Record<string, GroupKeySpec> = {
  */
 export const taskGroupKeys: Record<string, GroupKeySpec> = {
   project: {
-    omnijsExpr:
-      '(t.containingProject ? t.containingProject.name : "(Inbox)")',
+    omnijsExpr: '(t.containingProject ? t.containingProject.name : "(Inbox)")',
   },
   folder: {
     omnijsExpr: `(function() {
@@ -270,8 +272,7 @@ export const taskGroupKeys: Record<string, GroupKeySpec> = {
   },
   tag: {
     // First tag is the canonical bucket; if multiple, the task still groups once.
-    omnijsExpr:
-      '(t.tags.length > 0 ? t.tags[0].name : "(No Tag)")',
+    omnijsExpr: '(t.tags.length > 0 ? t.tags[0].name : "(No Tag)")',
   },
   flagged: {
     omnijsExpr: '(t.flagged ? "flagged" : "unflagged")',
@@ -316,7 +317,7 @@ export const tagGroupKeys: Record<string, GroupKeySpec> = {
     omnijsExpr: '(t.parent == null ? "root" : "child")',
   },
   hasAvailableTasks: {
-    omnijsExpr: '(t.availableTaskCount > 0 ? "active" : "empty")',
+    omnijsExpr: '(t.availableTasks.length > 0 ? "active" : "empty")',
   },
 };
 
@@ -330,8 +331,7 @@ export const folderGroupKeys: Record<string, GroupKeySpec> = {
     omnijsExpr: '(t.parent ? t.parent.name : "(Root)")',
   },
   status: {
-    omnijsExpr:
-      '(t.status === Folder.Status.Active ? "active" : "dropped")',
+    omnijsExpr: '(t.status === Folder.Status.Active ? "active" : "dropped")',
   },
   isRoot: {
     omnijsExpr: '(t.parent == null ? "root" : "child")',
