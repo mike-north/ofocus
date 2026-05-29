@@ -4,8 +4,10 @@
 
 ## TaskQueryOptions.project property
 
+Project name(s). When an array is provided, semantics are "any of".
+
 **Signature:**
 
 ```typescript
-project?: string | undefined;
+project?: string | string[] | undefined;
 ```

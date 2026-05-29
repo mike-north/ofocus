@@ -9,7 +9,7 @@ Options for importing from TaskPaper format.
 **Signature:**
 
 ```typescript
-export interface TaskPaperImportOptions
+export interface TaskPaperImportOptions 
 ```
 
 ## Properties
@@ -18,47 +18,60 @@ export interface TaskPaperImportOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [createProjects?](./sdk.taskpaperimportoptions.createprojects.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_ Whether to create projects that don't exist
+
 
 </td></tr>
 <tr><td>
 
 [defaultProject?](./sdk.taskpaperimportoptions.defaultproject.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Target project for tasks without a project
 
+
 </td></tr>
 </tbody></table>
+

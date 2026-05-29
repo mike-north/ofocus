@@ -4,14 +4,12 @@
 
 ## getReviewInterval() function
 
-Get the review interval for a project in OmniFocus. Returns the interval in days.
+Get the review interval for a project in OmniFocus. Returns the interval in days (approximating months as 30 days, years as 365 days).
 
 **Signature:**
 
 ```typescript
-export declare function getReviewInterval(
-  projectId: string
-): Promise<CliOutput<ReviewIntervalResult>>;
+export declare function getReviewInterval(projectId: string): Promise<CliOutput<ReviewIntervalResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function getReviewInterval(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 projectId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[ReviewIntervalResult](./sdk.reviewintervalresult.md)<!-- -->&gt;&gt;
+

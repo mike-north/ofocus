@@ -9,7 +9,7 @@ Options for querying statistics.
 **Signature:**
 
 ```typescript
-export interface StatsOptions
+export interface StatsOptions 
 ```
 
 ## Properties
@@ -18,77 +18,98 @@ export interface StatsOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [period?](./sdk.statsoptions.period.md)
 
+
 </td><td>
+
 
 </td><td>
 
 "day" \| "week" \| "month" \| "year" \| undefined
 
+
 </td><td>
 
 _(Optional)_ Predefined period: "day", "week", "month", "year"
+
 
 </td></tr>
 <tr><td>
 
 [project?](./sdk.statsoptions.project.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Filter by project name
+
 
 </td></tr>
 <tr><td>
 
 [since?](./sdk.statsoptions.since.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Start date for the period (ISO date string)
+
 
 </td></tr>
 <tr><td>
 
 [until?](./sdk.statsoptions.until.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ End date for the period (ISO date string)
 
+
 </td></tr>
 </tbody></table>
+

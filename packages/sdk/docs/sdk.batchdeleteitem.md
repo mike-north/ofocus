@@ -9,7 +9,7 @@ Batch delete result item
 **Signature:**
 
 ```typescript
-export interface BatchDeleteItem
+export interface BatchDeleteItem 
 ```
 
 ## Properties
@@ -18,30 +18,39 @@ export interface BatchDeleteItem
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [taskId](./sdk.batchdeleteitem.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

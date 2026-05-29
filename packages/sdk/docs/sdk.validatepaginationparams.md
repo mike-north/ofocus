@@ -9,10 +9,7 @@ Validate pagination parameters (limit and offset). Returns null if valid, or a C
 **Signature:**
 
 ```typescript
-export declare function validatePaginationParams(
-  limit: number | undefined,
-  offset: number | undefined
-): CliError | null;
+export declare function validatePaginationParams(limit: number | undefined, offset: number | undefined): CliError | null;
 ```
 
 ## Parameters
@@ -21,35 +18,44 @@ export declare function validatePaginationParams(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 limit
 
+
 </td><td>
 
 number \| undefined
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 offset
 
+
 </td><td>
 
 number \| undefined
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -57,3 +63,4 @@ number \| undefined
 **Returns:**
 
 [CliError](./sdk.clierror.md) \| null
+

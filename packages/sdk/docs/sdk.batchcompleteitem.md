@@ -9,7 +9,7 @@ Batch complete result item
 **Signature:**
 
 ```typescript
-export interface BatchCompleteItem
+export interface BatchCompleteItem 
 ```
 
 ## Properties
@@ -18,43 +18,56 @@ export interface BatchCompleteItem
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [taskId](./sdk.batchcompleteitem.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskName](./sdk.batchcompleteitem.taskname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

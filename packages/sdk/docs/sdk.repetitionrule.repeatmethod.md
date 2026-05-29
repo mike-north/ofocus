@@ -4,8 +4,10 @@
 
 ## RepetitionRule.repeatMethod property
 
+How OmniFocus reschedules the task after completion.
+
 **Signature:**
 
 ```typescript
-repeatMethod: "due-again" | "defer-another";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 ```

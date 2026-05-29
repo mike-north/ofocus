@@ -9,10 +9,7 @@ Update multiple tasks with the same properties in a single operation.
 **Signature:**
 
 ```typescript
-export declare function updateTasks(
-  taskIds: string[],
-  options: TaskUpdateOptions
-): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
+export declare function updateTasks(taskIds: string[], options: TaskUpdateOptions): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
 ```
 
 ## Parameters
@@ -21,35 +18,44 @@ export declare function updateTasks(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskIds
 
+
 </td><td>
 
 string\[\]
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [TaskUpdateOptions](./sdk.taskupdateoptions.md)
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -57,3 +63,4 @@ options
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[BatchResult](./sdk.batchresult.md)<!-- -->&lt;[BatchCompleteItem](./sdk.batchcompleteitem.md)<!-- -->&gt;&gt;&gt;
+

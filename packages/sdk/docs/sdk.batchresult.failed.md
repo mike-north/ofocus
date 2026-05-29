@@ -8,8 +8,7 @@
 
 ```typescript
 failed: {
-  id: string;
-  error: string;
-}
-[];
+        id: string;
+        error: string;
+    }[];
 ```

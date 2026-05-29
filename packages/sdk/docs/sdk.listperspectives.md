@@ -4,14 +4,18 @@
 
 ## listPerspectives() function
 
-List all perspectives in OmniFocus.
+List all perspectives in OmniFocus (both built-in and custom).
+
+Each entry includes: - `id` — for built-in perspectives this is the localized name used as a stable string key; for custom perspectives this is the UUID string returned by `Perspective.Custom#identifier`<!-- -->. - `name` — the display name shown in OmniFocus. - `kind` — `"builtin"` or `"custom"`<!-- -->.
+
+OmniJS API used: - `Perspective.BuiltIn.all` — array of all built-in perspective singletons. - `Perspective.Custom.all` — array of all user-created custom perspectives.
 
 **Signature:**
 
 ```typescript
 export declare function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
 ```
-
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFPerspective](./sdk.ofperspective.md)<!-- -->\[\]&gt;&gt;
+

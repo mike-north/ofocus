@@ -9,7 +9,7 @@ Options for updating a project.
 **Signature:**
 
 ```typescript
-export interface UpdateProjectOptions
+export interface UpdateProjectOptions 
 ```
 
 ## Properties
@@ -18,137 +18,174 @@ export interface UpdateProjectOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [deferDate?](./sdk.updateprojectoptions.deferdate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [dueDate?](./sdk.updateprojectoptions.duedate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [folderId?](./sdk.updateprojectoptions.folderid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [folderName?](./sdk.updateprojectoptions.foldername.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [name?](./sdk.updateprojectoptions.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [note?](./sdk.updateprojectoptions.note.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [sequential?](./sdk.updateprojectoptions.sequential.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 <tr><td>
 
 [status?](./sdk.updateprojectoptions.status.md)
 
+
 </td><td>
+
 
 </td><td>
 
 "active" \| "on-hold" \| "completed" \| "dropped" \| undefined
 
+
 </td><td>
 
 _(Optional)_
 
+
 </td></tr>
 </tbody></table>
+

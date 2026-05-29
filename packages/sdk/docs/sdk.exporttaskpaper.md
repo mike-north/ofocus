@@ -4,14 +4,14 @@
 
 ## exportTaskPaper() function
 
-Export tasks and projects to TaskPaper format.
+Export tasks and projects to TaskPaper format via OmniJS.
+
+OmniJS builds the entire TaskPaper document in a single script execution, iterating flattenedProjects and their tasks directly. This replaces the previous approach of multiple queryProjects/queryTasks round-trips.
 
 **Signature:**
 
 ```typescript
-export declare function exportTaskPaper(
-  options?: TaskPaperExportOptions
-): Promise<CliOutput<TaskPaperExportResult>>;
+export declare function exportTaskPaper(options?: TaskPaperExportOptions): Promise<CliOutput<TaskPaperExportResult>>;
 ```
 
 ## Parameters
@@ -20,26 +20,32 @@ export declare function exportTaskPaper(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [TaskPaperExportOptions](./sdk.taskpaperexportoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -47,3 +53,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[TaskPaperExportResult](./sdk.taskpaperexportresult.md)<!-- -->&gt;&gt;
+

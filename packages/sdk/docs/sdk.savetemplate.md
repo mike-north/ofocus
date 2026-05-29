@@ -9,9 +9,7 @@ Save a project as a template.
 **Signature:**
 
 ```typescript
-export declare function saveTemplate(
-  options: SaveTemplateOptions
-): Promise<CliOutput<SaveTemplateResult>>;
+export declare function saveTemplate(options: SaveTemplateOptions): Promise<CliOutput<SaveTemplateResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function saveTemplate(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 options
 
+
 </td><td>
 
 [SaveTemplateOptions](./sdk.savetemplateoptions.md)
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ options
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[SaveTemplateResult](./sdk.savetemplateresult.md)<!-- -->&gt;&gt;
+

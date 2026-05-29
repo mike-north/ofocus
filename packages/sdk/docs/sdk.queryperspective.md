@@ -4,17 +4,16 @@
 
 ## queryPerspective() function
 
-Query tasks from a specific perspective in OmniFocus.
+Query the tasks visible in a named OmniFocus perspective.
 
-Note: This function retrieves tasks based on the perspective's filtering rules. Some perspectives may require UI interaction in OmniFocus to be properly evaluated. Built-in perspectives like "Flagged", "Forecast", and "Projects" work best.
+Unlike the legacy AppleScript implementation — which was limited to hard-coded filters for Flagged/Forecast/Inbox — this implementation uses the OmniJS `Window.perspective` setter to switch the active window into the requested perspective and then reads `window.content.rootNode` to collect the actual leaf tasks that OmniFocus itself would display. The prior perspective is restored in a `try/finally` so the user's window state is preserved regardless of errors.
+
+OmniJS API used: - `Perspective.BuiltIn.all` — look up built-in by name. - `Perspective.Custom.byName()` — look up custom perspective by name. - `document.windows[0].perspective` — getter/setter. - `document.windows[0].content.rootNode.apply()` — traverse visible tasks. - `node.object instanceof Task` — discriminate task nodes from group/project nodes.
 
 **Signature:**
 
 ```typescript
-export declare function queryPerspective(
-  name: string,
-  options?: PerspectiveQueryOptions
-): Promise<CliOutput<OFTask[]>>;
+export declare function queryPerspective(name: string, options?: PerspectiveQueryOptions): Promise<CliOutput<OFTask[]>>;
 ```
 
 ## Parameters
@@ -23,37 +22,46 @@ export declare function queryPerspective(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 name
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [PerspectiveQueryOptions](./sdk.perspectivequeryoptions.md)
 
+
 </td><td>
 
 _(Optional)_
+
 
 </td></tr>
 </tbody></table>
@@ -61,3 +69,4 @@ _(Optional)_
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFTask](./sdk.oftask.md)<!-- -->\[\]&gt;&gt;
+

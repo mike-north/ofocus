@@ -9,9 +9,7 @@ Delete a task permanently from OmniFocus. Note: This cannot be undone.
 **Signature:**
 
 ```typescript
-export declare function deleteTask(
-  taskId: string
-): Promise<CliOutput<DeleteResult>>;
+export declare function deleteTask(taskId: string): Promise<CliOutput<DeleteResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function deleteTask(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DeleteResult](./sdk.deleteresult.md)<!-- -->&gt;&gt;
+

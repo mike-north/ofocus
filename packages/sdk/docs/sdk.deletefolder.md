@@ -9,9 +9,7 @@ Delete a folder permanently from OmniFocus. Note: This cannot be undone.
 **Signature:**
 
 ```typescript
-export declare function deleteFolder(
-  folderId: string
-): Promise<CliOutput<DeleteFolderResult>>;
+export declare function deleteFolder(folderId: string): Promise<CliOutput<DeleteFolderResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function deleteFolder(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 folderId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DeleteFolderResult](./sdk.deletefolderresult.md)<!-- -->&gt;&gt;
+

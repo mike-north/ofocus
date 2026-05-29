@@ -9,7 +9,7 @@ Result from deferring a task.
 **Signature:**
 
 ```typescript
-export interface DeferResult
+export interface DeferResult 
 ```
 
 ## Properties
@@ -18,69 +18,90 @@ export interface DeferResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [newDeferDate](./sdk.deferresult.newdeferdate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [previousDeferDate](./sdk.deferresult.previousdeferdate.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskId](./sdk.deferresult.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskName](./sdk.deferresult.taskname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

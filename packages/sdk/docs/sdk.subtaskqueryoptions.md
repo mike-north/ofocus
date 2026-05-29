@@ -6,13 +6,14 @@
 
 Options for querying subtasks.
 
+Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) so callers get the full shared-query vocabulary (sort, fields, count, groupBy, etc.) in addition to the subtask-specific predicates.
+
 **Signature:**
 
 ```typescript
-export interface SubtaskQueryOptions extends PaginationOptions
+export interface SubtaskQueryOptions extends BaseListQueryOptions 
 ```
-
-**Extends:** [PaginationOptions](./sdk.paginationoptions.md)
+**Extends:** [BaseListQueryOptions](./sdk.baselistqueryoptions.md)
 
 ## Properties
 
@@ -20,47 +21,60 @@ export interface SubtaskQueryOptions extends PaginationOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [completed?](./sdk.subtaskqueryoptions.completed.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
-_(Optional)_
+_(Optional)_ When set, filter by completion status.
+
 
 </td></tr>
 <tr><td>
 
 [flagged?](./sdk.subtaskqueryoptions.flagged.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
+
 </td><td>
 
-_(Optional)_
+_(Optional)_ When set, filter by flagged status.
+
 
 </td></tr>
 </tbody></table>
+

@@ -4,8 +4,10 @@
 
 ## TagQueryOptions.parent property
 
+Exact parent tag — name or id. A tag matches if its direct parent has the given name or primary key. Accepts a single value or an array (any-of).
+
 **Signature:**
 
 ```typescript
-parent?: string | undefined;
+parent?: string | string[] | undefined;
 ```

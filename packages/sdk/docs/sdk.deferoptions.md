@@ -9,7 +9,7 @@ Options for deferring a task.
 **Signature:**
 
 ```typescript
-export interface DeferOptions
+export interface DeferOptions 
 ```
 
 ## Properties
@@ -18,47 +18,60 @@ export interface DeferOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [days?](./sdk.deferoptions.days.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number \| undefined
 
+
 </td><td>
 
 _(Optional)_ Defer for a number of days from today
+
 
 </td></tr>
 <tr><td>
 
 [to?](./sdk.deferoptions.to.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| undefined
 
+
 </td><td>
 
 _(Optional)_ Defer to a specific date
 
+
 </td></tr>
 </tbody></table>
+

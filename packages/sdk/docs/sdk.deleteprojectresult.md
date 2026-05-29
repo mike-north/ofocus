@@ -9,7 +9,7 @@ Result from deleting a project.
 **Signature:**
 
 ```typescript
-export interface DeleteProjectResult
+export interface DeleteProjectResult 
 ```
 
 ## Properties
@@ -18,43 +18,56 @@ export interface DeleteProjectResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [deleted](./sdk.deleteprojectresult.deleted.md)
 
+
 </td><td>
+
 
 </td><td>
 
 true
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectId](./sdk.deleteprojectresult.projectid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

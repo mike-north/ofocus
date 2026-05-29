@@ -9,9 +9,7 @@ Validate a folder name. Returns null if valid (or empty), or a CliError if inval
 **Signature:**
 
 ```typescript
-export declare function validateFolderName(
-  name: string | undefined
-): CliError | null;
+export declare function validateFolderName(name: string | undefined): CliError | null;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function validateFolderName(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 name
 
+
 </td><td>
 
 string \| undefined
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string \| undefined
 **Returns:**
 
 [CliError](./sdk.clierror.md) \| null
+

@@ -9,7 +9,7 @@ OmniFocus folder representation.
 **Signature:**
 
 ```typescript
-export interface OFFolder
+export interface OFFolder 
 ```
 
 ## Properties
@@ -18,95 +18,124 @@ export interface OFFolder
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [folderCount](./sdk.offolder.foldercount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [id](./sdk.offolder.id.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.offolder.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [parentId](./sdk.offolder.parentid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [parentName](./sdk.offolder.parentname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [projectCount](./sdk.offolder.projectcount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

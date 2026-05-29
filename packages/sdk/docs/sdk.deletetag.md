@@ -9,9 +9,7 @@ Delete a tag from OmniFocus. Note: This cannot be undone.
 **Signature:**
 
 ```typescript
-export declare function deleteTag(
-  tagId: string
-): Promise<CliOutput<DeleteTagResult>>;
+export declare function deleteTag(tagId: string): Promise<CliOutput<DeleteTagResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function deleteTag(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 tagId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DeleteTagResult](./sdk.deletetagresult.md)<!-- -->&gt;&gt;
+

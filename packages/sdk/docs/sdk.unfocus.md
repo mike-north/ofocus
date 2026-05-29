@@ -11,7 +11,7 @@ Clear focus in OmniFocus (show all items).
 ```typescript
 export declare function unfocus(): Promise<CliOutput<FocusResult>>;
 ```
-
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[FocusResult](./sdk.focusresult.md)<!-- -->&gt;&gt;
+

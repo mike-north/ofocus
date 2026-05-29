@@ -9,17 +9,15 @@ Validate a repetition rule. Returns null if valid (or undefined), or a CliError 
 **Signature:**
 
 ```typescript
-export declare function validateRepetitionRule(
-  rule:
-    | {
-        frequency: string;
-        interval: number;
-        repeatMethod: string;
-        daysOfWeek?: number[] | undefined;
-        dayOfMonth?: number | undefined;
-      }
-    | undefined
-): CliError | null;
+export declare function validateRepetitionRule(rule: {
+    frequency: string;
+    interval: number;
+    repeatMethod: string;
+    daysOfWeek?: number[] | undefined;
+    dayOfMonth?: number | undefined;
+    daysOfWeekPositions?: number[] | undefined;
+    monthsOfYear?: number[] | undefined;
+} | undefined): CliError | null;
 ```
 
 ## Parameters
@@ -28,24 +26,30 @@ export declare function validateRepetitionRule(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 rule
 
-</td><td>
-
-{ frequency: string; interval: number; repeatMethod: string; daysOfWeek?: number\[\] \| undefined; dayOfMonth?: number \| undefined; } \| undefined
 
 </td><td>
+
+{ frequency: string; interval: number; repeatMethod: string; daysOfWeek?: number\[\] \| undefined; dayOfMonth?: number \| undefined; daysOfWeekPositions?: number\[\] \| undefined; monthsOfYear?: number\[\] \| undefined; } \| undefined
+
+
+</td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -53,3 +57,4 @@ rule
 **Returns:**
 
 [CliError](./sdk.clierror.md) \| null
+

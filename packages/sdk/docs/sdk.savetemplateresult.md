@@ -9,7 +9,7 @@ Result of saving a template.
 **Signature:**
 
 ```typescript
-export interface SaveTemplateResult
+export interface SaveTemplateResult 
 ```
 
 ## Properties
@@ -18,62 +18,79 @@ export interface SaveTemplateResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [name](./sdk.savetemplateresult.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Template name
+
 
 </td></tr>
 <tr><td>
 
 [path](./sdk.savetemplateresult.path.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Path where the template was saved
+
 
 </td></tr>
 <tr><td>
 
 [taskCount](./sdk.savetemplateresult.taskcount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
 
 Number of tasks in the template
 
+
 </td></tr>
 </tbody></table>
+

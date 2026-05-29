@@ -10,464 +10,664 @@
 
 Function
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [addAttachment(taskId, filePath)](./sdk.addattachment.md)
 
+
 </td><td>
 
 Add an attachment to a task.
+
 
 </td></tr>
 <tr><td>
 
 [addToInbox(title, options)](./sdk.addtoinbox.md)
 
+
 </td><td>
 
 Add a task to the OmniFocus inbox.
+
+
+</td></tr>
+<tr><td>
+
+[applyRepetitionRule(taskId, rule)](./sdk.applyrepetitionrule.md)
+
+
+</td><td>
+
+Apply a repetition rule to an existing task.
+
 
 </td></tr>
 <tr><td>
 
 [archiveTasks(options)](./sdk.archivetasks.md)
 
+
 </td><td>
 
-Archive completed/dropped tasks and projects. Note: OmniFocus archives are stored in \~/Library/Containers/com.omnigroup.OmniFocus3/Data/Library/Application Support/OmniFocus/Archive/
+Archive completed/dropped tasks and projects.
+
+In OmniJS, this scans `flattenedTasks` for completed/dropped tasks matching the date filters and counts them. OmniFocus automatically archives old completed tasks to \~/Library/Containers/.../OmniFocus/Archive/; this command does not delete tasks because the AppleScript implementation also did not delete them — it only called `compact` as a DB-optimization step.
+
 
 </td></tr>
 <tr><td>
 
-[buildRepetitionRuleScript(taskVar, rule)](./sdk.buildrepetitionrulescript.md)
+[buildListQueryBody(args)](./sdk.buildlistquerybody.md)
+
 
 </td><td>
 
-Build AppleScript to set a repetition rule on a task.
+Compose the full OmniJS body for a list endpoint.
+
+The generated body has roughly this structure:
+
+```
+var rows = SOURCE.filter(function(t) { return COND; });
+if (COMPARATOR) rows.sort(COMPARATOR);
+switch (shape) { case "count": ... case "list": ... }
+```
+The result is intended to be passed to `runOmniJSWrapped` which wraps it in try/catch and adds an outer IIFE. Do not pre-wrap.
+
 
 </td></tr>
 <tr><td>
 
 [buildRRule(rule)](./sdk.buildrrule.md)
 
+
 </td><td>
 
-Build iCalendar RRULE string from a RepetitionRule.
+Build an iCalendar RRULE string from a RepetitionRule.
+
+The output is the value passed as the first argument of `new Task.RepetitionRule(ruleString, method)` inside an OmniJS script. The `repeatMethod` field is intentionally \*not\* encoded here — it maps to the second constructor argument via [repeatMethodToOmniJS()](./sdk.repeatmethodtoomnijs.md)<!-- -->.
+
+Supported RRULE combinations: - FREQ=DAILY\[;INTERVAL=N\] - FREQ=WEEKLY\[;INTERVAL=N\]\[;BYDAY=MO,WE,...\] - FREQ=MONTHLY\[;INTERVAL=N\]\[;BYMONTHDAY=15\] - FREQ=MONTHLY\[;INTERVAL=N\]\[;BYDAY=1MO,-1MO,...\] (Nth-weekday form) - FREQ=YEARLY\[;INTERVAL=N\]\[;BYMONTH=3,6\]\[;BYMONTHDAY=25\]
+
 
 </td></tr>
 <tr><td>
 
-[clearScriptCache()](./sdk.clearscriptcache.md)
+[clearRepetitionRule(taskId)](./sdk.clearrepetitionrule.md)
+
 
 </td><td>
 
-Clear the script cache. Useful for testing or when scripts may have been modified.
+Clear the repetition rule from an existing task.
+
 
 </td></tr>
 <tr><td>
 
 [compactDatabase()](./sdk.compactdatabase.md)
 
+
 </td><td>
 
-Trigger database compaction in OmniFocus. Compaction removes deleted items and optimizes the database.
+Trigger database compaction in OmniFocus.
+
+The AppleScript `compact` command has no equivalent in OmniJS — OmniFocus handles database compaction internally and does not expose it to JavaScript automation. This function returns a structured result documenting this limitation rather than fabricating success or silently failing.
+
+
+</td></tr>
+<tr><td>
+
+[compileAggregate(options, groupKeys)](./sdk.compileaggregate.md)
+
+
+</td><td>
+
+Compile aggregate options into a single shape, validating that at most one shape modifier is set.
+
+Pass an entity-specific `groupKeys` map to validate `groupBy` against the correct key set. Defaults to [taskGroupKeys](./sdk.taskgroupkeys.md) for backward compatibility with call sites that do not supply a map.
+
+
+</td></tr>
+<tr><td>
+
+[compileProjection(spec, options)](./sdk.compileprojection.md)
+
+
+</td><td>
+
+Build a JS function literal that maps an entity to a projected object.
+
+- If `fields` is provided, only those fields are emitted (in the order given). - Otherwise the entity's default field set is used. - `excludeFields` removes fields from either selection. - Unknown fields produce `VALIDATION_ERROR` entries; the mapExpression still compiles using only the recognized fields so callers can inspect both.
+
+
+</td></tr>
+<tr><td>
+
+[compileSort(spec, options)](./sdk.compilesort.md)
+
+
+</td><td>
+
+Compile a multi-key sort over an entity's field allowlist.
+
+Sort semantics: - Keys are compared lexicographically (first key, then second, etc.). - Strings compared via `<`<!-- -->/`>` (lexicographic). - Numbers and booleans compared with `<`<!-- -->/`>`<!-- -->. - Dates: rely on the projection's ISO strings — those sort lexicographically. - `null`<!-- -->/`undefined` sort last by default; first if `nullsFirst` is true. - `reverse: true` flips the final comparator output.
+
+Comparator code accesses fields via the entity's OmniJS expression (with `t` rebound to `a` / `b`<!-- -->). This keeps the field-to-OmniJS mapping centralized in the field spec.
+
+
+</td></tr>
+<tr><td>
+
+[compileTaskPredicates(options)](./sdk.compiletaskpredicates.md)
+
+
+</td><td>
+
+Compile the predicate vocabulary on [TaskQueryOptions](./sdk.taskqueryoptions.md) into a list of OmniJS boolean expressions over the task variable `t`<!-- -->.
+
+Every predicate-bearing field that is set in `options` contributes one expression. Boolean predicates are emitted as-is (no double-negation games). Date predicates are resolved through [parseDate()](./sdk.parsedate.md) so callers may pass relative expressions like `"7d"` or `"tomorrow"`<!-- -->.
+
 
 </td></tr>
 <tr><td>
 
 [completeTask(taskId)](./sdk.completetask.md)
 
+
 </td><td>
 
 Mark a task as complete in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [completeTasks(taskIds)](./sdk.completetasks.md)
 
+
 </td><td>
 
 Complete multiple tasks in a single operation.
 
-</td></tr>
-<tr><td>
-
-[composeScript(handlers, body)](./sdk.composescript.md)
-
-</td><td>
-
-Compose multiple script parts and wrap in OmniFocus tell block. Handlers (on...end) go at the top level, body goes in the tell block.
 
 </td></tr>
 <tr><td>
 
 [createError(code, message, details)](./sdk.createerror.md)
 
+
 </td><td>
 
 Create a CliError with the given code and message.
+
 
 </td></tr>
 <tr><td>
 
 [createFolder(name, options)](./sdk.createfolder.md)
 
+
 </td><td>
 
 Create a new folder in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [createFromTemplate(options)](./sdk.createfromtemplate.md)
 
+
 </td><td>
 
 Create a new project from a template.
+
+
+</td></tr>
+<tr><td>
+
+[createPerspective(\_name, \_options)](./sdk.createperspective.md)
+
+
+</td><td>
+
+Create a custom perspective from an archive payload.
+
+\*\*Current limitation\*\*: OmniJS (as of OmniFocus 4) does not expose a public `Perspective.Custom.fromArchive()` factory method. This function returns a structured failure with `ErrorCode.VALIDATION_ERROR` and a clear message describing the limitation. It is included in the public API so that callers can write forward-compatible code and the SDK can surface a clear error rather than throwing.
+
+If Omni Group adds this capability to OmniJS in the future, only this function body needs to be updated.
+
 
 </td></tr>
 <tr><td>
 
 [createProject(name, options)](./sdk.createproject.md)
 
+
 </td><td>
 
 Create a new project in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [createSubtask(title, parentTaskId, options)](./sdk.createsubtask.md)
 
+
 </td><td>
 
 Create a subtask under a parent task in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [createTag(name, options)](./sdk.createtag.md)
 
+
 </td><td>
 
 Create a new tag in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [deferTask(taskId, options)](./sdk.defertask.md)
 
+
 </td><td>
 
 Defer a task by a number of days or to a specific date.
+
 
 </td></tr>
 <tr><td>
 
 [deferTasks(taskIds, options)](./sdk.defertasks.md)
 
+
 </td><td>
 
 Defer multiple tasks by a number of days or to a specific date.
+
+
+</td></tr>
+<tr><td>
+
+[defineCommand(spec)](./sdk.definecommand.md)
+
+
+</td><td>
+
+Factory for a [CommandDescriptor](./sdk.commanddescriptor.md)<!-- -->.
+
+Performs canonical-name validation at definition time, verifies that any declared positional fields exist in the schema, and fills in default `cliName` / `mcpName` derivations so consumers can rely on those fields always being present on the resolved descriptor.
+
 
 </td></tr>
 <tr><td>
 
 [deleteFolder(folderId)](./sdk.deletefolder.md)
 
+
 </td><td>
 
 Delete a folder permanently from OmniFocus. Note: This cannot be undone.
+
+
+</td></tr>
+<tr><td>
+
+[deletePerspective(idOrName)](./sdk.deleteperspective.md)
+
+
+</td><td>
+
+Delete a custom perspective.
+
+\*\*Current limitation\*\*: OmniJS (as of OmniFocus 4) does not support programmatic deletion of custom perspectives. The `deleteObject()` function does not accept perspective objects, and `Perspective.Custom` exposes no delete method. This function returns a structured failure rather than silently failing or throwing.
+
+Built-in perspectives are also rejected since they cannot be deleted.
+
 
 </td></tr>
 <tr><td>
 
 [deleteProject(projectId)](./sdk.deleteproject.md)
 
+
 </td><td>
 
 Delete a project permanently from OmniFocus. Note: This cannot be undone.
+
 
 </td></tr>
 <tr><td>
 
 [deleteTag(tagId)](./sdk.deletetag.md)
 
+
 </td><td>
 
 Delete a tag from OmniFocus. Note: This cannot be undone.
+
 
 </td></tr>
 <tr><td>
 
 [deleteTask(taskId)](./sdk.deletetask.md)
 
+
 </td><td>
 
 Delete a task permanently from OmniFocus. Note: This cannot be undone.
+
 
 </td></tr>
 <tr><td>
 
 [deleteTasks(taskIds)](./sdk.deletetasks.md)
 
+
 </td><td>
 
 Delete multiple tasks permanently in a single operation.
+
 
 </td></tr>
 <tr><td>
 
 [deleteTemplate(name)](./sdk.deletetemplate.md)
 
+
 </td><td>
 
 Delete a template.
+
 
 </td></tr>
 <tr><td>
 
 [dropProject(projectId)](./sdk.dropproject.md)
 
+
 </td><td>
 
 Drop a project in OmniFocus (marks as dropped but keeps history).
+
 
 </td></tr>
 <tr><td>
 
 [dropTask(taskId)](./sdk.droptask.md)
 
+
 </td><td>
 
 Drop a task in OmniFocus (marks as dropped but keeps history).
+
 
 </td></tr>
 <tr><td>
 
 [duplicateTask(taskId, options)](./sdk.duplicatetask.md)
 
+
 </td><td>
 
 Duplicate a task in OmniFocus. Creates a copy of the task with all its properties.
 
+
 </td></tr>
 <tr><td>
 
-[escapeAppleScript(str)](./sdk.escapeapplescript.md)
+[escapeJSString(str)](./sdk.escapejsstring.md)
+
 
 </td><td>
 
-Escape a string for safe use in AppleScript double-quoted strings. Handles backslashes and double quotes.
+Escape a string for safe embedding in a JavaScript string literal.
+
+
+</td></tr>
+<tr><td>
+
+[evaluateScript(input)](./sdk.evaluatescript.md)
+
+
+</td><td>
+
+Evaluate arbitrary OmniJS source against the user's OmniFocus database.
+
 
 </td></tr>
 <tr><td>
 
 [exportTaskPaper(options)](./sdk.exporttaskpaper.md)
 
+
 </td><td>
 
-Export tasks and projects to TaskPaper format.
+Export tasks and projects to TaskPaper format via OmniJS.
+
+OmniJS builds the entire TaskPaper document in a single script execution, iterating flattenedProjects and their tasks directly. This replaces the previous approach of multiple queryProjects/queryTasks round-trips.
+
 
 </td></tr>
 <tr><td>
 
 [failure(error)](./sdk.failure.md)
 
+
 </td><td>
 
 Create a failed CLI output with a structured error.
+
 
 </td></tr>
 <tr><td>
 
 [failureMessage(message)](./sdk.failuremessage.md)
 
+
 </td><td>
 
-Create a failed CLI output with a simple string message. This is a convenience function that wraps the message in an UNKNOWN_ERROR.
+Create a failed CLI output with a simple string message. This is a convenience function that wraps the message in an UNKNOWN\_ERROR.
+
 
 </td></tr>
 <tr><td>
 
 [focusOn(target, options)](./sdk.focuson.md)
 
+
 </td><td>
 
 Focus on a specific project or folder in OmniFocus. This matches the OmniFocus UI focus feature.
+
 
 </td></tr>
 <tr><td>
 
 [generateUrl(id)](./sdk.generateurl.md)
 
+
 </td><td>
 
 Generate an OmniFocus URL scheme deep link for a task, project, folder, or tag. Returns the omnifocus:/// URL that can be used to open the item in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [getFocused()](./sdk.getfocused.md)
 
+
 </td><td>
 
 Get the current focus state in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [getReviewInterval(projectId)](./sdk.getreviewinterval.md)
 
-</td><td>
-
-Get the review interval for a project in OmniFocus. Returns the interval in days.
-
-</td></tr>
-<tr><td>
-
-[getScriptPath(relativePath)](./sdk.getscriptpath.md)
 
 </td><td>
 
-Get the absolute path to a script file.
+Get the review interval for a project in OmniFocus. Returns the interval in days (approximating months as 30 days, years as 365 days).
+
 
 </td></tr>
 <tr><td>
 
 [getStats(options)](./sdk.getstats.md)
 
+
 </td><td>
 
 Get productivity statistics from OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [getSyncStatus()](./sdk.getsyncstatus.md)
 
+
 </td><td>
 
 Get the current sync status.
+
+OmniJS does not expose a `syncing` flag or account name directly. `document.lastSyncDate` is available for the last sync timestamp. `syncing` and `accountName` are returned as `false`<!-- -->/`null` because OmniJS provides no API to read them — this matches the AppleScript behaviour which also could not reliably determine these values.
+
 
 </td></tr>
 <tr><td>
 
 [getTemplate(name)](./sdk.gettemplate.md)
 
+
 </td><td>
 
 Get a template by name.
+
 
 </td></tr>
 <tr><td>
 
 [importTaskPaper(content, options)](./sdk.importtaskpaper.md)
 
+
 </td><td>
 
 Import tasks from TaskPaper format.
+
+The TypeScript-side TaskPaper parser (parseTaskPaperLine) is preserved exactly. After parsing, a single OmniJS script creates all projects and tasks in one execution rather than one round-trip per item.
+
 
 </td></tr>
 <tr><td>
 
 [listAttachments(taskId)](./sdk.listattachments.md)
 
+
 </td><td>
 
 List attachments of a task.
+
 
 </td></tr>
 <tr><td>
 
 [listPerspectives()](./sdk.listperspectives.md)
 
+
 </td><td>
 
-List all perspectives in OmniFocus.
+List all perspectives in OmniFocus (both built-in and custom).
+
+Each entry includes: - `id` — for built-in perspectives this is the localized name used as a stable string key; for custom perspectives this is the UUID string returned by `Perspective.Custom#identifier`<!-- -->. - `name` — the display name shown in OmniFocus. - `kind` — `"builtin"` or `"custom"`<!-- -->.
+
+OmniJS API used: - `Perspective.BuiltIn.all` — array of all built-in perspective singletons. - `Perspective.Custom.all` — array of all user-created custom perspectives.
+
 
 </td></tr>
 <tr><td>
 
 [listTemplates()](./sdk.listtemplates.md)
 
+
 </td><td>
 
 List all available templates.
 
-</td></tr>
-<tr><td>
-
-[loadScriptContent(relativePath)](./sdk.loadscriptcontent.md)
-
-</td><td>
-
-Load the content of a script file.
-
-</td></tr>
-<tr><td>
-
-[loadScriptContentCached(relativePath)](./sdk.loadscriptcontentcached.md)
-
-</td><td>
-
-Load the content of a script file, with caching. Subsequent calls with the same path return cached content.
 
 </td></tr>
 <tr><td>
 
 [moveTaskToParent(taskId, parentTaskId)](./sdk.movetasktoparent.md)
 
+
 </td><td>
 
 Move a task to become a subtask of another task.
 
-</td></tr>
-<tr><td>
-
-[omniFocusScript(body)](./sdk.omnifocusscript.md)
-
-</td><td>
-
-Build an AppleScript that tells OmniFocus to do something.
-
-</td></tr>
-<tr><td>
-
-[omniFocusScriptWithHelpers(body)](./sdk.omnifocusscriptwithhelpers.md)
-
-</td><td>
-
-Build an AppleScript that tells OmniFocus to do something, with JSON helper functions defined at the top level.
 
 </td></tr>
 <tr><td>
 
 [openItem(id)](./sdk.openitem.md)
 
+
 </td><td>
 
 Open an item in the OmniFocus UI. The item can be a task, project, folder, or tag. Auto-detects the item type based on the ID.
 
+
 </td></tr>
 <tr><td>
 
-[parseAppleScriptError(rawError)](./sdk.parseapplescripterror.md)
+[parseDate(input, now)](./sdk.parsedate.md)
+
 
 </td><td>
 
-Parse an AppleScript error message into a structured CliError. Detects common error patterns and maps them to appropriate error codes.
+Parse a date string supporting: - ISO 8601 calendar date: `2026-05-30` - ISO 8601 datetime: `2026-05-30T14:00:00Z` or `2026-05-30T14:00:00` - Natural relative: `today`<!-- -->, `tomorrow`<!-- -->, `yesterday` - Offsets: `7d`<!-- -->, `1w`<!-- -->, `2m`<!-- -->, `1y` (interpreted as `now + duration`<!-- -->) - Prefixed offsets: `in 3 days`<!-- -->, `in 1 week`<!-- -->, `in 2 months`<!-- -->, `in 1 year`
+
+Returns the normalized ISO string, or a `CliError` for invalid input.
+
+
+</td></tr>
+<tr><td>
+
+[parseDuration(input)](./sdk.parseduration.md)
+
+
+</td><td>
+
+Parse a duration like `7d`<!-- -->, `1w`<!-- -->, `2m`<!-- -->, `1y` into milliseconds.
+
+Units: - `d` — day (24h) - `w` — week (7d) - `m` — month (30d, approximate) - `y` — year (365d, approximate)
+
+Returns the millisecond value, or a `CliError` for invalid input.
+
 
 </td></tr>
 <tr><td>
 
 [parseQuickInput(input)](./sdk.parsequickinput.md)
+
 
 </td><td>
 
@@ -475,333 +675,527 @@ Parse natural language quick capture input.
 
 Syntax: - `@tagname` - Add a tag - `#projectname` - Set project - `!` or `!!` - Flag the task - `~30m` or `~1h` - Set estimated duration - `due:tomorrow` or `due:monday` - Set due date - `defer:tomorrow` - Set defer date - `repeat:daily` or `repeat:weekly` - Set repetition - Everything else is the title
 
+
+</td></tr>
+<tr><td>
+
+[parseScriptError(rawError)](./sdk.parsescripterror.md)
+
+
+</td><td>
+
+Parse a script-layer error message (from the OmniJS execution bridge or the underlying osascript host) into a structured CliError.
+
+Recognized message shapes: - `Error: <Entity> not found` — thrown from inside the OmniJS body when `Task.byIdentifier(...)` or similar returns `null`<!-- -->. - osascript transport errors when OmniFocus is not running.
+
+
 </td></tr>
 <tr><td>
 
 [queryDeferred(options)](./sdk.querydeferred.md)
 
+
 </td><td>
 
-Query all deferred tasks from OmniFocus. Returns tasks that have a defer date set.
+Query all deferred tasks from OmniFocus.
+
+The preset for this command includes: hasDefer, completed: false, and effectivelyDropped: false. Additional predicates can be added via the options object.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
+
 
 </td></tr>
 <tr><td>
 
 [queryFolders(options)](./sdk.queryfolders.md)
 
+
 </td><td>
 
-Query folders from OmniFocus with optional filters and pagination.
+Query folders from OmniFocus with the full shared-query vocabulary.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
+
 
 </td></tr>
 <tr><td>
 
 [queryForecast(options)](./sdk.queryforecast.md)
 
+
 </td><td>
 
-Query tasks by date range, similar to OmniFocus Forecast view. Returns tasks that are due or deferred within the specified date range.
+Query tasks by date window, similar to OmniFocus Forecast view.
+
+By default returns tasks that are due within the next N days (default 7). When `includeDeferred: true`<!-- -->, also includes tasks deferred to the same window.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
+
 
 </td></tr>
 <tr><td>
 
 [queryPerspective(name, options)](./sdk.queryperspective.md)
 
+
 </td><td>
 
-Query tasks from a specific perspective in OmniFocus.
+Query the tasks visible in a named OmniFocus perspective.
 
-Note: This function retrieves tasks based on the perspective's filtering rules. Some perspectives may require UI interaction in OmniFocus to be properly evaluated. Built-in perspectives like "Flagged", "Forecast", and "Projects" work best.
+Unlike the legacy AppleScript implementation — which was limited to hard-coded filters for Flagged/Forecast/Inbox — this implementation uses the OmniJS `Window.perspective` setter to switch the active window into the requested perspective and then reads `window.content.rootNode` to collect the actual leaf tasks that OmniFocus itself would display. The prior perspective is restored in a `try/finally` so the user's window state is preserved regardless of errors.
+
+OmniJS API used: - `Perspective.BuiltIn.all` — look up built-in by name. - `Perspective.Custom.byName()` — look up custom perspective by name. - `document.windows[0].perspective` — getter/setter. - `document.windows[0].content.rootNode.apply()` — traverse visible tasks. - `node.object instanceof Task` — discriminate task nodes from group/project nodes.
+
 
 </td></tr>
 <tr><td>
 
 [queryProjects(options)](./sdk.queryprojects.md)
 
+
 </td><td>
 
-Query projects from OmniFocus with optional filters and pagination.
+Query projects from OmniFocus with the full shared-query vocabulary.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
+
 
 </td></tr>
 <tr><td>
 
 [queryProjectsForReview()](./sdk.queryprojectsforreview.md)
 
+
 </td><td>
 
-Query projects that are due for review in OmniFocus.
+Query projects that are due for review in OmniFocus. Returns active (and on-hold) projects whose nextReviewDate is in the past or today.
+
 
 </td></tr>
 <tr><td>
 
 [querySubtasks(parentTaskId, options)](./sdk.querysubtasks.md)
 
+
 </td><td>
 
-Query subtasks of a parent task in OmniFocus with pagination.
+Query subtasks of a parent task in OmniFocus.
+
+The preset for this command scopes results to children of the given parent task via the `parentTaskId` predicate. Default fields include id, name, completed, and flagged since that metadata is the primary reason to query subtasks.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
+
 
 </td></tr>
 <tr><td>
 
 [queryTags(options)](./sdk.querytags.md)
 
+
 </td><td>
 
-Query tags from OmniFocus with optional filters and pagination.
+Query tags from OmniFocus with the full shared-query vocabulary.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
+
 
 </td></tr>
 <tr><td>
 
 [queryTasks(options)](./sdk.querytasks.md)
 
+
 </td><td>
 
-Query tasks from OmniFocus with optional filters and pagination.
+Query tasks from OmniFocus with the full shared-query vocabulary.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
+
 
 </td></tr>
 <tr><td>
 
 [quickCapture(input, options)](./sdk.quickcapture.md)
 
+
 </td><td>
 
 Quick capture - parse natural language input and add task to inbox.
+
 
 </td></tr>
 <tr><td>
 
 [removeAttachment(taskId, attachmentIdOrName)](./sdk.removeattachment.md)
 
+
 </td><td>
 
 Remove an attachment from a task.
+
+
+</td></tr>
+<tr><td>
+
+[renamePerspective(idOrName, \_newName)](./sdk.renameperspective.md)
+
+
+</td><td>
+
+Rename a custom perspective.
+
+\*\*Current limitation\*\*: The `name` property of `Perspective.Custom` is read-only in the OmniJS API (as of OmniFocus 4). This function returns a structured failure with `ErrorCode.VALIDATION_ERROR` and a clear message describing the limitation rather than silently failing or throwing.
+
+Built-in perspectives are also rejected since they cannot be renamed.
+
+
+</td></tr>
+<tr><td>
+
+[repeatMethodToOmniJS(method)](./sdk.repeatmethodtoomnijs.md)
+
+
+</td><td>
+
+Map a `RepetitionRule["repeatMethod"]` value to the OmniJS `Task.RepetitionMethod.*` expression string used in the second argument of `new Task.RepetitionRule(ruleString, method)`<!-- -->.
+
+\| SDK value \| OmniJS constant \| Meaning \| \|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--\| \| `"due-again"` \| `Task.RepetitionMethod.DueDate` \| Reschedules from completed date \| \| `"defer-another"`<!-- -->\| `Task.RepetitionMethod.Start` \| Reschedules from defer date \| \| `"scheduled"` \| `Task.RepetitionMethod.Fixed` \| Strict cadence, date-fixed \|
+
 
 </td></tr>
 <tr><td>
 
 [reviewProject(projectId)](./sdk.reviewproject.md)
 
+
 </td><td>
 
-Mark a project as reviewed in OmniFocus.
+Mark a project as reviewed in OmniFocus. Sets the lastReviewDate to now, which OmniFocus uses to recompute nextReviewDate.
+
 
 </td></tr>
 <tr><td>
 
-[runAppleScript(script)](./sdk.runapplescript.md)
+[runOmniJS(script)](./sdk.runomnijs.md)
+
 
 </td><td>
 
-Execute an AppleScript and return the result. The script should return a value that can be parsed as JSON for structured data.
+Execute an OmniJS (JavaScript) script within OmniFocus via osascript.
+
+The script is evaluated using: osascript -e 'tell application "OmniFocus" to evaluate javascript "..."'
+
+The script should end with a JSON.stringify(...) expression so the result can be parsed back into a typed value.
+
 
 </td></tr>
 <tr><td>
 
-[runAppleScriptFile(filePath, args)](./sdk.runapplescriptfile.md)
+[runOmniJSWrapped(body)](./sdk.runomnijswrapped.md)
+
 
 </td><td>
 
-Execute an AppleScript file.
+Execute an OmniJS script with automatic try/catch wrapping and error detection.
 
-</td></tr>
-<tr><td>
+The body should end with a `return JSON.stringify(...)` statement. Errors thrown within the script are caught and returned as structured errors.
 
-[runComposedScript(handlers, body)](./sdk.runcomposedscript.md)
-
-</td><td>
-
-Execute a composed AppleScript with handlers and body. Composes the script using [composeScript()](./sdk.composescript.md) and executes it.
 
 </td></tr>
 <tr><td>
 
 [saveTemplate(options)](./sdk.savetemplate.md)
 
+
 </td><td>
 
 Save a project as a template.
+
 
 </td></tr>
 <tr><td>
 
 [searchTasks(query, options)](./sdk.searchtasks.md)
 
+
 </td><td>
 
-Search tasks in OmniFocus.
+Search tasks in OmniFocus by name, note, or both.
+
+Returns a discriminated [QueryResult](./sdk.queryresult.md) — the `kind` field tells the caller whether the response is a paged list, a count, an ID list, a single item, or grouped buckets.
+
 
 </td></tr>
 <tr><td>
 
 [setReviewInterval(projectId, days)](./sdk.setreviewinterval.md)
 
+
 </td><td>
 
-Set the review interval for a project in OmniFocus. The interval is specified in days.
+Set the review interval for a project in OmniFocus. The interval is specified in days and stored as a `{ steps, unit }` object using "days" as the unit.
+
 
 </td></tr>
 <tr><td>
 
 [success(data)](./sdk.success.md)
 
+
 </td><td>
 
 Create a successful CLI output.
+
+
+</td></tr>
+<tr><td>
+
+[toKebabCase(name)](./sdk.tokebabcase.md)
+
+
+</td><td>
+
+Convert a camelCase identifier to kebab-case.
+
+
+</td></tr>
+<tr><td>
+
+[toOmniJSDate(dateStr)](./sdk.toomnijsdate.md)
+
+
+</td><td>
+
+Convert a Date string (ISO format or similar) to a JavaScript Date constructor call suitable for use in OmniJS scripts.
+
+Local-time strings (no timezone designator) are emitted as a 6-argument `new Date(year, monthIndex, day, hours, minutes, seconds)` call so they are interpreted in OmniFocus's local timezone. Strings carrying a timezone designator (`Z` or `±HH:MM`<!-- -->) are passed through to `new Date("<str>")` so the JS parser preserves the original timezone semantics. Any other format also falls through to the string constructor.
+
+
+</td></tr>
+<tr><td>
+
+[toSnakeCase(name)](./sdk.tosnakecase.md)
+
+
+</td><td>
+
+Convert a camelCase identifier to snake\_case.
+
 
 </td></tr>
 <tr><td>
 
 [triggerSync()](./sdk.triggersync.md)
 
+
 </td><td>
 
 Trigger a sync operation.
+
+`document.sync()` fires sync in the background and returns immediately. There is no OmniJS primitive to await completion.
+
 
 </td></tr>
 <tr><td>
 
 [unfocus()](./sdk.unfocus.md)
 
+
 </td><td>
 
 Clear focus in OmniFocus (show all items).
+
 
 </td></tr>
 <tr><td>
 
 [updateFolder(folderId, options)](./sdk.updatefolder.md)
 
+
 </td><td>
 
 Update an existing folder in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [updateProject(projectId, options)](./sdk.updateproject.md)
 
+
 </td><td>
 
 Update an existing project in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [updateTag(tagId, options)](./sdk.updatetag.md)
 
+
 </td><td>
 
 Update an existing tag in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [updateTask(taskId, options)](./sdk.updatetask.md)
 
+
 </td><td>
 
 Update properties of an existing task in OmniFocus.
+
 
 </td></tr>
 <tr><td>
 
 [updateTasks(taskIds, options)](./sdk.updatetasks.md)
 
+
 </td><td>
 
 Update multiple tasks with the same properties in a single operation.
+
+
+</td></tr>
+<tr><td>
+
+[validateCanonicalName(name)](./sdk.validatecanonicalname.md)
+
+
+</td><td>
+
+Validate that a name is a non-empty camelCase identifier suitable for derivation into kebab-case and snake\_case display names.
+
+Returns `null` if valid, or an error message describing the violation.
+
 
 </td></tr>
 <tr><td>
 
 [validateDateString(dateStr)](./sdk.validatedatestring.md)
 
+
 </td><td>
 
-Validate a date string for use with AppleScript. Returns null if valid (or empty), or a CliError if invalid.
+Validate a date string before it is forwarded to `toOmniJSDate`<!-- -->. Returns null if valid (or empty), or a CliError if invalid.
 
-Note: We do basic validation here; the actual date parsing is done by AppleScript and more detailed errors come from there.
+This is a cheap pre-flight check. The OmniJS layer ultimately calls the JS `Date` constructor, which produces the authoritative error.
+
 
 </td></tr>
 <tr><td>
 
 [validateEstimatedMinutes(minutes)](./sdk.validateestimatedminutes.md)
 
+
 </td><td>
 
 Validate an estimated minutes value. Returns null if valid (or undefined), or a CliError if invalid.
+
 
 </td></tr>
 <tr><td>
 
 [validateFolderName(name)](./sdk.validatefoldername.md)
 
+
 </td><td>
 
 Validate a folder name. Returns null if valid (or empty), or a CliError if invalid.
+
 
 </td></tr>
 <tr><td>
 
 [validateId(id, type)](./sdk.validateid.md)
 
+
 </td><td>
 
 Validate an OmniFocus ID string. IDs are alphanumeric with possible dashes/underscores. Returns null if valid, or a CliError if invalid.
+
 
 </td></tr>
 <tr><td>
 
 [validatePaginationParams(limit, offset)](./sdk.validatepaginationparams.md)
 
+
 </td><td>
 
 Validate pagination parameters (limit and offset). Returns null if valid, or a CliError if invalid.
+
 
 </td></tr>
 <tr><td>
 
 [validateProjectName(name)](./sdk.validateprojectname.md)
 
+
 </td><td>
 
 Validate a project name. Returns null if valid (or empty), or a CliError if invalid.
+
 
 </td></tr>
 <tr><td>
 
 [validateRepetitionRule(rule)](./sdk.validaterepetitionrule.md)
 
+
 </td><td>
 
 Validate a repetition rule. Returns null if valid (or undefined), or a CliError if invalid.
+
 
 </td></tr>
 <tr><td>
 
 [validateSearchQuery(query)](./sdk.validatesearchquery.md)
 
+
 </td><td>
 
 Validate a search query. Returns null if valid, or a CliError if invalid.
+
 
 </td></tr>
 <tr><td>
 
 [validateTagName(name)](./sdk.validatetagname.md)
 
+
 </td><td>
 
 Validate a tag name for creation/update. Returns null if valid, or a CliError if invalid.
+
 
 </td></tr>
 <tr><td>
 
 [validateTags(tags)](./sdk.validatetags.md)
 
+
 </td><td>
 
 Validate a list of tag names. Returns null if valid, or a CliError if any tag is invalid.
+
+
+</td></tr>
+<tr><td>
+
+[wrapOmniJS(body)](./sdk.wrapomnijs.md)
+
+
+</td><td>
+
+Build an OmniJS script that wraps the body in a try/catch and returns JSON-encoded results or error information.
+
 
 </td></tr>
 </tbody></table>
@@ -812,693 +1206,1103 @@ Validate a list of tag names. Returns null if valid, or a CliError if any tag is
 
 Interface
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [AddAttachmentResult](./sdk.addattachmentresult.md)
 
+
 </td><td>
 
 Result of adding an attachment.
 
+
 </td></tr>
 <tr><td>
 
-[AppleScriptResult](./sdk.applescriptresult.md)
+[ApplyRepetitionRuleResult](./sdk.applyrepetitionruleresult.md)
+
 
 </td><td>
 
-Result of executing an AppleScript.
+Result from applying a repetition rule to a task.
+
 
 </td></tr>
 <tr><td>
 
 [ArchiveOptions](./sdk.archiveoptions.md)
 
+
 </td><td>
 
 Options for archiving tasks.
+
 
 </td></tr>
 <tr><td>
 
 [ArchiveResult](./sdk.archiveresult.md)
 
+
 </td><td>
 
 Result of archive operation.
+
+
+</td></tr>
+<tr><td>
+
+[BaseListQueryOptions](./sdk.baselistqueryoptions.md)
+
+
+</td><td>
+
+Options that apply to every list endpoint regardless of entity. Entity-specific predicate flags live on the per-entity option type (TaskQueryOptions, ProjectQueryOptions, etc.) which extends this.
+
 
 </td></tr>
 <tr><td>
 
 [BatchCompleteItem](./sdk.batchcompleteitem.md)
 
+
 </td><td>
 
 Batch complete result item
+
 
 </td></tr>
 <tr><td>
 
 [BatchDeferItem](./sdk.batchdeferitem.md)
 
+
 </td><td>
 
 Item in batch defer result.
+
 
 </td></tr>
 <tr><td>
 
 [BatchDeleteItem](./sdk.batchdeleteitem.md)
 
+
 </td><td>
 
 Batch delete result item
+
 
 </td></tr>
 <tr><td>
 
 [BatchResult](./sdk.batchresult.md)
 
+
 </td><td>
 
 Result from a batch operation.
+
+
+</td></tr>
+<tr><td>
+
+[BuildListQueryBodyArgs](./sdk.buildlistquerybodyargs.md)
+
+
+</td><td>
+
+Arguments for [buildListQueryBody()](./sdk.buildlistquerybody.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ClearRepetitionRuleResult](./sdk.clearrepetitionruleresult.md)
+
+
+</td><td>
+
+Result from clearing a repetition rule from a task.
+
 
 </td></tr>
 <tr><td>
 
 [CliError](./sdk.clierror.md)
 
+
 </td><td>
 
 Structured error representation for CLI output.
+
 
 </td></tr>
 <tr><td>
 
 [CliOutput](./sdk.clioutput.md)
 
+
 </td><td>
 
 Standard CLI output format for all commands.
+
+
+</td></tr>
+<tr><td>
+
+[CommandDescriptor](./sdk.commanddescriptor.md)
+
+
+</td><td>
+
+Declarative description of a single command on the ofocus surface.
+
+One descriptor drives all three consumers: - The SDK function (the `handler`<!-- -->). - The CLI: name → kebab-case subcommand, `inputSchema` → Commander options, `description` → help text. - The MCP server: name → snake\_case tool, `inputSchema` → tool input schema, `description` → tool description shown to the agent.
+
+Defining one descriptor per command means the surfaces never drift. New commands land in the registry and propagate to CLI + MCP automatically.
+
 
 </td></tr>
 <tr><td>
 
 [CommandInfo](./sdk.commandinfo.md)
 
+
 </td><td>
 
 Metadata about a CLI command for semantic activation by AI agents.
+
 
 </td></tr>
 <tr><td>
 
 [CompactResult](./sdk.compactresult.md)
 
+
 </td><td>
 
 Result of compact operation.
+
+
+</td></tr>
+<tr><td>
+
+[CompiledAggregate](./sdk.compiledaggregate.md)
+
+
+</td><td>
+
+Result of compiling aggregate options.
+
+
+</td></tr>
+<tr><td>
+
+[CompiledPredicates](./sdk.compiledpredicates.md)
+
+
+</td><td>
+
+Result of compiling task predicates: a list of boolean JS expressions that each evaluate against the task variable `t`<!-- -->, and any validation errors collected along the way.
+
+The expressions are AND-combined by the caller via `buildListQueryBody`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[CompiledProjection](./sdk.compiledprojection.md)
+
+
+</td><td>
+
+Result of compiling a field projection.
+
+`mapExpression` is a JavaScript function literal of the form `function(t) { return { ... }; }` that can be used directly as a callback to `Array.prototype.map` inside an OmniJS body.
+
+
+</td></tr>
+<tr><td>
+
+[CompiledSort](./sdk.compiledsort.md)
+
+
+</td><td>
+
+Result of compiling a sort.
+
+`comparator` is either `null` (no sort) or a JS function expression of the form `function(a, b) { ... }` suitable for `Array.prototype.sort`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[CompileProjectionOptions](./sdk.compileprojectionoptions.md)
+
+
+</td><td>
+
+Options accepted by [compileProjection()](./sdk.compileprojection.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[CompileSortOptions](./sdk.compilesortoptions.md)
+
+
+</td><td>
+
+Options accepted by [compileSort()](./sdk.compilesort.md)<!-- -->.
+
 
 </td></tr>
 <tr><td>
 
 [CompleteResult](./sdk.completeresult.md)
 
+
 </td><td>
 
 Result from completing a task.
+
 
 </td></tr>
 <tr><td>
 
 [CreateFolderOptions](./sdk.createfolderoptions.md)
 
+
 </td><td>
 
 Options for creating a folder.
+
 
 </td></tr>
 <tr><td>
 
 [CreateFromTemplateOptions](./sdk.createfromtemplateoptions.md)
 
+
 </td><td>
 
 Options for creating from a template.
+
 
 </td></tr>
 <tr><td>
 
 [CreateFromTemplateResult](./sdk.createfromtemplateresult.md)
 
+
 </td><td>
 
 Result of creating from a template.
+
+
+</td></tr>
+<tr><td>
+
+[CreatePerspectiveOptions](./sdk.createperspectiveoptions.md)
+
+
+</td><td>
+
+Options for creating a perspective from an archive payload.
+
+Note: OmniJS does not expose a public `Perspective.Custom.fromArchive()` factory. createPerspective() will return a structured unsupported-operation failure if called. This interface is defined so callers can forward-declare their intent and the SDK can surface a clear error rather than throwing.
+
+
+</td></tr>
+<tr><td>
+
+[CreatePerspectiveResult](./sdk.createperspectiveresult.md)
+
+
+</td><td>
+
+Result from creating a perspective.
+
 
 </td></tr>
 <tr><td>
 
 [CreateProjectOptions](./sdk.createprojectoptions.md)
 
+
 </td><td>
 
 Options for creating a project.
+
 
 </td></tr>
 <tr><td>
 
 [CreateTagOptions](./sdk.createtagoptions.md)
 
+
 </td><td>
 
 Options for creating a tag.
+
 
 </td></tr>
 <tr><td>
 
 [DeferOptions](./sdk.deferoptions.md)
 
+
 </td><td>
 
 Options for deferring a task.
+
 
 </td></tr>
 <tr><td>
 
 [DeferredQueryOptions](./sdk.deferredqueryoptions.md)
 
+
 </td><td>
 
 Options for querying deferred tasks.
+
+Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) so callers get the full shared-query vocabulary (sort, fields, count, groupBy, etc.) in addition to the deferred-specific predicates.
+
 
 </td></tr>
 <tr><td>
 
 [DeferResult](./sdk.deferresult.md)
 
+
 </td><td>
 
 Result from deferring a task.
+
 
 </td></tr>
 <tr><td>
 
 [DeleteFolderResult](./sdk.deletefolderresult.md)
 
+
 </td><td>
 
 Result from deleting a folder.
+
+
+</td></tr>
+<tr><td>
+
+[DeletePerspectiveResult](./sdk.deleteperspectiveresult.md)
+
+
+</td><td>
+
+Result from deleting a perspective.
+
 
 </td></tr>
 <tr><td>
 
 [DeleteProjectResult](./sdk.deleteprojectresult.md)
 
+
 </td><td>
 
 Result from deleting a project.
+
 
 </td></tr>
 <tr><td>
 
 [DeleteResult](./sdk.deleteresult.md)
 
+
 </td><td>
 
 Result from deleting a task.
+
 
 </td></tr>
 <tr><td>
 
 [DeleteTagResult](./sdk.deletetagresult.md)
 
+
 </td><td>
 
 Result from deleting a tag.
+
 
 </td></tr>
 <tr><td>
 
 [DeleteTemplateResult](./sdk.deletetemplateresult.md)
 
+
 </td><td>
 
 Result of deleting a template.
+
 
 </td></tr>
 <tr><td>
 
 [DropProjectResult](./sdk.dropprojectresult.md)
 
+
 </td><td>
 
 Result from dropping a project.
+
 
 </td></tr>
 <tr><td>
 
 [DropResult](./sdk.dropresult.md)
 
+
 </td><td>
 
 Result from dropping a task.
+
 
 </td></tr>
 <tr><td>
 
 [DuplicateTaskOptions](./sdk.duplicatetaskoptions.md)
 
+
 </td><td>
 
 Options for duplicating a task.
+
 
 </td></tr>
 <tr><td>
 
 [DuplicateTaskResult](./sdk.duplicatetaskresult.md)
 
+
 </td><td>
 
 Result from duplicating a task.
+
+
+</td></tr>
+<tr><td>
+
+[EntityFieldSpec](./sdk.entityfieldspec.md)
+
+
+</td><td>
+
+Allowlist of fields the agent may request from a list endpoint, paired with the entity's compact default projection.
+
+
+</td></tr>
+<tr><td>
+
+[EvaluateScriptInput](./sdk.evaluatescriptinput.md)
+
+
+</td><td>
+
+Input for the `evaluateScript` command.
+
+Exactly one of `script` or `file` must be provided.
+
+
+</td></tr>
+<tr><td>
+
+[FieldGetter](./sdk.fieldgetter.md)
+
+
+</td><td>
+
+An OmniJS field accessor for a single field on an entity.
+
+`omnijsExpr` is a JavaScript expression where `t` is the bound entity variable. The expression should produce a JSON-serializable value.
+
 
 </td></tr>
 <tr><td>
 
 [FocusResult](./sdk.focusresult.md)
 
+
 </td><td>
 
 Result from focus operations.
+
 
 </td></tr>
 <tr><td>
 
 [FolderQueryOptions](./sdk.folderqueryoptions.md)
 
+
 </td><td>
 
-Options for querying folders.
+Options for querying folders. Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) with the full predicate vocabulary supported by the OmniJS folder query compiler.
+
+Every field is optional; only fields that are explicitly set contribute a filter condition to the compiled query.
+
 
 </td></tr>
 <tr><td>
 
 [ForecastOptions](./sdk.forecastoptions.md)
 
+
 </td><td>
 
 Options for querying forecast tasks.
+
+Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) so callers get the full shared-query vocabulary (sort, fields, count, groupBy, etc.) in addition to the forecast-specific predicates.
+
+
+</td></tr>
+<tr><td>
+
+[GroupKeySpec](./sdk.groupkeyspec.md)
+
+
+</td><td>
+
+Valid group keys per entity. The OmniJS expression returns the bucket name (string). Synthetic buckets (e.g., `dueBucket`<!-- -->) compute a coarse label.
+
 
 </td></tr>
 <tr><td>
 
 [InboxOptions](./sdk.inboxoptions.md)
 
+
 </td><td>
 
 Options for adding a task to the inbox.
+
 
 </td></tr>
 <tr><td>
 
 [ListAttachmentsResult](./sdk.listattachmentsresult.md)
 
+
 </td><td>
 
 Result of listing attachments.
+
 
 </td></tr>
 <tr><td>
 
 [ListTemplatesResult](./sdk.listtemplatesresult.md)
 
+
 </td><td>
 
 Result of listing templates.
+
 
 </td></tr>
 <tr><td>
 
 [OFAttachment](./sdk.ofattachment.md)
 
+
 </td><td>
 
 Attachment information.
+
 
 </td></tr>
 <tr><td>
 
 [OFFolder](./sdk.offolder.md)
 
+
 </td><td>
 
 OmniFocus folder representation.
+
 
 </td></tr>
 <tr><td>
 
 [OFPerspective](./sdk.ofperspective.md)
 
+
 </td><td>
 
 OmniFocus perspective representation.
+
 
 </td></tr>
 <tr><td>
 
 [OFProject](./sdk.ofproject.md)
 
+
 </td><td>
 
 OmniFocus project representation.
+
 
 </td></tr>
 <tr><td>
 
 [OFTag](./sdk.oftag.md)
 
+
 </td><td>
 
 OmniFocus tag representation.
+
 
 </td></tr>
 <tr><td>
 
 [OFTask](./sdk.oftask.md)
 
+
 </td><td>
 
 OmniFocus task representation.
+
 
 </td></tr>
 <tr><td>
 
 [OFTaskWithChildren](./sdk.oftaskwithchildren.md)
 
+
 </td><td>
 
 OmniFocus task with hierarchy information.
+
+
+</td></tr>
+<tr><td>
+
+[OmniJSResult](./sdk.omnijsresult.md)
+
+
+</td><td>
+
+Result of executing an OmniJS script via OmniFocus's evaluate javascript.
+
 
 </td></tr>
 <tr><td>
 
 [OpenResult](./sdk.openresult.md)
 
+
 </td><td>
 
 Result from opening an item.
+
 
 </td></tr>
 <tr><td>
 
 [PaginatedResult](./sdk.paginatedresult.md)
 
+
 </td><td>
 
 Paginated result wrapper with metadata.
+
 
 </td></tr>
 <tr><td>
 
 [PaginationOptions](./sdk.paginationoptions.md)
 
+
 </td><td>
 
 Common pagination options for query functions.
+
+
+</td></tr>
+<tr><td>
+
+[ParsedDate](./sdk.parseddate.md)
+
+
+</td><td>
+
+A successfully-parsed date, normalized to ISO 8601 UTC.
+
 
 </td></tr>
 <tr><td>
 
 [ParsedQuickInput](./sdk.parsedquickinput.md)
 
+
 </td><td>
 
 Parsed result from quick capture input.
+
 
 </td></tr>
 <tr><td>
 
 [PerspectiveQueryOptions](./sdk.perspectivequeryoptions.md)
 
+
 </td><td>
 
 Options for querying a perspective.
+
 
 </td></tr>
 <tr><td>
 
 [ProjectQueryOptions](./sdk.projectqueryoptions.md)
 
+
 </td><td>
 
-Options for querying projects.
+Options for querying projects. Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) with the full predicate vocabulary supported by the OmniJS project query compiler.
+
+Every field is optional; only fields that are explicitly set contribute a filter condition to the compiled query.
+
 
 </td></tr>
 <tr><td>
 
 [ProjectTemplate](./sdk.projecttemplate.md)
 
+
 </td><td>
 
 A project template definition.
+
 
 </td></tr>
 <tr><td>
 
 [QuickOptions](./sdk.quickoptions.md)
 
+
 </td><td>
 
 Quick capture options.
+
 
 </td></tr>
 <tr><td>
 
 [RemoveAttachmentResult](./sdk.removeattachmentresult.md)
 
+
 </td><td>
 
 Result of removing an attachment.
+
+
+</td></tr>
+<tr><td>
+
+[RenamePerspectiveResult](./sdk.renameperspectiveresult.md)
+
+
+</td><td>
+
+Result from renaming a perspective.
+
 
 </td></tr>
 <tr><td>
 
 [RepetitionRule](./sdk.repetitionrule.md)
 
+
 </td><td>
 
 Repetition rule for recurring tasks.
+
+Maps to OmniFocus's `Task.RepetitionRule` constructor: `new Task.RepetitionRule(ruleString, method)`
+
+Supported combinations (per RFC 5545 §3.3.10): - \*\*Daily\*\*: `{ frequency: "daily", interval: N }` - \*\*Weekly with days\*\*: `{ frequency: "weekly", daysOfWeek: [1,3,5] }` → `FREQ=WEEKLY;BYDAY=MO,WE,FR` - \*\*Monthly by day-of-month\*\*: `{ frequency: "monthly", dayOfMonth: 15 }` → `FREQ=MONTHLY;BYMONTHDAY=15` - \*\*Monthly by Nth weekday\*\*: `{ frequency: "monthly", daysOfWeek: [1], daysOfWeekPositions: [1] }` → `FREQ=MONTHLY;BYDAY=1MO` (first Monday) - \*\*Monthly cross-product\*\*: `{ frequency: "monthly", daysOfWeek: [1,3], daysOfWeekPositions: [1,-1] }` → `FREQ=MONTHLY;BYDAY=1MO,1WE,-1MO,-1WE` (first and last Monday and Wednesday) - \*\*Yearly\*\*: `{ frequency: "yearly" }` - \*\*Yearly with months\*\*: `{ frequency: "yearly", monthsOfYear: [3,6,9,12] }` → `FREQ=YEARLY;BYMONTH=3,6,9,12`
+
 
 </td></tr>
 <tr><td>
 
 [ReviewIntervalResult](./sdk.reviewintervalresult.md)
 
+
 </td><td>
 
 Result from getting or setting review interval.
+
 
 </td></tr>
 <tr><td>
 
 [ReviewResult](./sdk.reviewresult.md)
 
+
 </td><td>
 
 Result from a review operation.
+
 
 </td></tr>
 <tr><td>
 
 [SaveTemplateOptions](./sdk.savetemplateoptions.md)
 
+
 </td><td>
 
 Options for saving a template.
+
 
 </td></tr>
 <tr><td>
 
 [SaveTemplateResult](./sdk.savetemplateresult.md)
 
+
 </td><td>
 
 Result of saving a template.
+
 
 </td></tr>
 <tr><td>
 
 [SearchOptions](./sdk.searchoptions.md)
 
+
 </td><td>
 
 Options for searching tasks.
+
+Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) so callers get the full shared-query vocabulary (sort, fields, count, groupBy, etc.) in addition to the search-specific `scope` and `includeCompleted` flags.
+
 
 </td></tr>
 <tr><td>
 
 [StatsOptions](./sdk.statsoptions.md)
 
+
 </td><td>
 
 Options for querying statistics.
+
 
 </td></tr>
 <tr><td>
 
 [StatsResult](./sdk.statsresult.md)
 
+
 </td><td>
 
 Statistics result.
+
 
 </td></tr>
 <tr><td>
 
 [SubtaskQueryOptions](./sdk.subtaskqueryoptions.md)
 
+
 </td><td>
 
 Options for querying subtasks.
+
+Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) so callers get the full shared-query vocabulary (sort, fields, count, groupBy, etc.) in addition to the subtask-specific predicates.
+
 
 </td></tr>
 <tr><td>
 
 [SyncResult](./sdk.syncresult.md)
 
+
 </td><td>
 
 Result of sync operation.
+
 
 </td></tr>
 <tr><td>
 
 [SyncStatus](./sdk.syncstatus.md)
 
+
 </td><td>
 
 Sync status information.
+
 
 </td></tr>
 <tr><td>
 
 [TagQueryOptions](./sdk.tagqueryoptions.md)
 
+
 </td><td>
 
-Options for querying tags.
+Options for querying tags. Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) with the full predicate vocabulary supported by the OmniJS tag query compiler.
+
+Every field is optional; only fields that are explicitly set contribute a filter condition to the compiled query.
+
 
 </td></tr>
 <tr><td>
 
 [TaskPaperExportOptions](./sdk.taskpaperexportoptions.md)
 
+
 </td><td>
 
 Options for exporting to TaskPaper format.
+
 
 </td></tr>
 <tr><td>
 
 [TaskPaperExportResult](./sdk.taskpaperexportresult.md)
 
+
 </td><td>
 
 Result of a TaskPaper export.
+
 
 </td></tr>
 <tr><td>
 
 [TaskPaperImportOptions](./sdk.taskpaperimportoptions.md)
 
+
 </td><td>
 
 Options for importing from TaskPaper format.
+
 
 </td></tr>
 <tr><td>
 
 [TaskPaperImportResult](./sdk.taskpaperimportresult.md)
 
+
 </td><td>
 
 Result of a TaskPaper import.
+
 
 </td></tr>
 <tr><td>
 
 [TaskQueryOptions](./sdk.taskqueryoptions.md)
 
+
 </td><td>
 
-Options for querying tasks.
+Options for querying tasks. Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) with the full predicate vocabulary supported by the OmniJS task query compiler.
+
+Every field is optional; only fields that are explicitly set contribute a filter condition to the compiled query.
+
 
 </td></tr>
 <tr><td>
 
 [TaskUpdateOptions](./sdk.taskupdateoptions.md)
 
+
 </td><td>
 
 Options for updating a task.
+
 
 </td></tr>
 <tr><td>
 
 [TemplateSummary](./sdk.templatesummary.md)
 
+
 </td><td>
 
 Template summary info for listing.
+
 
 </td></tr>
 <tr><td>
 
 [TemplateTask](./sdk.templatetask.md)
 
+
 </td><td>
 
 A task within a template (without OmniFocus-specific IDs).
+
 
 </td></tr>
 <tr><td>
 
 [UpdateFolderOptions](./sdk.updatefolderoptions.md)
 
+
 </td><td>
 
 Options for updating a folder.
+
 
 </td></tr>
 <tr><td>
 
 [UpdateProjectOptions](./sdk.updateprojectoptions.md)
 
+
 </td><td>
 
 Options for updating a project.
+
 
 </td></tr>
 <tr><td>
 
 [UpdateTagOptions](./sdk.updatetagoptions.md)
 
+
 </td><td>
 
 Options for updating a tag.
+
 
 </td></tr>
 <tr><td>
 
 [UrlResult](./sdk.urlresult.md)
 
+
 </td><td>
 
 Result from URL generation.
+
 
 </td></tr>
 </tbody></table>
@@ -1509,36 +2313,849 @@ Result from URL generation.
 
 Variable
 
+
 </th><th>
 
 Description
 
+
 </th></tr></thead>
 <tbody><tr><td>
 
+[addAttachmentDescriptor](./sdk.addattachmentdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `attach` command.
+
+Drives CLI subcommand `attach` and MCP tool `attachment_add`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[addToInboxDescriptor](./sdk.addtoinboxdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the inbox-add command.
+
+Drives the CLI subcommand `inbox` (kebab-case override of the canonical `addToInbox`<!-- -->) and the MCP tool `inbox_add` (snake\_case override). The Zod schema is intentionally flat — agents and CLI users get one knob per concept rather than a nested `repeat` object that's awkward to fill in. The handler reassembles the repetition fields into the SDK function's nested `RepetitionRule`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[applyRepetitionRuleDescriptor](./sdk.applyrepetitionruledescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `apply-repetition` command.
+
+Drives the CLI subcommand `apply-repetition` and the MCP tool `task_apply_repetition`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[archiveTasksDescriptor](./sdk.archivetasksdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `archive` command.
+
+Drives CLI subcommand `archive` and MCP tool `archive`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[clearRepetitionRuleDescriptor](./sdk.clearrepetitionruledescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `clear-repetition` command.
+
+Drives the CLI subcommand `clear-repetition` and the MCP tool `task_clear_repetition`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[compactDatabaseDescriptor](./sdk.compactdatabasedescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `compact` command.
+
+Drives CLI subcommand `compact` and MCP tool `compact_database`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[completeTaskDescriptor](./sdk.completetaskdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `complete` command.
+
+Drives the CLI subcommand `complete` and the MCP tool `task_complete`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[completeTasksDescriptor](./sdk.completetasksdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `complete-batch` command.
+
+Drives the CLI subcommand `complete-batch` and the MCP tool `tasks_complete_batch`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[createFolderDescriptor](./sdk.createfolderdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `create-folder` command.
+
+Drives the CLI subcommand `create-folder` and the MCP tool `folder_create`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[createFromTemplateDescriptor](./sdk.createfromtemplatedescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `template-create` command.
+
+Drives CLI subcommand `template-create` and MCP tool `template_create_project`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[createProjectDescriptor](./sdk.createprojectdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `create-project` command.
+
+Drives the CLI subcommand `create-project` and the MCP tool `project_create`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[createSubtaskDescriptor](./sdk.createsubtaskdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `subtask` command.
+
+Drives the CLI subcommand `subtask` and the MCP tool `subtask_create`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[createTagDescriptor](./sdk.createtagdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `create-tag` command.
+
+Drives the CLI subcommand `create-tag` and the MCP tool `tag_create`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deferTaskDescriptor](./sdk.defertaskdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `defer` command.
+
+Drives the CLI subcommand `defer` and the MCP tool `task_defer`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deferTasksDescriptor](./sdk.defertasksdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `defer-batch` command.
+
+Drives the CLI subcommand `defer-batch` and the MCP tool `tasks_defer_batch`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deleteFolderDescriptor](./sdk.deletefolderdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `delete-folder` command.
+
+Drives the CLI subcommand `delete-folder` and the MCP tool `folder_delete`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deleteProjectDescriptor](./sdk.deleteprojectdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `delete-project` command.
+
+Drives the CLI subcommand `delete-project` and the MCP tool `project_delete`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deleteTagDescriptor](./sdk.deletetagdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `delete-tag` command.
+
+Drives the CLI subcommand `delete-tag` and the MCP tool `tag_delete`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deleteTaskDescriptor](./sdk.deletetaskdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `delete` command.
+
+Drives the CLI subcommand `delete` and the MCP tool `task_delete`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deleteTasksDescriptor](./sdk.deletetasksdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `delete-batch` command.
+
+Drives the CLI subcommand `delete-batch` and the MCP tool `tasks_delete_batch`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[deleteTemplateDescriptor](./sdk.deletetemplatedescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `template-delete` command.
+
+Drives CLI subcommand `template-delete` and MCP tool `template_delete`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[dropTaskDescriptor](./sdk.droptaskdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `drop` command.
+
+Drives the CLI subcommand `drop` and the MCP tool `task_drop`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[duplicateTaskDescriptor](./sdk.duplicatetaskdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `duplicate` command.
+
+Drives the CLI subcommand `duplicate` and the MCP tool `task_duplicate`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [ErrorCode](./sdk.errorcode.md)
+
 
 </td><td>
 
 Error codes for semantic error handling.
 
+
 </td></tr>
 <tr><td>
 
-[jsonHelpers](./sdk.jsonhelpers.md)
+[evaluateScriptDescriptor](./sdk.evaluatescriptdescriptor.md)
+
 
 </td><td>
 
-AppleScript helper functions for JSON serialization. These must be defined at the top level (outside tell blocks).
+Centralized descriptor for the `eval` command.
+
+Drives the CLI subcommand `ofocus eval` and the MCP tool `omnifocus_eval`<!-- -->.
+
+\#\# Agent guidance
+
+This tool is an \*\*escape hatch for edge cases\*\*. Before reaching for it, agents should prefer the deterministic query commands (`tasks`<!-- -->, `projects`<!-- -->, `folders`<!-- -->, `tags`<!-- -->, `forecast`<!-- -->, `search`<!-- -->, `deferred`<!-- -->, and their filter / sort / projection flags). Those commands cover the vast majority of read and write operations with no scripting required.
+
+Use `omnifocus_eval` only when no combination of flags on the existing commands covers the need. When `eval` is genuinely necessary, narrate the intent in plain language first, then show the script — the user should be able to read the explanation and verify it matches the code before it runs.
+
+\*\*Security note\*\*: The script runs unsandboxed in the user's OmniFocus and can mutate any task, project, folder, tag, or perspective. Treat this like running shell code on the user's machine.
+
 
 </td></tr>
 <tr><td>
 
-[MAX_PAGINATION_LIMIT](./sdk.max_pagination_limit.md)
+[exportTaskPaperDescriptor](./sdk.exporttaskpaperdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `export` command.
+
+Drives CLI subcommand `export` and MCP tool `export_taskpaper`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[focusOnDescriptor](./sdk.focusondescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `focus` command.
+
+Drives CLI subcommand `focus` and MCP tool `focus_set`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[folderFieldSpec](./sdk.folderfieldspec.md)
+
+
+</td><td>
+
+Field specification for [OFFolder](./sdk.offolder.md)<!-- -->-shaped queries.
+
+Default fields match the mandatory wire shape of OFFolder exactly. Additional fields (flattenedProjectCount, flattenedFolderCount, status) are available via opt-in `--fields` but are NOT part of the default projection.
+
+OmniJS API: each Folder has `id.primaryKey`<!-- -->, `name`<!-- -->, `parent` (Folder\|null), `folders` (direct children), `projects` (direct child projects), `flattenedFolders`<!-- -->, `flattenedProjects`<!-- -->, `status` (Folder.Status enum).
+
+
+</td></tr>
+<tr><td>
+
+[generateUrlDescriptor](./sdk.generateurldescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `url` command.
+
+Drives CLI subcommand `url` and MCP tool `generate_url`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[getFocusedDescriptor](./sdk.getfocuseddescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `focused` command.
+
+Drives CLI subcommand `focused` and MCP tool `focus_get`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[getReviewIntervalDescriptor](./sdk.getreviewintervaldescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `review-interval-get` command.
+
+Drives MCP tool `project_review_interval_get`<!-- -->. The CLI exposes both get and set through the combined `review-interval` command (hand-wired).
+
+
+</td></tr>
+<tr><td>
+
+[getSyncStatusDescriptor](./sdk.getsyncstatusdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `sync-status` command.
+
+Drives CLI subcommand `sync-status` and MCP tool `sync_status`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[getTemplateDescriptor](./sdk.gettemplatedescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `template-get` command.
+
+Drives CLI subcommand `template-get` and MCP tool `template_get`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[importTaskPaperDescriptor](./sdk.importtaskpaperdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `import` command.
+
+Drives CLI subcommand `import` and MCP tool `import_taskpaper`<!-- -->.
+
+Note: The CLI `import` command reads the TaskPaper content from a file path argument; the MCP tool accepts the raw content string directly. The descriptor uses `content` as the primary input, matching the MCP surface. The CLI hand-wired registration reads the file and passes its contents.
+
+
+</td></tr>
+<tr><td>
+
+[listAttachmentsDescriptor](./sdk.listattachmentsdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `attachments` command.
+
+Drives CLI subcommand `attachments` and MCP tool `attachments_list`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[listFoldersDescriptor](./sdk.listfoldersdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `folders` command.
+
+Drives the CLI subcommand `folders` and the MCP tool `folders_list`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[listPerspectivesDescriptor](./sdk.listperspectivesdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `perspectives` command.
+
+Drives CLI subcommand `perspectives` and MCP tool `perspectives_list`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[listProjectsDescriptor](./sdk.listprojectsdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `projects` command.
+
+Drives the CLI subcommand `projects` and the MCP tool `projects_list`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[listTagsDescriptor](./sdk.listtagsdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `tags` command.
+
+Drives the CLI subcommand `tags` and the MCP tool `tags_list`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[listTemplatesDescriptor](./sdk.listtemplatesdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `template-list` command.
+
+Drives CLI subcommand `template-list` and MCP tool `templates_list`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[MAX\_PAGINATION\_LIMIT](./sdk.max_pagination_limit.md)
+
 
 </td><td>
 
 Maximum allowed limit for pagination queries. Set high enough for legitimate use cases but low enough to prevent abuse.
+
+
+</td></tr>
+<tr><td>
+
+[moveTaskToParentDescriptor](./sdk.movetasktoparentdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `move-to-parent` command.
+
+Drives the CLI subcommand `move-to-parent` and the MCP tool `task_move`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[openItemDescriptor](./sdk.openitemdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `open` command.
+
+Drives CLI subcommand `open` and MCP tool `open`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[projectFieldSpec](./sdk.projectfieldspec.md)
+
+
+</td><td>
+
+Field specification for [OFProject](./sdk.ofproject.md)<!-- -->-shaped queries.
+
+The default field set is compact; extended fields (dates, review metadata, etc.) are available via opt-in `--fields`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[queryDeferredDescriptor](./sdk.querydeferreddescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the deferred-list command.
+
+Drives the CLI subcommand `deferred` and the MCP tool `deferred_list`<!-- -->. The schema field names (`deferredAfter`<!-- -->, `deferredBefore`<!-- -->) match the historical CLI/MCP surface; the handler maps them onto the SDK's canonical `deferAfter` / `deferBefore` option names.
+
+
+</td></tr>
+<tr><td>
+
+[queryForecastDescriptor](./sdk.queryforecastdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the forecast command.
+
+Drives the CLI subcommand `forecast` and the MCP tool `forecast`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[queryPerspectiveDescriptor](./sdk.queryperspectivedescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `perspective` command.
+
+Drives CLI subcommand `perspective` and MCP tool `perspective_query`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[queryProjectsForReviewDescriptor](./sdk.queryprojectsforreviewdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `projects-for-review` command.
+
+Drives CLI subcommand `projects-for-review` and MCP tool `projects_for_review`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[querySubtasksDescriptor](./sdk.querysubtasksdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `subtasks` command.
+
+Drives the CLI subcommand `subtasks` and the MCP tool `subtasks_list`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[quickCaptureDescriptor](./sdk.quickcapturedescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the quick-capture command.
+
+Drives the CLI subcommand `quick` and the MCP tool `quick_add`<!-- -->. The positional `input` carries the natural-language entry string; `note` appends extra note text.
+
+
+</td></tr>
+<tr><td>
+
+[removeAttachmentDescriptor](./sdk.removeattachmentdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `detach` command.
+
+Drives CLI subcommand `detach` and MCP tool `attachment_remove`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[reviewProjectDescriptor](./sdk.reviewprojectdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `review` command.
+
+Drives CLI subcommand `review` and MCP tool `project_review`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[saveTemplateDescriptor](./sdk.savetemplatedescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `template-save` command.
+
+Drives CLI subcommand `template-save` and MCP tool `template_save`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[searchTasksDescriptor](./sdk.searchtasksdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the search command.
+
+Drives the CLI subcommand `search` and the MCP tool `search`<!-- -->. The schema intentionally exposes only the search-specific knobs (scope, limit, includeCompleted) — the richer query vocabulary remains available through the [searchTasks()](./sdk.searchtasks.md) SDK function for callers that need it.
+
+
+</td></tr>
+<tr><td>
+
+[setReviewIntervalDescriptor](./sdk.setreviewintervaldescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `review-interval-set` command.
+
+Drives MCP tool `project_review_interval_set`<!-- -->. The CLI exposes both get and set through the combined `review-interval` command (hand-wired).
+
+
+</td></tr>
+<tr><td>
+
+[tagFieldSpec](./sdk.tagfieldspec.md)
+
+
+</td><td>
+
+Field specification for [OFTag](./sdk.oftag.md)<!-- -->-shaped queries.
+
+The default field set (`id`<!-- -->, `name`<!-- -->, `availableTaskCount`<!-- -->) matches the existing `OFTag` wire shape exactly so default output is byte-for-byte compatible. Additional fields are opt-in via the `fields` option.
+
+
+</td></tr>
+<tr><td>
+
+[taskFieldSpec](./sdk.taskfieldspec.md)
+
+
+</td><td>
+
+Field specification for [OFTask](./sdk.oftask.md)<!-- -->-shaped queries.
+
+Field names matching the existing `OFTask` interface map to the same OmniJS expressions used by the legacy projection so default output is byte-for-byte compatible for the canonical default set.
+
+
+</td></tr>
+<tr><td>
+
+[taskGroupKeys](./sdk.taskgroupkeys.md)
+
+
+</td><td>
+
+Group keys supported by `tasks --group-by`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[triggerSyncDescriptor](./sdk.triggersyncdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `sync` command.
+
+Drives CLI subcommand `sync` and MCP tool `sync_trigger`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[unfocusDescriptor](./sdk.unfocusdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `unfocus` command.
+
+Drives CLI subcommand `unfocus` and MCP tool `focus_clear`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[updateFolderDescriptor](./sdk.updatefolderdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `update-folder` command.
+
+Drives the CLI subcommand `update-folder` and the MCP tool `folder_update`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[updateProjectDescriptor](./sdk.updateprojectdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `update-project` command.
+
+Drives the CLI subcommand `update-project` and the MCP tool `project_update`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[updateTagDescriptor](./sdk.updatetagdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `update-tag` command.
+
+Drives the CLI subcommand `update-tag` and the MCP tool `tag_update`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[updateTasksDescriptor](./sdk.updatetasksdescriptor.md)
+
+
+</td><td>
+
+Centralized descriptor for the `update-batch` command.
+
+Drives the CLI subcommand `update-batch` and the MCP tool `tasks_update_batch`<!-- -->.
+
 
 </td></tr>
 </tbody></table>
@@ -1549,16 +3166,104 @@ Maximum allowed limit for pagination queries. Set high enough for legitimate use
 
 Type Alias
 
+
 </th><th>
 
 Description
 
+
 </th></tr></thead>
 <tbody><tr><td>
 
-[ErrorCode](./sdk.errorcode.md)
+[AggregateShape](./sdk.aggregateshape.md)
+
 
 </td><td>
 
+Result shape an aggregate compiles to.
+
+
+</td></tr>
+<tr><td>
+
+[ErrorCode](./sdk.errorcode.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[EvaluateScriptResult](./sdk.evaluatescriptresult.md)
+
+
+</td><td>
+
+Result from evaluating an OmniJS script.
+
+The payload type is intentionally `unknown` — the user wrote arbitrary code; the SDK cannot promise a shape.
+
+
+</td></tr>
+<tr><td>
+
+[NumericRange](./sdk.numericrange.md)
+
+
+</td><td>
+
+Inclusive integer range `[min, max]` for numeric predicates like `estimateBetween`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[QueryResult](./sdk.queryresult.md)
+
+
+</td><td>
+
+Discriminated wire shape returned by every list endpoint.
+
+
+</td></tr>
+<tr><td>
+
+[ResolvedCommandDescriptor](./sdk.resolvedcommanddescriptor.md)
+
+
+</td><td>
+
+Resolved descriptor returned by [defineCommand()](./sdk.definecommand.md)<!-- -->.
+
+Every CLI / MCP-derivable field is present (no `undefined`<!-- -->) so consumers can rely on the values without having to apply the same kebab/snake derivation rules themselves.
+
+
+</td></tr>
+<tr><td>
+
+[TagMode](./sdk.tagmode.md)
+
+
+</td><td>
+
+Tag-matching semantics for predicates that accept a single tag or a list.
+
+- `"all"` (default) — task must have every tag in the list - `"any"` — task must have at least one tag in the list - `"none"` — task must have none of the tags in the list
+
+
+</td></tr>
+<tr><td>
+
+[TaskStatus](./sdk.taskstatus.md)
+
+
+</td><td>
+
+High-level task status — a convenience predicate that collapses a few flags into a single named bucket.
+
+
 </td></tr>
 </tbody></table>
+

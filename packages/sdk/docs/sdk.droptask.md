@@ -9,9 +9,7 @@ Drop a task in OmniFocus (marks as dropped but keeps history).
 **Signature:**
 
 ```typescript
-export declare function dropTask(
-  taskId: string
-): Promise<CliOutput<DropResult>>;
+export declare function dropTask(taskId: string): Promise<CliOutput<DropResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function dropTask(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[DropResult](./sdk.dropresult.md)<!-- -->&gt;&gt;
+

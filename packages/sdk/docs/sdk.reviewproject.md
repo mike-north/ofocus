@@ -4,14 +4,12 @@
 
 ## reviewProject() function
 
-Mark a project as reviewed in OmniFocus.
+Mark a project as reviewed in OmniFocus. Sets the lastReviewDate to now, which OmniFocus uses to recompute nextReviewDate.
 
 **Signature:**
 
 ```typescript
-export declare function reviewProject(
-  projectId: string
-): Promise<CliOutput<ReviewResult>>;
+export declare function reviewProject(projectId: string): Promise<CliOutput<ReviewResult>>;
 ```
 
 ## Parameters
@@ -20,24 +18,30 @@ export declare function reviewProject(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 projectId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -45,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[ReviewResult](./sdk.reviewresult.md)<!-- -->&gt;&gt;
+

@@ -9,10 +9,7 @@ Add an attachment to a task.
 **Signature:**
 
 ```typescript
-export declare function addAttachment(
-  taskId: string,
-  filePath: string
-): Promise<CliOutput<AddAttachmentResult>>;
+export declare function addAttachment(taskId: string, filePath: string): Promise<CliOutput<AddAttachmentResult>>;
 ```
 
 ## Parameters
@@ -21,39 +18,48 @@ export declare function addAttachment(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 taskId
 
+
 </td><td>
 
 string
 
+
 </td><td>
 
 Task ID to add attachment to
+
 
 </td></tr>
 <tr><td>
 
 filePath
 
+
 </td><td>
 
 string
 
+
 </td><td>
 
 Path to the file to attach
+
 
 </td></tr>
 </tbody></table>
@@ -61,3 +67,4 @@ Path to the file to attach
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[AddAttachmentResult](./sdk.addattachmentresult.md)<!-- -->&gt;&gt;
+

@@ -6,11 +6,14 @@
 
 Options for searching tasks.
 
+Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) so callers get the full shared-query vocabulary (sort, fields, count, groupBy, etc.) in addition to the search-specific `scope` and `includeCompleted` flags.
+
 **Signature:**
 
 ```typescript
-export interface SearchOptions
+export interface SearchOptions extends BaseListQueryOptions 
 ```
+**Extends:** [BaseListQueryOptions](./sdk.baselistqueryoptions.md)
 
 ## Properties
 
@@ -18,62 +21,60 @@ export interface SearchOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [includeCompleted?](./sdk.searchoptions.includecompleted.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean \| undefined
 
-</td><td>
-
-_(Optional)_
-
-</td></tr>
-<tr><td>
-
-[limit?](./sdk.searchoptions.limit.md)
 
 </td><td>
 
-</td><td>
+_(Optional)_ When `true`<!-- -->, completed tasks are included in the results. Default: `false`<!-- -->.
 
-number \| undefined
-
-</td><td>
-
-_(Optional)_
 
 </td></tr>
 <tr><td>
 
 [scope?](./sdk.searchoptions.scope.md)
 
+
 </td><td>
+
 
 </td><td>
 
 "name" \| "note" \| "both" \| undefined
 
+
 </td><td>
 
-_(Optional)_
+_(Optional)_ Which fields to search against. - `"name"` — task name only - `"note"` — task note only - `"both"` (default) — either name or note
+
 
 </td></tr>
 </tbody></table>
+

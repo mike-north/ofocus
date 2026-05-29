@@ -9,7 +9,7 @@ Result from deleting a task.
 **Signature:**
 
 ```typescript
-export interface DeleteResult
+export interface DeleteResult 
 ```
 
 ## Properties
@@ -18,43 +18,56 @@ export interface DeleteResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [deleted](./sdk.deleteresult.deleted.md)
 
+
 </td><td>
+
 
 </td><td>
 
 true
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [taskId](./sdk.deleteresult.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

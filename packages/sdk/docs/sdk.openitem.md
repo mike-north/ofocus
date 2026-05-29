@@ -18,24 +18,30 @@ export declare function openItem(id: string): Promise<CliOutput<OpenResult>>;
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 id
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -43,3 +49,4 @@ string
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OpenResult](./sdk.openresult.md)<!-- -->&gt;&gt;
+

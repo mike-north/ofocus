@@ -4,15 +4,12 @@
 
 ## setReviewInterval() function
 
-Set the review interval for a project in OmniFocus. The interval is specified in days.
+Set the review interval for a project in OmniFocus. The interval is specified in days and stored as a `{ steps, unit }` object using "days" as the unit.
 
 **Signature:**
 
 ```typescript
-export declare function setReviewInterval(
-  projectId: string,
-  days: number
-): Promise<CliOutput<ReviewIntervalResult>>;
+export declare function setReviewInterval(projectId: string, days: number): Promise<CliOutput<ReviewIntervalResult>>;
 ```
 
 ## Parameters
@@ -21,35 +18,44 @@ export declare function setReviewInterval(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 projectId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 days
 
+
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -57,3 +63,4 @@ number
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[ReviewIntervalResult](./sdk.reviewintervalresult.md)<!-- -->&gt;&gt;
+

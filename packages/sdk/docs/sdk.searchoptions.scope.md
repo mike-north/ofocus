@@ -4,6 +4,8 @@
 
 ## SearchOptions.scope property
 
+Which fields to search against. - `"name"` — task name only - `"note"` — task note only - `"both"` (default) — either name or note
+
 **Signature:**
 
 ```typescript

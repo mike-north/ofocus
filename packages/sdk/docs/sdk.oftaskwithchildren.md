@@ -9,9 +9,8 @@ OmniFocus task with hierarchy information.
 **Signature:**
 
 ```typescript
-export interface OFTaskWithChildren extends OFTask
+export interface OFTaskWithChildren extends OFTask 
 ```
-
 **Extends:** [OFTask](./sdk.oftask.md)
 
 ## Properties
@@ -20,69 +19,90 @@ export interface OFTaskWithChildren extends OFTask
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [childTaskCount](./sdk.oftaskwithchildren.childtaskcount.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [isActionGroup](./sdk.oftaskwithchildren.isactiongroup.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [parentTaskId](./sdk.oftaskwithchildren.parenttaskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [parentTaskName](./sdk.oftaskwithchildren.parenttaskname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

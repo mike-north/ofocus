@@ -9,7 +9,7 @@ Result of listing attachments.
 **Signature:**
 
 ```typescript
-export interface ListAttachmentsResult
+export interface ListAttachmentsResult 
 ```
 
 ## Properties
@@ -18,62 +18,79 @@ export interface ListAttachmentsResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [attachments](./sdk.listattachmentsresult.attachments.md)
 
+
 </td><td>
+
 
 </td><td>
 
 [OFAttachment](./sdk.ofattachment.md)<!-- -->\[\]
 
+
 </td><td>
 
 List of attachments
+
 
 </td></tr>
 <tr><td>
 
 [taskId](./sdk.listattachmentsresult.taskid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Task ID
+
 
 </td></tr>
 <tr><td>
 
 [taskName](./sdk.listattachmentsresult.taskname.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Task name
 
+
 </td></tr>
 </tbody></table>
+

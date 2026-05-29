@@ -9,10 +9,7 @@ Validate an OmniFocus ID string. IDs are alphanumeric with possible dashes/under
 **Signature:**
 
 ```typescript
-export declare function validateId(
-  id: string,
-  type: "task" | "project" | "tag" | "folder" | "item"
-): CliError | null;
+export declare function validateId(id: string, type: "task" | "project" | "tag" | "folder" | "item"): CliError | null;
 ```
 
 ## Parameters
@@ -21,35 +18,44 @@ export declare function validateId(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 id
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 type
 
+
 </td><td>
 
 "task" \| "project" \| "tag" \| "folder" \| "item"
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -57,3 +63,4 @@ type
 **Returns:**
 
 [CliError](./sdk.clierror.md) \| null
+

@@ -9,7 +9,7 @@ Result from deleting a tag.
 **Signature:**
 
 ```typescript
-export interface DeleteTagResult
+export interface DeleteTagResult 
 ```
 
 ## Properties
@@ -18,43 +18,56 @@ export interface DeleteTagResult
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [deleted](./sdk.deletetagresult.deleted.md)
 
+
 </td><td>
+
 
 </td><td>
 
 true
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [tagId](./sdk.deletetagresult.tagid.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

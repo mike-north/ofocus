@@ -4,9 +4,9 @@
 
 ## validateDateString() function
 
-Validate a date string for use with AppleScript. Returns null if valid (or empty), or a CliError if invalid.
+Validate a date string before it is forwarded to `toOmniJSDate`<!-- -->. Returns null if valid (or empty), or a CliError if invalid.
 
-Note: We do basic validation here; the actual date parsing is done by AppleScript and more detailed errors come from there.
+This is a cheap pre-flight check. The OmniJS layer ultimately calls the JS `Date` constructor, which produces the authoritative error.
 
 **Signature:**
 

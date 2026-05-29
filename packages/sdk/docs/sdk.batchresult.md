@@ -9,7 +9,7 @@ Result from a batch operation.
 **Signature:**
 
 ```typescript
-export interface BatchResult<T>
+export interface BatchResult<T> 
 ```
 
 ## Properties
@@ -18,69 +18,90 @@ export interface BatchResult<T>
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [failed](./sdk.batchresult.failed.md)
 
+
 </td><td>
+
 
 </td><td>
 
 { id: string; error: string; }\[\]
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [succeeded](./sdk.batchresult.succeeded.md)
 
+
 </td><td>
+
 
 </td><td>
 
 T\[\]
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [totalFailed](./sdk.batchresult.totalfailed.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 [totalSucceeded](./sdk.batchresult.totalsucceeded.md)
 
+
 </td><td>
+
 
 </td><td>
 
 number
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+

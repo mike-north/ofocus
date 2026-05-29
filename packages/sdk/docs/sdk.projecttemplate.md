@@ -9,7 +9,7 @@ A project template definition.
 **Signature:**
 
 ```typescript
-export interface ProjectTemplate
+export interface ProjectTemplate 
 ```
 
 ## Properties
@@ -18,137 +18,174 @@ export interface ProjectTemplate
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [createdAt](./sdk.projecttemplate.createdat.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Creation timestamp
+
 
 </td></tr>
 <tr><td>
 
 [defaultFolder](./sdk.projecttemplate.defaultfolder.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
 
 Default folder for instantiation
+
 
 </td></tr>
 <tr><td>
 
 [description](./sdk.projecttemplate.description.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
 
 Template description
+
 
 </td></tr>
 <tr><td>
 
 [name](./sdk.projecttemplate.name.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string
 
+
 </td><td>
 
 Template name
+
 
 </td></tr>
 <tr><td>
 
 [note](./sdk.projecttemplate.note.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
 
 Project note
+
 
 </td></tr>
 <tr><td>
 
 [sequential](./sdk.projecttemplate.sequential.md)
 
+
 </td><td>
+
 
 </td><td>
 
 boolean
 
+
 </td><td>
 
 Whether the project is sequential
+
 
 </td></tr>
 <tr><td>
 
 [sourceProject](./sdk.projecttemplate.sourceproject.md)
 
+
 </td><td>
+
 
 </td><td>
 
 string \| null
 
+
 </td><td>
 
 Source project name (for reference)
+
 
 </td></tr>
 <tr><td>
 
 [tasks](./sdk.projecttemplate.tasks.md)
 
+
 </td><td>
+
 
 </td><td>
 
 [TemplateTask](./sdk.templatetask.md)<!-- -->\[\]
 
+
 </td><td>
 
 Tasks in the template
 
+
 </td></tr>
 </tbody></table>
+

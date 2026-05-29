@@ -4,15 +4,16 @@
 
 ## TagQueryOptions interface
 
-Options for querying tags.
+Options for querying tags. Extends [BaseListQueryOptions](./sdk.baselistqueryoptions.md) with the full predicate vocabulary supported by the OmniJS tag query compiler.
+
+Every field is optional; only fields that are explicitly set contribute a filter condition to the compiled query.
 
 **Signature:**
 
 ```typescript
-export interface TagQueryOptions extends PaginationOptions
+export interface TagQueryOptions extends BaseListQueryOptions 
 ```
-
-**Extends:** [PaginationOptions](./sdk.paginationoptions.md)
+**Extends:** [BaseListQueryOptions](./sdk.baselistqueryoptions.md)
 
 ## Properties
 
@@ -20,32 +21,516 @@ export interface TagQueryOptions extends PaginationOptions
 
 Property
 
+
 </th><th>
 
 Modifiers
+
 
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
 
+
 </th></tr></thead>
 <tbody><tr><td>
 
-[parent?](./sdk.tagqueryoptions.parent.md)
+[allowsNextAction?](./sdk.tagqueryoptions.allowsnextaction.md)
+
 
 </td><td>
 
+
 </td><td>
 
-string \| undefined
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match tags that allow next-action promotion.
+
+
+</td></tr>
+<tr><td>
+
+[ancestor?](./sdk.tagqueryoptions.ancestor.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Ancestor tag — transitive. A tag matches if any tag in its ancestor chain (parent, parent's parent, ...) has the given name or primary key. Accepts a single value or an array (any-of).
+
+
+</td></tr>
+<tr><td>
+
+[availableTaskCountEq?](./sdk.tagqueryoptions.availabletaskcounteq.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
 
 </td><td>
 
 _(Optional)_
 
+
+</td></tr>
+<tr><td>
+
+[availableTaskCountGt?](./sdk.tagqueryoptions.availabletaskcountgt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[availableTaskCountLt?](./sdk.tagqueryoptions.availabletaskcountlt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[caseSensitive?](./sdk.tagqueryoptions.casesensitive.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Case sensitivity for string predicates. Default: `false`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[childTagCountGt?](./sdk.tagqueryoptions.childtagcountgt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[childTagCountLt?](./sdk.tagqueryoptions.childtagcountlt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[disallowsNextAction?](./sdk.tagqueryoptions.disallowsnextaction.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match tags that do not allow next-action promotion.
+
+
+</td></tr>
+<tr><td>
+
+[hasAvailableTasks?](./sdk.tagqueryoptions.hasavailabletasks.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match tags with at least one available task (availableTaskCount &gt; 0).
+
+
+</td></tr>
+<tr><td>
+
+[hasChildren?](./sdk.tagqueryoptions.haschildren.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match only tags that have at least one direct child tag.
+
+
+</td></tr>
+<tr><td>
+
+[hasNote?](./sdk.tagqueryoptions.hasnote.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match tags that have a non-empty note.
+
+
+</td></tr>
+<tr><td>
+
+[isRoot?](./sdk.tagqueryoptions.isroot.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match only root tags (no parent).
+
+
+</td></tr>
+<tr><td>
+
+[nameContains?](./sdk.tagqueryoptions.namecontains.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameEquals?](./sdk.tagqueryoptions.nameequals.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameRegex?](./sdk.tagqueryoptions.nameregex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[nameStarts?](./sdk.tagqueryoptions.namestarts.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[noAvailableTasks?](./sdk.tagqueryoptions.noavailabletasks.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match tags with no available tasks.
+
+
+</td></tr>
+<tr><td>
+
+[noChildren?](./sdk.tagqueryoptions.nochildren.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match only tags with no child tags.
+
+
+</td></tr>
+<tr><td>
+
+[noteContains?](./sdk.tagqueryoptions.notecontains.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[noteRegex?](./sdk.tagqueryoptions.noteregex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[notIsRoot?](./sdk.tagqueryoptions.notisroot.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| undefined
+
+
+</td><td>
+
+_(Optional)_ Match only non-root tags (has a parent). Inverse of isRoot.
+
+
+</td></tr>
+<tr><td>
+
+[parent?](./sdk.tagqueryoptions.parent.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string \| string\[\] \| undefined
+
+
+</td><td>
+
+_(Optional)_ Exact parent tag — name or id. A tag matches if its direct parent has the given name or primary key. Accepts a single value or an array (any-of).
+
+
+</td></tr>
+<tr><td>
+
+[remainingTaskCountGt?](./sdk.tagqueryoptions.remainingtaskcountgt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[remainingTaskCountLt?](./sdk.tagqueryoptions.remainingtaskcountlt.md)
+
+
+</td><td>
+
+
+</td><td>
+
+number \| undefined
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[status?](./sdk.tagqueryoptions.status.md)
+
+
+</td><td>
+
+
+</td><td>
+
+TagStatus \| undefined
+
+
+</td><td>
+
+_(Optional)_ Filter by tag status (active \| on-hold \| dropped).
+
+
 </td></tr>
 </tbody></table>
+

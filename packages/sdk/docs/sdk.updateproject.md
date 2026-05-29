@@ -9,10 +9,7 @@ Update an existing project in OmniFocus.
 **Signature:**
 
 ```typescript
-export declare function updateProject(
-  projectId: string,
-  options: UpdateProjectOptions
-): Promise<CliOutput<OFProject>>;
+export declare function updateProject(projectId: string, options: UpdateProjectOptions): Promise<CliOutput<OFProject>>;
 ```
 
 ## Parameters
@@ -21,35 +18,44 @@ export declare function updateProject(
 
 Parameter
 
+
 </th><th>
 
 Type
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 projectId
 
+
 </td><td>
 
 string
 
+
 </td><td>
+
 
 </td></tr>
 <tr><td>
 
 options
 
+
 </td><td>
 
 [UpdateProjectOptions](./sdk.updateprojectoptions.md)
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
@@ -57,3 +63,4 @@ options
 **Returns:**
 
 Promise&lt;[CliOutput](./sdk.clioutput.md)<!-- -->&lt;[OFProject](./sdk.ofproject.md)<!-- -->&gt;&gt;
+
