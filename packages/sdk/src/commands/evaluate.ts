@@ -50,8 +50,8 @@ export type EvaluateScriptResult = unknown;
 const inputSchema = z.object({
   script: z
     .string()
-    .max(
-      MAX_SCRIPT_BYTES,
+    .refine(
+      (s) => Buffer.byteLength(s, "utf-8") <= MAX_SCRIPT_BYTES,
       `Script must be ${String(MAX_SCRIPT_BYTES / 1024)} KB or less`
     )
     .optional()
@@ -81,45 +81,108 @@ const inputSchema = z.object({
 // ---------------------------------------------------------------------------
 
 /**
+ * Check whether a script body ends with a `return <expression>` statement.
+ *
+ * The heuristic works in three steps:
+ *
+ * 1. Strip trailing whitespace, then strip one optional trailing `;`.
+ * 2. Scan backwards through the stripped string for the **last** `return`
+ *    keyword that is preceded by a statement boundary (start of string,
+ *    newline, `;`, or `}`).
+ * 3. Verify that the substring from that `return` to the end of the stripped
+ *    string is bracket-balanced (`(`, `[`, `{`).  Balanced means we never see
+ *    a closing bracket without a matching opener, and all openers are closed
+ *    by the end.
+ *
+ * This correctly handles multi-line return expressions such as:
+ *
+ * ```js
+ * return {
+ *   foo: 1,
+ *   bar: 2
+ * };
+ * ```
+ *
+ * **Known limitation**: the heuristic does not tokenise JS, so a `return`
+ * that appears inside a string literal or comment is treated as real. In
+ * practice agent-authored scripts don't hit this case, and the OmniJS runtime
+ * would reject syntactically broken code anyway.
+ *
+ * @returns `true` if the body ends with a return statement, `false` otherwise.
+ */
+function endsWithReturn(body: string): boolean {
+  // Step 1: strip trailing whitespace, then one optional trailing semicolon.
+  let stripped = body.trimEnd();
+  if (stripped.endsWith(";")) {
+    stripped = stripped.slice(0, -1).trimEnd();
+  }
+
+  if (stripped.length === 0) {
+    return false;
+  }
+
+  // Step 2: find the last `return` keyword preceded by a statement boundary.
+  // Boundaries: start-of-string (^), newline (\n), semicolon (;), or `}`.
+  const returnPattern = /(?:^|[\n;}\s])return(?:\s|$)/g;
+  let lastReturnIndex = -1;
+  let match: RegExpExecArray | null;
+
+  while ((match = returnPattern.exec(stripped)) !== null) {
+    // The actual `return` keyword may be offset by the boundary character.
+    const returnStart = match.index + match[0].indexOf("return");
+    lastReturnIndex = returnStart;
+  }
+
+  if (lastReturnIndex === -1) {
+    return false;
+  }
+
+  // Step 3: verify the substring from `return` to end is bracket-balanced.
+  const tail = stripped.slice(lastReturnIndex);
+
+  // `return` alone (no expression) is not valid.
+  const afterReturn = tail.slice("return".length).trimStart();
+  if (afterReturn.length === 0) {
+    return false;
+  }
+
+  let depth = 0;
+  for (const ch of tail) {
+    if (ch === "(" || ch === "[" || ch === "{") {
+      depth++;
+    } else if (ch === ")" || ch === "]" || ch === "}") {
+      depth--;
+      if (depth < 0) {
+        // Closing bracket without matching opener — not a valid tail.
+        return false;
+      }
+    }
+  }
+
+  return depth === 0;
+}
+
+/**
  * Check that a script body ends with a `return <expression>` statement.
  *
- * We strip trailing whitespace and optional trailing semicolon, then check
- * whether the last non-empty line starts with `return` followed by at least
- * one non-whitespace character.  This rejects:
- * - Scripts that produce a value purely through expression evaluation (no `return`)
- * - Empty scripts
- * - Scripts that use `return` only as a keyword mid-expression but not as the last statement
+ * Uses {@link endsWithReturn} for multi-line–safe detection.
  *
  * @returns `null` if valid, or an error string if invalid.
  */
 function validateReturnStatement(body: string): string | null {
-  // Strip trailing whitespace line-by-line, then find the last non-empty line.
-  const lines = body.split("\n");
-  let lastLine = "";
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const trimmed = (lines[i] ?? "").trimEnd();
-    if (trimmed.length > 0) {
-      // Strip an optional trailing semicolon for the check.
-      lastLine = trimmed.endsWith(";")
-        ? trimmed.slice(0, -1).trimEnd()
-        : trimmed;
-      break;
-    }
-  }
+  const trimmed = body.trimEnd();
 
-  if (lastLine === "") {
+  if (trimmed.length === 0) {
     return (
       "Script body is empty. The last statement must be `return <expression>;` so " +
       "the result can be returned as JSON."
     );
   }
 
-  // Match `return` followed by at least one whitespace char and then something.
-  if (!/^return\s+[\s\S]+$/.test(lastLine)) {
+  if (!endsWithReturn(trimmed)) {
     return (
       "Script must end with a `return <expression>;` statement. " +
-      `Last effective line: "${lastLine}". ` +
-      "Add `return JSON.stringify(...);` or `return <value>;` as the final line."
+      "Add `return JSON.stringify(...);` or `return <value>;` as the final statement."
     );
   }
 
@@ -220,12 +283,15 @@ export async function evaluateScript(
     );
   }
 
-  // Enforce 64 KB cap on the resolved body (catches oversized files too).
-  if (body.length > MAX_SCRIPT_BYTES) {
+  // Enforce 64 KB byte cap on the resolved body (covers files read from disk
+  // and emoji-heavy inline scripts that would exceed 64 KB despite having
+  // fewer than MAX_SCRIPT_BYTES UTF-16 code units).
+  const byteLength = Buffer.byteLength(body, "utf-8");
+  if (byteLength > MAX_SCRIPT_BYTES) {
     return failure(
       createError(
         ErrorCode.VALIDATION_ERROR,
-        `Script must be ${String(MAX_SCRIPT_BYTES / 1024)} KB or less (got ${String(Math.ceil(body.length / 1024))} KB)`
+        `Script must be ${String(MAX_SCRIPT_BYTES / 1024)} KB or less (got ${String(Math.ceil(byteLength / 1024))} KB)`
       )
     );
   }

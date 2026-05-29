@@ -913,7 +913,7 @@ args?: Record<string, unknown> | undefined;
 script?: string | undefined;
 file?: string | undefined;
 }, unknown, z.ZodObject<{
-script: z.ZodOptional<z.ZodString>;
+script: z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>;
 file: z.ZodOptional<z.ZodString>;
 args: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
 }, "strip", z.ZodTypeAny, {

@@ -137,6 +137,30 @@ describe("input schema validation", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  // --- Regression tests for PR #40: size cap must count UTF-8 bytes, not code units ---
+  // MAX_SCRIPT_BYTES = 65536 (64 KB).
+
+  it("rejects an inline script whose UTF-8 byte length exceeds 64 KB even if code-unit count is under the limit (schema-level)", () => {
+    // Each emoji is 4 UTF-8 bytes but 2 UTF-16 code units.
+    // 16384 emoji → exactly 65536 bytes, then "return 1;" (9 bytes) pushes it over.
+    // Code-unit count: 32768 + 9 = 32777 (well under 65536 — old .length check would accept this).
+    const emoji = "😀"; // 😀 — 4 UTF-8 bytes, 2 UTF-16 code units
+    const oversized = emoji.repeat(16384) + "return 1;";
+    const result = evaluateScriptDescriptor.inputSchema.safeParse({
+      script: oversized,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts an inline script whose UTF-8 byte length is exactly at the 64 KB limit (schema-level)", () => {
+    // 65536 ASCII bytes → byteLength === 65536 === MAX_SCRIPT_BYTES exactly.
+    const atLimit = "x".repeat(65536);
+    const result = evaluateScriptDescriptor.inputSchema.safeParse({
+      script: atLimit,
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -236,6 +260,53 @@ describe("evaluateScript — return statement validation", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  // --- Regression tests for PR #40: multi-line return expressions were rejected ---
+
+  it("accepts multi-line return expressions (regression: PR #40 single-line bug) — object literal", async () => {
+    // Previously, the validator only checked the last non-empty line ("}" after
+    // stripping the trailing ";"), which fails the /^return\s+/ pattern.
+    mockRunOmniJS.mockResolvedValueOnce(okResult({ foo: 1, bar: 2 }));
+    const result = await evaluateScript({
+      script: "return {\n  foo: 1,\n  bar: 2\n};",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts multi-line return with JSON.stringify spanning multiple lines (regression: PR #40 single-line bug)", async () => {
+    mockRunOmniJS.mockResolvedValueOnce(okResult({ items: [] }));
+    const result = await evaluateScript({
+      script:
+        "const tasks = flattenedTasks;\n" +
+        "return JSON.stringify({\n" +
+        "  items: tasks.map(t => ({ id: t.id, name: t.name }))\n" +
+        "});",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts single-line script followed by a multi-line return (regression: PR #40 single-line bug)", async () => {
+    mockRunOmniJS.mockResolvedValueOnce(okResult(1));
+    const result = await evaluateScript({
+      script: "const x = 1;\nreturn x;",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts return followed by a multi-line array literal (regression: PR #40 single-line bug)", async () => {
+    mockRunOmniJS.mockResolvedValueOnce(okResult([1, 2, 3]));
+    const result = await evaluateScript({
+      script: "return [\n  1,\n  2,\n  3\n];",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a script where return has no expression (bare 'return' keyword)", async () => {
+    const result = await evaluateScript({ script: "return" });
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    expect(mockRunOmniJS).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -283,6 +354,43 @@ describe("evaluateScript — file reading", () => {
       expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(result.error?.message).toMatch(/64 KB/i);
       expect(mockRunOmniJS).not.toHaveBeenCalled();
+    } finally {
+      await rm(tmpFile, { force: true });
+    }
+  });
+
+  // --- Regression tests for PR #40: handler must use byte-accurate size check ---
+
+  it("rejects a file whose UTF-8 byte length exceeds 64 KB even if code-unit count is under the limit (handler, --file path)", async () => {
+    // 16384 emoji × 4 bytes = 65536 bytes; "return 1;" = 9 bytes → 65545 bytes total.
+    // Old body.length check: 32768 + 9 = 32777 code units → would have accepted.
+    const tmpFile = join(
+      tmpdir(),
+      `ofocus-eval-emoji-oversized-${Date.now()}.js`
+    );
+    const emoji = "😀";
+    const oversized = emoji.repeat(16384) + "return 1;";
+    await writeFile(tmpFile, oversized, "utf-8");
+    try {
+      const result = await evaluateScript({ file: tmpFile });
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(result.error?.message).toMatch(/64 KB/i);
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    } finally {
+      await rm(tmpFile, { force: true });
+    }
+  });
+
+  it("accepts a file that is just under the 64 KB byte limit (handler, --file path)", async () => {
+    // 65536 - 10 = 65526 ASCII bytes + "return 1;" (9 bytes) = 65535 bytes → under limit.
+    const tmpFile = join(tmpdir(), `ofocus-eval-near-limit-${Date.now()}.js`);
+    const body = "x".repeat(65536 - 10) + "\nreturn 1;";
+    await writeFile(tmpFile, body, "utf-8");
+    try {
+      mockRunOmniJS.mockResolvedValueOnce(okResult(1));
+      const result = await evaluateScript({ file: tmpFile });
+      expect(result.success).toBe(true);
     } finally {
       await rm(tmpFile, { force: true });
     }
