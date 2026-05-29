@@ -2898,24 +2898,24 @@ export function updateTask(taskId: string, options: TaskUpdateOptions): Promise<
 // @public
 export const updateTaskDescriptor: ResolvedCommandDescriptor<    {
 taskId: string;
-project?: string | undefined;
+title?: string | undefined;
 note?: string | undefined;
-estimatedMinutes?: number | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+project?: string | undefined;
 tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
+clearEstimate?: boolean | undefined;
 repeat?: {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-repeatMethod: "due-again" | "defer-another" | "scheduled";
 interval: number;
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
 } | undefined;
-title?: string | undefined;
-due?: string | undefined;
-defer?: string | undefined;
-flag?: boolean | undefined;
-clearEstimate?: boolean | undefined;
 clearRepeat?: boolean | undefined;
 }, OFTask, z.ZodObject<{
 taskId: z.ZodString;
@@ -2928,7 +2928,7 @@ project: z.ZodOptional<z.ZodString>;
 tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
 estimatedMinutes: z.ZodOptional<z.ZodNumber>;
 clearEstimate: z.ZodOptional<z.ZodBoolean>;
-repeat: z.ZodOptional<z.ZodObject<{
+repeat: z.ZodOptional<z.ZodEffects<z.ZodObject<{
 frequency: z.ZodEnum<["daily", "weekly", "monthly", "yearly"]>;
 interval: z.ZodNumber;
 repeatMethod: z.ZodEnum<["due-again", "defer-another", "scheduled"]>;
@@ -2938,63 +2938,63 @@ daysOfWeekPositions: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
 monthsOfYear: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
 }, "strip", z.ZodTypeAny, {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-repeatMethod: "due-again" | "defer-another" | "scheduled";
 interval: number;
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
 }, {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-repeatMethod: "due-again" | "defer-another" | "scheduled";
 interval: number;
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
-}>>;
+}>, {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+interval: number;
+repeatMethod: "due-again" | "defer-another" | "scheduled";
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+}, unknown>>;
 clearRepeat: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 taskId: string;
-project?: string | undefined;
+title?: string | undefined;
 note?: string | undefined;
-estimatedMinutes?: number | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+project?: string | undefined;
 tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
+clearEstimate?: boolean | undefined;
 repeat?: {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-repeatMethod: "due-again" | "defer-another" | "scheduled";
 interval: number;
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
 } | undefined;
-title?: string | undefined;
-due?: string | undefined;
-defer?: string | undefined;
-flag?: boolean | undefined;
-clearEstimate?: boolean | undefined;
 clearRepeat?: boolean | undefined;
 }, {
 taskId: string;
-project?: string | undefined;
-note?: string | undefined;
-estimatedMinutes?: number | undefined;
-tags?: string[] | undefined;
-repeat?: {
-frequency: "daily" | "weekly" | "monthly" | "yearly";
-repeatMethod: "due-again" | "defer-another" | "scheduled";
-interval: number;
-daysOfWeek?: number[] | undefined;
-dayOfMonth?: number | undefined;
-daysOfWeekPositions?: number[] | undefined;
-monthsOfYear?: number[] | undefined;
-} | undefined;
 title?: string | undefined;
+note?: string | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
+project?: string | undefined;
+tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
 clearEstimate?: boolean | undefined;
+repeat?: unknown;
 clearRepeat?: boolean | undefined;
 }>>;
 

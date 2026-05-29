@@ -230,8 +230,25 @@ function addOptionForField(
     return;
   }
 
-  // ZodString, ZodLiteral, ZodUnion, and anything unfamiliar: take a string
-  // value and let the schema do the runtime validation in safeParse.
+  // ZodUnion containing an array branch: emit as variadic so callers can pass
+  // multiple values (e.g. `--project A B C`).  The most common pattern is
+  // z.union([z.string(), z.array(z.string())]) — we detect any union that
+  // has at least one ZodArray option and at least one scalar option.
+  if (inner instanceof z.ZodUnion) {
+    const unionOptions = (
+      inner as z.ZodUnion<[z.ZodTypeAny, ...z.ZodTypeAny[]]>
+    ).options as z.ZodTypeAny[];
+    const hasArray = unionOptions.some(
+      (o) => unwrapField(o).inner instanceof z.ZodArray
+    );
+    if (hasArray) {
+      cmd.option(`${flag} <values...>`, description);
+      return;
+    }
+  }
+
+  // ZodString, ZodLiteral, ZodUnion (no array branch), and anything unfamiliar:
+  // take a string value and let the schema do the runtime validation in safeParse.
   cmd.option(`${flag} <value>`, description);
 }
 

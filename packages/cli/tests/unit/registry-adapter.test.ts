@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Command } from "commander";
 import { z } from "zod";
-import { defineCommand, commaSeparatedStringArray } from "@ofocus/sdk";
+import {
+  defineCommand,
+  commaSeparatedStringArray,
+  updateTaskDescriptor,
+} from "@ofocus/sdk";
 import { success, failure, ErrorCode, createError } from "@ofocus/sdk";
 import { registerCliCommand } from "../../src/registry-adapter.js";
 
@@ -501,5 +505,190 @@ describe("registerCliCommand", () => {
 
       expect(handler).toHaveBeenCalledWith({ fields: undefined });
     });
+  // ── union-containing-array fields are registered as variadic options ─────
+
+  it("registers z.union([z.string(), z.array(z.string())]) as a variadic <values...> option", () => {
+    const program = new Command();
+    const cmd = defineCommand({
+      name: "filterTasks",
+      cliName: "filter-tasks",
+      description: "Filter.",
+      inputSchema: z.object({
+        project: z
+          .union([z.string(), z.array(z.string())])
+          .optional()
+          .describe("project filter"),
+      }),
+      handler: async () => await Promise.resolve(success({ ok: true })),
+    });
+
+    registerCliCommand(program, cmd, () => undefined);
+
+    const sub = program.commands.find((c) => c.name() === "filter-tasks");
+    const opt = sub?.options.find((o) => o.long === "--project");
+    // variadic option has <values...> in its syntax string
+    expect(opt?.flags).toContain("<values...>");
+  });
+
+  it("passes multiple values for a union-array option as an array to the handler", async () => {
+    const handler = vi.fn(
+      async (input: { project?: string | string[] }) =>
+        await Promise.resolve(success({ project: input.project }))
+    );
+
+    const program = new Command();
+    const cmd = defineCommand({
+      name: "filterTasks",
+      cliName: "filter-tasks",
+      description: "Filter.",
+      inputSchema: z.object({
+        project: z.union([z.string(), z.array(z.string())]).optional(),
+      }),
+      handler,
+    });
+
+    registerCliCommand(program, cmd, () => undefined);
+    await program.parseAsync([
+      "node",
+      "test",
+      "filter-tasks",
+      "--project",
+      "Work",
+      "Home",
+    ]);
+
+    expect(handler).toHaveBeenCalledWith({ project: ["Work", "Home"] });
+  });
+
+  it("passes a single value for a union-array option as a one-element array to the handler", async () => {
+    const handler = vi.fn(
+      async (input: { project?: string | string[] }) =>
+        await Promise.resolve(success({ project: input.project }))
+    );
+
+    const program = new Command();
+    const cmd = defineCommand({
+      name: "filterTasks",
+      cliName: "filter-tasks",
+      description: "Filter.",
+      inputSchema: z.object({
+        project: z.union([z.string(), z.array(z.string())]).optional(),
+      }),
+      handler,
+    });
+
+    registerCliCommand(program, cmd, () => undefined);
+    await program.parseAsync([
+      "node",
+      "test",
+      "filter-tasks",
+      "--project",
+      "Work",
+    ]);
+
+    // Commander variadic always returns an array; z.union accepts it via the array branch
+    expect(handler).toHaveBeenCalledWith({ project: ["Work"] });
+  });
+});
+
+// ── Regression: --repeat JSON string for updateTaskDescriptor (CLI adapter) ─
+
+describe("updateTaskDescriptor via registerCliCommand — --repeat JSON string regression", () => {
+  beforeEach(() => {
+    process.exitCode = 0;
+  });
+
+  it("regression: parses --repeat JSON string into a RepetitionRule object (fixes CLI breakage)", async () => {
+    // Before the fix, the CLI adapter passed the raw string to
+    // RepetitionRuleSchema (a ZodObject) which rejected it with a type error.
+    // After the fix, z.preprocess parses the JSON string into an object first.
+    const handler = vi.fn(
+      async () =>
+        await Promise.resolve(
+          success({
+            id: "abc",
+            name: "T",
+            note: null,
+            flagged: false,
+            completed: false,
+            dueDate: null,
+            deferDate: null,
+            completionDate: null,
+            projectId: null,
+            projectName: null,
+            tags: [],
+            estimatedMinutes: null,
+          })
+        )
+    );
+
+    // We can't easily override the real handler without mocking omnijs, so
+    // instead we test the schema-level preprocessing directly: verify that
+    // the inputSchema on updateTaskDescriptor accepts a JSON string for repeat.
+    const jsonRepeat = JSON.stringify({
+      frequency: "weekly",
+      interval: 1,
+      repeatMethod: "due-again",
+      daysOfWeek: [1, 3, 5],
+    });
+
+    const parsed = updateTaskDescriptor.inputSchema.safeParse({
+      taskId: "abc123ABC-xyz789XYZ-12345678",
+      repeat: jsonRepeat,
+    });
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.repeat).toEqual({
+        frequency: "weekly",
+        interval: 1,
+        repeatMethod: "due-again",
+        daysOfWeek: [1, 3, 5],
+      });
+    }
+  });
+
+  it("regression: malformed --repeat JSON string produces VALIDATION_ERROR, not a crash", async () => {
+    // The preprocess catch block returns the raw string on parse failure;
+    // Zod then reports a validation error (expected object, received string)
+    // rather than letting a SyntaxError propagate.
+    const onOutput = vi.fn();
+
+    const program = new Command();
+    registerCliCommand(program, updateTaskDescriptor, onOutput);
+
+    await program.parseAsync([
+      "node",
+      "test",
+      "update",
+      "abc123ABC-xyz789XYZ-12345678",
+      "--repeat",
+      "not valid json",
+    ]);
+
+    expect(onOutput).toHaveBeenCalledOnce();
+    const [result] = onOutput.mock.calls[0]!;
+    expect((result as { success: boolean }).success).toBe(false);
+    expect((result as { error?: { code: string } }).error?.code).toBe(
+      ErrorCode.VALIDATION_ERROR
+    );
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("regression: valid repeat object (MCP path) still accepted without preprocessing", () => {
+    // Verify MCP path (object input) is unaffected by the preprocess wrapper.
+    const parsed = updateTaskDescriptor.inputSchema.safeParse({
+      taskId: "abc123ABC-xyz789XYZ-12345678",
+      repeat: {
+        frequency: "monthly",
+        interval: 2,
+        repeatMethod: "defer-another",
+      },
+    });
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.repeat?.frequency).toBe("monthly");
+    }
   });
 });

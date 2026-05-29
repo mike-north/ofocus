@@ -176,8 +176,9 @@ return JSON.stringify({
 }
 
 /**
- * Shared Zod schema for a repetition rule — used in both the MCP
- * `tasks_list` manual registration and the `updateTaskDescriptor`.
+ * Shared Zod schema for a repetition rule — used in the `updateTaskDescriptor`
+ * for both the MCP tool (object supplied directly) and the CLI adapter (JSON
+ * string via `--repeat '<json>'` which is preprocessed into an object).
  * Defined inline to keep it co-located with the descriptor.
  */
 const RepetitionRuleSchema = z.object({
@@ -215,11 +216,15 @@ const RepetitionRuleSchema = z.object({
 /**
  * Centralized descriptor for the `update` command.
  *
- * Drives the CLI subcommand `update` and the MCP tool `task_update`. The MCP
- * tool accepts the full `repeat` object directly; the CLI hand-wire above
- * converts `--repeat`/`--every`/`--repeat-method` flags into a
- * {@link RepetitionRule}. After migration the descriptor handler receives the
- * object already assembled.
+ * Drives the CLI subcommand `update` and the MCP tool `task_update`.
+ *
+ * The MCP tool supplies the `repeat` field as a JSON object directly.
+ * The CLI adapter receives every option as a string; `--repeat` must be
+ * passed as a JSON string. A `z.preprocess` wrapper on the `repeat` field
+ * transparently parses that JSON string into an object before Zod validates
+ * the shape, so the handler always receives a fully-typed object regardless
+ * of which transport was used. See the `repeat` field description for the
+ * expected JSON shape.
  *
  * @public
  */
@@ -248,7 +253,7 @@ export const updateTaskDescriptor = defineCommand({
     project: z
       .string()
       .optional()
-      .describe("Move to project (name or ID; empty string to move to inbox)"),
+      .describe("Move to project by name (empty string to move to inbox)"),
     tags: z
       .array(z.string())
       .optional()
@@ -261,9 +266,28 @@ export const updateTaskDescriptor = defineCommand({
       .boolean()
       .optional()
       .describe("Clear the estimated duration when true"),
-    repeat: RepetitionRuleSchema.optional().describe(
-      "Set a repetition rule on the task"
-    ),
+    repeat: z
+      .preprocess(
+        // CLI supplies --repeat as a JSON string; MCP supplies an object.
+        // If the value is a string, attempt JSON.parse — on failure return
+        // the raw string so Zod reports a clean VALIDATION_ERROR rather than
+        // throwing a SyntaxError.
+        (v) => {
+          if (typeof v !== "string") return v;
+          try {
+            return JSON.parse(v) as unknown;
+          } catch {
+            return v;
+          }
+        },
+        RepetitionRuleSchema
+      )
+      .optional()
+      .describe(
+        "Set a repetition rule on the task. " +
+          "MCP: pass as an object. " +
+          'CLI: pass as a JSON string, e.g. --repeat \'{"frequency":"weekly","interval":1,"repeatMethod":"due-again","daysOfWeek":[1,3,5]}\''
+      ),
     clearRepeat: z
       .boolean()
       .optional()
