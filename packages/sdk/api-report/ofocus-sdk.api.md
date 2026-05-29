@@ -2898,24 +2898,24 @@ export function updateTask(taskId: string, options: TaskUpdateOptions): Promise<
 // @public
 export const updateTaskDescriptor: ResolvedCommandDescriptor<    {
 taskId: string;
-title?: string | undefined;
-note?: string | undefined;
-due?: string | undefined;
-defer?: string | undefined;
-flag?: boolean | undefined;
 project?: string | undefined;
-tags?: string[] | undefined;
+note?: string | undefined;
 estimatedMinutes?: number | undefined;
-clearEstimate?: boolean | undefined;
+tags?: string[] | undefined;
 repeat?: {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-interval: number;
 repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
 } | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+clearEstimate?: boolean | undefined;
 clearRepeat?: boolean | undefined;
 }, OFTask, z.ZodObject<{
 taskId: z.ZodString;
@@ -2938,24 +2938,24 @@ daysOfWeekPositions: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
 monthsOfYear: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
 }, "strip", z.ZodTypeAny, {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-interval: number;
 repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
 }, {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-interval: number;
 repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
 }>, {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-interval: number;
 repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
@@ -2964,37 +2964,37 @@ monthsOfYear?: number[] | undefined;
 clearRepeat: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 taskId: string;
-title?: string | undefined;
-note?: string | undefined;
-due?: string | undefined;
-defer?: string | undefined;
-flag?: boolean | undefined;
 project?: string | undefined;
-tags?: string[] | undefined;
+note?: string | undefined;
 estimatedMinutes?: number | undefined;
-clearEstimate?: boolean | undefined;
+tags?: string[] | undefined;
 repeat?: {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
-interval: number;
 repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
 } | undefined;
-clearRepeat?: boolean | undefined;
-}, {
-taskId: string;
 title?: string | undefined;
-note?: string | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
-project?: string | undefined;
-tags?: string[] | undefined;
-estimatedMinutes?: number | undefined;
 clearEstimate?: boolean | undefined;
+clearRepeat?: boolean | undefined;
+}, {
+taskId: string;
+project?: string | undefined;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
 repeat?: unknown;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+clearEstimate?: boolean | undefined;
 clearRepeat?: boolean | undefined;
 }>>;
 
