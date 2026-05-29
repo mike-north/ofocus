@@ -161,7 +161,7 @@ export const commandRegistry: CommandInfo[] = [
     name: "perspective",
     description:
       "Query tasks from a specific perspective in OmniFocus. Returns tasks that match the perspective's filter criteria. Supports limiting the number of results. Note: Some perspectives may require OmniFocus UI interaction.",
-    usage: "ofocus perspective <name> [--limit <n>]",
+    usage: "ofocus perspective <name> [--limit <value>]",
   },
   {
     name: "review",
@@ -186,7 +186,7 @@ export const commandRegistry: CommandInfo[] = [
     name: "focus",
     description:
       "Focus on a specific project or folder in OmniFocus. Limits the view to show only items within the focused target. Matches the OmniFocus UI focus feature. Use for scoped work sessions on a particular area.",
-    usage: "ofocus focus <name> [--by-id]",
+    usage: "ofocus focus <target> [--by-id] [--no-by-id]",
   },
   {
     name: "unfocus",
@@ -239,7 +239,7 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Export tasks and projects to TaskPaper format. TaskPaper is a plain text format compatible with OmniFocus and other task managers. Supports filtering by project and including completed/dropped tasks. Output is written to stdout.",
     usage:
-      "ofocus export [--project <name>] [--include-completed] [--include-dropped]",
+      "ofocus export [--project <value>] [--include-completed] [--no-include-completed] [--include-dropped] [--no-include-dropped]",
   },
   {
     name: "import",
@@ -262,7 +262,7 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Save an existing project as a reusable template. Captures the project structure, task titles, notes, flags, tags, estimated durations, and relative date offsets. Templates are stored locally and can be instantiated to create new projects with the same structure.",
     usage:
-      "ofocus template-save <name> <source-project> [--description <text>]",
+      "ofocus template-save <name> <source-project> [--description <value>]",
   },
   {
     name: "template-list",
@@ -274,27 +274,27 @@ export const commandRegistry: CommandInfo[] = [
     name: "template-get",
     description:
       "Get full details of a specific project template by name. Returns the complete template structure including all tasks with their titles, notes, flags, tags, estimated durations, and relative date offsets. Use this to inspect a template before creating a project from it.",
-    usage: "ofocus template-get <name>",
+    usage: "ofocus template-get <template-name>",
   },
   {
     name: "template-create",
     description:
       "Create a new project from a saved template. Instantiates the template with all tasks, applying date offsets relative to the base date (defaults to today). Supports specifying a custom project name and target folder.",
     usage:
-      "ofocus template-create <template-name> [--project-name <name>] [--folder <name>] [--base-date <date>]",
+      "ofocus template-create <template-name> [--project-name <value>] [--folder <value>] [--base-date <value>]",
   },
   {
     name: "template-delete",
     description:
       "Delete a project template from local storage. This action cannot be undone. The template file is permanently removed from ~/.config/ofocus/templates/.",
-    usage: "ofocus template-delete <name>",
+    usage: "ofocus template-delete <template-name>",
   },
   // Phase 8: Attachments
   {
     name: "attach",
     description:
       "Add a file attachment to a task in OmniFocus. The file is copied into the OmniFocus database. Requires task ID and a valid file path. The original file remains unchanged.",
-    usage: "ofocus attach <task-id> <file>",
+    usage: "ofocus attach <task-id> <file-path>",
   },
   {
     name: "attachments",
@@ -306,7 +306,7 @@ export const commandRegistry: CommandInfo[] = [
     name: "detach",
     description:
       "Remove an attachment from a task in OmniFocus. Accepts either attachment ID or name. This removes the file from the OmniFocus database. This action cannot be undone.",
-    usage: "ofocus detach <task-id> <attachment-id-or-name>",
+    usage: "ofocus detach <task-id> <attachment-name>",
   },
   // Phase 8: Archive & Cleanup
   {
@@ -314,7 +314,7 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Archive completed or dropped tasks and projects in OmniFocus. Supports filtering by completion date, drop date, and project. Use --dry-run to preview what would be archived without making changes. Helps maintain database performance.",
     usage:
-      "ofocus archive [--completed-before <date>] [--dropped-before <date>] [--project <name>] [--dry-run]",
+      "ofocus archive [--completed-before <value>] [--dropped-before <value>] [--project <value>] [--dry-run] [--no-dry-run]",
   },
   {
     name: "compact",
@@ -381,6 +381,7 @@ export const commandRegistry: CommandInfo[] = [
       "Open an item in the OmniFocus user interface. Accepts any ID (task, project, folder, or tag) and automatically detects the item type. Activates OmniFocus and navigates to the item using the URL scheme.",
     usage: "ofocus open <id>",
   },
+
   {
     name: "review-interval",
     description:

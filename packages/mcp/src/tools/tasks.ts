@@ -14,9 +14,9 @@ import {
   deferTasksDescriptor,
   applyRepetitionRuleDescriptor,
   clearRepetitionRuleDescriptor,
+  openItemDescriptor,
   queryTasks,
   updateTask,
-  openItem,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
 import { registerMcpTool } from "../registry-adapter.js";
@@ -143,21 +143,6 @@ export function registerTaskTools(server: McpServer): void {
   registerMcpTool(server, applyRepetitionRuleDescriptor);
   registerMcpTool(server, clearRepetitionRuleDescriptor);
 
-  // open - Open an item in OmniFocus UI
-  server.registerTool(
-    "open",
-    {
-      description:
-        "Open an item in the OmniFocus user interface (task, project, folder, or tag)",
-      inputSchema: {
-        id: z
-          .string()
-          .describe("The ID of the item to open (auto-detects type)"),
-      },
-    },
-    async (params) => {
-      const result = await openItem(params.id);
-      return formatResult(result);
-    }
-  );
+  // open — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, openItemDescriptor);
 }
