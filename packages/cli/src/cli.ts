@@ -532,17 +532,20 @@ Use --format json|toon for machine output (default: json). Use --human for human
   // Uses a custom output handler to emit raw TaskPaper text in --human mode.
   registerCliCommand(program, exportTaskPaperDescriptor, (result, cmd) => {
     const globalOpts = getGlobalOpts(cmd);
-    if (getOutputFormat(globalOpts)) {
-      output(result, true);
-    } else if (result.success && result.data) {
-      const data = result.data as import("@ofocus/sdk").TaskPaperExportResult;
-      console.log(data.content);
-      console.error(
-        `\nExported ${String(data.taskCount)} tasks from ${String(data.projectCount)} projects`
-      );
+    const fmt = getOutputFormat(globalOpts);
+    if (fmt === "human") {
+      if (result.success && result.data) {
+        const data = result.data as import("@ofocus/sdk").TaskPaperExportResult;
+        console.log(data.content);
+        console.error(
+          `\nExported ${String(data.taskCount)} tasks from ${String(data.projectCount)} projects`
+        );
+      } else {
+        output(result, "human");
+        process.exitCode = 1;
+      }
     } else {
-      output(result, false);
-      process.exitCode = 1;
+      output(result, fmt);
     }
   });
 
