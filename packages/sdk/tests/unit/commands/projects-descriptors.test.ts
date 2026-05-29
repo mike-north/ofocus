@@ -16,20 +16,13 @@ vi.mock("../../../src/omnijs.js", async () => {
   };
 });
 
-import {
-  listProjectsDescriptor,
-  createProjectDescriptor,
-  updateProjectDescriptor,
-  deleteProjectDescriptor,
-} from "../../../src/commands/projects.js";
-import { runOmniJSWrapped } from "../../../src/omnijs.js";
-
-// Also import create-project descriptor from the right file
+import { listProjectsDescriptor } from "../../../src/commands/projects.js";
 import { createProjectDescriptor as cpDesc } from "../../../src/commands/create-project.js";
 import {
   updateProjectDescriptor as upDesc,
   deleteProjectDescriptor as dpDesc,
 } from "../../../src/commands/projects-crud.js";
+import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
 const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
 
