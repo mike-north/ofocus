@@ -158,7 +158,7 @@ describe("tasks_list MCP tool schema", () => {
     ).toEqual(expect.arrayContaining(["limit", "offset", "all"]));
   });
 
-  it("exposes the core task filter fields (project, tag, flagged, etc.) in its input schema", () => {
+  it("exposes the full filter/sort/projection/aggregation surface in its input schema", () => {
     type RegisterToolArgs = [
       name: string,
       config: { description: string; inputSchema: Record<string, unknown> },
@@ -179,18 +179,45 @@ describe("tasks_list MCP tool schema", () => {
     registerTaskTools(mockServer);
 
     const schema = registeredConfigs.get("tasks_list")!.inputSchema;
-    const expectedFields = [
-      "project",
-      "tag",
-      "dueBefore",
-      "dueAfter",
-      "flagged",
-      "completed",
-      "available",
-      "limit",
-      "offset",
-      "all",
-    ];
-    expect(Object.keys(schema).sort()).toEqual(expectedFields.sort());
+    const schemaKeys = Object.keys(schema);
+
+    // Core filter fields
+    expect(schemaKeys).toContain("project");
+    expect(schemaKeys).toContain("tag");
+    expect(schemaKeys).toContain("flagged");
+    expect(schemaKeys).toContain("completed");
+    expect(schemaKeys).toContain("available");
+    expect(schemaKeys).toContain("dueBefore");
+    expect(schemaKeys).toContain("dueAfter");
+
+    // Extended boolean predicates (newly exposed via descriptor)
+    expect(schemaKeys).toContain("folder");
+    expect(schemaKeys).toContain("tagMode");
+    expect(schemaKeys).toContain("inInbox");
+    expect(schemaKeys).toContain("hasDue");
+    expect(schemaKeys).toContain("noDue");
+    expect(schemaKeys).toContain("hasNote");
+    expect(schemaKeys).toContain("hasSubtasks");
+    expect(schemaKeys).toContain("status");
+
+    // Projection and sort
+    expect(schemaKeys).toContain("fields");
+    expect(schemaKeys).toContain("sort");
+    expect(schemaKeys).toContain("reverse");
+
+    // Shape modifiers
+    expect(schemaKeys).toContain("count");
+    expect(schemaKeys).toContain("first");
+    expect(schemaKeys).toContain("last");
+    expect(schemaKeys).toContain("idsOnly");
+    expect(schemaKeys).toContain("groupBy");
+
+    // Pagination
+    expect(schemaKeys).toContain("limit");
+    expect(schemaKeys).toContain("offset");
+    expect(schemaKeys).toContain("all");
+
+    // format is auto-injected by registerMcpTool
+    expect(schemaKeys).toContain("format");
   });
 });

@@ -21,9 +21,9 @@ export const commandRegistry: CommandInfo[] = [
   {
     name: "tasks",
     description:
-      "Query and filter tasks from OmniFocus. Supports filtering by project, tag, due date range, flagged status, completion state, and availability. Returns task details including ID, title, dates, project, tags, and hierarchy. Use --available to see only actionable tasks.",
+      "Query and filter tasks from OmniFocus. Supports filtering by project, tag, folder, due/defer dates, flagged status, completion state, availability, string matching, and more. Supports sorting, projection (--fields), shape modifiers (--count, --first, --last, --ids-only, --group-by), and pagination (--limit/--offset/--all). Returns task details including ID, title, dates, project, tags, and hierarchy.",
     usage:
-      "ofocus tasks [--project <name>] [--tag <name>] [--due-before <date>] [--due-after <date>] [--flagged] [--completed] [--available] [--limit <n>] [--offset <n>] [--all]",
+      "ofocus tasks [--project <name|...>] [--tag <name|...>] [--tag-mode <any|all|none>] [--folder <name|...>] [--flagged] [--not-flagged] [--completed] [--not-completed] [--dropped] [--not-dropped] [--blocked] [--available] [--in-inbox] [--has-due] [--no-due] [--has-defer] [--has-note] [--has-attachments] [--has-subtasks] [--has-repetition] [--effectively-completed] [--effectively-dropped] [--status <active|completed|dropped|deferred>] [--due-before <date>] [--due-after <date>] [--due-on <date>] [--due-within <dur>] [--defer-before <date>] [--defer-after <date>] [--defer-on <date>] [--defer-within <dur>] [--completed-before <date>] [--completed-after <date>] [--estimate-lt <n>] [--estimate-gt <n>] [--estimate-eq <n>] [--name-contains <text>] [--name-starts <text>] [--name-equals <text>] [--name-regex <pattern>] [--note-contains <text>] [--note-regex <pattern>] [--case-sensitive] [--fields <field...>] [--exclude-fields <field...>] [--sort <key...>] [--reverse] [--nulls-first] [--count] [--first] [--last] [--ids-only] [--group-by <key>] [--stats] [--limit <n>] [--offset <n>] [--all]",
   },
   {
     name: "projects",
@@ -50,7 +50,7 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Update properties of an existing task in OmniFocus. Requires the task ID. Supports modifying title, note, due date, defer date, flagged status, project assignment, tags, estimated duration, and repetition rules. Only specified properties are updated; others remain unchanged.",
     usage:
-      "ofocus update <task-id> [--title <text>] [--note <text>] [--due <date>] [--defer <date>] [--flag] [--no-flag] [--project <name>] [--tag <name>...] [--estimate <minutes>] [--repeat <frequency>]",
+      "ofocus update <task-id> [--title <text>] [--note <text>] [--due <date>] [--defer <date>] [--flag] [--no-flag] [--project <name>] [--tags <name...>] [--estimated-minutes <n>] [--clear-estimate] [--repeat <RepetitionRule JSON>] [--clear-repeat]",
   },
   {
     name: "create-project",
