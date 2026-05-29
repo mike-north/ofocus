@@ -66,7 +66,7 @@ var failed = [];
 for (var i = 0; i < taskIds.length; i++) {
   var id = taskIds[i];
   try {
-    var task = flattenedTasks.byId(id);
+    var task = Task.byIdentifier(id);
     if (!task) {
       failed.push({ id: id, error: "Task not found: " + id });
       continue;
@@ -245,7 +245,7 @@ var failed = [];
 for (var i = 0; i < taskIds.length; i++) {
   var id = taskIds[i];
   try {
-    var task = flattenedTasks.byId(id);
+    var task = Task.byIdentifier(id);
     if (!task) {
       failed.push({ id: id, error: "Task not found: " + id });
       continue;
@@ -322,7 +322,7 @@ var failed = [];
 for (var i = 0; i < taskIds.length; i++) {
   var id = taskIds[i];
   try {
-    var task = flattenedTasks.byId(id);
+    var task = Task.byIdentifier(id);
     if (!task) {
       failed.push({ id: id, error: "Task not found: " + id });
       continue;

@@ -26,7 +26,7 @@ export async function completeTask(
   if (idError) return failure(idError);
 
   const body = `
-var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+var task = Task.byIdentifier("${escapeJSString(taskId)}");
 if (!task) {
   throw new Error("Task not found: ${escapeJSString(taskId)}");
 }
@@ -53,7 +53,6 @@ return JSON.stringify({
 
   return success(result.data);
 }
-
 
 /**
  * Centralized descriptor for the `complete` command.

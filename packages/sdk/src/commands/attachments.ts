@@ -95,7 +95,7 @@ export async function addAttachment(
   // Base64 strings contain only [A-Za-z0-9+/=], so escapeJSString is safe
   // but not strictly required. We pass through it for defensive consistency.
   const body = `
-var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+var task = Task.byIdentifier("${escapeJSString(taskId)}");
 if (!task) {
   throw new Error("Task not found: ${escapeJSString(taskId)}");
 }
@@ -141,7 +141,7 @@ export async function listAttachments(
   // We use the preferredFilename as the attachment id so that callers
   // can pass the returned id to removeAttachment (which looks up by name).
   const body = `
-var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+var task = Task.byIdentifier("${escapeJSString(taskId)}");
 if (!task) {
   throw new Error("Task not found: ${escapeJSString(taskId)}");
 }
@@ -199,7 +199,7 @@ export async function removeAttachment(
   // against the provided identifier (which may be an id or a name —
   // listAttachments sets id === name, so both lookups are equivalent).
   const body = `
-var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+var task = Task.byIdentifier("${escapeJSString(taskId)}");
 if (!task) {
   throw new Error("Task not found: ${escapeJSString(taskId)}");
 }

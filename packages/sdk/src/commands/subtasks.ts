@@ -107,7 +107,7 @@ export async function createSubtask(
   scriptParts.push(serializeTaskWithChildrenExpr);
 
   scriptParts.push(`
-var parentTask = flattenedTasks.byId("${escapeJSString(parentTaskId)}");
+var parentTask = Task.byIdentifier("${escapeJSString(parentTaskId)}");
 if (!parentTask) {
   throw new Error("Parent task not found: ${escapeJSString(parentTaskId)}");
 }
@@ -357,12 +357,12 @@ export async function moveTaskToParent(
   const body = `
 ${serializeTaskWithChildrenExpr}
 
-var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+var task = Task.byIdentifier("${escapeJSString(taskId)}");
 if (!task) {
   throw new Error("Task not found: ${escapeJSString(taskId)}");
 }
 
-var parentTask = flattenedTasks.byId("${escapeJSString(parentTaskId)}");
+var parentTask = Task.byIdentifier("${escapeJSString(parentTaskId)}");
 if (!parentTask) {
   throw new Error("Parent task not found: ${escapeJSString(parentTaskId)}");
 }
