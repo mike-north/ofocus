@@ -10,6 +10,7 @@ import {
   validateEstimatedMinutes,
   validateSearchQuery,
   validatePaginationParams,
+  validateAllFlag,
   MAX_PAGINATION_LIMIT,
 } from "../../src/validation.js";
 import { ErrorCode } from "../../src/errors.js";
@@ -720,6 +721,55 @@ describe("validatePaginationParams", () => {
       expect(error).not.toBeNull();
       expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
       expect(error?.message).toContain("offset");
+    });
+  });
+});
+
+describe("validateAllFlag", () => {
+  describe("valid combinations", () => {
+    it("accepts all=undefined (not set)", () => {
+      expect(validateAllFlag(undefined, undefined, undefined)).toBeNull();
+    });
+
+    it("accepts all=false", () => {
+      expect(validateAllFlag(false, undefined, undefined)).toBeNull();
+    });
+
+    it("accepts all=true with no limit or offset", () => {
+      expect(validateAllFlag(true, undefined, undefined)).toBeNull();
+    });
+
+    it("accepts all=undefined with limit and offset set (standard pagination)", () => {
+      expect(validateAllFlag(undefined, 50, 100)).toBeNull();
+    });
+  });
+
+  describe("invalid combinations", () => {
+    it("rejects all=true combined with limit", () => {
+      const error = validateAllFlag(true, 5, undefined);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain(
+        "Cannot combine --all with --limit or --offset"
+      );
+    });
+
+    it("rejects all=true combined with offset", () => {
+      const error = validateAllFlag(true, undefined, 10);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain(
+        "Cannot combine --all with --limit or --offset"
+      );
+    });
+
+    it("rejects all=true combined with both limit and offset", () => {
+      const error = validateAllFlag(true, 5, 10);
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain(
+        "Cannot combine --all with --limit or --offset"
+      );
     });
   });
 });
