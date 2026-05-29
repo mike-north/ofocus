@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 // Re-export CLI utilities
 export { createCli, outputJson, outputHuman } from "./cli.js";
-export { output } from "./output.js";
+export { output, outputToon, type OutputFormat } from "./output.js";
 export { commandRegistry } from "./commands/index.js";
 export { listCommands } from "./commands/list-commands.js";
 
