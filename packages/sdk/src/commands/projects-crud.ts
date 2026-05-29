@@ -342,3 +342,23 @@ export const deleteProjectDescriptor = defineCommand({
   }),
   handler: async (input) => deleteProject(input.projectId),
 });
+
+/**
+ * Centralized descriptor for the `drop-project` command.
+ *
+ * Drives the CLI subcommand `drop-project` and the MCP tool `project_drop`.
+ *
+ * @public
+ */
+export const dropProjectDescriptor = defineCommand({
+  name: "dropProject",
+  cliName: "drop-project",
+  mcpName: "project_drop",
+  description:
+    "Drop a project in OmniFocus (marks as dropped but preserves history).",
+  cliPositional: ["projectId"],
+  inputSchema: z.object({
+    projectId: z.string().describe("The ID of the project to drop"),
+  }),
+  handler: async (input) => dropProject(input.projectId),
+});
