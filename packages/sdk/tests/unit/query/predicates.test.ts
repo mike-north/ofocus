@@ -50,27 +50,61 @@ describe("compileTaskPredicates", () => {
       ]);
     });
 
-    it("dropped states", () => {
+    // OmniJS Task has no `dropped` / `blocked` / `effectivelyDropped` boolean
+    // properties. The correct API is t.taskStatus compared against Task.Status.*.
+    // Verified live against OmniFocus: Task.Status.Dropped, Blocked, Completed,
+    // Available, Next, DueSoon, Overdue all exist as enum members.
+    it("dropped: true uses Task.Status.Dropped enum comparison", () => {
       expect(compileTaskPredicates({ dropped: true }).conditions).toEqual([
-        "t.dropped",
+        "(t.taskStatus === Task.Status.Dropped)",
       ]);
+    });
+
+    it("dropped: false uses Task.Status.Dropped inequality", () => {
+      expect(compileTaskPredicates({ dropped: false }).conditions).toEqual([
+        "(t.taskStatus !== Task.Status.Dropped)",
+      ]);
+    });
+
+    it("notDropped: true uses Task.Status.Dropped inequality", () => {
       expect(compileTaskPredicates({ notDropped: true }).conditions).toEqual([
-        "!t.dropped",
+        "(t.taskStatus !== Task.Status.Dropped)",
       ]);
     });
 
-    it("blocked state", () => {
+    it("blocked: true uses Task.Status.Blocked enum comparison", () => {
       expect(compileTaskPredicates({ blocked: true }).conditions).toEqual([
-        "t.blocked",
+        "(t.taskStatus === Task.Status.Blocked)",
       ]);
     });
 
-    it("available: true compiles three-way condition", () => {
+    it("blocked: false uses Task.Status.Blocked inequality", () => {
+      expect(compileTaskPredicates({ blocked: false }).conditions).toEqual([
+        "(t.taskStatus !== Task.Status.Blocked)",
+      ]);
+    });
+
+    // available=true means actionable: Available + Next + DueSoon + Overdue.
+    // These are all statuses that are not Blocked, Completed, or Dropped.
+    it("available: true includes all actionable statuses (Available/Next/DueSoon/Overdue)", () => {
       const r = compileTaskPredicates({ available: true });
       expect(r.conditions).toHaveLength(1);
-      expect(r.conditions[0]).toContain("!t.completed");
-      expect(r.conditions[0]).toContain("!t.effectivelyDropped");
-      expect(r.conditions[0]).toContain("!t.blocked");
+      expect(r.conditions[0]).toContain("Task.Status.Available");
+      expect(r.conditions[0]).toContain("Task.Status.Next");
+      expect(r.conditions[0]).toContain("Task.Status.DueSoon");
+      expect(r.conditions[0]).toContain("Task.Status.Overdue");
+      // Must NOT reference the non-existent property names
+      expect(r.conditions[0]).not.toContain("t.blocked");
+      expect(r.conditions[0]).not.toContain("t.effectivelyDropped");
+      expect(r.conditions[0]).not.toContain("t.completed");
+    });
+
+    it("available: false includes Blocked/Completed/Dropped", () => {
+      const r = compileTaskPredicates({ available: false });
+      expect(r.conditions).toHaveLength(1);
+      expect(r.conditions[0]).toContain("Task.Status.Blocked");
+      expect(r.conditions[0]).toContain("Task.Status.Completed");
+      expect(r.conditions[0]).toContain("Task.Status.Dropped");
     });
 
     it("inInbox states", () => {
@@ -112,30 +146,56 @@ describe("compileTaskPredicates", () => {
       );
     });
 
-    it("effective flags", () => {
+    // effectivelyCompleted: Task.Status.Completed covers both own completion
+    // and completion through a completed parent/ancestor project (verified live).
+    it("effectivelyCompleted: true uses Task.Status.Completed", () => {
       expect(
         compileTaskPredicates({ effectivelyCompleted: true }).conditions
-      ).toEqual(["t.effectivelyCompleted"]);
+      ).toEqual(["(t.taskStatus === Task.Status.Completed)"]);
+    });
+
+    it("effectivelyCompleted: false uses Task.Status.Completed inequality", () => {
+      expect(
+        compileTaskPredicates({ effectivelyCompleted: false }).conditions
+      ).toEqual(["(t.taskStatus !== Task.Status.Completed)"]);
+    });
+
+    // effectivelyDropped: Task.Status.Dropped covers both directly-dropped tasks
+    // and tasks inside a dropped project/ancestor (verified live).
+    it("effectivelyDropped: true uses Task.Status.Dropped", () => {
       expect(
         compileTaskPredicates({ effectivelyDropped: true }).conditions
-      ).toEqual(["t.effectivelyDropped"]);
+      ).toEqual(["(t.taskStatus === Task.Status.Dropped)"]);
+    });
+
+    it("effectivelyDropped: false uses Task.Status.Dropped inequality", () => {
+      expect(
+        compileTaskPredicates({ effectivelyDropped: false }).conditions
+      ).toEqual(["(t.taskStatus !== Task.Status.Dropped)"]);
     });
   });
 
   describe("status convenience", () => {
-    it("status: active", () => {
+    it("status: active uses taskStatus enum (not completed and not dropped)", () => {
       const r = compileTaskPredicates({ status: "active" });
-      expect(r.conditions).toEqual(["(!t.completed && !t.dropped)"]);
+      expect(r.conditions).toHaveLength(1);
+      expect(r.conditions[0]).toContain("Task.Status.Completed");
+      expect(r.conditions[0]).toContain("Task.Status.Dropped");
+      // Must NOT use the non-existent t.dropped / t.completed boolean guards
+      expect(r.conditions[0]).not.toContain("!t.dropped");
+      expect(r.conditions[0]).not.toContain("!t.completed");
     });
 
-    it("status: completed → t.completed", () => {
+    it("status: completed uses Task.Status.Completed", () => {
       const r = compileTaskPredicates({ status: "completed" });
-      expect(r.conditions).toEqual(["t.completed"]);
+      expect(r.conditions).toEqual([
+        "(t.taskStatus === Task.Status.Completed)",
+      ]);
     });
 
-    it("status: dropped", () => {
+    it("status: dropped uses Task.Status.Dropped", () => {
       const r = compileTaskPredicates({ status: "dropped" });
-      expect(r.conditions).toEqual(["t.dropped"]);
+      expect(r.conditions).toEqual(["(t.taskStatus === Task.Status.Dropped)"]);
     });
 
     it("status: deferred (defer date in future)", () => {
@@ -909,7 +969,9 @@ describe("compileProjectPredicates", () => {
       const ltCond =
         compileProjectPredicates({ remainingTaskCountLt: 2 }).conditions[0] ??
         "";
-      expect(ltCond).toContain("!s.completed");
+      // remainingExpr now uses taskStatus enum instead of non-existent boolean props
+      expect(ltCond).toContain("Task.Status.Completed");
+      expect(ltCond).toContain("Task.Status.Dropped");
       expect(ltCond).toContain("< 2");
 
       const gtCond =
@@ -1586,7 +1648,10 @@ describe("compileTaskPredicates — new predicates (W4 migration)", () => {
     it("is distinct from the blocked predicate", () => {
       const rBlocked = compileTaskPredicates({ blocked: true });
       const rDeferred = compileTaskPredicates({ deferredToFuture: true });
-      expect(rBlocked.conditions[0]).toBe("t.blocked");
+      // blocked uses taskStatus enum; deferredToFuture checks deferDate
+      expect(rBlocked.conditions[0]).toBe(
+        "(t.taskStatus === Task.Status.Blocked)"
+      );
       expect(rDeferred.conditions[0]).toContain("t.deferDate");
     });
   });
