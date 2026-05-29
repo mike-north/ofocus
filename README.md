@@ -97,68 +97,70 @@ ofocus complete <task-id>
 | `compact`                 | Trigger database compaction          |
 | `sync-status`             | Get sync status                      |
 | `sync`                    | Trigger synchronization              |
+| `eval [script]`           | Run arbitrary OmniJS (last resort)   |
 
 ### MCP Tools
 
-| Tool                          | Description                  |
-| ----------------------------- | ---------------------------- |
-| `inbox_add`                   | Add a task to inbox          |
-| `tasks_list`                  | List and filter tasks        |
-| `task_complete`               | Mark a task as complete      |
-| `task_update`                 | Update task properties       |
-| `task_drop`                   | Drop a task                  |
-| `task_delete`                 | Delete a task                |
-| `task_defer`                  | Defer a task                 |
-| `task_duplicate`              | Clone a task                 |
-| `tasks_complete_batch`        | Complete multiple tasks      |
-| `tasks_update_batch`          | Update multiple tasks        |
-| `tasks_delete_batch`          | Delete multiple tasks        |
-| `tasks_defer_batch`           | Defer multiple tasks         |
-| `search`                      | Search tasks by text         |
-| `projects_list`               | List and filter projects     |
-| `project_create`              | Create a new project         |
-| `project_update`              | Update project properties    |
-| `project_delete`              | Delete a project             |
-| `project_drop`                | Drop a project               |
-| `project_review`              | Mark project as reviewed     |
-| `projects_for_review`         | Get projects due for review  |
-| `project_review_interval_get` | Get review interval          |
-| `project_review_interval_set` | Set review interval          |
-| `folders_list`                | List folders                 |
-| `folder_create`               | Create a folder              |
-| `folder_update`               | Update folder properties     |
-| `folder_delete`               | Delete a folder              |
-| `tags_list`                   | List tags                    |
-| `tag_create`                  | Create a tag                 |
-| `tag_update`                  | Update tag properties        |
-| `tag_delete`                  | Delete a tag                 |
-| `subtask_create`              | Create a subtask             |
-| `subtasks_list`               | List subtasks                |
-| `open`                        | Open an item in OmniFocus UI |
-| `perspectives_list`           | List perspectives            |
-| `perspective_query`           | Query a perspective          |
-| `forecast`                    | Query forecast               |
-| `focus`                       | Focus on project/folder      |
-| `unfocus`                     | Clear focus                  |
-| `focused`                     | Get focus state              |
-| `deferred`                    | List deferred tasks          |
-| `url`                         | Generate URL deep link       |
-| `quick_capture`               | Quick capture with NLP       |
-| `export_taskpaper`            | Export to TaskPaper          |
-| `import_taskpaper`            | Import from TaskPaper        |
-| `stats`                       | Get productivity stats       |
-| `template_save`               | Save template                |
-| `template_list`               | List templates               |
-| `template_get`                | Get template                 |
-| `template_create`             | Create from template         |
-| `template_delete`             | Delete template              |
-| `attachment_add`              | Add attachment               |
-| `attachments_list`            | List attachments             |
-| `attachment_remove`           | Remove attachment            |
-| `archive`                     | Archive tasks                |
-| `compact`                     | Compact database             |
-| `sync_status`                 | Get sync status              |
-| `sync_trigger`                | Trigger sync                 |
+| Tool                          | Description                                    |
+| ----------------------------- | ---------------------------------------------- |
+| `inbox_add`                   | Add a task to inbox                            |
+| `tasks_list`                  | List and filter tasks                          |
+| `task_complete`               | Mark a task as complete                        |
+| `task_update`                 | Update task properties                         |
+| `task_drop`                   | Drop a task                                    |
+| `task_delete`                 | Delete a task                                  |
+| `task_defer`                  | Defer a task                                   |
+| `task_duplicate`              | Clone a task                                   |
+| `tasks_complete_batch`        | Complete multiple tasks                        |
+| `tasks_update_batch`          | Update multiple tasks                          |
+| `tasks_delete_batch`          | Delete multiple tasks                          |
+| `tasks_defer_batch`           | Defer multiple tasks                           |
+| `search`                      | Search tasks by text                           |
+| `projects_list`               | List and filter projects                       |
+| `project_create`              | Create a new project                           |
+| `project_update`              | Update project properties                      |
+| `project_delete`              | Delete a project                               |
+| `project_drop`                | Drop a project                                 |
+| `project_review`              | Mark project as reviewed                       |
+| `projects_for_review`         | Get projects due for review                    |
+| `project_review_interval_get` | Get review interval                            |
+| `project_review_interval_set` | Set review interval                            |
+| `folders_list`                | List folders                                   |
+| `folder_create`               | Create a folder                                |
+| `folder_update`               | Update folder properties                       |
+| `folder_delete`               | Delete a folder                                |
+| `tags_list`                   | List tags                                      |
+| `tag_create`                  | Create a tag                                   |
+| `tag_update`                  | Update tag properties                          |
+| `tag_delete`                  | Delete a tag                                   |
+| `subtask_create`              | Create a subtask                               |
+| `subtasks_list`               | List subtasks                                  |
+| `open`                        | Open an item in OmniFocus UI                   |
+| `perspectives_list`           | List perspectives                              |
+| `perspective_query`           | Query a perspective                            |
+| `forecast`                    | Query forecast                                 |
+| `focus`                       | Focus on project/folder                        |
+| `unfocus`                     | Clear focus                                    |
+| `focused`                     | Get focus state                                |
+| `deferred`                    | List deferred tasks                            |
+| `url`                         | Generate URL deep link                         |
+| `quick_capture`               | Quick capture with NLP                         |
+| `export_taskpaper`            | Export to TaskPaper                            |
+| `import_taskpaper`            | Import from TaskPaper                          |
+| `stats`                       | Get productivity stats                         |
+| `template_save`               | Save template                                  |
+| `template_list`               | List templates                                 |
+| `template_get`                | Get template                                   |
+| `template_create`             | Create from template                           |
+| `template_delete`             | Delete template                                |
+| `attachment_add`              | Add attachment                                 |
+| `attachments_list`            | List attachments                               |
+| `attachment_remove`           | Remove attachment                              |
+| `archive`                     | Archive tasks                                  |
+| `compact`                     | Compact database                               |
+| `sync_status`                 | Get sync status                                |
+| `sync_trigger`                | Trigger sync                                   |
+| `omnifocus_eval`              | Run arbitrary OmniJS (last resort — see below) |
 
 ### SDK Functions
 
@@ -247,8 +249,56 @@ import {
   compactDatabase,
   getSyncStatus,
   triggerSync,
+
+  // Eval escape hatch (last resort)
+  evaluateScript,
 } from "@ofocus/sdk";
 ```
+
+## Using `ofocus eval`
+
+`ofocus eval` (MCP: `omnifocus_eval`) is a last-resort escape hatch for operations that no combination of flags on the deterministic commands can cover. Before using it, try `tasks`, `projects`, `folders`, `tags`, `forecast`, `search`, and their filter/sort/projection flags.
+
+When `eval` is necessary, narrate your intent in plain language first so the user can verify the script matches the description.
+
+### Example: simple query
+
+Intent: count how many flagged tasks exist across all projects.
+
+```bash
+ofocus eval 'return flattenedTasks.filter(t => t.flagged && !t.completed).length;'
+```
+
+### Example: args-parameterized query
+
+Intent: retrieve the name of the task with a specific ID, using `args` to avoid embedding the ID in the script string.
+
+```bash
+ofocus eval \
+  --args '{"taskId":"abc123"}' \
+  'var t = flattenedTasks.byId(args.taskId); return t ? t.name : null;'
+```
+
+Using `--args` is safer than string-interpolating values into the script body — values are JSON-encoded and cannot break out of the argument context.
+
+### Example: mutation
+
+Intent: move all tasks tagged "waiting" that have no due date into a holding project called "Someday".
+
+```bash
+ofocus eval '
+var waiting = flattenedTasks.filter(function(t) {
+  return t.tags.map(function(tg) { return tg.name; }).includes("waiting")
+    && !t.dueDate && !t.completed;
+});
+var holding = flattenedProjects.byName("Someday");
+if (!holding) { return JSON.stringify({ error: "Someday project not found" }); }
+waiting.forEach(function(t) { moveTasks([t], holding.ending); });
+return JSON.stringify({ moved: waiting.length });
+'
+```
+
+**Security note**: Scripts run unsandboxed in your OmniFocus and can mutate any task, project, folder, tag, or perspective. Scripts must end with `return <expression>;` and are capped at 64 KB.
 
 ## Development
 

@@ -32,6 +32,7 @@ import {
   deleteTagDescriptor,
   applyRepetitionRuleDescriptor,
   clearRepetitionRuleDescriptor,
+  evaluateScriptDescriptor,
   queryTasks,
   updateTask,
   listPerspectives,
@@ -901,6 +902,15 @@ Use --human flag for human-readable output (default is JSON).
 
   // duplicate — registered from the centralized descriptor in @ofocus/sdk
   registerCliCommand(program, duplicateTaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+
+  // ===========================================
+  // Eval escape hatch
+  // ===========================================
+
+  // eval — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, evaluateScriptDescriptor, (result, cmd) => {
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 

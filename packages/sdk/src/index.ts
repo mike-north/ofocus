@@ -322,3 +322,13 @@ export {
   applyRepetitionRuleDescriptor,
   clearRepetitionRuleDescriptor,
 } from "./commands/repetition.js";
+
+// Eval escape hatch
+export {
+  evaluateScript,
+  evaluateScriptDescriptor,
+} from "./commands/evaluate.js";
+export type {
+  EvaluateScriptInput,
+  EvaluateScriptResult,
+} from "./commands/evaluate.js";

@@ -905,6 +905,38 @@ export { ErrorCode as ErrorCodeType }
 export function escapeJSString(str: string): string;
 
 // @public
+export function evaluateScript(input: EvaluateScriptInput): Promise<CliOutput<EvaluateScriptResult>>;
+
+// @public
+export const evaluateScriptDescriptor: ResolvedCommandDescriptor<    {
+args?: Record<string, unknown> | undefined;
+script?: string | undefined;
+file?: string | undefined;
+}, unknown, z.ZodObject<{
+script: z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>;
+file: z.ZodOptional<z.ZodString>;
+args: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+}, "strip", z.ZodTypeAny, {
+args?: Record<string, unknown> | undefined;
+script?: string | undefined;
+file?: string | undefined;
+}, {
+args?: Record<string, unknown> | undefined;
+script?: string | undefined;
+file?: string | undefined;
+}>>;
+
+// @public
+export interface EvaluateScriptInput {
+    args?: Record<string, unknown> | undefined;
+    file?: string | undefined;
+    script?: string | undefined;
+}
+
+// @public
+export type EvaluateScriptResult = unknown;
+
+// @public
 export function exportTaskPaper(options?: TaskPaperExportOptions): Promise<CliOutput<TaskPaperExportResult>>;
 
 // @public
