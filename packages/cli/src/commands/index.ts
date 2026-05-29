@@ -1,412 +1,201 @@
 import type { CommandInfo } from "@ofocus/sdk";
+import {
+  addToInboxDescriptor,
+  completeTaskDescriptor,
+  updateTaskDescriptor,
+  dropTaskDescriptor,
+  deleteTaskDescriptor,
+  duplicateTaskDescriptor,
+  createSubtaskDescriptor,
+  querySubtasksDescriptor,
+  moveTaskToParentDescriptor,
+  completeTasksDescriptor,
+  updateTasksDescriptor,
+  deleteTasksDescriptor,
+  deferTaskDescriptor,
+  deferTasksDescriptor,
+  searchTasksDescriptor,
+  quickCaptureDescriptor,
+  applyRepetitionRuleDescriptor,
+  clearRepetitionRuleDescriptor,
+  listProjectsDescriptor,
+  createProjectDescriptor,
+  updateProjectDescriptor,
+  deleteProjectDescriptor,
+  dropProjectDescriptor,
+  reviewProjectDescriptor,
+  queryProjectsForReviewDescriptor,
+  listFoldersDescriptor,
+  createFolderDescriptor,
+  updateFolderDescriptor,
+  deleteFolderDescriptor,
+  listTagsDescriptor,
+  createTagDescriptor,
+  updateTagDescriptor,
+  deleteTagDescriptor,
+  listPerspectivesDescriptor,
+  queryPerspectiveDescriptor,
+  queryForecastDescriptor,
+  focusOnDescriptor,
+  unfocusDescriptor,
+  getFocusedDescriptor,
+  queryDeferredDescriptor,
+  exportTaskPaperDescriptor,
+  saveTemplateDescriptor,
+  listTemplatesDescriptor,
+  getTemplateDescriptor,
+  createFromTemplateDescriptor,
+  deleteTemplateDescriptor,
+  addAttachmentDescriptor,
+  listAttachmentsDescriptor,
+  removeAttachmentDescriptor,
+  archiveTasksDescriptor,
+  compactDatabaseDescriptor,
+  getSyncStatusDescriptor,
+  triggerSyncDescriptor,
+  getStatsDescriptor,
+  generateUrlDescriptor,
+  openItemDescriptor,
+  evaluateScriptDescriptor,
+  queryTasksDescriptor,
+} from "@ofocus/sdk";
+import { usageStringForDescriptor } from "../registry-adapter.js";
 
 /**
- * Registry of all available commands with their semantic descriptions.
- * Descriptions are ~100 tokens to enable AI agent semantic activation.
+ * Descriptors for every command registered via `registerCliCommand` in cli.ts.
+ *
+ * This list must stay in sync with the `registerCliCommand` calls in cli.ts.
+ * New descriptor-based commands should be added here AND registered in cli.ts.
+ * Do NOT add `importTaskPaperDescriptor` here — the CLI surfaces `import` as
+ * a hand-wired file-path command (see HAND_WIRED_COMMANDS below).
  */
-export const commandRegistry: CommandInfo[] = [
+const CLI_DESCRIPTORS = [
+  addToInboxDescriptor,
+  queryTasksDescriptor,
+  listProjectsDescriptor,
+  listTagsDescriptor,
+  completeTaskDescriptor,
+  updateTaskDescriptor,
+  createProjectDescriptor,
+  createFolderDescriptor,
+  listFoldersDescriptor,
+  dropTaskDescriptor,
+  deleteTaskDescriptor,
+  createTagDescriptor,
+  updateTagDescriptor,
+  deleteTagDescriptor,
+  createSubtaskDescriptor,
+  querySubtasksDescriptor,
+  moveTaskToParentDescriptor,
+  completeTasksDescriptor,
+  updateTasksDescriptor,
+  deleteTasksDescriptor,
+  searchTasksDescriptor,
+  listPerspectivesDescriptor,
+  queryPerspectiveDescriptor,
+  reviewProjectDescriptor,
+  queryProjectsForReviewDescriptor,
+  queryForecastDescriptor,
+  focusOnDescriptor,
+  unfocusDescriptor,
+  getFocusedDescriptor,
+  queryDeferredDescriptor,
+  generateUrlDescriptor,
+  deferTaskDescriptor,
+  deferTasksDescriptor,
+  applyRepetitionRuleDescriptor,
+  clearRepetitionRuleDescriptor,
+  quickCaptureDescriptor,
+  exportTaskPaperDescriptor,
+  getStatsDescriptor,
+  saveTemplateDescriptor,
+  listTemplatesDescriptor,
+  getTemplateDescriptor,
+  createFromTemplateDescriptor,
+  deleteTemplateDescriptor,
+  addAttachmentDescriptor,
+  listAttachmentsDescriptor,
+  removeAttachmentDescriptor,
+  archiveTasksDescriptor,
+  compactDatabaseDescriptor,
+  getSyncStatusDescriptor,
+  triggerSyncDescriptor,
+  updateProjectDescriptor,
+  deleteProjectDescriptor,
+  dropProjectDescriptor,
+  updateFolderDescriptor,
+  deleteFolderDescriptor,
+  duplicateTaskDescriptor,
+  evaluateScriptDescriptor,
+  openItemDescriptor,
+] as const;
+
+/**
+ * Hand-wired commands that are not (yet) expressible as descriptors and must
+ * be listed explicitly in the catalog.
+ *
+ * - `list-commands`: Cannot be a descriptor — it has no OmniFocus handler and
+ *   reads from the descriptor registry itself.
+ * - `import`: The CLI surfaces a file-path argument that reads content before
+ *   calling `importTaskPaper`; the MCP descriptor (`import-taskpaper`) takes
+ *   raw content and is a different surface.
+ * - `review-interval`: Combines two MCP descriptors (`getReviewInterval` and
+ *   `setReviewInterval`) into a single CLI command controlled by `--set`.
+ */
+const HAND_WIRED_COMMANDS: CommandInfo[] = [
   {
     name: "list-commands",
     description:
       "List all available CLI commands with descriptions and usage. Use this to discover what operations are possible. Returns structured metadata about each command suitable for semantic activation by AI agents.",
-    usage: "ofocus list-commands [--human]",
-  },
-  {
-    name: "inbox",
-    description:
-      "Add a new task to the OmniFocus inbox. Supports setting title, note, due date, defer date, flags, tags, and a recurrence rule. Use this when you need to quickly capture a task without assigning it to a specific project. The task can be organized later from within OmniFocus.",
-    usage:
-      "ofocus inbox <title> [--note <text>] [--due <date>] [--defer <date>] [--flag] [--tags <name...>] [--estimated-minutes <n>] [--repeat-frequency <daily|weekly|monthly|yearly>] [--repeat-interval <n>] [--repeat-method <due-again|defer-another>] [--repeat-days-of-week <0..6...>] [--repeat-day-of-month <1..31>]",
-  },
-  {
-    name: "tasks",
-    description:
-      "Query and filter tasks from OmniFocus. Supports filtering by project, tag, folder, due/defer dates, flagged status, completion state, availability, string matching, and more. Supports sorting, projection (--fields), shape modifiers (--count, --first, --last, --ids-only, --group-by), and pagination (--limit/--offset/--all). Returns task details including ID, title, dates, project, tags, and hierarchy.",
-    usage:
-      "ofocus tasks [--project <name|...>] [--tag <name|...>] [--tag-mode <any|all|none>] [--folder <name|...>] [--flagged] [--not-flagged] [--completed] [--not-completed] [--dropped] [--not-dropped] [--blocked] [--available] [--in-inbox] [--has-due] [--no-due] [--has-defer] [--has-note] [--has-attachments] [--has-subtasks] [--has-repetition] [--effectively-completed] [--effectively-dropped] [--status <active|completed|dropped|deferred>] [--due-before <date>] [--due-after <date>] [--due-on <date>] [--due-within <dur>] [--defer-before <date>] [--defer-after <date>] [--defer-on <date>] [--defer-within <dur>] [--completed-before <date>] [--completed-after <date>] [--estimate-lt <n>] [--estimate-gt <n>] [--estimate-eq <n>] [--name-contains <text>] [--name-starts <text>] [--name-equals <text>] [--name-regex <pattern>] [--note-contains <text>] [--note-regex <pattern>] [--case-sensitive] [--fields <field...>] [--exclude-fields <field...>] [--sort <key...>] [--reverse] [--nulls-first] [--count] [--first] [--last] [--ids-only] [--group-by <key>] [--stats] [--limit <n>] [--offset <n>] [--all]",
-  },
-  {
-    name: "projects",
-    description:
-      "List and query projects from OmniFocus. Supports filtering by folder, status (active, on-hold, completed, dropped), and whether the project is sequential. Returns project details including ID, name, task counts, and folder hierarchy.",
-    usage:
-      "ofocus projects [--folder <value>] [--status <value>] [--sequential] [--no-sequential] [--limit <value>] [--offset <value>]",
-  },
-  {
-    name: "tags",
-    description:
-      "List and query tags from OmniFocus. Supports filtering by parent tag for nested tag hierarchies. Returns tag details including ID, name, parent relationship, and count of available tasks with that tag.",
-    usage:
-      "ofocus tags [--parent <value>] [--limit <value>] [--offset <value>]",
-  },
-  {
-    name: "complete",
-    description:
-      "Mark a task as complete in OmniFocus. Requires the task ID which can be obtained from the tasks command. The task will be marked as completed with the current timestamp. This operation cannot be undone via the CLI.",
-    usage: "ofocus complete <task-id>",
-  },
-  {
-    name: "update",
-    description:
-      "Update properties of an existing task in OmniFocus. Requires the task ID. Supports modifying title, note, due date, defer date, flagged status, project assignment, tags, estimated duration, and repetition rules. Only specified properties are updated; others remain unchanged.",
-    usage:
-      "ofocus update <task-id> [--title <text>] [--note <text>] [--due <date>] [--defer <date>] [--flag] [--no-flag] [--project <name>] [--tags <name...>] [--estimated-minutes <n>] [--clear-estimate] [--repeat <RepetitionRule JSON>] [--clear-repeat]",
-  },
-  {
-    name: "create-project",
-    description:
-      "Create a new project in OmniFocus. Supports setting name, note, folder placement, sequential vs parallel action ordering, status (active or on-hold), and due/defer dates. Projects organize related tasks and can be placed in folders for hierarchy.",
-    usage:
-      "ofocus create-project <name> [--note <value>] [--folder-id <value>] [--folder-name <value>] [--sequential] [--no-sequential] [--status <value>] [--due-date <value>] [--defer-date <value>]",
-  },
-  {
-    name: "create-folder",
-    description:
-      "Create a new folder in OmniFocus. Folders organize projects into hierarchies. Supports optional parent folder for nested structures. Folders cannot contain tasks directly; they contain projects and other folders.",
-    usage:
-      "ofocus create-folder <name> [--parent-folder-id <value>] [--parent-folder-name <value>]",
-  },
-  {
-    name: "folders",
-    description:
-      "List and query folders from OmniFocus. Supports filtering by parent folder to explore nested hierarchies. Returns folder details including ID, name, parent relationship, project count, and subfolder count.",
-    usage:
-      "ofocus folders [--parent <value>] [--limit <value>] [--offset <value>]",
-  },
-  {
-    name: "drop",
-    description:
-      "Mark a task as dropped in OmniFocus. Dropped tasks are removed from active lists but preserved in the database for historical reference. This is the recommended way to remove tasks you won't complete, as it maintains task history.",
-    usage: "ofocus drop <task-id>",
-  },
-  {
-    name: "delete",
-    description:
-      "Permanently delete a task from OmniFocus. This action cannot be undone. The task is completely removed from the database. Use 'drop' instead if you want to preserve task history. Requires task ID from tasks command.",
-    usage: "ofocus delete <task-id>",
-  },
-  {
-    name: "create-tag",
-    description:
-      "Create a new tag in OmniFocus. Tags can be nested under parent tags for hierarchical organization. Tags are used to categorize and filter tasks across projects. Returns the created tag with its ID.",
-    usage:
-      "ofocus create-tag <name> [--parent-tag-id <value>] [--parent-tag-name <value>]",
-  },
-  {
-    name: "update-tag",
-    description:
-      "Update properties of an existing tag in OmniFocus. Supports renaming tags and moving them to different parent tags. Requires the tag ID which can be obtained from the tags command.",
-    usage:
-      "ofocus update-tag <tag-id> [--name <value>] [--parent-tag-id <value>] [--parent-tag-name <value>]",
-  },
-  {
-    name: "delete-tag",
-    description:
-      "Permanently delete a tag from OmniFocus. This removes the tag from all tasks that use it. This action cannot be undone. Child tags under this tag will become top-level tags.",
-    usage: "ofocus delete-tag <tag-id>",
-  },
-  {
-    name: "subtask",
-    description:
-      "Create a subtask under an existing task in OmniFocus. Subtasks inherit context from their parent task and create action groups. Supports all standard task options like note, due date, defer date, flags, and tags.",
-    usage:
-      "ofocus subtask <title> --parent-task-id <task-id> [--note <text>] [--due <date>] [--defer <date>] [--flag] [--tags <name...>] [--estimated-minutes <n>]",
-  },
-  {
-    name: "subtasks",
-    description:
-      "Query subtasks of a parent task in OmniFocus. Returns immediate children of the specified task. Supports filtering by completion state and flagged status. Use this to explore task hierarchies.",
-    usage:
-      "ofocus subtasks <parent-task-id> [--completed] [--no-completed] [--flagged] [--no-flagged]",
-  },
-  {
-    name: "move-to-parent",
-    description:
-      "Move an existing task to become a subtask of another task. This restructures task hierarchies by making one task a child of another. Both task IDs are required. The moved task becomes part of an action group.",
-    usage: "ofocus move-to-parent <task-id> --parent-task-id <parent-task-id>",
-  },
-  {
-    name: "complete-batch",
-    description:
-      "Mark multiple tasks as complete in a single operation. Accepts one or more task IDs. Returns a batch result showing which tasks succeeded and which failed. More efficient than completing tasks individually.",
-    usage: "ofocus complete-batch <task-ids...>",
-  },
-  {
-    name: "update-batch",
-    description:
-      "Update multiple tasks with the same changes in a single operation. Accepts task IDs and update options. Supports title, note, flagging, due dates, defer dates, project assignment, tags, and estimated duration. Returns batch results.",
-    usage:
-      "ofocus update-batch <task-ids...> [--title <text>] [--note <text>] [--due <date>] [--defer <date>] [--flag] [--no-flag] [--project <name>] [--tags <name...>] [--estimated-minutes <n>]",
-  },
-  {
-    name: "delete-batch",
-    description:
-      "Permanently delete multiple tasks in a single operation. Accepts one or more task IDs. Returns batch results showing successes and failures. This action cannot be undone. Use with caution.",
-    usage: "ofocus delete-batch <task-ids...>",
-  },
-  {
-    name: "search",
-    description:
-      "Full-text search across tasks in OmniFocus. Searches task names and notes. Supports filtering search scope (name, note, or both), limiting results, and including completed tasks. Returns matching tasks.",
-    usage:
-      "ofocus search <query> [--scope <name|note|both>] [--limit <n>] [--include-completed]",
-  },
-  {
-    name: "perspectives",
-    description:
-      "List all perspectives available in OmniFocus. Returns both built-in perspectives (like Inbox, Flagged, Due Soon) and custom user-defined perspectives. Shows perspective name, ID, and whether it's custom.",
-    usage: "ofocus perspectives",
-  },
-  {
-    name: "perspective",
-    description:
-      "Query tasks from a specific perspective in OmniFocus. Returns tasks that match the perspective's filter criteria. Supports limiting the number of results. Note: Some perspectives may require OmniFocus UI interaction.",
-    usage: "ofocus perspective <name> [--limit <value>]",
-  },
-  {
-    name: "review",
-    description:
-      "Mark a project as reviewed in OmniFocus. Updates the project's last review date to now and calculates the next review date based on the project's review interval. Returns review status information.",
-    usage: "ofocus review <project-id>",
-  },
-  {
-    name: "projects-for-review",
-    description:
-      "List projects that are due for review in OmniFocus. Returns projects whose review date has passed or is imminent. Use this to identify projects needing attention as part of the GTD weekly review process.",
-    usage: "ofocus projects-for-review",
-  },
-  // Phase 5: Forecast, Focus, Deferred
-  {
-    name: "forecast",
-    description:
-      "Query tasks due within the next N days, similar to OmniFocus Forecast view. Defaults to 7 days from today. Use --include-deferred to also include tasks deferred to the same window. Use for daily and weekly planning to see what's coming up.",
-    usage: "ofocus forecast [--days <n>] [--include-deferred]",
-  },
-  {
-    name: "focus",
-    description:
-      "Focus on a specific project or folder in OmniFocus. Limits the view to show only items within the focused target. Matches the OmniFocus UI focus feature. Use for scoped work sessions on a particular area.",
-    usage: "ofocus focus <target> [--by-id] [--no-by-id]",
-  },
-  {
-    name: "unfocus",
-    description:
-      "Clear focus in OmniFocus to show all items. Removes any active focus set by the focus command. Returns to showing the full project/folder hierarchy. Use when done with a focused work session.",
-    usage: "ofocus unfocus",
-  },
-  {
-    name: "focused",
-    description:
-      "Show the current focus state in OmniFocus. Returns information about what project or folder is currently focused, or indicates no active focus. Use to check the current view scope before making queries.",
-    usage: "ofocus focused",
-  },
-  {
-    name: "deferred",
-    description:
-      "List all tasks that have defer dates set. Returns tasks that are scheduled to become available in the future. Use --blocked-only to see only tasks currently hidden by their defer date. Useful for reviewing upcoming work.",
-    usage:
-      "ofocus deferred [--deferred-after <date>] [--deferred-before <date>] [--blocked-only]",
-  },
-  // Phase 5b: Utility Commands
-  {
-    name: "url",
-    description:
-      "Generate an OmniFocus URL scheme deep link for any item. Accepts a task, project, folder, or tag ID and returns the omnifocus:/// URL that can be used to open that item. Useful for creating links in notes, scripts, or other apps.",
-    usage: "ofocus url <id>",
-  },
-  {
-    name: "defer",
-    description:
-      "Defer a single task by a number of days or to a specific date. Convenience wrapper around update that focuses on defer date changes. Use --days for relative deferral or --to for absolute date.",
-    usage: "ofocus defer <task-id> [--days <n>] [--to <date>]",
-  },
-  {
-    name: "defer-batch",
-    description:
-      "Defer multiple tasks by the same amount. Accepts multiple task IDs and defers them all by the specified days or to the same date. More efficient than deferring tasks individually. Returns batch results.",
-    usage: "ofocus defer-batch <task-ids...> [--days <n>] [--to <date>]",
-  },
-  // Phase 6: Quick Capture
-  {
-    name: "quick",
-    description:
-      "Quick capture with natural language parsing. Supports @tag for tags, #project for project, ! for flag, ~30m for duration, due:tomorrow for due dates, defer:monday for defer dates, repeat:weekly for repetition. Everything else becomes the title.",
-    usage: 'ofocus quick "<input>" [--note <text>]',
-  },
-  // Phase 6: TaskPaper Import/Export
-  {
-    name: "export",
-    description:
-      "Export tasks and projects to TaskPaper format. TaskPaper is a plain text format compatible with OmniFocus and other task managers. Supports filtering by project and including completed/dropped tasks. Output is written to stdout.",
-    usage:
-      "ofocus export [--project <value>] [--include-completed] [--no-include-completed] [--include-dropped] [--no-include-dropped]",
+    usage: "ofocus list-commands",
   },
   {
     name: "import",
     description:
       "Import tasks from a TaskPaper format file. Creates tasks in the inbox and optionally creates projects that don't exist. TaskPaper format uses indentation and @tags for metadata like @due(date), @flagged, @done.",
     usage:
-      "ofocus import <file> [--create-projects] [--default-project <name>]",
+      "ofocus import <file> [--create-projects] [--default-project <value>]",
   },
-  // Phase 6: Statistics
-  {
-    name: "stats",
-    description:
-      "Display productivity statistics from OmniFocus. Shows counts of completed tasks, overdue tasks, available tasks, flagged items, and project status. Supports filtering by project and time period (day, week, month, year).",
-    usage:
-      "ofocus stats [--project <name>] [--period <day|week|month|year>] [--since <date>] [--until <date>]",
-  },
-  // Phase 7: Project Templates
-  {
-    name: "template-save",
-    description:
-      "Save an existing project as a reusable template. Captures the project structure, task titles, notes, flags, tags, estimated durations, and relative date offsets. Templates are stored locally and can be instantiated to create new projects with the same structure.",
-    usage:
-      "ofocus template-save <name> <source-project> [--description <value>]",
-  },
-  {
-    name: "template-list",
-    description:
-      "List all available project templates stored locally. Shows template name, description, task count, creation date, and source project name. Use this to discover available templates before creating projects from them.",
-    usage: "ofocus template-list",
-  },
-  {
-    name: "template-get",
-    description:
-      "Get full details of a specific project template by name. Returns the complete template structure including all tasks with their titles, notes, flags, tags, estimated durations, and relative date offsets. Use this to inspect a template before creating a project from it.",
-    usage: "ofocus template-get <template-name>",
-  },
-  {
-    name: "template-create",
-    description:
-      "Create a new project from a saved template. Instantiates the template with all tasks, applying date offsets relative to the base date (defaults to today). Supports specifying a custom project name and target folder.",
-    usage:
-      "ofocus template-create <template-name> [--project-name <value>] [--folder <value>] [--base-date <value>]",
-  },
-  {
-    name: "template-delete",
-    description:
-      "Delete a project template from local storage. This action cannot be undone. The template file is permanently removed from ~/.config/ofocus/templates/.",
-    usage: "ofocus template-delete <template-name>",
-  },
-  // Phase 8: Attachments
-  {
-    name: "attach",
-    description:
-      "Add a file attachment to a task in OmniFocus. The file is copied into the OmniFocus database. Requires task ID and a valid file path. The original file remains unchanged.",
-    usage: "ofocus attach <task-id> <file-path>",
-  },
-  {
-    name: "attachments",
-    description:
-      "List all attachments of a task in OmniFocus. Returns attachment IDs, names, and metadata. Use the attachment ID or name with the detach command to remove attachments.",
-    usage: "ofocus attachments <task-id>",
-  },
-  {
-    name: "detach",
-    description:
-      "Remove an attachment from a task in OmniFocus. Accepts either attachment ID or name. This removes the file from the OmniFocus database. This action cannot be undone.",
-    usage: "ofocus detach <task-id> <attachment-name>",
-  },
-  // Phase 8: Archive & Cleanup
-  {
-    name: "archive",
-    description:
-      "Archive completed or dropped tasks and projects in OmniFocus. Supports filtering by completion date, drop date, and project. Use --dry-run to preview what would be archived without making changes. Helps maintain database performance.",
-    usage:
-      "ofocus archive [--completed-before <value>] [--dropped-before <value>] [--project <value>] [--dry-run] [--no-dry-run]",
-  },
-  {
-    name: "compact",
-    description:
-      "Trigger database compaction in OmniFocus. Compaction removes deleted items and optimizes the database for better performance. Run periodically to maintain a healthy OmniFocus database.",
-    usage: "ofocus compact",
-  },
-  // Phase 8: Sync
-  {
-    name: "sync-status",
-    description:
-      "Get the current synchronization status in OmniFocus. Shows whether sync is in progress, when the last sync occurred, and whether sync is enabled. Useful for automation workflows.",
-    usage: "ofocus sync-status",
-  },
-  {
-    name: "sync",
-    description:
-      "Trigger a synchronization in OmniFocus. Syncs changes with the OmniFocus sync server (Omni Sync Server or custom WebDAV). Use after making changes to ensure they're uploaded.",
-    usage: "ofocus sync",
-  },
-  // Phase 9: Project/Folder CRUD & Utilities
-  {
-    name: "update-project",
-    description:
-      "Update properties of an existing project in OmniFocus. Supports renaming, changing notes, status (active, on-hold, completed, dropped), moving to different folder, switching between sequential/parallel, and setting due/defer dates. Only specified properties are updated.",
-    usage:
-      "ofocus update-project <project-id> [--name <value>] [--note <value>] [--status <value>] [--folder-id <value>] [--folder-name <value>] [--sequential] [--no-sequential] [--due-date <value>] [--defer-date <value>]",
-  },
-  {
-    name: "delete-project",
-    description:
-      "Permanently delete a project from OmniFocus. This removes the project and all its tasks from the database. This action cannot be undone. Use 'drop-project' instead to preserve history.",
-    usage: "ofocus delete-project <project-id>",
-  },
-  {
-    name: "drop-project",
-    description:
-      "Mark a project as dropped in OmniFocus. Dropped projects are removed from active lists but preserved in the database for historical reference. This is the recommended way to remove projects you won't complete.",
-    usage: "ofocus drop-project <project-id>",
-  },
-  {
-    name: "update-folder",
-    description:
-      "Update properties of an existing folder in OmniFocus. Supports renaming folders and moving them to different parent folders. Folders organize projects into hierarchies. Only specified properties are updated.",
-    usage:
-      "ofocus update-folder <folder-id> [--name <value>] [--parent-folder-id <value>] [--parent-folder-name <value>]",
-  },
-  {
-    name: "delete-folder",
-    description:
-      "Permanently delete a folder from OmniFocus. This removes the folder from the database. Projects inside will become top-level. This action cannot be undone. Consider moving projects first.",
-    usage: "ofocus delete-folder <folder-id>",
-  },
-  {
-    name: "duplicate",
-    description:
-      "Create a copy of an existing task in OmniFocus. The duplicated task inherits all properties: title, note, due/defer dates, flags, tags, and estimated duration. By default includes subtasks; use --no-include-subtasks to exclude them.",
-    usage:
-      "ofocus duplicate <task-id> [--include-subtasks] [--no-include-subtasks]",
-  },
-  {
-    name: "open",
-    description:
-      "Open an item in the OmniFocus user interface. Accepts any ID (task, project, folder, or tag) and automatically detects the item type. Activates OmniFocus and navigates to the item using the URL scheme.",
-    usage: "ofocus open <id>",
-  },
-
   {
     name: "review-interval",
     description:
       "Get or set the review interval for a project. Review intervals determine how often projects appear in the Review perspective. Omit --set to get current interval; use --set <days> to change it.",
-    usage: "ofocus review-interval <project-id> [--set <days>]",
-  },
-  // W2b: Repetition rule commands
-  {
-    name: "apply-repetition",
-    description:
-      "Apply a repetition rule to an existing task. Supports daily, weekly (with specific days via --days-of-week), monthly (by day-of-month or Nth-weekday via --days-of-week-positions), and yearly (with BYMONTH via --months-of-year) recurrences. Also accepts --repeat-method (due-again, defer-another, scheduled).",
-    usage:
-      "ofocus apply-repetition <task-id> --frequency <daily|weekly|monthly|yearly> [--interval <n>] [--repeat-method <due-again|defer-another|scheduled>] [--days-of-week <0..6...>] [--day-of-month <1..31>] [--days-of-week-positions <pos...>] [--months-of-year <1..12...>]",
-  },
-  {
-    name: "clear-repetition",
-    description:
-      "Clear the repetition rule from an existing task. After clearing, the task will no longer recur. Requires the task ID which can be obtained from the tasks command.",
-    usage: "ofocus clear-repetition <task-id>",
-  },
-  // Eval escape hatch
-  {
-    name: "eval",
-    description:
-      "Evaluate arbitrary OmniJS against the user's OmniFocus database. LAST-RESORT tool — prefer tasks, projects, folders, tags, forecast, search, and their --filter/--sort/--fields flags for the vast majority of operations. Use eval only when no flag combination covers the need. Narrate intent before showing the script. The script runs unsandboxed and can mutate any OmniFocus data. Scripts must end with return <expression>; and are capped at 64 KB.",
-    usage: "ofocus eval [<script>] [--file <path>] [--args <json>]",
+    usage: "ofocus review-interval <project-id> [--set <value>]",
   },
 ];
+
+/**
+ * Derive the `CommandInfo` catalog from the descriptor registry.
+ *
+ * Each CLI-registered descriptor contributes one entry with:
+ * - `name` = `descriptor.cliName`
+ * - `description` = `descriptor.description`
+ * - `usage` = derived by {@link usageStringForDescriptor} (same logic as Commander registration)
+ *
+ * The three hand-wired exceptions (`list-commands`, `import`, `review-interval`)
+ * are appended explicitly and sorted into the final catalog alphabetically.
+ */
+function buildCommandRegistry(): CommandInfo[] {
+  const fromDescriptors: CommandInfo[] = CLI_DESCRIPTORS.map((d) => ({
+    name: d.cliName,
+    description: d.description,
+    usage: usageStringForDescriptor(d),
+  }));
+
+  const all = [...fromDescriptors, ...HAND_WIRED_COMMANDS];
+
+  // Sort deterministically by name so the catalog is stable across runs.
+  all.sort((a, b) => a.name.localeCompare(b.name));
+
+  return all;
+}
+
+/**
+ * Registry of all available commands derived from the descriptor registry.
+ *
+ * Usage strings are computed from each descriptor's schema via
+ * {@link usageStringForDescriptor}, matching the flags that
+ * `registerCliCommand` actually registers in Commander. This eliminates the
+ * hand-maintained drift that arose when updating flags by hand.
+ */
+export const commandRegistry: CommandInfo[] = buildCommandRegistry();

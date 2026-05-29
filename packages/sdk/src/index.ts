@@ -280,6 +280,7 @@ export {
   toKebabCase,
   toSnakeCase,
   validateCanonicalName,
+  allCommandDescriptors,
 } from "./registry/index.js";
 export type {
   CommandDescriptor,

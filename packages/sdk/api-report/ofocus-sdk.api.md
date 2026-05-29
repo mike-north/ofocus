@@ -94,6 +94,9 @@ repeatDayOfMonth?: number | undefined;
 export type AggregateShape = "list" | "count" | "ids" | "single-first" | "single-last" | "groups";
 
 // @public
+export const allCommandDescriptors: readonly ResolvedCommandDescriptor<any, any, any>[];
+
+// @public
 export function applyRepetitionRule(taskId: string, rule: RepetitionRule): Promise<CliOutput<ApplyRepetitionRuleResult>>;
 
 // @public
