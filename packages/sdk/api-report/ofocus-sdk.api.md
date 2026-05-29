@@ -10,6 +10,21 @@ import { z } from 'zod';
 export function addAttachment(taskId: string, filePath: string): Promise<CliOutput<AddAttachmentResult>>;
 
 // @public
+export const addAttachmentDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+filePath: string;
+}, AddAttachmentResult, z.ZodObject<{
+taskId: z.ZodString;
+filePath: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+filePath: string;
+}, {
+taskId: string;
+filePath: string;
+}>>;
+
+// @public
 export interface AddAttachmentResult {
     attached: boolean;
     fileName: string;
@@ -148,6 +163,29 @@ export interface ArchiveResult {
 
 // @public
 export function archiveTasks(options?: ArchiveOptions): Promise<CliOutput<ArchiveResult>>;
+
+// @public
+export const archiveTasksDescriptor: ResolvedCommandDescriptor<    {
+project?: string | undefined;
+completedBefore?: string | undefined;
+droppedBefore?: string | undefined;
+dryRun?: boolean | undefined;
+}, ArchiveResult, z.ZodObject<{
+completedBefore: z.ZodOptional<z.ZodString>;
+droppedBefore: z.ZodOptional<z.ZodString>;
+project: z.ZodOptional<z.ZodString>;
+dryRun: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+project?: string | undefined;
+completedBefore?: string | undefined;
+droppedBefore?: string | undefined;
+dryRun?: boolean | undefined;
+}, {
+project?: string | undefined;
+completedBefore?: string | undefined;
+droppedBefore?: string | undefined;
+dryRun?: boolean | undefined;
+}>>;
 
 // @public
 export interface BaseListQueryOptions extends PaginationOptions {
@@ -289,6 +327,9 @@ export interface CommandInfo {
 
 // @public
 export function compactDatabase(): Promise<CliOutput<CompactResult>>;
+
+// @public
+export const compactDatabaseDescriptor: ResolvedCommandDescriptor<    {}, CompactResult, z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
 
 // @public
 export interface CompactResult {
@@ -435,6 +476,29 @@ export interface CreateFolderOptions {
 
 // @public
 export function createFromTemplate(options: CreateFromTemplateOptions): Promise<CliOutput<CreateFromTemplateResult>>;
+
+// @public
+export const createFromTemplateDescriptor: ResolvedCommandDescriptor<    {
+templateName: string;
+folder?: string | undefined;
+projectName?: string | undefined;
+baseDate?: string | undefined;
+}, CreateFromTemplateResult, z.ZodObject<{
+templateName: z.ZodString;
+projectName: z.ZodOptional<z.ZodString>;
+folder: z.ZodOptional<z.ZodString>;
+baseDate: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+templateName: string;
+folder?: string | undefined;
+projectName?: string | undefined;
+baseDate?: string | undefined;
+}, {
+templateName: string;
+folder?: string | undefined;
+projectName?: string | undefined;
+baseDate?: string | undefined;
+}>>;
 
 // @public
 export interface CreateFromTemplateOptions {
@@ -796,6 +860,17 @@ taskIds: string[];
 export function deleteTemplate(name: string): CliOutput<DeleteTemplateResult>;
 
 // @public
+export const deleteTemplateDescriptor: ResolvedCommandDescriptor<    {
+templateName: string;
+}, DeleteTemplateResult, z.ZodObject<{
+templateName: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+templateName: string;
+}, {
+templateName: string;
+}>>;
+
+// @public
 export interface DeleteTemplateResult {
     deleted: boolean;
     name: string;
@@ -940,6 +1015,25 @@ export type EvaluateScriptResult = unknown;
 export function exportTaskPaper(options?: TaskPaperExportOptions): Promise<CliOutput<TaskPaperExportResult>>;
 
 // @public
+export const exportTaskPaperDescriptor: ResolvedCommandDescriptor<    {
+project?: string | undefined;
+includeCompleted?: boolean | undefined;
+includeDropped?: boolean | undefined;
+}, TaskPaperExportResult, z.ZodObject<{
+project: z.ZodOptional<z.ZodString>;
+includeCompleted: z.ZodOptional<z.ZodBoolean>;
+includeDropped: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+project?: string | undefined;
+includeCompleted?: boolean | undefined;
+includeDropped?: boolean | undefined;
+}, {
+project?: string | undefined;
+includeCompleted?: boolean | undefined;
+includeDropped?: boolean | undefined;
+}>>;
+
+// @public
 export function failure<T = null>(error: CliError): CliOutput<T>;
 
 // @public
@@ -955,6 +1049,21 @@ export interface FieldGetter {
 export function focusOn(target: string, options?: {
     byId?: boolean | undefined;
 }): Promise<CliOutput<FocusResult>>;
+
+// @public
+export const focusOnDescriptor: ResolvedCommandDescriptor<    {
+target: string;
+byId?: boolean | undefined;
+}, FocusResult, z.ZodObject<{
+target: z.ZodString;
+byId: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+target: string;
+byId?: boolean | undefined;
+}, {
+target: string;
+byId?: boolean | undefined;
+}>>;
 
 // @public
 export interface FocusResult {
@@ -1012,10 +1121,35 @@ export interface ForecastOptions extends BaseListQueryOptions {
 export function generateUrl(id: string): Promise<CliOutput<UrlResult>>;
 
 // @public
+export const generateUrlDescriptor: ResolvedCommandDescriptor<    {
+id: string;
+}, UrlResult, z.ZodObject<{
+id: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+id: string;
+}, {
+id: string;
+}>>;
+
+// @public
 export function getFocused(): Promise<CliOutput<FocusResult>>;
 
 // @public
+export const getFocusedDescriptor: ResolvedCommandDescriptor<    {}, FocusResult, z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
+
+// @public
 export function getReviewInterval(projectId: string): Promise<CliOutput<ReviewIntervalResult>>;
+
+// @public
+export const getReviewIntervalDescriptor: ResolvedCommandDescriptor<    {
+projectId: string;
+}, ReviewIntervalResult, z.ZodObject<{
+projectId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+projectId: string;
+}, {
+projectId: string;
+}>>;
 
 // @public
 export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
@@ -1024,7 +1158,21 @@ export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>
 export function getSyncStatus(): Promise<CliOutput<SyncStatus>>;
 
 // @public
+export const getSyncStatusDescriptor: ResolvedCommandDescriptor<    {}, SyncStatus, z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
+
+// @public
 export function getTemplate(name: string): CliOutput<ProjectTemplate>;
+
+// @public
+export const getTemplateDescriptor: ResolvedCommandDescriptor<    {
+templateName: string;
+}, ProjectTemplate, z.ZodObject<{
+templateName: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+templateName: string;
+}, {
+templateName: string;
+}>>;
 
 // @public
 export interface GroupKeySpec {
@@ -1034,6 +1182,25 @@ export interface GroupKeySpec {
 
 // @public
 export function importTaskPaper(content: string, options?: TaskPaperImportOptions): Promise<CliOutput<TaskPaperImportResult>>;
+
+// @public
+export const importTaskPaperDescriptor: ResolvedCommandDescriptor<    {
+content: string;
+defaultProject?: string | undefined;
+createProjects?: boolean | undefined;
+}, TaskPaperImportResult, z.ZodObject<{
+content: z.ZodString;
+defaultProject: z.ZodOptional<z.ZodString>;
+createProjects: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+content: string;
+defaultProject?: string | undefined;
+createProjects?: boolean | undefined;
+}, {
+content: string;
+defaultProject?: string | undefined;
+createProjects?: boolean | undefined;
+}>>;
 
 // @public
 export interface InboxOptions {
@@ -1055,6 +1222,17 @@ export interface InboxOptions {
 
 // @public
 export function listAttachments(taskId: string): Promise<CliOutput<ListAttachmentsResult>>;
+
+// @public
+export const listAttachmentsDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+}, ListAttachmentsResult, z.ZodObject<{
+taskId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+}, {
+taskId: string;
+}>>;
 
 // @public
 export interface ListAttachmentsResult {
@@ -1084,6 +1262,9 @@ offset?: number | undefined;
 
 // @public
 export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
+
+// @public
+export const listPerspectivesDescriptor: ResolvedCommandDescriptor<    {}, OFPerspective[], z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
 
 // @public
 export const listProjectsDescriptor: ResolvedCommandDescriptor<    {
@@ -1133,6 +1314,9 @@ offset?: number | undefined;
 
 // @public
 export function listTemplates(): CliOutput<ListTemplatesResult>;
+
+// @public
+export const listTemplatesDescriptor: ResolvedCommandDescriptor<    {}, ListTemplatesResult, z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
 
 // @public
 export interface ListTemplatesResult {
@@ -1281,6 +1465,17 @@ export interface OmniJSResult<T> {
 
 // @public
 export function openItem(id: string): Promise<CliOutput<OpenResult>>;
+
+// @public
+export const openItemDescriptor: ResolvedCommandDescriptor<    {
+id: string;
+}, OpenResult, z.ZodObject<{
+id: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+id: string;
+}, {
+id: string;
+}>>;
 
 // @public
 export interface OpenResult {
@@ -1498,10 +1693,28 @@ includeDeferred?: boolean | undefined;
 export function queryPerspective(name: string, options?: PerspectiveQueryOptions): Promise<CliOutput<OFTask[]>>;
 
 // @public
+export const queryPerspectiveDescriptor: ResolvedCommandDescriptor<    {
+name: string;
+limit?: number | undefined;
+}, OFTask[], z.ZodObject<{
+name: z.ZodString;
+limit: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+name: string;
+limit?: number | undefined;
+}, {
+name: string;
+limit?: number | undefined;
+}>>;
+
+// @public
 export function queryProjects(options?: ProjectQueryOptions): Promise<CliOutput<QueryResult<OFProject>>>;
 
 // @public
 export function queryProjectsForReview(): Promise<CliOutput<OFProject[]>>;
+
+// @public
+export const queryProjectsForReviewDescriptor: ResolvedCommandDescriptor<    {}, OFProject[], z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
 
 // @public
 export type QueryResult<T> = {
@@ -1586,6 +1799,21 @@ export interface QuickOptions {
 export function removeAttachment(taskId: string, attachmentIdOrName: string): Promise<CliOutput<RemoveAttachmentResult>>;
 
 // @public
+export const removeAttachmentDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+attachmentName: string;
+}, RemoveAttachmentResult, z.ZodObject<{
+taskId: z.ZodString;
+attachmentName: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+attachmentName: string;
+}, {
+taskId: string;
+attachmentName: string;
+}>>;
+
+// @public
 export interface RemoveAttachmentResult {
     attachmentName: string;
     removed: boolean;
@@ -1638,6 +1866,17 @@ export interface ReviewIntervalResult {
 export function reviewProject(projectId: string): Promise<CliOutput<ReviewResult>>;
 
 // @public
+export const reviewProjectDescriptor: ResolvedCommandDescriptor<    {
+projectId: string;
+}, ReviewResult, z.ZodObject<{
+projectId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+projectId: string;
+}, {
+projectId: string;
+}>>;
+
+// @public
 export interface ReviewResult {
     // (undocumented)
     lastReviewed: string;
@@ -1657,6 +1896,25 @@ export function runOmniJSWrapped<T>(body: string): Promise<OmniJSResult<T>>;
 
 // @public
 export function saveTemplate(options: SaveTemplateOptions): Promise<CliOutput<SaveTemplateResult>>;
+
+// @public
+export const saveTemplateDescriptor: ResolvedCommandDescriptor<    {
+name: string;
+sourceProject: string;
+description?: string | undefined;
+}, SaveTemplateResult, z.ZodObject<{
+name: z.ZodString;
+sourceProject: z.ZodString;
+description: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+name: string;
+sourceProject: string;
+description?: string | undefined;
+}, {
+name: string;
+sourceProject: string;
+description?: string | undefined;
+}>>;
 
 // @public
 export interface SaveTemplateOptions {
@@ -1706,6 +1964,21 @@ includeCompleted?: boolean | undefined;
 
 // @public
 export function setReviewInterval(projectId: string, days: number): Promise<CliOutput<ReviewIntervalResult>>;
+
+// @public
+export const setReviewIntervalDescriptor: ResolvedCommandDescriptor<    {
+projectId: string;
+intervalDays: number;
+}, ReviewIntervalResult, z.ZodObject<{
+projectId: z.ZodString;
+intervalDays: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+projectId: string;
+intervalDays: number;
+}, {
+projectId: string;
+intervalDays: number;
+}>>;
 
 // @public
 export interface StatsOptions {
@@ -1997,7 +2270,13 @@ export function toSnakeCase(name: string): string;
 export function triggerSync(): Promise<CliOutput<SyncResult>>;
 
 // @public
+export const triggerSyncDescriptor: ResolvedCommandDescriptor<    {}, SyncResult, z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
+
+// @public
 export function unfocus(): Promise<CliOutput<FocusResult>>;
+
+// @public
+export const unfocusDescriptor: ResolvedCommandDescriptor<    {}, FocusResult, z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
 
 // @public
 export function updateFolder(folderId: string, options: UpdateFolderOptions): Promise<CliOutput<OFFolder>>;

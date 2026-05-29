@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from opening an item.
@@ -95,3 +97,31 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptor
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `open` command.
+ *
+ * Drives CLI subcommand `open` and MCP tool `open`.
+ *
+ * @public
+ */
+export const openItemDescriptor = defineCommand({
+  name: "openItem",
+  cliName: "open",
+  mcpName: "open",
+  description:
+    "Open an item in the OmniFocus user interface (task, project, folder, or tag)",
+  cliPositional: ["id"] as const,
+  inputSchema: z.object({
+    id: z
+      .string()
+      .describe(
+        "ID of the item to open (task, project, folder, or tag — auto-detected)"
+      ),
+  }),
+  handler: async (input) => openItem(input.id),
+});

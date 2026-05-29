@@ -1,7 +1,9 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Sync status information.
@@ -102,3 +104,39 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptors
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `sync-status` command.
+ *
+ * Drives CLI subcommand `sync-status` and MCP tool `sync_status`.
+ *
+ * @public
+ */
+export const getSyncStatusDescriptor = defineCommand({
+  name: "getSyncStatus",
+  cliName: "sync-status",
+  mcpName: "sync_status",
+  description: "Get the current sync status of OmniFocus",
+  inputSchema: z.object({}),
+  handler: async (_input) => getSyncStatus(),
+});
+
+/**
+ * Centralized descriptor for the `sync` command.
+ *
+ * Drives CLI subcommand `sync` and MCP tool `sync_trigger`.
+ *
+ * @public
+ */
+export const triggerSyncDescriptor = defineCommand({
+  name: "triggerSync",
+  cliName: "sync",
+  mcpName: "sync_trigger",
+  description: "Trigger a sync in OmniFocus",
+  inputSchema: z.object({}),
+  handler: async (_input) => triggerSync(),
+});

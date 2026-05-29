@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { runOmniJSWrapped, escapeJSString, toOmniJSDate } from "../omnijs.js";
 import { validateDateString } from "../validation.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Options for archiving tasks.
@@ -177,3 +179,62 @@ export function compactDatabase(): Promise<CliOutput<CompactResult>> {
     })
   );
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptors
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `archive` command.
+ *
+ * Drives CLI subcommand `archive` and MCP tool `archive`.
+ *
+ * @public
+ */
+export const archiveTasksDescriptor = defineCommand({
+  name: "archiveTasks",
+  cliName: "archive",
+  mcpName: "archive",
+  description: "Archive completed or dropped tasks and projects",
+  inputSchema: z.object({
+    completedBefore: z
+      .string()
+      .optional()
+      .describe("Archive tasks completed before this date (ISO 8601)"),
+    droppedBefore: z
+      .string()
+      .optional()
+      .describe("Archive tasks dropped before this date (ISO 8601)"),
+    project: z
+      .string()
+      .optional()
+      .describe("Archive only tasks from this project"),
+    dryRun: z
+      .boolean()
+      .optional()
+      .describe("Preview what would be archived without archiving"),
+  }),
+  handler: async (input) =>
+    archiveTasks({
+      completedBefore: input.completedBefore,
+      droppedBefore: input.droppedBefore,
+      project: input.project,
+      dryRun: input.dryRun,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `compact` command.
+ *
+ * Drives CLI subcommand `compact` and MCP tool `compact_database`.
+ *
+ * @public
+ */
+export const compactDatabaseDescriptor = defineCommand({
+  name: "compactDatabase",
+  cliName: "compact",
+  mcpName: "compact_database",
+  description: "Compact the OmniFocus database",
+  inputSchema: z.object({}),
+  handler: async (_input) => compactDatabase(),
+});

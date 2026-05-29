@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateProjectName } from "../validation.js";
 import { runOmniJSWrapped, escapeJSString } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from focus operations.
@@ -222,3 +224,62 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptors
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `focus` command.
+ *
+ * Drives CLI subcommand `focus` and MCP tool `focus_set`.
+ *
+ * @public
+ */
+export const focusOnDescriptor = defineCommand({
+  name: "focusOn",
+  cliName: "focus",
+  mcpName: "focus_set",
+  description: "Focus on a specific project or folder by name or ID",
+  cliPositional: ["target"] as const,
+  inputSchema: z.object({
+    target: z.string().describe("Project or folder name (or ID with --by-id)"),
+    byId: z
+      .boolean()
+      .optional()
+      .describe("If true, interpret target as an ID instead of a name"),
+  }),
+  handler: async (input) => focusOn(input.target, { byId: input.byId }),
+});
+
+/**
+ * Centralized descriptor for the `unfocus` command.
+ *
+ * Drives CLI subcommand `unfocus` and MCP tool `focus_clear`.
+ *
+ * @public
+ */
+export const unfocusDescriptor = defineCommand({
+  name: "unfocus",
+  cliName: "unfocus",
+  mcpName: "focus_clear",
+  description: "Clear the current focus in OmniFocus",
+  inputSchema: z.object({}),
+  handler: async (_input) => unfocus(),
+});
+
+/**
+ * Centralized descriptor for the `focused` command.
+ *
+ * Drives CLI subcommand `focused` and MCP tool `focus_get`.
+ *
+ * @public
+ */
+export const getFocusedDescriptor = defineCommand({
+  name: "getFocused",
+  cliName: "focused",
+  mcpName: "focus_get",
+  description: "Get the currently focused project or folder",
+  inputSchema: z.object({}),
+  handler: async (_input) => getFocused(),
+});

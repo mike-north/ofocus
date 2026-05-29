@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput, OFProject, ReviewResult } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from getting or setting review interval.
@@ -262,3 +264,84 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptors
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `review` command.
+ *
+ * Drives CLI subcommand `review` and MCP tool `project_review`.
+ *
+ * @public
+ */
+export const reviewProjectDescriptor = defineCommand({
+  name: "reviewProject",
+  cliName: "review",
+  mcpName: "project_review",
+  description: "Mark a project as reviewed in OmniFocus",
+  cliPositional: ["projectId"] as const,
+  inputSchema: z.object({
+    projectId: z.string().describe("Project ID to mark as reviewed"),
+  }),
+  handler: async (input) => reviewProject(input.projectId),
+});
+
+/**
+ * Centralized descriptor for the `projects-for-review` command.
+ *
+ * Drives CLI subcommand `projects-for-review` and MCP tool `projects_for_review`.
+ *
+ * @public
+ */
+export const queryProjectsForReviewDescriptor = defineCommand({
+  name: "queryProjectsForReview",
+  cliName: "projects-for-review",
+  mcpName: "projects_for_review",
+  description: "List projects that are due for review",
+  inputSchema: z.object({}),
+  handler: async (_input) => queryProjectsForReview(),
+});
+
+/**
+ * Centralized descriptor for the `review-interval-get` command.
+ *
+ * Drives MCP tool `project_review_interval_get`. The CLI exposes both get and
+ * set through the combined `review-interval` command (hand-wired).
+ *
+ * @public
+ */
+export const getReviewIntervalDescriptor = defineCommand({
+  name: "getReviewInterval",
+  cliName: "review-interval-get",
+  mcpName: "project_review_interval_get",
+  description: "Get the review interval for a project in days",
+  cliPositional: ["projectId"] as const,
+  inputSchema: z.object({
+    projectId: z.string().describe("Project ID to get review interval for"),
+  }),
+  handler: async (input) => getReviewInterval(input.projectId),
+});
+
+/**
+ * Centralized descriptor for the `review-interval-set` command.
+ *
+ * Drives MCP tool `project_review_interval_set`. The CLI exposes both get and
+ * set through the combined `review-interval` command (hand-wired).
+ *
+ * @public
+ */
+export const setReviewIntervalDescriptor = defineCommand({
+  name: "setReviewInterval",
+  cliName: "review-interval-set",
+  mcpName: "project_review_interval_set",
+  description: "Set the review interval for a project in days",
+  cliPositional: ["projectId"] as const,
+  inputSchema: z.object({
+    projectId: z.string().describe("Project ID to set review interval for"),
+    intervalDays: z.number().int().min(1).describe("Review interval in days"),
+  }),
+  handler: async (input) =>
+    setReviewInterval(input.projectId, input.intervalDays),
+});
