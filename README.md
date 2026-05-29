@@ -7,7 +7,7 @@ A SDK and CLI for integrating with OmniFocus on macOS
 
 A monorepo containing the OmniFocus CLI and SDK for AI agents.
 
-> **Note**: Requires macOS with OmniFocus installed. The SDK communicates with OmniFocus through the OmniJS automation API (`osascript -e 'tell application "OmniFocus" to evaluate javascript …'`).
+> **Note**: Requires macOS with OmniFocus 4+ installed. The SDK communicates with OmniFocus via OmniJS (OmniFocus's built-in JavaScript automation API), invoked through `osascript` for cross-process script evaluation.
 
 ## Quick Start
 
