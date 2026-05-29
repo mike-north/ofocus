@@ -87,8 +87,33 @@ describe.skipIf(SKIP)("Repetition rule integration", () => {
     expect(applied.data!.ruleString).toBe(buildRRule(rule));
   });
 
-  it("applies and reads back a yearly BYMONTH rule (March and September)", async () => {
-    const name = ctx.generateName("repetition-yearly-bymonth");
+  it("applies and reads back a yearly rule", async () => {
+    const name = ctx.generateName("repetition-yearly");
+    const created = await addToInbox(name);
+    expect(created.success).toBe(true);
+    const taskId = created.data!.id;
+    ctx.trackTask(taskId);
+
+    const rule = {
+      frequency: "yearly" as const,
+      interval: 1,
+      repeatMethod: "due-again" as const,
+    };
+    const applied = await applyRepetitionRule(taskId, rule);
+    expect(applied.success).toBe(true);
+    expect(applied.data!.ruleString).toBe(buildRRule(rule));
+  });
+
+  it("rejects a yearly BYMONTH rule as unsupported by OmniFocus", async () => {
+    // OmniFocus's Task.RepetitionRule does NOT support the BYMONTH token (it
+    // supports FREQ=YEARLY plain, and FREQ=YEARLY;BYDAY=NMO, but not BYMONTH —
+    // verified empirically against the live RepetitionRule constructor, which
+    // throws "Repetition rule is of a format that OmniFocus doesn't support").
+    // buildRRule still emits RFC-5545-correct BYMONTH, so applying a rule with
+    // monthsOfYear must surface OmniFocus's rejection as a failure rather than
+    // silently succeeding. This guards the limitation so a future regression
+    // (e.g. swallowing the error) is caught.
+    const name = ctx.generateName("repetition-yearly-bymonth-unsupported");
     const created = await addToInbox(name);
     expect(created.success).toBe(true);
     const taskId = created.data!.id;
@@ -101,8 +126,8 @@ describe.skipIf(SKIP)("Repetition rule integration", () => {
       monthsOfYear: [3, 9],
     };
     const applied = await applyRepetitionRule(taskId, rule);
-    expect(applied.success).toBe(true);
-    expect(applied.data!.ruleString).toBe(buildRRule(rule));
+    expect(applied.success).toBe(false);
+    expect(applied.error?.code).toBe("SCRIPT_ERROR");
   });
 
   it("clears a previously applied rule", async () => {

@@ -677,12 +677,16 @@ describe("Additional API Integration", () => {
       expect(archiveResult.error).toBeDefined();
     });
 
-    it("compacts the database", async () => {
+    it("reports that database compaction is unsupported via automation", async () => {
+      // OmniFocus does not expose database compaction to OmniJS automation
+      // (the AppleScript `compact` command has no OmniJS equivalent). The SDK
+      // returns a structured result documenting this rather than fabricating
+      // success, so the call succeeds but `compacted` is false.
       const result = await compactDatabase();
 
       expect(result.success).toBe(true);
-      expect(result.data!.compacted).toBe(true);
-      expect(result.data!.message).toBeDefined();
+      expect(result.data!.compacted).toBe(false);
+      expect(result.data!.message).toContain("not supported");
     });
   });
 

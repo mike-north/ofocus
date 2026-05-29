@@ -112,11 +112,18 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // Check for --force flag
-  const forceDelete = process.argv.includes("--force");
+  // Non-interactive mode: --force/--yes/-y flags, or CI / OFOCUS_FORCE_CLEANUP
+  // env vars. Lets the script run unattended (CI, scripted cleanup) without
+  // hanging on the confirmation prompt.
+  const forceDelete =
+    process.argv.includes("--force") ||
+    process.argv.includes("--yes") ||
+    process.argv.includes("-y") ||
+    process.env.CI === "true" ||
+    process.env.OFOCUS_FORCE_CLEANUP === "1";
 
   if (forceDelete) {
-    console.log("--force flag detected, skipping confirmation.\n");
+    console.log("Non-interactive mode, skipping confirmation.\n");
   } else {
     const confirmed = await promptYesNo(
       `Delete all ${totalCount} test item(s)? (y/N): `

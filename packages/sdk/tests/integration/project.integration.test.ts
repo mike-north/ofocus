@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { IntegrationTestContext } from "./setup.js";
+import { IntegrationTestContext, expectListItems } from "./setup.js";
 import {
   createProject,
   queryProjects,
@@ -271,9 +271,11 @@ describe("Project Integration", () => {
       expect(deleteResult.success).toBe(true);
       expect(deleteResult.data!.deleted).toBe(true);
 
-      // Verify project is gone
+      // Verify project is gone (queryProjects returns a list-shaped QueryResult)
       const queryResult = await queryProjects({});
-      const found = queryResult.data?.find((p) => p.id === projectId);
+      const found = expectListItems(queryResult.data!).find(
+        (p) => p.id === projectId
+      );
       expect(found).toBeUndefined();
 
       // Don't track - it's already deleted

@@ -23,8 +23,13 @@ describe.skipIf(CI)("evaluateScript — integration", () => {
   });
 
   it("injects args and uses them in the script", async () => {
+    // Per the eval contract, scripts must end with `return JSON.stringify(...)`
+    // so the value round-trips as JSON — OmniFocus returns a bare string
+    // otherwise, which is not JSON-parseable. This test exercises the args
+    // injection path (object input here; the CLI string path is covered by the
+    // schema preprocess regression tests in the unit suite).
     const result = await evaluateScript({
-      script: 'return args.greeting + ", world";',
+      script: 'return JSON.stringify(args.greeting + ", world");',
       args: { greeting: "hello" },
     });
     expect(result.success).toBe(true);

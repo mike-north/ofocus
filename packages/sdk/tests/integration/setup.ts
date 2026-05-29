@@ -16,7 +16,28 @@ import {
   queryProjects,
   queryFolders,
   queryTags,
+  type QueryResult,
 } from "../../src/index.js";
+
+/**
+ * Extract the `items` array from a list-shaped {@link QueryResult}.
+ *
+ * List queries (`queryTasks`, `queryFolders`, `queryTags`, `queryForecast`,
+ * `queryDeferred`, `searchTasks`, …) return a discriminated `QueryResult`
+ * whose default shape is `{ kind: "list", items: T[], … }`. Tests frequently
+ * need the items array; accessing `.data` directly (as if it were an array)
+ * is a common mistake. This helper asserts the list shape and returns the
+ * items, throwing a descriptive error for any non-list shape so a misuse
+ * surfaces clearly rather than as `data.find is not a function`.
+ */
+export function expectListItems<T>(result: QueryResult<T>): T[] {
+  if (result.kind !== "list") {
+    throw new Error(
+      `Expected a list QueryResult but got kind="${result.kind}"`
+    );
+  }
+  return result.items;
+}
 
 /**
  * Test naming convention prefix
