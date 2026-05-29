@@ -341,6 +341,56 @@ const result = await queryTasks({ project: "Work", all: true });
 
 For unbounded or extremely large queries (e.g., every task in a large database), prefer `--count` or `--group-by` to avoid materializing a very large array.
 
+### Auto-iterate in the SDK (`paginate` / `paginatePages`)
+
+In TypeScript, rather than stepping `offset`/`hasMore` yourself (or materializing everything with `--all`), pass any single-`options` list query (`queryTasks`, `queryProjects`, `queryTags`, `queryFolders`, `queryDeferred`, `queryForecast`, …) to `paginate` and iterate every matching item with a `for await` loop:
+
+```typescript
+import {
+  paginate,
+  paginatePages,
+  PaginationError,
+  queryTasks,
+} from "@ofocus/sdk";
+
+// Iterate every flagged task, transparently fetching pages as needed.
+for await (const task of paginate(queryTasks, { flagged: true })) {
+  console.log(task.name);
+}
+
+// Or process whole pages — useful for batching or progress reporting.
+// The third argument sets the page size (defaults to options.limit, then 100).
+for await (const page of paginatePages(queryTasks, { available: true }, 250)) {
+  await processBatch(page);
+}
+```
+
+The element and options types are inferred from the query function — no type arguments needed.
+
+Queries that take a required leading argument — `searchTasks(query, options)` and `querySubtasks(parentTaskId, options)` — don't match the single-`options` shape directly. Wrap them in a closure first:
+
+```typescript
+for await (const task of paginate((options) => searchTasks("invoice", options))) {
+  console.log(task.name);
+}
+```
+
+A failed page (or an options combination that does not produce a list, such as `count`/`idsOnly`/`first`/`last`/`groupBy`) throws a `PaginationError` carrying the underlying error code:
+
+```typescript
+try {
+  for await (const task of paginate(queryTasks)) {
+    // …
+  }
+} catch (err) {
+  if (err instanceof PaginationError) {
+    console.error(err.code, err.message);
+  }
+}
+```
+
+> **Note:** This is offset-based pagination over a live database. If tasks are added, completed, or deleted while you iterate, pages can skip or duplicate items.
+
 ## Development
 
 ### Prerequisites

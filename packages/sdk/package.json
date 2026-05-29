@@ -19,7 +19,8 @@
   "scripts": {
     "build": "tsc --build && api-extractor run --local --verbose",
     "build:tsc": "tsc --build",
-    "test": "vitest run",
+    "test": "vitest run && tsc -p tsconfig.test-d.json",
+    "test:types": "tsc -p tsconfig.test-d.json",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:integration:watch": "vitest --config vitest.integration.config.ts",

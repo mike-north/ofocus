@@ -4,6 +4,34 @@
 
 ## sdk package
 
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[PaginationError](./sdk.paginationerror.md)
+
+
+</td><td>
+
+Error thrown by [paginate()](./sdk.paginate.md) and [paginatePages()](./sdk.paginatepages.md) when a page cannot be retrieved or the query does not produce a paginated list.
+
+It carries the underlying [CliError](./sdk.clierror.md) so callers can branch on the structured [PaginationError.code](./sdk.paginationerror.code.md) from inside a normal `try`<!-- -->/`catch` around the `for await` loop.
+
+
+</td></tr>
+</tbody></table>
+
 ## Functions
 
 <table><thead><tr><th>
@@ -633,6 +661,36 @@ Move a task to become a subtask of another task.
 </td><td>
 
 Open an item in the OmniFocus UI. The item can be a task, project, folder, or tag. Auto-detects the item type based on the ID.
+
+
+</td></tr>
+<tr><td>
+
+[paginate(queryFn, options, pageSize)](./sdk.paginate.md)
+
+
+</td><td>
+
+Auto-paginate a list query, yielding individual items.
+
+A thin wrapper over [paginatePages()](./sdk.paginatepages.md) that flattens each page. This is the common case — iterate every matching entity without manual `offset`<!-- -->/`hasMore` bookkeeping.
+
+See [paginatePages()](./sdk.paginatepages.md) for page-size resolution, error behavior, and the live-data caveat.
+
+
+</td></tr>
+<tr><td>
+
+[paginatePages(queryFn, options, pageSize)](./sdk.paginatepages.md)
+
+
+</td><td>
+
+Auto-paginate a list query, yielding one full page (`T[]`<!-- -->) at a time.
+
+The helper owns pagination control: it overrides `limit` and `offset` on each call (using `pageSize` as the per-page `limit` and stepping `offset` forward), and keeps requesting pages until the query reports `hasMore === false`<!-- -->. It does \*\*not\*\* strip aggregating options (`count` / `idsOnly` / `first` / `last` / `groupBy`<!-- -->); if the query returns a non-`list` shape it throws a [PaginationError](./sdk.paginationerror.md) instead.
+
+Page size resolves as `pageSize ?? options.limit ?? 100`<!-- -->. Iteration starts at `options.offset ?? 0`<!-- -->.
 
 
 </td></tr>
@@ -3208,12 +3266,36 @@ The payload type is intentionally `unknown` — the user wrote arbitrary code; t
 </td></tr>
 <tr><td>
 
+[ListQueryFn](./sdk.listqueryfn.md)
+
+
+</td><td>
+
+A query function in the SDK's uniform list-query shape: it accepts a single options object (carrying at least [PaginationOptions](./sdk.paginationoptions.md)<!-- -->) and resolves to a [CliOutput](./sdk.clioutput.md) wrapping a [QueryResult](./sdk.queryresult.md)<!-- -->.
+
+Single-`options` list queries — `queryTasks`<!-- -->, `queryProjects`<!-- -->, `queryTags`<!-- -->, `queryFolders`<!-- -->, `queryDeferred`<!-- -->, `queryForecast`<!-- -->, … — conform directly, which is what lets a single generic helper auto-paginate them. Queries that take a required leading argument (e.g. `searchTasks(query, options)`<!-- -->, `querySubtasks(parentTaskId, options)`<!-- -->) do not match this shape directly; wrap them in a single-`options` closure first — e.g. `paginate((options) => searchTasks(query, options))`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [NumericRange](./sdk.numericrange.md)
 
 
 </td><td>
 
 Inclusive integer range `[min, max]` for numeric predicates like `estimateBetween`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[QueryFnItem](./sdk.queryfnitem.md)
+
+
+</td><td>
+
+The entity type produced by a [ListQueryFn](./sdk.listqueryfn.md)<!-- -->, extracted from its result. This is what lets [paginate()](./sdk.paginate.md) / [paginatePages()](./sdk.paginatepages.md) infer the element type from the query function alone, without an explicit type argument.
 
 
 </td></tr>

@@ -36,6 +36,10 @@ export type { ErrorCode as ErrorCodeType } from "./errors.js";
 // Result helpers
 export { success, failure, failureMessage } from "./result.js";
 
+// Auto-paginating async iteration over list queries
+export { paginate, paginatePages, PaginationError } from "./pagination.js";
+export type { ListQueryFn, QueryFnItem } from "./pagination.js";
+
 // Validation
 export {
   validateId,
