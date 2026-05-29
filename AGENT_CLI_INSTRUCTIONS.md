@@ -26,19 +26,19 @@ ofocus inbox <title> [--note <note>] [--due <due>] [--defer <defer>] [--flag] [-
 
 **Flags:**
 
-| Flag                    | Type                                   | Required | Description                                             |
-| ----------------------- | -------------------------------------- | -------- | ------------------------------------------------------- |
-| `--note`                | `string`                               | no       | Task note / description                                 |
-| `--due`                 | `string`                               | no       | Due date (ISO 8601 or natural language like 'tomorrow') |
-| `--defer`               | `string`                               | no       | Defer date (ISO 8601 or natural language)               |
-| `--flag` / `--no-flag`  | `boolean`                              | no       | Mark the task as flagged                                |
-| `--tags`                | `string[]`                             | no       | Tag names to apply                                      |
-| `--estimated-minutes`   | `number`                               | no       | Estimated duration in minutes                           |
-| `--repeat-frequency`    | `daily \| weekly \| monthly \| yearly` | no       | Repetition frequency                                    |
-| `--repeat-interval`     | `number`                               | no       | Repeat every N periods (default: 1)                     |
-| `--repeat-method`       | `due-again \| defer-another`           | no       | Anchor for the next occurrence (default: due-again)     |
-| `--repeat-days-of-week` | `number[]`                             | no       | Days of week for weekly repeats (0=Sunday … 6=Saturday) |
-| `--repeat-day-of-month` | `number`                               | no       | Day of month for monthly repeats                        |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--note` | `string` | no | Task note / description |
+| `--due` | `string` | no | Due date (ISO 8601 or natural language like 'tomorrow') |
+| `--defer` | `string` | no | Defer date (ISO 8601 or natural language) |
+| `--flag` / `--no-flag` | `boolean` | no | Mark the task as flagged |
+| `--tags` | `string[]` | no | Tag names to apply |
+| `--estimated-minutes` | `number` | no | Estimated duration in minutes |
+| `--repeat-frequency` | `daily \| weekly \| monthly \| yearly` | no | Repetition frequency |
+| `--repeat-interval` | `number` | no | Repeat every N periods (default: 1) |
+| `--repeat-method` | `due-again \| defer-another` | no | Anchor for the next occurrence (default: due-again) |
+| `--repeat-days-of-week` | `number[]` | no | Days of week for weekly repeats (0=Sunday … 6=Saturday) |
+| `--repeat-day-of-month` | `number` | no | Day of month for monthly repeats |
 
 #### `ofocus complete`
 
@@ -62,15 +62,15 @@ ofocus subtask <title> --parent-task-id <parentTaskId> [--note <note>] [--due <d
 
 **Flags:**
 
-| Flag                   | Type       | Required | Description                   |
-| ---------------------- | ---------- | -------- | ----------------------------- |
-| `--parent-task-id`     | `string`   | yes      | ID of the parent task         |
-| `--note`               | `string`   | no       | Subtask note                  |
-| `--due`                | `string`   | no       | Due date                      |
-| `--defer`              | `string`   | no       | Defer date                    |
-| `--flag` / `--no-flag` | `boolean`  | no       | Flag the subtask              |
-| `--tags`               | `string[]` | no       | Tags to apply                 |
-| `--estimated-minutes`  | `number`   | no       | Estimated duration in minutes |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--parent-task-id` | `string` | yes | ID of the parent task |
+| `--note` | `string` | no | Subtask note |
+| `--due` | `string` | no | Due date |
+| `--defer` | `string` | no | Defer date |
+| `--flag` / `--no-flag` | `boolean` | no | Flag the subtask |
+| `--tags` | `string[]` | no | Tags to apply |
+| `--estimated-minutes` | `number` | no | Estimated duration in minutes |
 
 #### `ofocus defer`
 
@@ -84,10 +84,10 @@ ofocus defer <taskId> [--days <days>] [--to <to>]
 
 **Flags:**
 
-| Flag     | Type     | Required | Description                         |
-| -------- | -------- | -------- | ----------------------------------- |
-| `--days` | `number` | no       | Defer by this many days from today  |
-| `--to`   | `string` | no       | Defer to a specific date (ISO 8601) |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--days` | `number` | no | Defer by this many days from today |
+| `--to` | `string` | no | Defer to a specific date (ISO 8601) |
 
 #### `ofocus delete`
 
@@ -131,9 +131,9 @@ ofocus duplicate <taskId> [--include-subtasks]
 
 **Flags:**
 
-| Flag                                           | Type      | Required | Description                                       |
-| ---------------------------------------------- | --------- | -------- | ------------------------------------------------- |
-| `--include-subtasks` / `--no-include-subtasks` | `boolean` | no       | Include subtasks in the duplicate (default: true) |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--include-subtasks` / `--no-include-subtasks` | `boolean` | no | Include subtasks in the duplicate (default: true) |
 
 #### `ofocus attachments`
 
@@ -177,9 +177,9 @@ ofocus move-to-parent <taskId> --parent-task-id <parentTaskId>
 
 **Flags:**
 
-| Flag               | Type     | Required | Description               |
-| ------------------ | -------- | -------- | ------------------------- |
-| `--parent-task-id` | `string` | yes      | ID of the new parent task |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--parent-task-id` | `string` | yes | ID of the new parent task |
 
 #### `ofocus deferred`
 
@@ -193,14 +193,14 @@ ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredB
 
 **Flags:**
 
-| Flag                                   | Type      | Required | Description                                                                                                    |
-| -------------------------------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `--deferred-after`                     | `string`  | no       | Only tasks deferred after this date                                                                            |
-| `--deferred-before`                    | `string`  | no       | Only tasks deferred before this date                                                                           |
-| `--blocked-only` / `--no-blocked-only` | `boolean` | no       | Only show tasks currently blocked by their defer date                                                          |
-| `--limit`                              | `number`  | no       | Maximum number of results to return (default: 100)                                                             |
-| `--offset`                             | `number`  | no       | Number of results to skip for pagination                                                                       |
-| `--all` / `--no-all`                   | `boolean` | no       | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--deferred-after` | `string` | no | Only tasks deferred after this date |
+| `--deferred-before` | `string` | no | Only tasks deferred before this date |
+| `--blocked-only` / `--no-blocked-only` | `boolean` | no | Only show tasks currently blocked by their defer date |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100) |
+| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus perspective`
 
@@ -214,9 +214,9 @@ ofocus perspective <name> [--limit <limit>]
 
 **Flags:**
 
-| Flag      | Type     | Required | Description                         |
-| --------- | -------- | -------- | ----------------------------------- |
-| `--limit` | `number` | no       | Maximum number of results to return |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--limit` | `number` | no | Maximum number of results to return |
 
 #### `ofocus projects-for-review`
 
@@ -240,13 +240,13 @@ ofocus subtasks <parentTaskId> [--completed] [--flagged] [--limit <limit>] [--of
 
 **Flags:**
 
-| Flag                             | Type      | Required | Description                                                                                                    |
-| -------------------------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `--completed` / `--no-completed` | `boolean` | no       | Filter by completion status (true = only completed, false = only incomplete)                                   |
-| `--flagged` / `--no-flagged`     | `boolean` | no       | Filter by flagged status                                                                                       |
-| `--limit`                        | `number`  | no       | Maximum number of results to return (default: 100)                                                             |
-| `--offset`                       | `number`  | no       | Number of results to skip for pagination                                                                       |
-| `--all` / `--no-all`             | `boolean` | no       | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--completed` / `--no-completed` | `boolean` | no | Filter by completion status (true = only completed, false = only incomplete) |
+| `--flagged` / `--no-flagged` | `boolean` | no | Filter by flagged status |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100) |
+| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus tasks`
 
@@ -260,65 +260,65 @@ ofocus tasks [--project <project>] [--tag <tag>] [--tag-mode <tagMode>] [--folde
 
 **Flags:**
 
-| Flag                                                     | Type                                         | Required | Description                                                                                                    |
-| -------------------------------------------------------- | -------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `--project`                                              | `string \| string[]`                         | no       | Filter by project name (single value or array)                                                                 |
-| `--tag`                                                  | `string \| string[]`                         | no       | Filter by tag name (single value or array)                                                                     |
-| `--tag-mode`                                             | `any \| all \| none`                         | no       | Tag-matching mode when multiple tags are given (default: all)                                                  |
-| `--folder`                                               | `string \| string[]`                         | no       | Filter by folder name (transitive; single value or array)                                                      |
-| `--flagged` / `--no-flagged`                             | `boolean`                                    | no       | Filter by flagged status                                                                                       |
-| `--not-flagged` / `--no-not-flagged`                     | `boolean`                                    | no       | Exclude flagged tasks when true                                                                                |
-| `--completed` / `--no-completed`                         | `boolean`                                    | no       | Include completed tasks when true                                                                              |
-| `--not-completed` / `--no-not-completed`                 | `boolean`                                    | no       | Exclude completed tasks when true                                                                              |
-| `--dropped` / `--no-dropped`                             | `boolean`                                    | no       | Include dropped tasks when true                                                                                |
-| `--not-dropped` / `--no-not-dropped`                     | `boolean`                                    | no       | Exclude dropped tasks when true                                                                                |
-| `--blocked` / `--no-blocked`                             | `boolean`                                    | no       | Include only blocked tasks when true                                                                           |
-| `--available` / `--no-available`                         | `boolean`                                    | no       | Only show available (actionable) tasks                                                                         |
-| `--in-inbox` / `--no-in-inbox`                           | `boolean`                                    | no       | Include only inbox tasks when true                                                                             |
-| `--has-due` / `--no-has-due`                             | `boolean`                                    | no       | Include only tasks that have a due date                                                                        |
-| `--no-due` / `--no-no-due`                               | `boolean`                                    | no       | Include only tasks with no due date                                                                            |
-| `--has-defer` / `--no-has-defer`                         | `boolean`                                    | no       | Include only tasks that have a defer date                                                                      |
-| `--has-note` / `--no-has-note`                           | `boolean`                                    | no       | Include only tasks that have a non-empty note                                                                  |
-| `--has-attachments` / `--no-has-attachments`             | `boolean`                                    | no       | Include only tasks with attachments                                                                            |
-| `--has-subtasks` / `--no-has-subtasks`                   | `boolean`                                    | no       | Include only tasks that have child subtasks                                                                    |
-| `--has-repetition` / `--no-has-repetition`               | `boolean`                                    | no       | Include only tasks with a repetition rule                                                                      |
-| `--effectively-completed` / `--no-effectively-completed` | `boolean`                                    | no       | Include only effectively-completed tasks                                                                       |
-| `--effectively-dropped` / `--no-effectively-dropped`     | `boolean`                                    | no       | Include only effectively-dropped tasks                                                                         |
-| `--status`                                               | `active \| completed \| dropped \| deferred` | no       | Filter by high-level task status (active, completed, dropped, deferred)                                        |
-| `--due-before`                                           | `string`                                     | no       | Filter tasks due before this date (ISO 8601 or relative)                                                       |
-| `--due-after`                                            | `string`                                     | no       | Filter tasks due after this date (ISO 8601 or relative)                                                        |
-| `--due-on`                                               | `string`                                     | no       | Match tasks whose due date falls on this calendar day (UTC)                                                    |
-| `--due-within`                                           | `string`                                     | no       | Duration string like '7d'/'1w' — due date must be within now + duration                                        |
-| `--defer-before`                                         | `string`                                     | no       | Filter tasks with defer date before this date                                                                  |
-| `--defer-after`                                          | `string`                                     | no       | Filter tasks with defer date after this date                                                                   |
-| `--defer-on`                                             | `string`                                     | no       | Match tasks whose defer date falls on this calendar day (UTC)                                                  |
-| `--defer-within`                                         | `string`                                     | no       | Duration string — defer date must be within now + duration                                                     |
-| `--completed-before`                                     | `string`                                     | no       | Filter tasks completed before this date                                                                        |
-| `--completed-after`                                      | `string`                                     | no       | Filter tasks completed after this date                                                                         |
-| `--estimate-lt`                                          | `number`                                     | no       | Estimated minutes less than this value                                                                         |
-| `--estimate-gt`                                          | `number`                                     | no       | Estimated minutes greater than this value                                                                      |
-| `--estimate-eq`                                          | `number`                                     | no       | Estimated minutes equal to this value                                                                          |
-| `--name-contains`                                        | `string`                                     | no       | Task name contains this substring                                                                              |
-| `--name-starts`                                          | `string`                                     | no       | Task name starts with this string                                                                              |
-| `--name-equals`                                          | `string`                                     | no       | Task name equals this string                                                                                   |
-| `--name-regex`                                           | `string`                                     | no       | Task name matches this regular expression                                                                      |
-| `--note-contains`                                        | `string`                                     | no       | Task note contains this substring                                                                              |
-| `--note-regex`                                           | `string`                                     | no       | Task note matches this regular expression                                                                      |
-| `--case-sensitive` / `--no-case-sensitive`               | `boolean`                                    | no       | Case sensitivity for name/note string predicates (default: false)                                              |
-| `--fields`                                               | `string[]`                                   | no       | Whitelist of fields to include in each result item                                                             |
-| `--exclude-fields`                                       | `string[]`                                   | no       | Fields to exclude from each result item                                                                        |
-| `--sort`                                                 | `string[]`                                   | no       | Ordered list of sort keys (field names)                                                                        |
-| `--reverse` / `--no-reverse`                             | `boolean`                                    | no       | Reverse the sort order (default: false)                                                                        |
-| `--nulls-first` / `--no-nulls-first`                     | `boolean`                                    | no       | Place null sort values first instead of last (default: false)                                                  |
-| `--count` / `--no-count`                                 | `boolean`                                    | no       | Return only the count of matching tasks as { kind: 'count', count }                                            |
-| `--first` / `--no-first`                                 | `boolean`                                    | no       | Return only the first matching task as { kind: 'single', item }                                                |
-| `--last` / `--no-last`                                   | `boolean`                                    | no       | Return only the last matching task as { kind: 'single', item }                                                 |
-| `--ids-only` / `--no-ids-only`                           | `boolean`                                    | no       | Return only the IDs of matching tasks as { kind: 'ids', ids }                                                  |
-| `--group-by`                                             | `string`                                     | no       | Group matching tasks by this field key                                                                         |
-| `--stats` / `--no-stats`                                 | `boolean`                                    | no       | When grouping, include count statistics per group                                                              |
-| `--limit`                                                | `number`                                     | no       | Maximum number of results to return (default: 100)                                                             |
-| `--offset`                                               | `number`                                     | no       | Number of results to skip for pagination                                                                       |
-| `--all` / `--no-all`                                     | `boolean`                                    | no       | When true, return every matching task ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--project` | `string \| string[]` | no | Filter by project name (single value or array) |
+| `--tag` | `string \| string[]` | no | Filter by tag name (single value or array) |
+| `--tag-mode` | `any \| all \| none` | no | Tag-matching mode when multiple tags are given (default: all) |
+| `--folder` | `string \| string[]` | no | Filter by folder name (transitive; single value or array) |
+| `--flagged` / `--no-flagged` | `boolean` | no | Filter by flagged status |
+| `--not-flagged` / `--no-not-flagged` | `boolean` | no | Exclude flagged tasks when true |
+| `--completed` / `--no-completed` | `boolean` | no | Include completed tasks when true |
+| `--not-completed` / `--no-not-completed` | `boolean` | no | Exclude completed tasks when true |
+| `--dropped` / `--no-dropped` | `boolean` | no | Include dropped tasks when true |
+| `--not-dropped` / `--no-not-dropped` | `boolean` | no | Exclude dropped tasks when true |
+| `--blocked` / `--no-blocked` | `boolean` | no | Include only blocked tasks when true |
+| `--available` / `--no-available` | `boolean` | no | Only show available (actionable) tasks |
+| `--in-inbox` / `--no-in-inbox` | `boolean` | no | Include only inbox tasks when true |
+| `--has-due` / `--no-has-due` | `boolean` | no | Include only tasks that have a due date |
+| `--no-due` / `--no-no-due` | `boolean` | no | Include only tasks with no due date |
+| `--has-defer` / `--no-has-defer` | `boolean` | no | Include only tasks that have a defer date |
+| `--has-note` / `--no-has-note` | `boolean` | no | Include only tasks that have a non-empty note |
+| `--has-attachments` / `--no-has-attachments` | `boolean` | no | Include only tasks with attachments |
+| `--has-subtasks` / `--no-has-subtasks` | `boolean` | no | Include only tasks that have child subtasks |
+| `--has-repetition` / `--no-has-repetition` | `boolean` | no | Include only tasks with a repetition rule |
+| `--effectively-completed` / `--no-effectively-completed` | `boolean` | no | Include only effectively-completed tasks |
+| `--effectively-dropped` / `--no-effectively-dropped` | `boolean` | no | Include only effectively-dropped tasks |
+| `--status` | `active \| completed \| dropped \| deferred` | no | Filter by high-level task status (active, completed, dropped, deferred) |
+| `--due-before` | `string` | no | Filter tasks due before this date (ISO 8601 or relative) |
+| `--due-after` | `string` | no | Filter tasks due after this date (ISO 8601 or relative) |
+| `--due-on` | `string` | no | Match tasks whose due date falls on this calendar day (UTC) |
+| `--due-within` | `string` | no | Duration string like '7d'/'1w' — due date must be within now + duration |
+| `--defer-before` | `string` | no | Filter tasks with defer date before this date |
+| `--defer-after` | `string` | no | Filter tasks with defer date after this date |
+| `--defer-on` | `string` | no | Match tasks whose defer date falls on this calendar day (UTC) |
+| `--defer-within` | `string` | no | Duration string — defer date must be within now + duration |
+| `--completed-before` | `string` | no | Filter tasks completed before this date |
+| `--completed-after` | `string` | no | Filter tasks completed after this date |
+| `--estimate-lt` | `number` | no | Estimated minutes less than this value |
+| `--estimate-gt` | `number` | no | Estimated minutes greater than this value |
+| `--estimate-eq` | `number` | no | Estimated minutes equal to this value |
+| `--name-contains` | `string` | no | Task name contains this substring |
+| `--name-starts` | `string` | no | Task name starts with this string |
+| `--name-equals` | `string` | no | Task name equals this string |
+| `--name-regex` | `string` | no | Task name matches this regular expression |
+| `--note-contains` | `string` | no | Task note contains this substring |
+| `--note-regex` | `string` | no | Task note matches this regular expression |
+| `--case-sensitive` / `--no-case-sensitive` | `boolean` | no | Case sensitivity for name/note string predicates (default: false) |
+| `--fields` | `string[]` | no | Whitelist of fields to include in each result item |
+| `--exclude-fields` | `string[]` | no | Fields to exclude from each result item |
+| `--sort` | `string[]` | no | Ordered list of sort keys (field names) |
+| `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
+| `--nulls-first` / `--no-nulls-first` | `boolean` | no | Place null sort values first instead of last (default: false) |
+| `--count` / `--no-count` | `boolean` | no | Return only the count of matching tasks as { kind: 'count', count } |
+| `--first` / `--no-first` | `boolean` | no | Return only the first matching task as { kind: 'single', item } |
+| `--last` / `--no-last` | `boolean` | no | Return only the last matching task as { kind: 'single', item } |
+| `--ids-only` / `--no-ids-only` | `boolean` | no | Return only the IDs of matching tasks as { kind: 'ids', ids } |
+| `--group-by` | `string` | no | Group matching tasks by this field key |
+| `--stats` / `--no-stats` | `boolean` | no | When grouping, include count statistics per group |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100) |
+| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching task ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus quick`
 
@@ -332,9 +332,9 @@ ofocus quick <input> [--note <note>]
 
 **Flags:**
 
-| Flag     | Type     | Required | Description                 |
-| -------- | -------- | -------- | --------------------------- |
-| `--note` | `string` | no       | Additional note text to add |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--note` | `string` | no | Additional note text to add |
 
 #### `ofocus search`
 
@@ -348,13 +348,13 @@ ofocus search <query> [--scope <scope>] [--limit <limit>] [--include-completed] 
 
 **Flags:**
 
-| Flag                                             | Type                   | Required | Description                                                                                                    |
-| ------------------------------------------------ | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `--scope`                                        | `name \| note \| both` | no       | Where to search (default: both)                                                                                |
-| `--limit`                                        | `number`               | no       | Maximum results to return (default: 100)                                                                       |
-| `--include-completed` / `--no-include-completed` | `boolean`              | no       | Include completed tasks in the results                                                                         |
-| `--offset`                                       | `number`               | no       | Number of results to skip for pagination                                                                       |
-| `--all` / `--no-all`                             | `boolean`              | no       | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--scope` | `name \| note \| both` | no | Where to search (default: both) |
+| `--limit` | `number` | no | Maximum results to return (default: 100) |
+| `--include-completed` / `--no-include-completed` | `boolean` | no | Include completed tasks in the results |
+| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update`
 
@@ -368,19 +368,19 @@ ofocus update <taskId> [--title <title>] [--note <note>] [--due <due>] [--defer 
 
 **Flags:**
 
-| Flag                                       | Type       | Required | Description                                                                                                                                                                                |
-| ------------------------------------------ | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--title`                                  | `string`   | no       | New task title                                                                                                                                                                             |
-| `--note`                                   | `string`   | no       | New task note                                                                                                                                                                              |
-| `--due`                                    | `string`   | no       | New due date (ISO 8601 or relative; empty string to clear)                                                                                                                                 |
-| `--defer`                                  | `string`   | no       | New defer date (ISO 8601 or relative; empty string to clear)                                                                                                                               |
-| `--flag` / `--no-flag`                     | `boolean`  | no       | Flag (true) or unflag (false) the task                                                                                                                                                     |
-| `--project`                                | `string`   | no       | Move to project by name (empty string to move to inbox)                                                                                                                                    |
-| `--tags`                                   | `string[]` | no       | Replace all tags with this list                                                                                                                                                            |
-| `--estimated-minutes`                      | `number`   | no       | Estimated duration in minutes                                                                                                                                                              |
-| `--clear-estimate` / `--no-clear-estimate` | `boolean`  | no       | Clear the estimated duration when true                                                                                                                                                     |
-| `--repeat`                                 | `unknown`  | no       | Set a repetition rule on the task. MCP: pass as an object. CLI: pass as a JSON string, e.g. --repeat '{"frequency":"weekly","interval":1,"repeatMethod":"due-again","daysOfWeek":[1,3,5]}' |
-| `--clear-repeat` / `--no-clear-repeat`     | `boolean`  | no       | Clear the repetition rule when true                                                                                                                                                        |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--title` | `string` | no | New task title |
+| `--note` | `string` | no | New task note |
+| `--due` | `string` | no | New due date (ISO 8601 or relative; empty string to clear) |
+| `--defer` | `string` | no | New defer date (ISO 8601 or relative; empty string to clear) |
+| `--flag` / `--no-flag` | `boolean` | no | Flag (true) or unflag (false) the task |
+| `--project` | `string` | no | Move to project by name (empty string to move to inbox) |
+| `--tags` | `string[]` | no | Replace all tags with this list |
+| `--estimated-minutes` | `number` | no | Estimated duration in minutes |
+| `--clear-estimate` / `--no-clear-estimate` | `boolean` | no | Clear the estimated duration when true |
+| `--repeat` | `unknown` | no | Set a repetition rule on the task. MCP: pass as an object. CLI: pass as a JSON string, e.g. --repeat '{"frequency":"weekly","interval":1,"repeatMethod":"due-again","daysOfWeek":[1,3,5]}' |
+| `--clear-repeat` / `--no-clear-repeat` | `boolean` | no | Clear the repetition rule when true |
 
 ## Batch
 
@@ -406,10 +406,10 @@ ofocus defer-batch <taskIds...> [--days <days>] [--to <to>]
 
 **Flags:**
 
-| Flag     | Type     | Required | Description                         |
-| -------- | -------- | -------- | ----------------------------------- |
-| `--days` | `number` | no       | Defer by this many days from today  |
-| `--to`   | `string` | no       | Defer to a specific date (ISO 8601) |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--days` | `number` | no | Defer by this many days from today |
+| `--to` | `string` | no | Defer to a specific date (ISO 8601) |
 
 #### `ofocus delete-batch`
 
@@ -433,16 +433,16 @@ ofocus update-batch <taskIds...> [--title <title>] [--note <note>] [--due <due>]
 
 **Flags:**
 
-| Flag                   | Type       | Required | Description                                 |
-| ---------------------- | ---------- | -------- | ------------------------------------------- |
-| `--title`              | `string`   | no       | New title for all tasks                     |
-| `--note`               | `string`   | no       | New note for all tasks                      |
-| `--due`                | `string`   | no       | New due date for all tasks                  |
-| `--defer`              | `string`   | no       | New defer date for all tasks                |
-| `--flag` / `--no-flag` | `boolean`  | no       | Flag or unflag all tasks                    |
-| `--project`            | `string`   | no       | Move all tasks to this project              |
-| `--tags`               | `string[]` | no       | Replace tags on all tasks                   |
-| `--estimated-minutes`  | `number`   | no       | Estimated duration in minutes for all tasks |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--title` | `string` | no | New title for all tasks |
+| `--note` | `string` | no | New note for all tasks |
+| `--due` | `string` | no | New due date for all tasks |
+| `--defer` | `string` | no | New defer date for all tasks |
+| `--flag` / `--no-flag` | `boolean` | no | Flag or unflag all tasks |
+| `--project` | `string` | no | Move all tasks to this project |
+| `--tags` | `string[]` | no | Replace tags on all tasks |
+| `--estimated-minutes` | `number` | no | Estimated duration in minutes for all tasks |
 
 ## Projects
 
@@ -458,15 +458,15 @@ ofocus create-project <name> [--note <note>] [--folder-id <folderId>] [--folder-
 
 **Flags:**
 
-| Flag                               | Type                | Required | Description                                   |
-| ---------------------------------- | ------------------- | -------- | --------------------------------------------- |
-| `--note`                           | `string`            | no       | Project note/description                      |
-| `--folder-id`                      | `string`            | no       | Parent folder ID                              |
-| `--folder-name`                    | `string`            | no       | Parent folder name                            |
-| `--sequential` / `--no-sequential` | `boolean`           | no       | Whether tasks are sequential (default: false) |
-| `--status`                         | `active \| on-hold` | no       | Initial project status (active, on-hold)      |
-| `--due-date`                       | `string`            | no       | Project due date                              |
-| `--defer-date`                     | `string`            | no       | Project defer date                            |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--note` | `string` | no | Project note/description |
+| `--folder-id` | `string` | no | Parent folder ID |
+| `--folder-name` | `string` | no | Parent folder name |
+| `--sequential` / `--no-sequential` | `boolean` | no | Whether tasks are sequential (default: false) |
+| `--status` | `active \| on-hold` | no | Initial project status (active, on-hold) |
+| `--due-date` | `string` | no | Project due date |
+| `--defer-date` | `string` | no | Project defer date |
 
 #### `ofocus delete-project`
 
@@ -500,14 +500,14 @@ ofocus projects [--folder <folder>] [--status <status>] [--sequential] [--limit 
 
 **Flags:**
 
-| Flag                               | Type                                        | Required | Description                                                                                                    |
-| ---------------------------------- | ------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `--folder`                         | `string`                                    | no       | Filter by folder name or ID                                                                                    |
-| `--status`                         | `active \| on-hold \| completed \| dropped` | no       | Filter by project status (active, on-hold, completed, dropped)                                                 |
-| `--sequential` / `--no-sequential` | `boolean`                                   | no       | Filter by sequential/parallel type                                                                             |
-| `--limit`                          | `number`                                    | no       | Maximum number of results to return                                                                            |
-| `--offset`                         | `number`                                    | no       | Number of results to skip for pagination                                                                       |
-| `--all` / `--no-all`               | `boolean`                                   | no       | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--folder` | `string` | no | Filter by folder name or ID |
+| `--status` | `active \| on-hold \| completed \| dropped` | no | Filter by project status (active, on-hold, completed, dropped) |
+| `--sequential` / `--no-sequential` | `boolean` | no | Filter by sequential/parallel type |
+| `--limit` | `number` | no | Maximum number of results to return |
+| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-project`
 
@@ -521,16 +521,16 @@ ofocus update-project <projectId> [--name <name>] [--note <note>] [--status <sta
 
 **Flags:**
 
-| Flag                               | Type                                        | Required | Description                                              |
-| ---------------------------------- | ------------------------------------------- | -------- | -------------------------------------------------------- |
-| `--name`                           | `string`                                    | no       | New project name                                         |
-| `--note`                           | `string`                                    | no       | New project note                                         |
-| `--status`                         | `active \| on-hold \| completed \| dropped` | no       | New project status (active, on-hold, completed, dropped) |
-| `--folder-id`                      | `string`                                    | no       | Move to folder by ID                                     |
-| `--folder-name`                    | `string`                                    | no       | Move to folder by name                                   |
-| `--sequential` / `--no-sequential` | `boolean`                                   | no       | Make project sequential (true) or parallel (false)       |
-| `--due-date`                       | `string`                                    | no       | New due date (empty string to clear)                     |
-| `--defer-date`                     | `string`                                    | no       | New defer date (empty string to clear)                   |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--name` | `string` | no | New project name |
+| `--note` | `string` | no | New project note |
+| `--status` | `active \| on-hold \| completed \| dropped` | no | New project status (active, on-hold, completed, dropped) |
+| `--folder-id` | `string` | no | Move to folder by ID |
+| `--folder-name` | `string` | no | Move to folder by name |
+| `--sequential` / `--no-sequential` | `boolean` | no | Make project sequential (true) or parallel (false) |
+| `--due-date` | `string` | no | New due date (empty string to clear) |
+| `--defer-date` | `string` | no | New defer date (empty string to clear) |
 
 ## Folders
 
@@ -546,10 +546,10 @@ ofocus create-folder <name> [--parent-folder-id <parentFolderId>] [--parent-fold
 
 **Flags:**
 
-| Flag                   | Type     | Required | Description        |
-| ---------------------- | -------- | -------- | ------------------ |
-| `--parent-folder-id`   | `string` | no       | Parent folder ID   |
-| `--parent-folder-name` | `string` | no       | Parent folder name |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--parent-folder-id` | `string` | no | Parent folder ID |
+| `--parent-folder-name` | `string` | no | Parent folder name |
 
 #### `ofocus delete-folder`
 
@@ -573,12 +573,12 @@ ofocus folders [--parent <parent>] [--limit <limit>] [--offset <offset>] [--all]
 
 **Flags:**
 
-| Flag                 | Type      | Required | Description                                                                                                    |
-| -------------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `--parent`           | `string`  | no       | Filter by parent folder name or ID                                                                             |
-| `--limit`            | `number`  | no       | Maximum number of results to return                                                                            |
-| `--offset`           | `number`  | no       | Number of results to skip for pagination                                                                       |
-| `--all` / `--no-all` | `boolean` | no       | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--parent` | `string` | no | Filter by parent folder name or ID |
+| `--limit` | `number` | no | Maximum number of results to return |
+| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-folder`
 
@@ -592,11 +592,11 @@ ofocus update-folder <folderId> [--name <name>] [--parent-folder-id <parentFolde
 
 **Flags:**
 
-| Flag                   | Type     | Required | Description                   |
-| ---------------------- | -------- | -------- | ----------------------------- |
-| `--name`               | `string` | no       | New folder name               |
-| `--parent-folder-id`   | `string` | no       | Move to parent folder by ID   |
-| `--parent-folder-name` | `string` | no       | Move to parent folder by name |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--name` | `string` | no | New folder name |
+| `--parent-folder-id` | `string` | no | Move to parent folder by ID |
+| `--parent-folder-name` | `string` | no | Move to parent folder by name |
 
 ## Tags
 
@@ -612,10 +612,10 @@ ofocus create-tag <name> [--parent-tag-id <parentTagId>] [--parent-tag-name <par
 
 **Flags:**
 
-| Flag                | Type     | Required | Description     |
-| ------------------- | -------- | -------- | --------------- |
-| `--parent-tag-id`   | `string` | no       | Parent tag ID   |
-| `--parent-tag-name` | `string` | no       | Parent tag name |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--parent-tag-id` | `string` | no | Parent tag ID |
+| `--parent-tag-name` | `string` | no | Parent tag name |
 
 #### `ofocus delete-tag`
 
@@ -639,12 +639,12 @@ ofocus tags [--parent <parent>] [--limit <limit>] [--offset <offset>] [--all]
 
 **Flags:**
 
-| Flag                 | Type      | Required | Description                                                                                                    |
-| -------------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `--parent`           | `string`  | no       | Filter by parent tag name or ID                                                                                |
-| `--limit`            | `number`  | no       | Maximum number of results to return                                                                            |
-| `--offset`           | `number`  | no       | Number of results to skip for pagination                                                                       |
-| `--all` / `--no-all` | `boolean` | no       | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--parent` | `string` | no | Filter by parent tag name or ID |
+| `--limit` | `number` | no | Maximum number of results to return |
+| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-tag`
 
@@ -658,11 +658,11 @@ ofocus update-tag <tagId> [--name <name>] [--parent-tag-id <parentTagId>] [--par
 
 **Flags:**
 
-| Flag                | Type     | Required | Description         |
-| ------------------- | -------- | -------- | ------------------- |
-| `--name`            | `string` | no       | New tag name        |
-| `--parent-tag-id`   | `string` | no       | New parent tag ID   |
-| `--parent-tag-name` | `string` | no       | New parent tag name |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--name` | `string` | no | New tag name |
+| `--parent-tag-id` | `string` | no | New parent tag ID |
+| `--parent-tag-name` | `string` | no | New parent tag name |
 
 ## Forecast
 
@@ -678,13 +678,13 @@ ofocus forecast [--days <days>] [--include-deferred] [--limit <limit>] [--offset
 
 **Flags:**
 
-| Flag                                           | Type      | Required | Description                                                                                                    |
-| ---------------------------------------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `--days`                                       | `number`  | no       | Number of days ahead to include (default: 7)                                                                   |
-| `--include-deferred` / `--no-include-deferred` | `boolean` | no       | Include tasks deferred to the same window                                                                      |
-| `--limit`                                      | `number`  | no       | Maximum number of results to return (default: 100)                                                             |
-| `--offset`                                     | `number`  | no       | Number of results to skip for pagination                                                                       |
-| `--all` / `--no-all`                           | `boolean` | no       | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--days` | `number` | no | Number of days ahead to include (default: 7) |
+| `--include-deferred` / `--no-include-deferred` | `boolean` | no | Include tasks deferred to the same window |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100) |
+| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 ## Focus
 
@@ -700,9 +700,9 @@ ofocus focus <target> [--by-id]
 
 **Flags:**
 
-| Flag                     | Type      | Required | Description                                          |
-| ------------------------ | --------- | -------- | ---------------------------------------------------- |
-| `--by-id` / `--no-by-id` | `boolean` | no       | If true, interpret target as an ID instead of a name |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--by-id` / `--no-by-id` | `boolean` | no | If true, interpret target as an ID instead of a name |
 
 #### `ofocus focused`
 
@@ -750,11 +750,11 @@ ofocus template-create <templateName> [--project-name <projectName>] [--folder <
 
 **Flags:**
 
-| Flag             | Type     | Required | Description                                                |
-| ---------------- | -------- | -------- | ---------------------------------------------------------- |
-| `--project-name` | `string` | no       | Name for the new project (defaults to template name)       |
-| `--folder`       | `string` | no       | Folder to create the project in                            |
-| `--base-date`    | `string` | no       | Base date for calculating date offsets (defaults to today) |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--project-name` | `string` | no | Name for the new project (defaults to template name) |
+| `--folder` | `string` | no | Folder to create the project in |
+| `--base-date` | `string` | no | Base date for calculating date offsets (defaults to today) |
 
 #### `ofocus template-get`
 
@@ -778,9 +778,9 @@ ofocus template-save <name> <sourceProject> [--description <description>]
 
 **Flags:**
 
-| Flag            | Type     | Required | Description          |
-| --------------- | -------- | -------- | -------------------- |
-| `--description` | `string` | no       | Template description |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--description` | `string` | no | Template description |
 
 ## Attachments
 
@@ -840,11 +840,11 @@ ofocus export [--project <project>] [--include-completed] [--include-dropped]
 
 **Flags:**
 
-| Flag                                             | Type      | Required | Description                            |
-| ------------------------------------------------ | --------- | -------- | -------------------------------------- |
-| `--project`                                      | `string`  | no       | Export only a specific project by name |
-| `--include-completed` / `--no-include-completed` | `boolean` | no       | Include completed tasks in the export  |
-| `--include-dropped` / `--no-include-dropped`     | `boolean` | no       | Include dropped tasks in the export    |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--project` | `string` | no | Export only a specific project by name |
+| `--include-completed` / `--no-include-completed` | `boolean` | no | Include completed tasks in the export |
+| `--include-dropped` / `--no-include-dropped` | `boolean` | no | Include dropped tasks in the export |
 
 #### `ofocus import-taskpaper`
 
@@ -858,11 +858,11 @@ ofocus import-taskpaper --content <content> [--default-project <defaultProject>]
 
 **Flags:**
 
-| Flag                                         | Type      | Required | Description                                |
-| -------------------------------------------- | --------- | -------- | ------------------------------------------ |
-| `--content`                                  | `string`  | yes      | TaskPaper formatted content to import      |
-| `--default-project`                          | `string`  | no       | Target project for tasks without a project |
-| `--create-projects` / `--no-create-projects` | `boolean` | no       | Create projects that do not exist          |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--content` | `string` | yes | TaskPaper formatted content to import |
+| `--default-project` | `string` | no | Target project for tasks without a project |
+| `--create-projects` / `--no-create-projects` | `boolean` | no | Create projects that do not exist |
 
 ## Utilities
 
@@ -878,12 +878,12 @@ ofocus archive [--completed-before <completedBefore>] [--dropped-before <dropped
 
 **Flags:**
 
-| Flag                         | Type      | Required | Description                                         |
-| ---------------------------- | --------- | -------- | --------------------------------------------------- |
-| `--completed-before`         | `string`  | no       | Archive tasks completed before this date (ISO 8601) |
-| `--dropped-before`           | `string`  | no       | Archive tasks dropped before this date (ISO 8601)   |
-| `--project`                  | `string`  | no       | Archive only tasks from this project                |
-| `--dry-run` / `--no-dry-run` | `boolean` | no       | Preview what would be archived without archiving    |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--completed-before` | `string` | no | Archive tasks completed before this date (ISO 8601) |
+| `--dropped-before` | `string` | no | Archive tasks dropped before this date (ISO 8601) |
+| `--project` | `string` | no | Archive only tasks from this project |
+| `--dry-run` / `--no-dry-run` | `boolean` | no | Preview what would be archived without archiving |
 
 #### `ofocus compact`
 
@@ -917,12 +917,12 @@ ofocus stats [--project <project>] [--period <period>] [--since <since>] [--unti
 
 **Flags:**
 
-| Flag        | Type                           | Required | Description                                                    |
-| ----------- | ------------------------------ | -------- | -------------------------------------------------------------- |
-| `--project` | `string`                       | no       | Filter statistics by project name                              |
-| `--period`  | `day \| week \| month \| year` | no       | Predefined time period for statistics (day, week, month, year) |
-| `--since`   | `string`                       | no       | Custom period start date (ISO 8601 format)                     |
-| `--until`   | `string`                       | no       | Custom period end date (ISO 8601 format)                       |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--project` | `string` | no | Filter statistics by project name |
+| `--period` | `day \| week \| month \| year` | no | Predefined time period for statistics (day, week, month, year) |
+| `--since` | `string` | no | Custom period start date (ISO 8601 format) |
+| `--until` | `string` | no | Custom period end date (ISO 8601 format) |
 
 #### `ofocus open`
 
@@ -948,15 +948,15 @@ ofocus apply-repetition <taskId> --frequency <frequency> --interval <interval> -
 
 **Flags:**
 
-| Flag                       | Type                                      | Required | Description                                                                                                 |
-| -------------------------- | ----------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `--frequency`              | `daily \| weekly \| monthly \| yearly`    | yes      | Repeat frequency                                                                                            |
-| `--interval`               | `number`                                  | yes      | Repeat every N periods (default: 1)                                                                         |
-| `--repeat-method`          | `due-again \| defer-another \| scheduled` | yes      | How to reschedule: due-again (from completion), defer-another (from defer date), scheduled (fixed cadence)  |
-| `--days-of-week`           | `number[]`                                | no       | Days of week (0=Sunday, 6=Saturday)                                                                         |
-| `--day-of-month`           | `number`                                  | no       | Day of month (1-31) for monthly recurrences                                                                 |
-| `--days-of-week-positions` | `number[]`                                | no       | Positional prefixes for Nth-weekday monthly rules, e.g. [1,-1] for first and last. Values in [-5,-1]∪[1,5]. |
-| `--months-of-year`         | `number[]`                                | no       | Months of year (1=January, 12=December) for yearly recurrences                                              |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--frequency` | `daily \| weekly \| monthly \| yearly` | yes | Repeat frequency |
+| `--interval` | `number` | yes | Repeat every N periods (default: 1) |
+| `--repeat-method` | `due-again \| defer-another \| scheduled` | yes | How to reschedule: due-again (from completion), defer-another (from defer date), scheduled (fixed cadence) |
+| `--days-of-week` | `number[]` | no | Days of week (0=Sunday, 6=Saturday) |
+| `--day-of-month` | `number` | no | Day of month (1-31) for monthly recurrences |
+| `--days-of-week-positions` | `number[]` | no | Positional prefixes for Nth-weekday monthly rules, e.g. [1,-1] for first and last. Values in [-5,-1]∪[1,5]. |
+| `--months-of-year` | `number[]` | no | Months of year (1=January, 12=December) for yearly recurrences |
 
 #### `ofocus clear-repetition`
 
@@ -988,10 +988,10 @@ ofocus eval [script] [--file <file>] [--args <args>]
 
 **Flags:**
 
-| Flag     | Type      | Required | Description                                                                                                                                                                                                               |
-| -------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--file` | `string`  | no       | Path to a file containing OmniJS source. Read at execution time. Mutually exclusive with --script. CLI: --file <path>                                                                                                     |
-| `--args` | `unknown` | no       | Arguments injected into the script as a global `args` constant (deserialized from JSON). Use this instead of string-interpolating values into the script body — args go through JSON.stringify and avoid escaping issues. |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--file` | `string` | no | Path to a file containing OmniJS source. Read at execution time. Mutually exclusive with --script. CLI: --file <path> |
+| `--args` | `unknown` | no | Arguments injected into the script as a global `args` constant (deserialized from JSON). Use this instead of string-interpolating values into the script body — args go through JSON.stringify and avoid escaping issues. |
 
 #### `ofocus review-interval-get`
 
@@ -1015,6 +1015,7 @@ ofocus review-interval-set <projectId> --interval-days <intervalDays>
 
 **Flags:**
 
-| Flag              | Type     | Required | Description             |
-| ----------------- | -------- | -------- | ----------------------- |
-| `--interval-days` | `number` | yes      | Review interval in days |
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--interval-days` | `number` | yes | Review interval in days |
+
