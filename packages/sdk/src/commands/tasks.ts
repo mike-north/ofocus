@@ -127,7 +127,7 @@ export const queryTasksDescriptor = defineCommand({
     project: z
       .union([z.string(), z.array(z.string())])
       .optional()
-      .describe("Filter by project name or ID (single value or array)"),
+      .describe("Filter by project name (single value or array)"),
     tag: z
       .union([z.string(), z.array(z.string())])
       .optional()
