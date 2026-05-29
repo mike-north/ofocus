@@ -94,6 +94,7 @@ interface TasksCommandOptions {
   available?: boolean | undefined;
   limit?: number | undefined;
   offset?: number | undefined;
+  all?: boolean | undefined;
 }
 
 interface UpdateCommandOptions {
@@ -292,6 +293,10 @@ Use --format json|toon for machine output (default: json). Use --human for human
     .option("--available", "Show only available (actionable) tasks")
     .option("--limit <n>", "Maximum results to return", parseInt)
     .option("--offset <n>", "Number of results to skip", parseInt)
+    .option(
+      "--all",
+      "Return every matching task, ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+    )
     .action(async (options: TasksCommandOptions, cmd: Command) => {
       const globalOpts = getGlobalOpts(cmd);
       const result = await queryTasks({
@@ -304,6 +309,7 @@ Use --format json|toon for machine output (default: json). Use --human for human
         available: options.available,
         limit: options.limit,
         offset: options.offset,
+        all: options.all,
       });
       output(result, getOutputFormat(globalOpts));
       if (!result.success) process.exitCode = 1;

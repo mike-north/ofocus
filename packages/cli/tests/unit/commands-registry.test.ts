@@ -82,6 +82,28 @@ describe("commandRegistry — batch-ops command usage strings", () => {
 // registry, short aliases were dropped and flag names were normalized to
 // kebab-case. The hand-maintained `list-commands` usage strings must reflect
 // the descriptor-derived surface so they can't drift.
+// Regression: tasks --all was never wired into the manual CLI registration, so
+// the README example `ofocus tasks --project "Work" --all` would fail with
+// "unknown option '--all'". This test ensures the usage string advertises all
+// three pagination surface fields (limit, offset, all).
+describe("commandRegistry — tasks command usage string", () => {
+  it("tasks advertises --limit, --offset, and --all for pagination", () => {
+    const usage = usageFor("tasks");
+    expect(usage).toContain("--limit");
+    expect(usage).toContain("--offset");
+    expect(usage).toContain("--all");
+  });
+
+  it("tasks advertises the core filter flags", () => {
+    const usage = usageFor("tasks");
+    expect(usage).toContain("--project");
+    expect(usage).toContain("--tag");
+    expect(usage).toContain("--flagged");
+    expect(usage).toContain("--completed");
+    expect(usage).toContain("--available");
+  });
+});
+
 describe("commandRegistry — project/folder/tag command usage strings", () => {
   it("projects advertises --folder, --status, --sequential and pagination", () => {
     const usage = usageFor("projects");
