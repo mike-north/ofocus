@@ -13,6 +13,11 @@ import {
   createSubtaskDescriptor,
   querySubtasksDescriptor,
   moveTaskToParentDescriptor,
+  completeTasksDescriptor,
+  updateTasksDescriptor,
+  deleteTasksDescriptor,
+  deferTaskDescriptor,
+  deferTasksDescriptor,
   queryTasks,
   queryProjects,
   queryTags,
@@ -23,9 +28,6 @@ import {
   createTag,
   updateTag,
   deleteTag,
-  completeTasks,
-  updateTasks,
-  deleteTasks,
   listPerspectives,
   queryPerspective,
   reviewProject,
@@ -35,8 +37,6 @@ import {
   unfocus,
   getFocused,
   generateUrl,
-  deferTask,
-  deferTasks,
   // Phase 6
   exportTaskPaper,
   importTaskPaper,
@@ -149,26 +149,12 @@ interface UpdateTagOptions {
   parentId?: string | undefined;
 }
 
-interface BatchUpdateOptions {
-  flag?: boolean | undefined;
-  due?: string | undefined;
-  defer?: string | undefined;
-  project?: string | undefined;
-  tag?: string[] | undefined;
-  estimate?: number | undefined;
-}
-
 interface PerspectiveOptions {
   limit?: number | undefined;
 }
 
 interface FocusCommandOptions {
   byId?: boolean | undefined;
-}
-
-interface DeferCommandOptions {
-  days?: number | undefined;
-  to?: string | undefined;
 }
 
 interface ExportCommandOptions {
@@ -592,57 +578,17 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 3: Batch Operations
   // ===========================================
 
-  // complete-batch
-  program
-    .command("complete-batch")
-    .description("Complete multiple tasks at once")
-    .argument("<task-ids...>", "Task IDs to complete")
-    .action(async (taskIds: string[], _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await completeTasks(taskIds);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
-
-  // update-batch
-  program
-    .command("update-batch")
-    .description("Update multiple tasks with the same properties")
-    .argument("<task-ids...>", "Task IDs to update")
-    .option("-f, --flag", "Flag all tasks")
-    .option("--no-flag", "Unflag all tasks")
-    .option("-d, --due <date>", "Set due date")
-    .option("--defer <date>", "Set defer date")
-    .option("-p, --project <name>", "Move to project")
-    .option("-t, --tag <name...>", "Replace tags")
-    .option("-e, --estimate <minutes>", "Set estimated duration", parseInt)
-    .action(
-      async (taskIds: string[], options: BatchUpdateOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await updateTasks(taskIds, {
-          flag: options.flag,
-          due: options.due,
-          defer: options.defer,
-          project: options.project,
-          tags: options.tag,
-          estimatedMinutes: options.estimate,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
-
-  // delete-batch
-  program
-    .command("delete-batch")
-    .description("Delete multiple tasks permanently (cannot be undone)")
-    .argument("<task-ids...>", "Task IDs to delete")
-    .action(async (taskIds: string[], _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await deleteTasks(taskIds);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // complete-batch / update-batch / delete-batch — registered from the
+  // centralized descriptors in @ofocus/sdk.
+  registerCliCommand(program, completeTasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, updateTasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, deleteTasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 4: Search
@@ -774,43 +720,14 @@ Use --human flag for human-readable output (default is JSON).
       if (!result.success) process.exitCode = 1;
     });
 
-  // defer
-  program
-    .command("defer")
-    .description("Defer a task by days or to a specific date")
-    .argument("<task-id>", "Task ID to defer")
-    .option("--days <n>", "Defer by N days from today", parseInt)
-    .option("--to <date>", "Defer to a specific date")
-    .action(
-      async (taskId: string, options: DeferCommandOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await deferTask(taskId, {
-          days: options.days,
-          to: options.to,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
-
-  // defer-batch
-  program
-    .command("defer-batch")
-    .description("Defer multiple tasks by days or to a specific date")
-    .argument("<task-ids...>", "Task IDs to defer")
-    .option("--days <n>", "Defer by N days from today", parseInt)
-    .option("--to <date>", "Defer to a specific date")
-    .action(
-      async (taskIds: string[], options: DeferCommandOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await deferTasks(taskIds, {
-          days: options.days,
-          to: options.to,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // defer / defer-batch — registered from the centralized descriptors in
+  // @ofocus/sdk.
+  registerCliCommand(program, deferTaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, deferTasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 6: Quick Capture

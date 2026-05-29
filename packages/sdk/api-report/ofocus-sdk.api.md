@@ -318,6 +318,17 @@ taskId: string;
 export function completeTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
 
 // @public
+export const completeTasksDescriptor: ResolvedCommandDescriptor<    {
+taskIds: string[];
+}, BatchResult<BatchCompleteItem>, z.ZodObject<{
+taskIds: z.ZodArray<z.ZodString, "many">;
+}, "strip", z.ZodTypeAny, {
+taskIds: string[];
+}, {
+taskIds: string[];
+}>>;
+
+// @public
 export function createError(code: ErrorCode, message: string, details?: string): CliError;
 
 // @public
@@ -466,7 +477,45 @@ export interface DeferResult {
 export function deferTask(taskId: string, options?: DeferOptions): Promise<CliOutput<DeferResult>>;
 
 // @public
+export const deferTaskDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+days?: number | undefined;
+to?: string | undefined;
+}, DeferResult, z.ZodObject<{
+taskId: z.ZodString;
+days: z.ZodOptional<z.ZodNumber>;
+to: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+days?: number | undefined;
+to?: string | undefined;
+}, {
+taskId: string;
+days?: number | undefined;
+to?: string | undefined;
+}>>;
+
+// @public
 export function deferTasks(taskIds: string[], options?: DeferOptions): Promise<CliOutput<BatchResult<BatchDeferItem>>>;
+
+// @public
+export const deferTasksDescriptor: ResolvedCommandDescriptor<    {
+taskIds: string[];
+days?: number | undefined;
+to?: string | undefined;
+}, BatchResult<BatchDeferItem>, z.ZodObject<{
+taskIds: z.ZodArray<z.ZodString, "many">;
+days: z.ZodOptional<z.ZodNumber>;
+to: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+taskIds: string[];
+days?: number | undefined;
+to?: string | undefined;
+}, {
+taskIds: string[];
+days?: number | undefined;
+to?: string | undefined;
+}>>;
 
 // @public
 export function defineCommand<TSchema extends z.AnyZodObject, TOutput>(spec: {
@@ -549,6 +598,17 @@ taskId: string;
 
 // @public
 export function deleteTasks(taskIds: string[]): Promise<CliOutput<BatchResult<BatchDeleteItem>>>;
+
+// @public
+export const deleteTasksDescriptor: ResolvedCommandDescriptor<    {
+taskIds: string[];
+}, BatchResult<BatchDeleteItem>, z.ZodObject<{
+taskIds: z.ZodArray<z.ZodString, "many">;
+}, "strip", z.ZodTypeAny, {
+taskIds: string[];
+}, {
+taskIds: string[];
+}>>;
 
 // @public
 export function deleteTemplate(name: string): CliOutput<DeleteTemplateResult>;
@@ -1710,6 +1770,49 @@ export function updateTask(taskId: string, options: TaskUpdateOptions): Promise<
 
 // @public
 export function updateTasks(taskIds: string[], options: TaskUpdateOptions): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;
+
+// @public
+export const updateTasksDescriptor: ResolvedCommandDescriptor<    {
+taskIds: string[];
+project?: string | undefined;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+}, BatchResult<BatchCompleteItem>, z.ZodObject<{
+taskIds: z.ZodArray<z.ZodString, "many">;
+title: z.ZodOptional<z.ZodString>;
+note: z.ZodOptional<z.ZodString>;
+due: z.ZodOptional<z.ZodString>;
+defer: z.ZodOptional<z.ZodString>;
+flag: z.ZodOptional<z.ZodBoolean>;
+project: z.ZodOptional<z.ZodString>;
+tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+estimatedMinutes: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+taskIds: string[];
+project?: string | undefined;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+}, {
+taskIds: string[];
+project?: string | undefined;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+}>>;
 
 // @public
 export interface UrlResult {

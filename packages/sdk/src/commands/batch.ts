@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { CliOutput, TaskUpdateOptions, BatchResult } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
@@ -12,6 +13,7 @@ import {
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 import { buildRRule } from "./repetition.js";
 import { sanitizeVarName } from "../utils/sanitize.js";
+import { defineCommand } from "../registry/define.js";
 
 /** Batch complete result item */
 export interface BatchCompleteItem {
@@ -362,3 +364,90 @@ return JSON.stringify({ succeeded: succeeded, failed: failed });`;
     totalFailed: allFailed.length,
   });
 }
+
+/** Shared positional schema for the batch task-ID commands. */
+const taskIdsSchema = z
+  .array(z.string())
+  .min(1)
+  .describe("Task IDs to operate on");
+
+/**
+ * Centralized descriptor for the `complete-batch` command.
+ *
+ * Drives the CLI subcommand `complete-batch` and the MCP tool
+ * `tasks_complete_batch`.
+ *
+ * @public
+ */
+export const completeTasksDescriptor = defineCommand({
+  name: "completeTasks",
+  cliName: "complete-batch",
+  mcpName: "tasks_complete_batch",
+  description: "Complete multiple tasks in a single operation.",
+  cliPositional: ["taskIds"],
+  inputSchema: z.object({
+    taskIds: taskIdsSchema,
+  }),
+  handler: async (input) => completeTasks(input.taskIds),
+});
+
+/**
+ * Centralized descriptor for the `update-batch` command.
+ *
+ * Drives the CLI subcommand `update-batch` and the MCP tool
+ * `tasks_update_batch`.
+ *
+ * @public
+ */
+export const updateTasksDescriptor = defineCommand({
+  name: "updateTasks",
+  cliName: "update-batch",
+  mcpName: "tasks_update_batch",
+  description: "Apply the same property changes to multiple tasks at once.",
+  cliPositional: ["taskIds"],
+  inputSchema: z.object({
+    taskIds: taskIdsSchema,
+    title: z.string().optional().describe("New title for all tasks"),
+    note: z.string().optional().describe("New note for all tasks"),
+    due: z.string().optional().describe("New due date for all tasks"),
+    defer: z.string().optional().describe("New defer date for all tasks"),
+    flag: z.boolean().optional().describe("Flag or unflag all tasks"),
+    project: z.string().optional().describe("Move all tasks to this project"),
+    tags: z.array(z.string()).optional().describe("Replace tags on all tasks"),
+    estimatedMinutes: z
+      .number()
+      .optional()
+      .describe("Estimated duration in minutes for all tasks"),
+  }),
+  handler: async (input) =>
+    updateTasks(input.taskIds, {
+      title: input.title,
+      note: input.note,
+      due: input.due,
+      defer: input.defer,
+      flag: input.flag,
+      project: input.project,
+      tags: input.tags,
+      estimatedMinutes: input.estimatedMinutes,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `delete-batch` command.
+ *
+ * Drives the CLI subcommand `delete-batch` and the MCP tool
+ * `tasks_delete_batch`.
+ *
+ * @public
+ */
+export const deleteTasksDescriptor = defineCommand({
+  name: "deleteTasks",
+  cliName: "delete-batch",
+  mcpName: "tasks_delete_batch",
+  description: "Permanently delete multiple tasks in a single operation.",
+  cliPositional: ["taskIds"],
+  inputSchema: z.object({
+    taskIds: taskIdsSchema,
+  }),
+  handler: async (input) => deleteTasks(input.taskIds),
+});

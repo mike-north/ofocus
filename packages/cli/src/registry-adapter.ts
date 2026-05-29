@@ -21,7 +21,12 @@ export type CliOutputHandler = (
  *
  * Each top-level field in the descriptor's input schema becomes either a
  * positional argument (if listed in `cliPositional`) or a `--kebab-case`
- * option. Zod types map to Commander as follows:
+ * option. A positional field whose type is `z.array(...)` is rendered as a
+ * Commander variadic argument (`<field...>` / `[field...]`); Commander
+ * collects the trailing args into an array which is handed to the schema
+ * unchanged. A variadic positional must be the last positional field.
+ *
+ * Zod types map to Commander as follows:
  *
  * | Zod type                    | Commander shape                |
  * | --------------------------- | ------------------------------ |
@@ -64,9 +69,13 @@ export function registerCliCommand<TSchema extends z.AnyZodObject>(
         `registerCliCommand: positional field "${fieldName}" is not in the schema for "${descriptor.name}"`
       );
     }
+    const { inner } = unwrapField(fieldSchema);
     const required = !isFieldOptional(fieldSchema);
     const description = fieldSchema.description ?? fieldName;
-    const display = required ? `<${fieldName}>` : `[${fieldName}]`;
+    // Array-typed positionals become Commander variadic args; the trailing
+    // CLI tokens are collected into an array passed straight to the schema.
+    const token = inner instanceof z.ZodArray ? `${fieldName}...` : fieldName;
+    const display = required ? `<${token}>` : `[${token}]`;
     cmd.argument(display, description);
   }
 

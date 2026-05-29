@@ -286,3 +286,12 @@ export {
   querySubtasksDescriptor,
   moveTaskToParentDescriptor,
 } from "./commands/subtasks.js";
+export {
+  completeTasksDescriptor,
+  updateTasksDescriptor,
+  deleteTasksDescriptor,
+} from "./commands/batch.js";
+export {
+  deferTaskDescriptor,
+  deferTasksDescriptor,
+} from "./commands/defer.js";

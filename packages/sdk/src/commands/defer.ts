@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput, BatchResult } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId, validateDateString } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Options for deferring a task.
@@ -227,3 +229,60 @@ return JSON.stringify({ succeeded: succeeded, failed: failed });`;
     totalFailed: allFailed.length,
   });
 }
+
+const deferDaysSchema = z
+  .number()
+  .int()
+  .min(1)
+  .optional()
+  .describe("Defer by this many days from today");
+const deferToSchema = z
+  .string()
+  .optional()
+  .describe("Defer to a specific date (ISO 8601)");
+
+/**
+ * Centralized descriptor for the `defer` command.
+ *
+ * Drives the CLI subcommand `defer` and the MCP tool `task_defer`.
+ *
+ * @public
+ */
+export const deferTaskDescriptor = defineCommand({
+  name: "deferTask",
+  cliName: "defer",
+  mcpName: "task_defer",
+  description: "Defer a task by a number of days or to a specific date.",
+  cliPositional: ["taskId"],
+  inputSchema: z.object({
+    taskId: z.string().describe("ID of the task to defer"),
+    days: deferDaysSchema,
+    to: deferToSchema,
+  }),
+  handler: async (input) =>
+    deferTask(input.taskId, { days: input.days, to: input.to }),
+});
+
+/**
+ * Centralized descriptor for the `defer-batch` command.
+ *
+ * Drives the CLI subcommand `defer-batch` and the MCP tool
+ * `tasks_defer_batch`.
+ *
+ * @public
+ */
+export const deferTasksDescriptor = defineCommand({
+  name: "deferTasks",
+  cliName: "defer-batch",
+  mcpName: "tasks_defer_batch",
+  description:
+    "Defer multiple tasks by a number of days or to a specific date.",
+  cliPositional: ["taskIds"],
+  inputSchema: z.object({
+    taskIds: z.array(z.string()).min(1).describe("Task IDs to defer"),
+    days: deferDaysSchema,
+    to: deferToSchema,
+  }),
+  handler: async (input) =>
+    deferTasks(input.taskIds, { days: input.days, to: input.to }),
+});

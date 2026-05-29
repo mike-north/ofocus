@@ -15,7 +15,12 @@ vi.mock("../../../src/omnijs.js", () => ({
 }));
 
 // Import after mocking
-import { deferTask, deferTasks } from "../../../src/commands/defer.js";
+import {
+  deferTask,
+  deferTasks,
+  deferTaskDescriptor,
+  deferTasksDescriptor,
+} from "../../../src/commands/defer.js";
 import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
 const mockRunOmniJS = vi.mocked(runOmniJSWrapped);
@@ -290,5 +295,107 @@ describe("deferTasks", () => {
       expect(result.data?.totalFailed).toBe(2);
       expect(result.data?.totalSucceeded).toBe(0);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Registry descriptors
+// ---------------------------------------------------------------------------
+
+const ID_A = "abc123ABC-xyz789XYZ-12345678";
+const ID_B = "def456DEF-uvw012UVW-87654321";
+
+function getScriptBody(): string {
+  const call = mockRunOmniJS.mock.calls[0];
+  if (!call) throw new Error("runOmniJSWrapped was not called");
+  return call[0] as string;
+}
+
+describe("defer descriptors — metadata", () => {
+  it("defer descriptor maps to the right CLI/MCP names", () => {
+    expect(deferTaskDescriptor.name).toBe("deferTask");
+    expect(deferTaskDescriptor.cliName).toBe("defer");
+    expect(deferTaskDescriptor.mcpName).toBe("task_defer");
+    expect(deferTaskDescriptor.cliPositional).toEqual(["taskId"]);
+  });
+
+  it("defer-batch descriptor maps to the right CLI/MCP names", () => {
+    expect(deferTasksDescriptor.name).toBe("deferTasks");
+    expect(deferTasksDescriptor.cliName).toBe("defer-batch");
+    expect(deferTasksDescriptor.mcpName).toBe("tasks_defer_batch");
+    expect(deferTasksDescriptor.cliPositional).toEqual(["taskIds"]);
+  });
+
+  it("rejects an empty taskIds array at the schema boundary", () => {
+    // Regression: the variadic positional must require at least one ID so the
+    // CLI/MCP surfaces fail validation rather than running an empty no-op.
+    const parsed = deferTasksDescriptor.inputSchema.safeParse({ taskIds: [] });
+    expect(parsed.success).toBe(false);
+  });
+});
+
+describe("defer descriptors — handler forwarding", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("deferTaskDescriptor forwards taskId and days to deferTask", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: {
+        taskId: ID_A,
+        taskName: "Task A",
+        previousDeferDate: null,
+        newDeferDate: "2026-01-08",
+      },
+    } as OmniJSResult<DeferResult>);
+
+    const result = await deferTaskDescriptor.handler({
+      taskId: ID_A,
+      days: 7,
+    });
+
+    expect(result.success).toBe(true);
+    const body = getScriptBody();
+    expect(body).toContain(`flattenedTasks.byId("${ID_A}")`);
+    expect(body).toContain("7 * 86400000");
+  });
+
+  it("deferTaskDescriptor forwards the to date", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: {
+        taskId: ID_A,
+        taskName: "Task A",
+        previousDeferDate: null,
+        newDeferDate: "2026-06-15",
+      },
+    } as OmniJSResult<DeferResult>);
+
+    await deferTaskDescriptor.handler({ taskId: ID_A, to: "2026-06-15" });
+
+    const body = getScriptBody();
+    // toOmniJSDate is mocked to emit `new Date("<input>")`.
+    expect(body).toContain('new Date("2026-06-15")');
+  });
+
+  it("deferTasksDescriptor forwards taskIds and days to deferTasks", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: { succeeded: [], failed: [] },
+    } as OmniJSResult<{
+      succeeded: BatchDeferItem[];
+      failed: { id: string; error: string }[];
+    }>);
+
+    const result = await deferTasksDescriptor.handler({
+      taskIds: [ID_A, ID_B],
+      days: 3,
+    });
+
+    expect(result.success).toBe(true);
+    const body = getScriptBody();
+    expect(body).toContain(JSON.stringify([ID_A, ID_B]));
+    expect(body).toContain("3 * 86400000");
   });
 });
