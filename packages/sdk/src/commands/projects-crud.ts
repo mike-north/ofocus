@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { CliOutput, OFProject, UpdateProjectOptions } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
@@ -7,6 +8,7 @@ import {
   validateFolderName,
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from deleting a project.
@@ -272,3 +274,71 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+/**
+ * Centralized descriptor for the `update-project` command.
+ *
+ * Drives the CLI subcommand `update-project` and the MCP tool `project_update`.
+ *
+ * @public
+ */
+export const updateProjectDescriptor = defineCommand({
+  name: "updateProject",
+  cliName: "update-project",
+  mcpName: "project_update",
+  description: "Update properties of an existing project",
+  cliPositional: ["projectId"],
+  inputSchema: z.object({
+    projectId: z.string().describe("The ID of the project to update"),
+    name: z.string().optional().describe("New project name"),
+    note: z.string().optional().describe("New project note"),
+    status: z
+      .enum(["active", "on-hold", "completed", "dropped"])
+      .optional()
+      .describe("New project status (active, on-hold, completed, dropped)"),
+    folderId: z.string().optional().describe("Move to folder by ID"),
+    folderName: z.string().optional().describe("Move to folder by name"),
+    sequential: z
+      .boolean()
+      .optional()
+      .describe("Make project sequential (true) or parallel (false)"),
+    dueDate: z
+      .string()
+      .optional()
+      .describe("New due date (empty string to clear)"),
+    deferDate: z
+      .string()
+      .optional()
+      .describe("New defer date (empty string to clear)"),
+  }),
+  handler: async (input) =>
+    updateProject(input.projectId, {
+      name: input.name,
+      note: input.note,
+      status: input.status,
+      folderId: input.folderId,
+      folderName: input.folderName,
+      sequential: input.sequential,
+      dueDate: input.dueDate,
+      deferDate: input.deferDate,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `delete-project` command.
+ *
+ * Drives the CLI subcommand `delete-project` and the MCP tool `project_delete`.
+ *
+ * @public
+ */
+export const deleteProjectDescriptor = defineCommand({
+  name: "deleteProject",
+  cliName: "delete-project",
+  mcpName: "project_delete",
+  description: "Permanently delete a project from OmniFocus",
+  cliPositional: ["projectId"],
+  inputSchema: z.object({
+    projectId: z.string().describe("The ID of the project to delete"),
+  }),
+  handler: async (input) => deleteProject(input.projectId),
+});

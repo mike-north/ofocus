@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { CliOutput, CreateFolderOptions, OFFolder } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
@@ -18,6 +19,70 @@ import {
   type FolderQueryOptions,
   type QueryResult,
 } from "../query/index.js";
+import { defineCommand } from "../registry/define.js";
+
+/**
+ * Centralized descriptor for the `folders` command.
+ *
+ * Drives the CLI subcommand `folders` and the MCP tool `folders_list`.
+ *
+ * @public
+ */
+export const listFoldersDescriptor = defineCommand({
+  name: "listFolders",
+  cliName: "folders",
+  mcpName: "folders_list",
+  description: "List folders from OmniFocus",
+  inputSchema: z.object({
+    parent: z
+      .string()
+      .optional()
+      .describe("Filter by parent folder name or ID"),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .optional()
+      .describe("Maximum number of results to return"),
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("Number of results to skip for pagination"),
+  }),
+  handler: async (input) =>
+    queryFolders({
+      parent: input.parent,
+      limit: input.limit,
+      offset: input.offset,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `create-folder` command.
+ *
+ * Drives the CLI subcommand `create-folder` and the MCP tool `folder_create`.
+ *
+ * @public
+ */
+export const createFolderDescriptor = defineCommand({
+  name: "createFolder",
+  cliName: "create-folder",
+  mcpName: "folder_create",
+  description: "Create a new folder in OmniFocus",
+  cliPositional: ["name"],
+  inputSchema: z.object({
+    name: z.string().describe("Folder name"),
+    parentFolderId: z.string().optional().describe("Parent folder ID"),
+    parentFolderName: z.string().optional().describe("Parent folder name"),
+  }),
+  handler: async (input) =>
+    createFolder(input.name, {
+      parentFolderId: input.parentFolderId,
+      parentFolderName: input.parentFolderName,
+    }),
+});
 
 /**
  * Create a new folder in OmniFocus.

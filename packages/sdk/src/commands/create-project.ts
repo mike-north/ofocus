@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { CliOutput, CreateProjectOptions, OFProject } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
@@ -8,6 +9,7 @@ import {
   validateId,
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Create a new project in OmniFocus.
@@ -136,3 +138,44 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+/**
+ * Centralized descriptor for the `create-project` command.
+ *
+ * Drives the CLI subcommand `create-project` and the MCP tool `project_create`.
+ *
+ * @public
+ */
+export const createProjectDescriptor = defineCommand({
+  name: "createProject",
+  cliName: "create-project",
+  mcpName: "project_create",
+  description: "Create a new project in OmniFocus",
+  cliPositional: ["name"],
+  inputSchema: z.object({
+    name: z.string().describe("Project name"),
+    note: z.string().optional().describe("Project note/description"),
+    folderId: z.string().optional().describe("Parent folder ID"),
+    folderName: z.string().optional().describe("Parent folder name"),
+    sequential: z
+      .boolean()
+      .optional()
+      .describe("Whether tasks are sequential (default: false)"),
+    status: z
+      .enum(["active", "on-hold"])
+      .optional()
+      .describe("Initial project status (active, on-hold)"),
+    dueDate: z.string().optional().describe("Project due date"),
+    deferDate: z.string().optional().describe("Project defer date"),
+  }),
+  handler: async (input) =>
+    createProject(input.name, {
+      note: input.note,
+      folderId: input.folderId,
+      folderName: input.folderName,
+      sequential: input.sequential,
+      status: input.status,
+      dueDate: input.dueDate,
+      deferDate: input.deferDate,
+    }),
+});

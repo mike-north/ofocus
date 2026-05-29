@@ -30,13 +30,14 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "List and query projects from OmniFocus. Supports filtering by folder, status (active, on-hold, completed, dropped), and whether the project is sequential. Returns project details including ID, name, task counts, and folder hierarchy.",
     usage:
-      "ofocus projects [--folder <name>] [--status <status>] [--sequential]",
+      "ofocus projects [--folder <value>] [--status <value>] [--sequential] [--no-sequential] [--limit <value>] [--offset <value>]",
   },
   {
     name: "tags",
     description:
       "List and query tags from OmniFocus. Supports filtering by parent tag for nested tag hierarchies. Returns tag details including ID, name, parent relationship, and count of available tasks with that tag.",
-    usage: "ofocus tags [--parent <name>]",
+    usage:
+      "ofocus tags [--parent <value>] [--limit <value>] [--offset <value>]",
   },
   {
     name: "complete",
@@ -56,19 +57,21 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Create a new project in OmniFocus. Supports setting name, note, folder placement, sequential vs parallel action ordering, status (active or on-hold), and due/defer dates. Projects organize related tasks and can be placed in folders for hierarchy.",
     usage:
-      "ofocus create-project <name> [--folder <name>] [--sequential] [--status <active|on-hold>] [--note <text>] [--due <date>] [--defer <date>]",
+      "ofocus create-project <name> [--note <value>] [--folder-id <value>] [--folder-name <value>] [--sequential] [--no-sequential] [--status <value>] [--due-date <value>] [--defer-date <value>]",
   },
   {
     name: "create-folder",
     description:
       "Create a new folder in OmniFocus. Folders organize projects into hierarchies. Supports optional parent folder for nested structures. Folders cannot contain tasks directly; they contain projects and other folders.",
-    usage: "ofocus create-folder <name> [--parent <folder-name>]",
+    usage:
+      "ofocus create-folder <name> [--parent-folder-id <value>] [--parent-folder-name <value>]",
   },
   {
     name: "folders",
     description:
       "List and query folders from OmniFocus. Supports filtering by parent folder to explore nested hierarchies. Returns folder details including ID, name, parent relationship, project count, and subfolder count.",
-    usage: "ofocus folders [--parent <folder-name>]",
+    usage:
+      "ofocus folders [--parent <value>] [--limit <value>] [--offset <value>]",
   },
   {
     name: "drop",
@@ -86,14 +89,15 @@ export const commandRegistry: CommandInfo[] = [
     name: "create-tag",
     description:
       "Create a new tag in OmniFocus. Tags can be nested under parent tags for hierarchical organization. Tags are used to categorize and filter tasks across projects. Returns the created tag with its ID.",
-    usage: "ofocus create-tag <name> [--parent <tag-name>]",
+    usage:
+      "ofocus create-tag <name> [--parent-tag-id <value>] [--parent-tag-name <value>]",
   },
   {
     name: "update-tag",
     description:
       "Update properties of an existing tag in OmniFocus. Supports renaming tags and moving them to different parent tags. Requires the tag ID which can be obtained from the tags command.",
     usage:
-      "ofocus update-tag <tag-id> [--name <new-name>] [--parent <tag-name>]",
+      "ofocus update-tag <tag-id> [--name <value>] [--parent-tag-id <value>] [--parent-tag-name <value>]",
   },
   {
     name: "delete-tag",
@@ -337,7 +341,7 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Update properties of an existing project in OmniFocus. Supports renaming, changing notes, status (active, on-hold, completed, dropped), moving to different folder, switching between sequential/parallel, and setting due/defer dates. Only specified properties are updated.",
     usage:
-      "ofocus update-project <project-id> [--name <name>] [--note <text>] [--status <status>] [--folder <name>] [--sequential] [--due <date>] [--defer <date>]",
+      "ofocus update-project <project-id> [--name <value>] [--note <value>] [--status <value>] [--folder-id <value>] [--folder-name <value>] [--sequential] [--no-sequential] [--due-date <value>] [--defer-date <value>]",
   },
   {
     name: "delete-project",
@@ -356,7 +360,7 @@ export const commandRegistry: CommandInfo[] = [
     description:
       "Update properties of an existing folder in OmniFocus. Supports renaming folders and moving them to different parent folders. Folders organize projects into hierarchies. Only specified properties are updated.",
     usage:
-      "ofocus update-folder <folder-id> [--name <name>] [--parent <name>] [--parent-id <id>]",
+      "ofocus update-folder <folder-id> [--name <value>] [--parent-folder-id <value>] [--parent-folder-name <value>]",
   },
   {
     name: "delete-folder",
@@ -368,7 +372,8 @@ export const commandRegistry: CommandInfo[] = [
     name: "duplicate",
     description:
       "Create a copy of an existing task in OmniFocus. The duplicated task inherits all properties: title, note, due/defer dates, flags, tags, and estimated duration. By default includes subtasks; use --no-include-subtasks to exclude them.",
-    usage: "ofocus duplicate <task-id> [--include-subtasks] [--no-include-subtasks]",
+    usage:
+      "ofocus duplicate <task-id> [--include-subtasks] [--no-include-subtasks]",
   },
   {
     name: "open",

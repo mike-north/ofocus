@@ -272,10 +272,7 @@ export type {
 // Command descriptors (migrated to the centralized registry).
 export { addToInboxDescriptor } from "./commands/inbox.js";
 export { completeTaskDescriptor } from "./commands/complete.js";
-export {
-  dropTaskDescriptor,
-  deleteTaskDescriptor,
-} from "./commands/drop.js";
+export { dropTaskDescriptor, deleteTaskDescriptor } from "./commands/drop.js";
 export { duplicateTaskDescriptor } from "./commands/duplicate.js";
 export { searchTasksDescriptor } from "./commands/search.js";
 export { queryForecastDescriptor } from "./commands/forecast.js";
@@ -291,7 +288,24 @@ export {
   updateTasksDescriptor,
   deleteTasksDescriptor,
 } from "./commands/batch.js";
+export { deferTaskDescriptor, deferTasksDescriptor } from "./commands/defer.js";
+export { listProjectsDescriptor } from "./commands/projects.js";
+export { createProjectDescriptor } from "./commands/create-project.js";
 export {
-  deferTaskDescriptor,
-  deferTasksDescriptor,
-} from "./commands/defer.js";
+  updateProjectDescriptor,
+  deleteProjectDescriptor,
+} from "./commands/projects-crud.js";
+export {
+  listFoldersDescriptor,
+  createFolderDescriptor,
+} from "./commands/folders.js";
+export {
+  updateFolderDescriptor,
+  deleteFolderDescriptor,
+} from "./commands/folders-crud.js";
+export { listTagsDescriptor } from "./commands/tags.js";
+export {
+  createTagDescriptor,
+  updateTagDescriptor,
+  deleteTagDescriptor,
+} from "./commands/tags-crud.js";

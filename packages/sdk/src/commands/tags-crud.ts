@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type {
   CliOutput,
   CreateTagOptions,
@@ -8,6 +9,7 @@ import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId, validateTagName } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from deleting a tag.
@@ -246,3 +248,74 @@ return JSON.stringify({ tagId: "${escapeJSString(tagId)}", deleted: true });`;
 
   return success(result.data as DeleteTagResult);
 }
+
+/**
+ * Centralized descriptor for the `create-tag` command.
+ *
+ * Drives the CLI subcommand `create-tag` and the MCP tool `tag_create`.
+ *
+ * @public
+ */
+export const createTagDescriptor = defineCommand({
+  name: "createTag",
+  cliName: "create-tag",
+  mcpName: "tag_create",
+  description: "Create a new tag in OmniFocus",
+  cliPositional: ["name"],
+  inputSchema: z.object({
+    name: z.string().describe("Tag name"),
+    parentTagId: z.string().optional().describe("Parent tag ID"),
+    parentTagName: z.string().optional().describe("Parent tag name"),
+  }),
+  handler: async (input) =>
+    createTag(input.name, {
+      parentTagId: input.parentTagId,
+      parentTagName: input.parentTagName,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `update-tag` command.
+ *
+ * Drives the CLI subcommand `update-tag` and the MCP tool `tag_update`.
+ *
+ * @public
+ */
+export const updateTagDescriptor = defineCommand({
+  name: "updateTag",
+  cliName: "update-tag",
+  mcpName: "tag_update",
+  description: "Update an existing tag in OmniFocus",
+  cliPositional: ["tagId"],
+  inputSchema: z.object({
+    tagId: z.string().describe("The ID of the tag to update"),
+    name: z.string().optional().describe("New tag name"),
+    parentTagId: z.string().optional().describe("New parent tag ID"),
+    parentTagName: z.string().optional().describe("New parent tag name"),
+  }),
+  handler: async (input) =>
+    updateTag(input.tagId, {
+      name: input.name,
+      parentTagId: input.parentTagId,
+      parentTagName: input.parentTagName,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `delete-tag` command.
+ *
+ * Drives the CLI subcommand `delete-tag` and the MCP tool `tag_delete`.
+ *
+ * @public
+ */
+export const deleteTagDescriptor = defineCommand({
+  name: "deleteTag",
+  cliName: "delete-tag",
+  mcpName: "tag_delete",
+  description: "Delete a tag from OmniFocus",
+  cliPositional: ["tagId"],
+  inputSchema: z.object({
+    tagId: z.string().describe("The ID of the tag to delete"),
+  }),
+  handler: async (input) => deleteTag(input.tagId),
+});

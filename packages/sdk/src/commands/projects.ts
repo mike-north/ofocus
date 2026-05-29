@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { CliOutput, OFProject } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
@@ -14,6 +15,7 @@ import {
   type QueryResult,
   type ProjectQueryOptions,
 } from "../query/index.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Query projects from OmniFocus with the full shared-query vocabulary.
@@ -88,6 +90,53 @@ export async function queryProjects(
 
   return success(result.data);
 }
+
+/**
+ * Centralized descriptor for the `projects` command.
+ *
+ * Drives the CLI subcommand `projects` and the MCP tool `projects_list`.
+ *
+ * @public
+ */
+export const listProjectsDescriptor = defineCommand({
+  name: "listProjects",
+  cliName: "projects",
+  mcpName: "projects_list",
+  description: "List and filter projects from OmniFocus",
+  inputSchema: z.object({
+    folder: z.string().optional().describe("Filter by folder name or ID"),
+    status: z
+      .enum(["active", "on-hold", "completed", "dropped"])
+      .optional()
+      .describe(
+        "Filter by project status (active, on-hold, completed, dropped)"
+      ),
+    sequential: z
+      .boolean()
+      .optional()
+      .describe("Filter by sequential/parallel type"),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .optional()
+      .describe("Maximum number of results to return"),
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("Number of results to skip for pagination"),
+  }),
+  handler: async (input) =>
+    queryProjects({
+      folder: input.folder,
+      status: input.status,
+      sequential: input.sequential,
+      limit: input.limit,
+      offset: input.offset,
+    }),
+});
 
 function makeEmptyResult(
   shape: ReturnType<typeof compileAggregate>["shape"],

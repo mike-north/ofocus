@@ -18,16 +18,20 @@ import {
   deleteTasksDescriptor,
   deferTaskDescriptor,
   deferTasksDescriptor,
+  listProjectsDescriptor,
+  createProjectDescriptor,
+  updateProjectDescriptor,
+  deleteProjectDescriptor,
+  listFoldersDescriptor,
+  createFolderDescriptor,
+  updateFolderDescriptor,
+  deleteFolderDescriptor,
+  listTagsDescriptor,
+  createTagDescriptor,
+  updateTagDescriptor,
+  deleteTagDescriptor,
   queryTasks,
-  queryProjects,
-  queryTags,
   updateTask,
-  createProject,
-  createFolder,
-  queryFolders,
-  createTag,
-  updateTag,
-  deleteTag,
   listPerspectives,
   queryPerspective,
   reviewProject,
@@ -56,11 +60,7 @@ import {
   getSyncStatus,
   triggerSync,
   // Phase 9: Project/Folder CRUD & Utilities
-  updateProject,
-  deleteProject,
   dropProject,
-  updateFolder,
-  deleteFolder,
   openItem,
   getReviewInterval,
   setReviewInterval,
@@ -87,20 +87,6 @@ interface TasksCommandOptions {
   offset?: number | undefined;
 }
 
-interface ProjectsCommandOptions {
-  folder?: string | undefined;
-  status?: string | undefined;
-  sequential?: boolean | undefined;
-  limit?: number | undefined;
-  offset?: number | undefined;
-}
-
-interface TagsCommandOptions {
-  parent?: string | undefined;
-  limit?: number | undefined;
-  offset?: number | undefined;
-}
-
 interface UpdateCommandOptions {
   title?: string | undefined;
   note?: string | undefined;
@@ -115,38 +101,6 @@ interface UpdateCommandOptions {
   every?: number | undefined;
   repeatMethod?: string | undefined;
   clearRepeat?: boolean | undefined;
-}
-
-interface CreateProjectOptions {
-  note?: string | undefined;
-  folder?: string | undefined;
-  folderId?: string | undefined;
-  sequential?: boolean | undefined;
-  status?: string | undefined;
-  due?: string | undefined;
-  defer?: string | undefined;
-}
-
-interface CreateFolderOptions {
-  parent?: string | undefined;
-  parentId?: string | undefined;
-}
-
-interface FoldersQueryOptions {
-  parent?: string | undefined;
-  limit?: number | undefined;
-  offset?: number | undefined;
-}
-
-interface CreateTagOptions {
-  parent?: string | undefined;
-  parentId?: string | undefined;
-}
-
-interface UpdateTagOptions {
-  name?: string | undefined;
-  parent?: string | undefined;
-  parentId?: string | undefined;
 }
 
 interface PerspectiveOptions {
@@ -312,54 +266,15 @@ Use --human flag for human-readable output (default is JSON).
       if (!result.success) process.exitCode = 1;
     });
 
-  // projects
-  program
-    .command("projects")
-    .description("Query projects from OmniFocus")
-    .option("--folder <name>", "Filter by folder name")
-    .option(
-      "--status <status>",
-      "Filter by status (active, on-hold, completed, dropped)"
-    )
-    .option("--sequential", "Show only sequential projects")
-    .option("--limit <n>", "Maximum results to return", parseInt)
-    .option("--offset <n>", "Number of results to skip", parseInt)
-    .action(async (options: ProjectsCommandOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const status = options.status as
-        | "active"
-        | "on-hold"
-        | "completed"
-        | "dropped"
-        | undefined;
-      const result = await queryProjects({
-        folder: options.folder,
-        status,
-        sequential: options.sequential,
-        limit: options.limit,
-        offset: options.offset,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // projects — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, listProjectsDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // tags
-  program
-    .command("tags")
-    .description("Query tags from OmniFocus")
-    .option("--parent <name>", "Filter by parent tag name")
-    .option("--limit <n>", "Maximum results to return", parseInt)
-    .option("--offset <n>", "Number of results to skip", parseInt)
-    .action(async (options: TagsCommandOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await queryTags({
-        parent: options.parent,
-        limit: options.limit,
-        offset: options.offset,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // tags — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, listTagsDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // complete — registered from the centralized descriptor in @ofocus/sdk
   registerCliCommand(program, completeTaskDescriptor, (result, cmd) => {
@@ -424,72 +339,20 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 1: Create Projects & Folders
   // ===========================================
 
-  // create-project
-  program
-    .command("create-project")
-    .description("Create a new project in OmniFocus")
-    .argument("<name>", "Project name")
-    .option("-n, --note <text>", "Project note")
-    .option("--folder <name>", "Parent folder name")
-    .option("--folder-id <id>", "Parent folder ID")
-    .option("--sequential", "Make the project sequential")
-    .option("--status <status>", "Initial status (active, on-hold)")
-    .option("-d, --due <date>", "Due date")
-    .option("--defer <date>", "Defer date")
-    .action(
-      async (name: string, options: CreateProjectOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const status = options.status as "active" | "on-hold" | undefined;
-        const result = await createProject(name, {
-          note: options.note,
-          folderName: options.folder,
-          folderId: options.folderId,
-          sequential: options.sequential,
-          status,
-          dueDate: options.due,
-          deferDate: options.defer,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // create-project — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, createProjectDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // create-folder
-  program
-    .command("create-folder")
-    .description("Create a new folder in OmniFocus")
-    .argument("<name>", "Folder name")
-    .option("--parent <name>", "Parent folder name")
-    .option("--parent-id <id>", "Parent folder ID")
-    .action(
-      async (name: string, options: CreateFolderOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await createFolder(name, {
-          parentFolderName: options.parent,
-          parentFolderId: options.parentId,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // create-folder — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, createFolderDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
-  // folders
-  program
-    .command("folders")
-    .description("Query folders from OmniFocus")
-    .option("--parent <name>", "Filter by parent folder name")
-    .option("--limit <n>", "Maximum results to return", parseInt)
-    .option("--offset <n>", "Number of results to skip", parseInt)
-    .action(async (options: FoldersQueryOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await queryFolders({
-        parent: options.parent,
-        limit: options.limit,
-        offset: options.offset,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // folders — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, listFoldersDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 1: Drop/Delete Tasks
@@ -507,53 +370,17 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 1: Tags CRUD
   // ===========================================
 
-  // create-tag
-  program
-    .command("create-tag")
-    .description("Create a new tag in OmniFocus")
-    .argument("<name>", "Tag name")
-    .option("--parent <name>", "Parent tag name")
-    .option("--parent-id <id>", "Parent tag ID")
-    .action(async (name: string, options: CreateTagOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await createTag(name, {
-        parentTagName: options.parent,
-        parentTagId: options.parentId,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
-
-  // update-tag
-  program
-    .command("update-tag")
-    .description("Update an existing tag in OmniFocus")
-    .argument("<tag-id>", "Tag ID to update")
-    .option("--name <name>", "New tag name")
-    .option("--parent <name>", "Move to parent tag by name")
-    .option("--parent-id <id>", "Move to parent tag by ID")
-    .action(async (tagId: string, options: UpdateTagOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await updateTag(tagId, {
-        name: options.name,
-        parentTagName: options.parent,
-        parentTagId: options.parentId,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
-
-  // delete-tag
-  program
-    .command("delete-tag")
-    .description("Delete a tag permanently (cannot be undone)")
-    .argument("<tag-id>", "Tag ID to delete")
-    .action(async (tagId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await deleteTag(tagId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // create-tag / update-tag / delete-tag — registered from the centralized
+  // descriptors in @ofocus/sdk.
+  registerCliCommand(program, createTagDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, updateTagDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, deleteTagDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 2: Subtasks
@@ -1031,71 +858,14 @@ Use --human flag for human-readable output (default is JSON).
   // Phase 9: Project/Folder CRUD & Utilities
   // ===========================================
 
-  // update-project
-  program
-    .command("update-project")
-    .description("Update project properties")
-    .argument("<project-id>", "Project ID to update")
-    .option("--name <name>", "New project name")
-    .option("-n, --note <text>", "New project note")
-    .option(
-      "--status <status>",
-      "New status (active, on-hold, completed, dropped)"
-    )
-    .option("--folder <name>", "Move to folder by name")
-    .option("--folder-id <id>", "Move to folder by ID")
-    .option("--sequential", "Make the project sequential")
-    .option("--no-sequential", "Make the project parallel")
-    .option("-d, --due <date>", "New due date (empty string to clear)")
-    .option("--defer <date>", "New defer date (empty string to clear)")
-    .action(
-      async (
-        projectId: string,
-        options: {
-          name?: string;
-          note?: string;
-          status?: string;
-          folder?: string;
-          folderId?: string;
-          sequential?: boolean;
-          due?: string;
-          defer?: string;
-        },
-        cmd: Command
-      ) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const status = options.status as
-          | "active"
-          | "on-hold"
-          | "completed"
-          | "dropped"
-          | undefined;
-        const result = await updateProject(projectId, {
-          name: options.name,
-          note: options.note,
-          status,
-          folderName: options.folder,
-          folderId: options.folderId,
-          sequential: options.sequential,
-          dueDate: options.due,
-          deferDate: options.defer,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
-
-  // delete-project
-  program
-    .command("delete-project")
-    .description("Delete a project permanently (cannot be undone)")
-    .argument("<project-id>", "Project ID to delete")
-    .action(async (projectId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await deleteProject(projectId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // update-project / delete-project — registered from the centralized
+  // descriptors in @ofocus/sdk.
+  registerCliCommand(program, updateProjectDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, deleteProjectDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // drop-project
   program
@@ -1109,46 +879,14 @@ Use --human flag for human-readable output (default is JSON).
       if (!result.success) process.exitCode = 1;
     });
 
-  // update-folder
-  program
-    .command("update-folder")
-    .description("Update folder properties")
-    .argument("<folder-id>", "Folder ID to update")
-    .option("--name <name>", "New folder name")
-    .option("--parent <name>", "Move to parent folder by name")
-    .option("--parent-id <id>", "Move to parent folder by ID")
-    .action(
-      async (
-        folderId: string,
-        options: {
-          name?: string;
-          parent?: string;
-          parentId?: string;
-        },
-        cmd: Command
-      ) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await updateFolder(folderId, {
-          name: options.name,
-          parentFolderName: options.parent,
-          parentFolderId: options.parentId,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
-
-  // delete-folder
-  program
-    .command("delete-folder")
-    .description("Delete a folder permanently (cannot be undone)")
-    .argument("<folder-id>", "Folder ID to delete")
-    .action(async (folderId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await deleteFolder(folderId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // update-folder / delete-folder — registered from the centralized
+  // descriptors in @ofocus/sdk.
+  registerCliCommand(program, updateFolderDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, deleteFolderDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // duplicate — registered from the centralized descriptor in @ofocus/sdk
   registerCliCommand(program, duplicateTaskDescriptor, (result, cmd) => {
