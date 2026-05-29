@@ -172,6 +172,8 @@ export function validateRepetitionRule(
         repeatMethod: string;
         daysOfWeek?: number[] | undefined;
         dayOfMonth?: number | undefined;
+        daysOfWeekPositions?: number[] | undefined;
+        monthsOfYear?: number[] | undefined;
       }
     | undefined
 ): CliError | null {
@@ -196,12 +198,12 @@ export function validateRepetitionRule(
     );
   }
 
-  const validMethods = ["due-again", "defer-another"];
+  const validMethods = ["due-again", "defer-another", "scheduled"];
   if (!validMethods.includes(rule.repeatMethod)) {
     return createError(
       ErrorCode.VALIDATION_ERROR,
       `Invalid repeat method: ${rule.repeatMethod}`,
-      "Valid methods are: due-again, defer-another"
+      "Valid methods are: due-again, defer-another, scheduled"
     );
   }
 
@@ -234,6 +236,61 @@ export function validateRepetitionRule(
         `Invalid day of month: ${String(rule.dayOfMonth)}`,
         "Day of month must be an integer 1-31"
       );
+    }
+  }
+
+  // daysOfWeekPositions is only valid for monthly frequency
+  if (rule.daysOfWeekPositions !== undefined) {
+    if (rule.frequency !== "monthly") {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "daysOfWeekPositions is only valid for monthly frequency",
+        "Positional BYDAY (e.g. 1MO for first Monday) only applies within a month"
+      );
+    }
+    if (
+      !Array.isArray(rule.daysOfWeekPositions) ||
+      rule.daysOfWeekPositions.length === 0
+    ) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "daysOfWeekPositions must be a non-empty array"
+      );
+    }
+    for (const pos of rule.daysOfWeekPositions) {
+      if (!Number.isInteger(pos) || pos === 0 || pos < -5 || pos > 5) {
+        return createError(
+          ErrorCode.VALIDATION_ERROR,
+          `Invalid day-of-week position: ${String(pos)}`,
+          "Positions must be integers in [-5, -1] ∪ [1, 5] (RFC 5545)"
+        );
+      }
+    }
+  }
+
+  // monthsOfYear is only valid for yearly frequency
+  if (rule.monthsOfYear !== undefined) {
+    if (rule.frequency !== "yearly") {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "monthsOfYear is only valid for yearly frequency",
+        "BYMONTH only applies to FREQ=YEARLY recurrences"
+      );
+    }
+    if (!Array.isArray(rule.monthsOfYear) || rule.monthsOfYear.length === 0) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "monthsOfYear must be a non-empty array"
+      );
+    }
+    for (const month of rule.monthsOfYear) {
+      if (!Number.isInteger(month) || month < 1 || month > 12) {
+        return createError(
+          ErrorCode.VALIDATION_ERROR,
+          `Invalid month of year: ${String(month)}`,
+          "Months must be integers in [1, 12] (1=January, 12=December)"
+        );
+      }
     }
   }
 

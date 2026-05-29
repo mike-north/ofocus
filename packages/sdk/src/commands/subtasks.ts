@@ -16,7 +16,7 @@ import {
   validatePaginationParams,
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
-import { buildRRule } from "./repetition.js";
+import { buildRRule, repeatMethodToOmniJS } from "./repetition.js";
 import { sanitizeVarName } from "../utils/sanitize.js";
 import { defineCommand } from "../registry/define.js";
 import {
@@ -148,10 +148,7 @@ var task = new Task("${escapeJSString(title)}", parentTask.ending);`);
   // Handle repetition rule
   if (options.repeat) {
     const rrule = buildRRule(options.repeat);
-    const method =
-      options.repeat.repeatMethod === "due-again"
-        ? "Task.RepetitionMethod.DueDate"
-        : "Task.RepetitionMethod.DeferDate";
+    const method = repeatMethodToOmniJS(options.repeat.repeatMethod);
     scriptParts.push(
       `task.repetitionRule = new Task.RepetitionRule("${escapeJSString(rrule)}", ${method});`
     );
@@ -219,7 +216,10 @@ export async function querySubtasks(
   if (idError) return failure(idError);
 
   // Validate pagination
-  const paginationError = validatePaginationParams(options.limit, options.offset);
+  const paginationError = validatePaginationParams(
+    options.limit,
+    options.offset
+  );
   if (paginationError) return failure(paginationError);
 
   // Build the task query options: scope to children of the given parent,
@@ -227,7 +227,9 @@ export async function querySubtasks(
   const taskOptions: TaskQueryOptions = {
     ...options,
     parentTaskId,
-    ...(options.completed !== undefined ? { completed: options.completed } : {}),
+    ...(options.completed !== undefined
+      ? { completed: options.completed }
+      : {}),
     ...(options.flagged !== undefined ? { flagged: options.flagged } : {}),
   };
 
