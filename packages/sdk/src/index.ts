@@ -106,7 +106,7 @@ export type {
 
 // Tasks
 export { addToInbox } from "./commands/inbox.js";
-export { queryTasks, listTasksDescriptor } from "./commands/tasks.js";
+export { queryTasks } from "./commands/tasks.js";
 export { completeTask } from "./commands/complete.js";
 export type { CompleteResult } from "./commands/complete.js";
 export { updateTask } from "./commands/update.js";

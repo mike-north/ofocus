@@ -1392,69 +1392,6 @@ offset?: number | undefined;
 }>>;
 
 // @public
-export const listTasksDescriptor: ResolvedCommandDescriptor<    {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
-completed?: boolean | undefined;
-flagged?: boolean | undefined;
-available?: boolean | undefined;
-project?: string | undefined;
-tag?: string | undefined;
-dueBefore?: string | undefined;
-dueAfter?: string | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
-}, QueryResult<OFTask>, z.ZodObject<{
-limit: z.ZodOptional<z.ZodNumber>;
-offset: z.ZodOptional<z.ZodNumber>;
-all: z.ZodOptional<z.ZodBoolean>;
-sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
-reverse: z.ZodOptional<z.ZodBoolean>;
-fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
-excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
-project: z.ZodOptional<z.ZodString>;
-tag: z.ZodOptional<z.ZodString>;
-dueBefore: z.ZodOptional<z.ZodString>;
-dueAfter: z.ZodOptional<z.ZodString>;
-flagged: z.ZodOptional<z.ZodBoolean>;
-completed: z.ZodOptional<z.ZodBoolean>;
-available: z.ZodOptional<z.ZodBoolean>;
-}, "strip", z.ZodTypeAny, {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
-completed?: boolean | undefined;
-flagged?: boolean | undefined;
-available?: boolean | undefined;
-project?: string | undefined;
-tag?: string | undefined;
-dueBefore?: string | undefined;
-dueAfter?: string | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
-}, {
-fields?: unknown;
-excludeFields?: unknown;
-sort?: unknown;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
-completed?: boolean | undefined;
-flagged?: boolean | undefined;
-available?: boolean | undefined;
-project?: string | undefined;
-tag?: string | undefined;
-dueBefore?: string | undefined;
-dueAfter?: string | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
-}>>;
-
-// @public
 export function listTemplates(): CliOutput<ListTemplatesResult>;
 
 // @public

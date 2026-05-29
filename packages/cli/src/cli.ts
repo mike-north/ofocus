@@ -2,7 +2,6 @@ import { Command, Option, Help } from "commander";
 import { isAgenticTui } from "is-agentic-tui";
 import {
   addToInboxDescriptor,
-  listTasksDescriptor,
   completeTaskDescriptor,
   dropTaskDescriptor,
   deleteTaskDescriptor,
@@ -59,6 +58,7 @@ import {
   openItemDescriptor,
   getReviewIntervalDescriptor,
   setReviewIntervalDescriptor,
+  queryTasks,
   updateTask,
   // Phase 6
   getStats,
@@ -80,6 +80,19 @@ interface GlobalOptions {
   json?: boolean | undefined;
   human?: boolean | undefined;
   format?: string | undefined;
+}
+
+interface TasksCommandOptions {
+  project?: string | undefined;
+  tag?: string | undefined;
+  dueBefore?: string | undefined;
+  dueAfter?: string | undefined;
+  flagged?: boolean | undefined;
+  completed?: boolean | undefined;
+  available?: boolean | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
+  all?: boolean | undefined;
 }
 
 interface UpdateCommandOptions {
@@ -229,11 +242,40 @@ Use --format json|toon for machine output (default: json). Use --human for human
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 
-  // tasks — registered from the centralized descriptor in @ofocus/sdk
-  // Supports --fields, --exclude-fields, --sort (comma- or space-separated)
-  registerCliCommand(program, listTasksDescriptor, (result, cmd) => {
-    output(result, getOutputFormat(getGlobalOpts(cmd)));
-  });
+  // tasks
+  program
+    .command("tasks")
+    .description("Query tasks from OmniFocus")
+    .option("-p, --project <name>", "Filter by project name")
+    .option("-t, --tag <name>", "Filter by tag name")
+    .option("--due-before <date>", "Filter tasks due before date")
+    .option("--due-after <date>", "Filter tasks due after date")
+    .option("--flagged", "Show only flagged tasks")
+    .option("--completed", "Show only completed tasks")
+    .option("--available", "Show only available (actionable) tasks")
+    .option("--limit <n>", "Maximum results to return", parseInt)
+    .option("--offset <n>", "Number of results to skip", parseInt)
+    .option(
+      "--all",
+      "Return every matching task, ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+    )
+    .action(async (options: TasksCommandOptions, cmd: Command) => {
+      const globalOpts = getGlobalOpts(cmd);
+      const result = await queryTasks({
+        project: options.project,
+        tag: options.tag,
+        dueBefore: options.dueBefore,
+        dueAfter: options.dueAfter,
+        flagged: options.flagged,
+        completed: options.completed,
+        available: options.available,
+        limit: options.limit,
+        offset: options.offset,
+        all: options.all,
+      });
+      output(result, getOutputFormat(globalOpts));
+      if (!result.success) process.exitCode = 1;
+    });
 
   // projects — registered from the centralized descriptor in @ofocus/sdk
   registerCliCommand(program, listProjectsDescriptor, (result, cmd) => {
