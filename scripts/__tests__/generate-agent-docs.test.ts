@@ -25,6 +25,7 @@ import {
   getDomain,
   extractFields,
   zodTypeLabel,
+  escapeTableCell,
   renderAgentInstructions,
   renderCliInstructions,
   renderSkillMd,
@@ -139,6 +140,48 @@ const batchDescriptor = makeDescriptor({
   inputSchema: {
     shape: {
       taskIds: zodArray(zodString(), "Task IDs") as never,
+    },
+  },
+});
+
+/**
+ * Descriptor with an enum field whose type label contains `|` (e.g. `active | on-hold`).
+ * Used to verify pipe-escaping in table cells (Fix 1 — comment 3325703458).
+ */
+const enumDescriptor = makeDescriptor({
+  name: "updateProject",
+  cliName: "project update",
+  mcpName: "project_update",
+  description: "Update a project.",
+  cliPositional: ["projectId"],
+  inputSchema: {
+    shape: {
+      projectId: zodString("The project ID") as never,
+      status: zodOptional(
+        zodEnum(["active", "on-hold", "done"], "Project status"),
+        "Project status"
+      ) as never,
+    },
+  },
+});
+
+/**
+ * Descriptor with a boolean field that defaults to true in behaviour.
+ * Used to verify `--no-<flag>` generation (Fix 2 — comment 3325703502).
+ */
+const booleanDefaultTrueDescriptor = makeDescriptor({
+  name: "duplicateTask",
+  cliName: "duplicate",
+  mcpName: "task_duplicate",
+  description: "Duplicate a task.",
+  cliPositional: ["taskId"],
+  inputSchema: {
+    shape: {
+      taskId: zodString("The task ID") as never,
+      includeSubtasks: zodOptional(
+        zodBoolean(),
+        "Include subtasks in the duplicate (default: true)"
+      ) as never,
     },
   },
 });
@@ -572,5 +615,142 @@ describe("renderSkillMd", () => {
   it("produces a deterministic output", () => {
     const descriptors = [simpleDescriptor, fullDescriptor];
     expect(renderSkillMd(descriptors)).toBe(renderSkillMd(descriptors));
+  });
+});
+
+// ─── Fix 1: escapeTableCell — pipe escaping ───────────────────────────────────
+// Regression for comment 3325703458: enum types like `active | on-hold` must
+// have their `|` escaped to `\|` so they don't split markdown table columns.
+
+describe("escapeTableCell", () => {
+  it("leaves plain strings untouched", () => {
+    expect(escapeTableCell("hello world")).toBe("hello world");
+  });
+
+  it("escapes a single pipe", () => {
+    expect(escapeTableCell("a | b")).toBe("a \\| b");
+  });
+
+  it("escapes multiple pipes (enum type string)", () => {
+    expect(escapeTableCell("active | on-hold | done")).toBe(
+      "active \\| on-hold \\| done"
+    );
+  });
+
+  it("replaces literal newlines with a space", () => {
+    expect(escapeTableCell("line one\nline two")).toBe("line one line two");
+  });
+
+  it("handles empty string", () => {
+    expect(escapeTableCell("")).toBe("");
+  });
+});
+
+describe("mcpToolParamTable — pipe escaping in type column", () => {
+  it("escapes pipe characters in enum type cells", () => {
+    // enumDescriptor has a status field of type `active | on-hold | done`
+    const table = mcpToolParamTable(enumDescriptor);
+    // The type cell must contain escaped pipes
+    expect(table).toContain("active \\| on-hold \\| done");
+  });
+
+  it("produces the correct column count in enum rows (no extra columns from unescaped pipes)", () => {
+    // A GFM markdown table row of the form `| a | b | c | d |` has exactly
+    // (columns + 1) pipe characters at the non-escaped level.
+    // With 4 columns (Parameter, Type, Required, Description) every data row
+    // should have exactly 5 `|` separators (the outer two + 3 inner).
+    const table = mcpToolParamTable(enumDescriptor);
+    const rows = table.split("\n").filter((l) => l.startsWith("|"));
+    // Skip the separator row (contains only `---`s)
+    const dataRows = rows.filter((l) => !l.includes("---"));
+    for (const row of dataRows) {
+      // Count unescaped pipes: those NOT preceded by `\`
+      const unescapedPipes = [...row.matchAll(/(?<!\\)\|/g)];
+      // A 4-column table row has exactly 5 unescaped pipes
+      expect(unescapedPipes).toHaveLength(5);
+    }
+  });
+});
+
+describe("cliFlagTable — pipe escaping in type column", () => {
+  it("escapes pipe characters in enum type cells", () => {
+    const table = cliFlagTable(enumDescriptor);
+    // status field type is `active | on-hold | done` — must be escaped
+    expect(table).toContain("active \\| on-hold \\| done");
+  });
+});
+
+// ─── Fix 2: negated boolean forms in cliFlagTable ────────────────────────────
+// Regression for comment 3325703502: Commander registers both `--foo` and
+// `--no-foo` for boolean fields; the generated flag table must document both.
+
+describe("cliFlagTable — negated boolean forms", () => {
+  it("documents both --flag and --no-flag for boolean fields", () => {
+    // noPositionalDescriptor has an `includeDeferred` boolean flag
+    const table = cliFlagTable(noPositionalDescriptor);
+    expect(table).toContain("--include-deferred");
+    expect(table).toContain("--no-include-deferred");
+  });
+
+  it("documents both forms for a boolean that defaults true in behaviour", () => {
+    // booleanDefaultTrueDescriptor has `includeSubtasks` (default: true)
+    const table = cliFlagTable(booleanDefaultTrueDescriptor);
+    expect(table).toContain("--include-subtasks");
+    expect(table).toContain("--no-include-subtasks");
+  });
+
+  it("preserves the (default: true) hint in the description", () => {
+    const table = cliFlagTable(booleanDefaultTrueDescriptor);
+    expect(table).toContain("default: true");
+  });
+
+  it("does NOT add --no- form for non-boolean flags", () => {
+    // simpleDescriptor has only a string `taskId` positional; cliFlagTable
+    // returns _No flags._ for it (no flags at all), so use fullDescriptor
+    const table = cliFlagTable(fullDescriptor);
+    // `--note` is a string flag — must NOT have `--no-note`
+    expect(table).not.toContain("--no-note");
+    // `--tags` is an array flag — must NOT have `--no-tags`
+    expect(table).not.toContain("--no-tags");
+  });
+});
+
+// ─── Fix 3: MCP output envelope ──────────────────────────────────────────────
+// Regression for comment 3325703534: the generated MCP reference must describe
+// the real CallToolResult shape, not the CLI `{ success, data, error }` shape.
+
+describe("renderAgentInstructions — MCP output envelope", () => {
+  it("describes content[0].text in the MCP output envelope", () => {
+    const out = renderAgentInstructions([simpleDescriptor]);
+    expect(out).toContain("content[0].text");
+  });
+
+  it("mentions isError for failure cases", () => {
+    const out = renderAgentInstructions([simpleDescriptor]);
+    expect(out).toContain("isError");
+  });
+
+  it("does NOT document the CLI { success, data, error } shape as the MCP envelope", () => {
+    const out = renderAgentInstructions([simpleDescriptor]);
+    // The string `"success": true` inside a JSON fence would be wrong for MCP
+    // (that is the CliOutput / CLI shape). The MCP Output Envelope section
+    // must not have this.
+    const outputEnvelopeSection = out.split("## Output Envelope")[1] ?? "";
+    // Cut off at the next ## heading (start of domain sections)
+    const sectionText = outputEnvelopeSection.split(/\n## /)[0] ?? "";
+    expect(sectionText).not.toContain('"success": true');
+    expect(sectionText).not.toContain('"success": false');
+  });
+});
+
+// ─── Fix 4: skill prerequisite install command ───────────────────────────────
+// Regression for comment 3325703560: the `ofocus` binary comes from the
+// umbrella `ofocus` package, not `@ofocus/cli` (which exposes `ofocus-cli`).
+
+describe("renderSkillMd — install command", () => {
+  it("installs the umbrella 'ofocus' package, not '@ofocus/cli'", () => {
+    const out = renderSkillMd([simpleDescriptor]);
+    expect(out).toContain("npm install -g ofocus");
+    expect(out).not.toContain("@ofocus/cli");
   });
 });

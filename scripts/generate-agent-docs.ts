@@ -419,6 +419,17 @@ export function usageLineForDescriptor(descriptor: DescriptorView): string {
 
 // ─── Markdown table helpers ──────────────────────────────────────────────────
 
+/**
+ * Escape a string for safe inclusion in a markdown table cell.
+ *
+ * A raw `|` in a cell value splits the row into extra columns, corrupting the
+ * table. Enum type strings like `"active | on-hold"` trigger this. A literal
+ * newline also breaks a table row, so newlines are replaced with a space.
+ */
+export function escapeTableCell(s: string): string {
+  return s.replace(/\|/g, "\\|").replace(/\n/g, " ");
+}
+
 function mdTableRow(cells: string[]): string {
   return `| ${cells.join(" | ")} |`;
 }
@@ -437,10 +448,10 @@ export function mcpToolParamTable(descriptor: DescriptorView): string {
 
   const rows = fields.map((f) =>
     mdTableRow([
-      f.name,
-      `\`${f.type}\``,
+      escapeTableCell(f.name),
+      `\`${escapeTableCell(f.type)}\``,
       f.required ? "yes" : "no",
-      f.description || "—",
+      escapeTableCell(f.description || "—"),
     ])
   );
 
@@ -452,6 +463,10 @@ export function mcpToolParamTable(descriptor: DescriptorView): string {
 
 /**
  * Build the CLI flag table (flag → type → required → description).
+ *
+ * For boolean fields, Commander registers BOTH `--foo` and `--no-foo` (see
+ * `registry-adapter.ts` `addOptionForField`). Both forms are documented here
+ * so the reference matches real CLI behaviour.
  */
 export function cliFlagTable(descriptor: DescriptorView): string {
   const shape = descriptor.inputSchema.shape;
@@ -460,13 +475,26 @@ export function cliFlagTable(descriptor: DescriptorView): string {
 
   if (flagFields.length === 0) return "_No flags._";
 
-  const rows = flagFields.map(([fieldName, fieldNode]) => {
+  const rows: string[] = [];
+  for (const [fieldName, fieldNode] of flagFields) {
     const flag = kebabFromSchemaField(fieldName);
     const type = zodTypeLabel(fieldNode);
     const req = isNodeRequired(fieldNode) ? "yes" : "no";
-    const desc = getNodeDescription(fieldNode) || "—";
-    return mdTableRow([`\`${flag}\``, `\`${type}\``, req, desc]);
-  });
+    const desc = escapeTableCell(getNodeDescription(fieldNode) || "—");
+
+    if (isNodeBoolean(fieldNode)) {
+      // Emit both affirmative and negated forms on a single row, mirroring
+      // how Commander's registry-adapter registers them.
+      const flagCell = `\`${flag}\` / \`--no-${flag.slice(2)}\``;
+      rows.push(
+        mdTableRow([flagCell, `\`${escapeTableCell(type)}\``, req, desc])
+      );
+    } else {
+      rows.push(
+        mdTableRow([`\`${flag}\``, `\`${escapeTableCell(type)}\``, req, desc])
+      );
+    }
+  }
 
   return [
     mdTableHeader(["Flag", "Type", "Required", "Description"]),
@@ -557,14 +585,29 @@ export function renderAgentInstructions(descriptors: DescriptorView[]): string {
   lines.push("");
   lines.push(`## Output Envelope`);
   lines.push("");
-  lines.push(`Every tool returns a JSON object with the following shape:`);
+  lines.push(
+    `Every tool returns an MCP \`CallToolResult\`. The payload is JSON-encoded in \`content[0].text\`.`
+  );
+  lines.push(`On success, \`content[0].text\` contains the result JSON:`);
   lines.push("");
   lines.push("```json");
-  lines.push(`{ "success": true, "data": { ... } }`);
+  lines.push(`{ "content": [{ "type": "text", "text": "<result-json>" }] }`);
+  lines.push("```");
+  lines.push("");
   lines.push(
-    `{ "success": false, "error": { "code": "...", "message": "..." } }`
+    `On failure, \`isError\` is \`true\` and \`content[0].text\` contains the error details:`
+  );
+  lines.push("");
+  lines.push("```json");
+  lines.push(
+    `{ "content": [{ "type": "text", "text": "<error-json>" }], "isError": true }`
   );
   lines.push("```");
+  lines.push("");
+  lines.push(
+    `The result JSON uses TOON format (token-efficient) by default for descriptor-backed tools. ` +
+      `Pass \`--format json\` on the CLI (or set \`format: "json"\` as a parameter) to get standard JSON.`
+  );
   lines.push("");
 
   for (const [domain, group] of groups) {
@@ -681,7 +724,7 @@ export function renderSkillMd(descriptors: DescriptorView[]): string {
   lines.push(`## Prerequisites`);
   lines.push("");
   lines.push(`- macOS with OmniFocus installed`);
-  lines.push(`- Install: \`npm install -g @ofocus/cli\``);
+  lines.push(`- Install: \`npm install -g ofocus\``);
   lines.push("");
   lines.push(`## Output Format`);
   lines.push("");
