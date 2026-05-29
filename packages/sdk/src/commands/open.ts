@@ -33,19 +33,23 @@ var itemId = "${escapedId}";
 var itemType = null;
 var itemName = null;
 
-// Try task first (most common)
-var task = Task.byIdentifier(itemId);
-if (task) {
-  itemType = "task";
-  itemName = task.name;
+// Try project FIRST. In OmniFocus a project is backed by a task that shares
+// the project's primary key, so Task.byIdentifier(projectId) also resolves
+// (to the backing task). Checking Task first would therefore misclassify
+// every project ID as a "task". Project.byIdentifier returns null for a
+// regular (non-project) task ID, so this ordering classifies both correctly.
+var project = Project.byIdentifier(itemId);
+if (project) {
+  itemType = "project";
+  itemName = project.name;
 }
 
-// Try project
+// Try task
 if (!itemType) {
-  var project = Project.byIdentifier(itemId);
-  if (project) {
-    itemType = "project";
-    itemName = project.name;
+  var task = Task.byIdentifier(itemId);
+  if (task) {
+    itemType = "task";
+    itemName = task.name;
   }
 }
 

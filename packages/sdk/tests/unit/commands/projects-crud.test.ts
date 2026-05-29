@@ -726,7 +726,7 @@ describe("dropProject", () => {
       expect(result.data?.projectName).toBe(longName);
     });
 
-    it("should use Project.byIdentifier and markDropped in the script body", async () => {
+    it("should use Project.byIdentifier and set status to Dropped in the script body", async () => {
       const mockResult: DropProjectResult = {
         projectId: "proj-123",
         projectName: "Test Project",
@@ -742,8 +742,13 @@ describe("dropProject", () => {
 
       const scriptBody = mockRunOmniJS.mock.calls[0]![0] as string;
       expect(scriptBody).toContain("Project.byIdentifier");
-      expect(scriptBody).toContain("markDropped");
-      expect(scriptBody).toContain("Project.Status.Dropped");
+      // OmniJS Project has no markDropped(); dropping is done by assigning the
+      // status. Assert the assignment, not just a substring match on the
+      // status enum (which also appears in the result readback).
+      expect(scriptBody).toContain(
+        "theProject.status = Project.Status.Dropped"
+      );
+      expect(scriptBody).not.toContain("markDropped");
     });
   });
 
