@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "clean": "rm -rf packages/*/dist packages/*/.tsbuildinfo",
-    "build": "tsc --build",
+    "build": "tsc --build && pnpm generate:agent-docs --out-instructions AGENT_INSTRUCTIONS.md --out-cli AGENT_CLI_INSTRUCTIONS.md --out-skill skills/ofocus/SKILL.md",
     "build:clean": "tsc --build --clean && tsc --build",
     "lint": "eslint packages/*/src",
     "lint:fix": "eslint packages/*/src --fix",
