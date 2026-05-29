@@ -1081,6 +1081,9 @@ offset?: number | undefined;
 }>>;
 
 // @public
+export type ListQueryFn<T, O extends PaginationOptions> = (options: O) => Promise<CliOutput<QueryResult<T>>>;
+
+// @public
 export const listTagsDescriptor: ResolvedCommandDescriptor<    {
 parent?: string | undefined;
 limit?: number | undefined;
@@ -1263,6 +1266,9 @@ export interface OpenResult {
 }
 
 // @public
+export function paginate<F extends ListQueryFn<unknown, PaginationOptions>>(queryFn: F, options?: Parameters<F>[0], pageSize?: number): AsyncGenerator<QueryFnItem<F>, void, undefined>;
+
+// @public
 export interface PaginatedResult<T> {
     hasMore: boolean;
     items: T[];
@@ -1270,6 +1276,16 @@ export interface PaginatedResult<T> {
     offset: number;
     returnedCount: number;
     totalCount: number;
+}
+
+// @public
+export function paginatePages<F extends ListQueryFn<unknown, PaginationOptions>>(queryFn: F, options?: Parameters<F>[0], pageSize?: number): AsyncGenerator<QueryFnItem<F>[], void, undefined>;
+
+// @public
+export class PaginationError extends Error {
+    constructor(cliError: CliError);
+    readonly cliError: CliError;
+    readonly code: ErrorCode;
 }
 
 // @public
@@ -1440,6 +1456,9 @@ blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
 }>>;
+
+// @public
+export type QueryFnItem<F> = F extends (options: never) => Promise<CliOutput<QueryResult<infer T>>> ? T : never;
 
 // @public
 export function queryFolders(options?: FolderQueryOptions): Promise<CliOutput<QueryResult<OFFolder>>>;
