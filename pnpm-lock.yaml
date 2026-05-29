@@ -65,6 +65,9 @@ importers:
       '@ofocus/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@toon-format/toon':
+        specifier: ^2.3.0
+        version: 2.3.0
       commander:
         specifier: ^14.0.3
         version: 14.0.3
@@ -83,6 +86,9 @@ importers:
       '@ofocus/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@toon-format/toon':
+        specifier: ^2.3.0
+        version: 2.3.0
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -883,6 +889,9 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
+  '@toon-format/toon@2.3.0':
+    resolution: {integrity: sha512-/Ew9etdRQKVMnm9fDaCG0JjyAOK/O7T0M97oum1aW4W+UR8ZhVVPBanIV7oWgHBiGlnVxV9M55PWQCHofDV07w==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -3417,6 +3426,8 @@ snapshots:
   '@sindresorhus/merge-streams@2.3.0': {}
 
   '@standard-schema/spec@1.1.0': {}
+
+  '@toon-format/toon@2.3.0': {}
 
   '@tybys/wasm-util@0.10.1':
     dependencies:

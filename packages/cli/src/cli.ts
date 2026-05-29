@@ -70,12 +70,18 @@ import {
 } from "@ofocus/sdk";
 import type { RepetitionRule } from "@ofocus/sdk";
 import { listCommands } from "./commands/list-commands.js";
-import { output, outputJson, outputHuman } from "./output.js";
+import {
+  output,
+  outputJson,
+  outputHuman,
+  type OutputFormat,
+} from "./output.js";
 import { registerCliCommand } from "./registry-adapter.js";
 
 interface GlobalOptions {
   json?: boolean | undefined;
   human?: boolean | undefined;
+  format?: string | undefined;
 }
 
 interface TasksCommandOptions {
@@ -178,7 +184,7 @@ Quick start:
   ofocus tasks            Query tasks
   ofocus complete <id>    Complete a task
 
-Use --human flag for human-readable output (default is JSON).
+Use --format json|toon for machine output (default: json). Use --human for human-readable output.
 `;
       }
       // Default help for humans - use the base Help class to avoid recursion
@@ -191,11 +197,45 @@ Use --human flag for human-readable output (default is JSON).
     new Option("--json", "Output as JSON (default)").default(true)
   );
   program.addOption(new Option("--human", "Output as human-readable text"));
+  program.addOption(
+    new Option(
+      "--format <fmt>",
+      "Machine output format: json or toon (default: json). Use --human for human-readable output."
+    ).default("json")
+  );
 
-  // Helper to get output format
-  function getOutputFormat(options: GlobalOptions): boolean {
-    // --human overrides --json
-    return options.human !== true;
+  /**
+   * Derive the effective output format from the resolved global options.
+   *
+   * Order of precedence (highest to lowest):
+   * 1. `--human`   → always selects the human-readable formatter
+   * 2. `--format`  → selects between `json` and `toon` (default: `json`)
+   *
+   * An unrecognised `--format` value is rejected with a structured error
+   * written to stdout so callers receive a machine-parseable envelope.
+   */
+  function getOutputFormat(options: GlobalOptions): OutputFormat {
+    if (options.human === true) {
+      return "human";
+    }
+    const fmt = options.format ?? "json";
+    if (fmt === "json" || fmt === "toon") {
+      return fmt;
+    }
+    // Unknown --format value: write structured error to stdout then exit 1.
+    // We fall back to JSON for the error itself because we can't trust the
+    // caller's requested format when the value is unrecognised. We call
+    // process.exit() immediately so the command action does not continue
+    // executing (which would produce a spurious second output block).
+    const errorEnvelope = {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: `Unknown --format value: "${fmt}". Valid values are: json, toon. Use --human for human-readable output.`,
+      },
+    };
+    console.log(JSON.stringify(errorEnvelope, null, 2));
+    process.exit(1);
   }
 
   // Helper to get global options with proper typing
@@ -594,17 +634,21 @@ Use --human flag for human-readable output (default is JSON).
         includeCompleted: options.includeCompleted,
         includeDropped: options.includeDropped,
       });
-      // For export, output raw TaskPaper content unless JSON is requested
-      if (getOutputFormat(globalOpts)) {
-        output(result, true);
-      } else if (result.success && result.data) {
-        console.log(result.data.content);
-        console.error(
-          `\nExported ${String(result.data.taskCount)} tasks from ${String(result.data.projectCount)} projects`
-        );
+      // For export, output raw TaskPaper content in human mode; otherwise
+      // use the selected machine format (json or toon).
+      const fmt = getOutputFormat(globalOpts);
+      if (fmt === "human") {
+        if (result.success && result.data) {
+          console.log(result.data.content);
+          console.error(
+            `\nExported ${String(result.data.taskCount)} tasks from ${String(result.data.projectCount)} projects`
+          );
+        } else {
+          output(result, "human");
+          process.exitCode = 1;
+        }
       } else {
-        output(result, false);
-        process.exitCode = 1;
+        output(result, fmt);
       }
     });
 

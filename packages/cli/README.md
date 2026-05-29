@@ -84,17 +84,26 @@ Only increase `--limit` beyond 100 when you specifically need all matching items
 
 ## Output Formats
 
-By default, output is JSON for machine parsing:
+Three output formats are supported:
+
+| Flag            | Format                          | Best for                                       |
+| --------------- | ------------------------------- | ---------------------------------------------- |
+| _(none)_        | JSON (default)                  | Machine parsing                                |
+| `--format toon` | [TOON](https://toonformat.dev/) | LLM/agent consumption (~40% smaller than JSON) |
+| `--human`       | Human-readable text             | Terminal use                                   |
 
 ```bash
+# JSON (default)
 ofocus-cli tasks --flagged
-```
 
-Use `--human` for human-readable output:
+# TOON — token-efficient for LLM agents
+ofocus-cli tasks --flagged --format toon
 
-```bash
+# Human-readable
 ofocus-cli tasks --flagged --human
 ```
+
+The `--format` option accepts `json` or `toon`. Use `--human` (not `--format human`) for human-readable output. `--human` takes precedence over `--format` when both are specified.
 
 ## Commands
 
@@ -112,7 +121,13 @@ ofocus-cli tasks --flagged --human
 ## Programmatic Usage
 
 ```typescript
-import { createCli, outputJson, outputHuman } from "@ofocus/cli";
+import {
+  createCli,
+  outputJson,
+  outputHuman,
+  outputToon,
+  type OutputFormat,
+} from "@ofocus/cli";
 
 const cli = createCli();
 cli.parse(["node", "ofocus", "tasks", "--flagged"]);

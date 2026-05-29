@@ -28,12 +28,52 @@ import type {
   SyncResult,
   PaginatedResult,
 } from "@ofocus/sdk";
+import { encode } from "@toon-format/toon";
+
+/**
+ * The output format for machine-readable output.
+ *
+ * - `'json'`  – Pretty-printed JSON (default CLI format).
+ * - `'toon'`  – TOON encoding (~40% smaller than JSON for uniform arrays).
+ *               See https://toonformat.dev/ for the format specification.
+ * - `'human'` – Human-readable text (selected via `--human`).
+ *
+ * @public
+ */
+export type OutputFormat = "json" | "toon" | "human";
 
 /**
  * Output the result as JSON to stdout.
  */
 export function outputJson<T>(result: CliOutput<T>): void {
   console.log(JSON.stringify(result, null, 2));
+}
+
+/**
+ * Output the result as TOON to stdout.
+ *
+ * TOON (Token-Oriented Object Notation) is a compact, human-readable encoding
+ * of the JSON data model specifically designed for LLM consumption. It is
+ * approximately 40% smaller than equivalent JSON for the uniform array-of-objects
+ * shapes that dominate this SDK's output.
+ *
+ * @see https://toonformat.dev/
+ * @see https://www.npmjs.com/package/@toon-format/toon
+ */
+export function outputToon<T>(result: CliOutput<T>): void {
+  try {
+    // Pass the full CliOutput<T> envelope (including success/error fields) so
+    // callers receive a consistent envelope regardless of format.
+    console.log(encode(result as unknown));
+  } catch (encodeErr) {
+    // Defensive fallback: TOON handles all JSON-serializable values, but if an
+    // exotic payload shape causes encode() to throw, fall back to JSON so the
+    // caller always receives useful output.
+    console.error(
+      `[ofocus] TOON encoding failed, falling back to JSON: ${encodeErr instanceof Error ? encodeErr.message : String(encodeErr)}`
+    );
+    console.log(JSON.stringify(result, null, 2));
+  }
 }
 
 /**
@@ -161,12 +201,25 @@ export function outputHuman<T>(result: CliOutput<T>): void {
 
 /**
  * Output based on format preference.
+ *
+ * - `'json'`  – Pretty-printed JSON envelope (default).
+ * - `'toon'`  – TOON-encoded envelope; ~40% smaller for uniform arrays.
+ * - `'human'` – Human-readable text (selected via `--human`).
+ *
+ * @see https://toonformat.dev/ for the TOON format specification.
  */
-export function output<T>(result: CliOutput<T>, json: boolean): void {
-  if (json) {
-    outputJson(result);
-  } else {
-    outputHuman(result);
+export function output<T>(result: CliOutput<T>, format: OutputFormat): void {
+  switch (format) {
+    case "toon":
+      outputToon(result);
+      break;
+    case "human":
+      outputHuman(result);
+      break;
+    case "json":
+    default:
+      outputJson(result);
+      break;
   }
 }
 
@@ -447,8 +500,7 @@ function formatPerspective(perspective: OFPerspective): void {
 
 function formatPerspectives(perspectives: OFPerspective[]): void {
   for (const perspective of perspectives) {
-    const kindStr =
-      perspective.kind === "custom" ? "[custom]" : "[built-in]";
+    const kindStr = perspective.kind === "custom" ? "[custom]" : "[built-in]";
     console.log(`${kindStr} ${perspective.name}`);
     console.log(`  ${perspective.id}`);
   }
