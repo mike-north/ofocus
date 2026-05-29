@@ -84,9 +84,9 @@ export function applyRepetitionRule(taskId: string, rule: RepetitionRule): Promi
 // @public
 export const applyRepetitionRuleDescriptor: ResolvedCommandDescriptor<    {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 taskId: string;
 interval: number;
-repeatMethod: "due-again" | "defer-another" | "scheduled";
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
@@ -102,9 +102,9 @@ daysOfWeekPositions: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
 monthsOfYear: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
 }, "strip", z.ZodTypeAny, {
 frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
 taskId: string;
 interval: number;
-repeatMethod: "due-again" | "defer-another" | "scheduled";
 daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
@@ -116,8 +116,8 @@ daysOfWeek?: number[] | undefined;
 dayOfMonth?: number | undefined;
 daysOfWeekPositions?: number[] | undefined;
 monthsOfYear?: number[] | undefined;
-interval?: number | undefined;
 repeatMethod?: "due-again" | "defer-another" | "scheduled" | undefined;
+interval?: number | undefined;
 }>>;
 
 // @public
@@ -1424,21 +1424,21 @@ export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput
 
 // @public
 export const queryDeferredDescriptor: ResolvedCommandDescriptor<    {
+blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
-blockedOnly?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
 deferredAfter: z.ZodOptional<z.ZodString>;
 deferredBefore: z.ZodOptional<z.ZodString>;
 blockedOnly: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
-blockedOnly?: boolean | undefined;
 }, {
+blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
-blockedOnly?: boolean | undefined;
 }>>;
 
 // @public

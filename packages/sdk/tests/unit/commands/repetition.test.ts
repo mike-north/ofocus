@@ -382,11 +382,12 @@ describe("validateRepetitionRule — new fields", () => {
       expect(result?.message).toContain("Invalid day-of-week position: -6");
     });
 
-    it("accepts boundary positions -5 and 5", () => {
+    it("accepts boundary positions -5 and 5 with daysOfWeek", () => {
       const result = validateRepetitionRule({
         frequency: "monthly",
         interval: 1,
         repeatMethod: "due-again",
+        daysOfWeek: [1], // required when daysOfWeekPositions is set
         daysOfWeekPositions: [-5, 5],
       });
       expect(result).toBeNull();
@@ -403,6 +404,32 @@ describe("validateRepetitionRule — new fields", () => {
       expect(result?.message).toContain(
         "daysOfWeekPositions must be a non-empty array"
       );
+    });
+
+    // Regression test: silent-drop bug — without daysOfWeek, buildRRule emits only
+    // FREQ=MONTHLY, silently dropping the Nth-weekday constraint entirely.
+    // Reported via Copilot review of packages/sdk/src/validation.ts:259.
+    it("rejects daysOfWeekPositions without daysOfWeek (silent-drop bug)", () => {
+      const result = validateRepetitionRule({
+        frequency: "monthly",
+        interval: 1,
+        repeatMethod: "due-again",
+        daysOfWeekPositions: [1],
+      });
+      expect(result).not.toBeNull();
+      expect(result?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(result?.message).toContain("daysOfWeek");
+    });
+
+    it("accepts daysOfWeekPositions when daysOfWeek is also set (valid Nth-weekday combination)", () => {
+      const result = validateRepetitionRule({
+        frequency: "monthly",
+        interval: 1,
+        repeatMethod: "due-again",
+        daysOfWeekPositions: [1],
+        daysOfWeek: [1], // first Monday of the month
+      });
+      expect(result).toBeNull();
     });
   });
 

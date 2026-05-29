@@ -266,6 +266,13 @@ export function validateRepetitionRule(
         );
       }
     }
+    if (rule.daysOfWeek === undefined || rule.daysOfWeek.length === 0) {
+      return createError(
+        ErrorCode.VALIDATION_ERROR,
+        "daysOfWeekPositions requires daysOfWeek to be set (positions apply to specific weekdays, e.g., first Monday = position 1, daysOfWeek [1])",
+        "Without daysOfWeek, the position has no weekday to attach to and would be silently dropped"
+      );
+    }
   }
 
   // monthsOfYear is only valid for yearly frequency
