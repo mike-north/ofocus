@@ -77,3 +77,129 @@ describe("commandRegistry — batch-ops command usage strings", () => {
     expect(batch).toContain("--to");
   });
 });
+
+// Regression: when the project/folder/tag commands moved to the descriptor
+// registry, short aliases were dropped and flag names were normalized to
+// kebab-case. The hand-maintained `list-commands` usage strings must reflect
+// the descriptor-derived surface so they can't drift.
+describe("commandRegistry — project/folder/tag command usage strings", () => {
+  it("projects advertises --folder, --status, --sequential and pagination", () => {
+    const usage = usageFor("projects");
+    expect(usage).toContain("--folder");
+    expect(usage).toContain("--status");
+    expect(usage).toContain("--sequential");
+    expect(usage).toContain("--no-sequential");
+    expect(usage).toContain("--limit");
+    expect(usage).toContain("--offset");
+  });
+
+  it("folders advertises --parent and pagination flags", () => {
+    const usage = usageFor("folders");
+    expect(usage).toContain("--parent");
+    expect(usage).toContain("--limit");
+    expect(usage).toContain("--offset");
+  });
+
+  it("tags advertises --parent and pagination flags", () => {
+    const usage = usageFor("tags");
+    expect(usage).toContain("--parent");
+    expect(usage).toContain("--limit");
+    expect(usage).toContain("--offset");
+  });
+
+  it("create-project advertises descriptor-derived flag names", () => {
+    const usage = usageFor("create-project");
+    expect(usage).toContain("<name>");
+    expect(usage).toContain("--note");
+    expect(usage).toContain("--folder-id");
+    expect(usage).toContain("--folder-name");
+    expect(usage).toContain("--sequential");
+    expect(usage).toContain("--no-sequential");
+    expect(usage).toContain("--status");
+    expect(usage).toContain("--due-date");
+    expect(usage).toContain("--defer-date");
+    // old short aliases must not appear
+    expect(usage).not.toContain("-n ");
+    expect(usage).not.toContain("-d ");
+    // old flag names must not appear
+    expect(usage).not.toMatch(/--folder\b(?![-])/);
+    expect(usage).not.toContain("--due ");
+    expect(usage).not.toContain("--defer ");
+  });
+
+  it("create-folder advertises --parent-folder-id and --parent-folder-name", () => {
+    const usage = usageFor("create-folder");
+    expect(usage).toContain("<name>");
+    expect(usage).toContain("--parent-folder-id");
+    expect(usage).toContain("--parent-folder-name");
+    // old flags must not appear
+    expect(usage).not.toMatch(/--parent\b(?!-folder)/);
+    expect(usage).not.toContain("--parent-id");
+  });
+
+  it("create-tag advertises --parent-tag-id and --parent-tag-name", () => {
+    const usage = usageFor("create-tag");
+    expect(usage).toContain("<name>");
+    expect(usage).toContain("--parent-tag-id");
+    expect(usage).toContain("--parent-tag-name");
+    // old flags must not appear
+    expect(usage).not.toMatch(/--parent\b(?!-tag)/);
+    expect(usage).not.toContain("--parent-id");
+  });
+
+  it("update-tag advertises --name, --parent-tag-id and --parent-tag-name", () => {
+    const usage = usageFor("update-tag");
+    expect(usage).toContain("<tag-id>");
+    expect(usage).toContain("--name");
+    expect(usage).toContain("--parent-tag-id");
+    expect(usage).toContain("--parent-tag-name");
+    // old flags must not appear
+    expect(usage).not.toMatch(/--parent\b(?!-tag)/);
+  });
+
+  it("delete-tag advertises positional <tag-id> only", () => {
+    const usage = usageFor("delete-tag");
+    expect(usage).toContain("<tag-id>");
+  });
+
+  it("update-project advertises descriptor-derived flag names", () => {
+    const usage = usageFor("update-project");
+    expect(usage).toContain("<project-id>");
+    expect(usage).toContain("--name");
+    expect(usage).toContain("--note");
+    expect(usage).toContain("--status");
+    expect(usage).toContain("--folder-id");
+    expect(usage).toContain("--folder-name");
+    expect(usage).toContain("--sequential");
+    expect(usage).toContain("--no-sequential");
+    expect(usage).toContain("--due-date");
+    expect(usage).toContain("--defer-date");
+    // old flags must not appear
+    expect(usage).not.toContain("-n ");
+    expect(usage).not.toContain("-d ");
+    expect(usage).not.toMatch(/--folder\b(?![-])/);
+    expect(usage).not.toContain("--due ");
+    expect(usage).not.toContain("--defer ");
+  });
+
+  it("delete-project advertises positional <project-id> only", () => {
+    const usage = usageFor("delete-project");
+    expect(usage).toContain("<project-id>");
+  });
+
+  it("update-folder advertises --parent-folder-id and --parent-folder-name", () => {
+    const usage = usageFor("update-folder");
+    expect(usage).toContain("<folder-id>");
+    expect(usage).toContain("--name");
+    expect(usage).toContain("--parent-folder-id");
+    expect(usage).toContain("--parent-folder-name");
+    // old flags must not appear
+    expect(usage).not.toMatch(/--parent\b(?!-folder)/);
+    expect(usage).not.toContain("--parent-id");
+  });
+
+  it("delete-folder advertises positional <folder-id> only", () => {
+    const usage = usageFor("delete-folder");
+    expect(usage).toContain("<folder-id>");
+  });
+});

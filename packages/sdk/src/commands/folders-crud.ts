@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput, OFFolder, UpdateFolderOptions } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId, validateFolderName } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Result from deleting a folder.
@@ -159,3 +161,55 @@ return JSON.stringify({ folderId: "${escapeJSString(folderId)}", deleted: true }
 
   return success(result.data as DeleteFolderResult);
 }
+
+/**
+ * Centralized descriptor for the `update-folder` command.
+ *
+ * Drives the CLI subcommand `update-folder` and the MCP tool `folder_update`.
+ *
+ * @public
+ */
+export const updateFolderDescriptor = defineCommand({
+  name: "updateFolder",
+  cliName: "update-folder",
+  mcpName: "folder_update",
+  description: "Update properties of an existing folder",
+  cliPositional: ["folderId"],
+  inputSchema: z.object({
+    folderId: z.string().describe("The ID of the folder to update"),
+    name: z.string().optional().describe("New folder name"),
+    parentFolderId: z
+      .string()
+      .optional()
+      .describe("Move to parent folder by ID"),
+    parentFolderName: z
+      .string()
+      .optional()
+      .describe("Move to parent folder by name"),
+  }),
+  handler: async (input) =>
+    updateFolder(input.folderId, {
+      name: input.name,
+      parentFolderId: input.parentFolderId,
+      parentFolderName: input.parentFolderName,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `delete-folder` command.
+ *
+ * Drives the CLI subcommand `delete-folder` and the MCP tool `folder_delete`.
+ *
+ * @public
+ */
+export const deleteFolderDescriptor = defineCommand({
+  name: "deleteFolder",
+  cliName: "delete-folder",
+  mcpName: "folder_delete",
+  description: "Permanently delete a folder from OmniFocus",
+  cliPositional: ["folderId"],
+  inputSchema: z.object({
+    folderId: z.string().describe("The ID of the folder to delete"),
+  }),
+  handler: async (input) => deleteFolder(input.folderId),
+});

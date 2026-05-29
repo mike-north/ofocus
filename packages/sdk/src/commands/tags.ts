@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { CliOutput, OFTag } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
@@ -14,6 +15,42 @@ import {
   type QueryResult,
   type TagQueryOptions,
 } from "../query/index.js";
+import { defineCommand } from "../registry/define.js";
+
+/**
+ * Centralized descriptor for the `tags` command.
+ *
+ * Drives the CLI subcommand `tags` and the MCP tool `tags_list`.
+ *
+ * @public
+ */
+export const listTagsDescriptor = defineCommand({
+  name: "listTags",
+  cliName: "tags",
+  mcpName: "tags_list",
+  description: "List tags from OmniFocus",
+  inputSchema: z.object({
+    parent: z.string().optional().describe("Filter by parent tag name or ID"),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .optional()
+      .describe("Maximum number of results to return"),
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("Number of results to skip for pagination"),
+  }),
+  handler: async (input) =>
+    queryTags({
+      parent: input.parent,
+      limit: input.limit,
+      offset: input.offset,
+    }),
+});
 
 /**
  * Query tags from OmniFocus with the full shared-query vocabulary.

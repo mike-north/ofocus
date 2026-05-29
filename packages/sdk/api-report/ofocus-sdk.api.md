@@ -335,6 +335,25 @@ export function createError(code: ErrorCode, message: string, details?: string):
 export function createFolder(name: string, options?: CreateFolderOptions): Promise<CliOutput<OFFolder>>;
 
 // @public
+export const createFolderDescriptor: ResolvedCommandDescriptor<    {
+name: string;
+parentFolderId?: string | undefined;
+parentFolderName?: string | undefined;
+}, OFFolder, z.ZodObject<{
+name: z.ZodString;
+parentFolderId: z.ZodOptional<z.ZodString>;
+parentFolderName: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+name: string;
+parentFolderId?: string | undefined;
+parentFolderName?: string | undefined;
+}, {
+name: string;
+parentFolderId?: string | undefined;
+parentFolderName?: string | undefined;
+}>>;
+
+// @public
 export interface CreateFolderOptions {
     // (undocumented)
     parentFolderId?: string | undefined;
@@ -376,6 +395,45 @@ export interface CreatePerspectiveResult {
 
 // @public
 export function createProject(name: string, options?: CreateProjectOptions): Promise<CliOutput<OFProject>>;
+
+// @public
+export const createProjectDescriptor: ResolvedCommandDescriptor<    {
+name: string;
+status?: "active" | "on-hold" | undefined;
+sequential?: boolean | undefined;
+note?: string | undefined;
+dueDate?: string | undefined;
+deferDate?: string | undefined;
+folderId?: string | undefined;
+folderName?: string | undefined;
+}, OFProject, z.ZodObject<{
+name: z.ZodString;
+note: z.ZodOptional<z.ZodString>;
+folderId: z.ZodOptional<z.ZodString>;
+folderName: z.ZodOptional<z.ZodString>;
+sequential: z.ZodOptional<z.ZodBoolean>;
+status: z.ZodOptional<z.ZodEnum<["active", "on-hold"]>>;
+dueDate: z.ZodOptional<z.ZodString>;
+deferDate: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+name: string;
+status?: "active" | "on-hold" | undefined;
+sequential?: boolean | undefined;
+note?: string | undefined;
+dueDate?: string | undefined;
+deferDate?: string | undefined;
+folderId?: string | undefined;
+folderName?: string | undefined;
+}, {
+name: string;
+status?: "active" | "on-hold" | undefined;
+sequential?: boolean | undefined;
+note?: string | undefined;
+dueDate?: string | undefined;
+deferDate?: string | undefined;
+folderId?: string | undefined;
+folderName?: string | undefined;
+}>>;
 
 // @public
 export interface CreateProjectOptions {
@@ -439,6 +497,25 @@ flag?: boolean | undefined;
 
 // @public
 export function createTag(name: string, options?: CreateTagOptions): Promise<CliOutput<OFTag>>;
+
+// @public
+export const createTagDescriptor: ResolvedCommandDescriptor<    {
+name: string;
+parentTagId?: string | undefined;
+parentTagName?: string | undefined;
+}, OFTag, z.ZodObject<{
+name: z.ZodString;
+parentTagId: z.ZodOptional<z.ZodString>;
+parentTagName: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+name: string;
+parentTagId?: string | undefined;
+parentTagName?: string | undefined;
+}, {
+name: string;
+parentTagId?: string | undefined;
+parentTagName?: string | undefined;
+}>>;
 
 // @public
 export interface CreateTagOptions {
@@ -532,6 +609,17 @@ export function defineCommand<TSchema extends z.AnyZodObject, TOutput>(spec: {
 export function deleteFolder(folderId: string): Promise<CliOutput<DeleteFolderResult>>;
 
 // @public
+export const deleteFolderDescriptor: ResolvedCommandDescriptor<    {
+folderId: string;
+}, DeleteFolderResult, z.ZodObject<{
+folderId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+folderId: string;
+}, {
+folderId: string;
+}>>;
+
+// @public
 export interface DeleteFolderResult {
     // (undocumented)
     deleted: true;
@@ -556,6 +644,17 @@ export interface DeletePerspectiveResult {
 export function deleteProject(projectId: string): Promise<CliOutput<DeleteProjectResult>>;
 
 // @public
+export const deleteProjectDescriptor: ResolvedCommandDescriptor<    {
+projectId: string;
+}, DeleteProjectResult, z.ZodObject<{
+projectId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+projectId: string;
+}, {
+projectId: string;
+}>>;
+
+// @public
 export interface DeleteProjectResult {
     // (undocumented)
     deleted: true;
@@ -573,6 +672,17 @@ export interface DeleteResult {
 
 // @public
 export function deleteTag(tagId: string): Promise<CliOutput<DeleteTagResult>>;
+
+// @public
+export const deleteTagDescriptor: ResolvedCommandDescriptor<    {
+tagId: string;
+}, DeleteTagResult, z.ZodObject<{
+tagId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+tagId: string;
+}, {
+tagId: string;
+}>>;
 
 // @public
 export interface DeleteTagResult {
@@ -850,7 +960,72 @@ export interface ListAttachmentsResult {
 }
 
 // @public
+export const listFoldersDescriptor: ResolvedCommandDescriptor<    {
+parent?: string | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}, QueryResult<OFFolder>, z.ZodObject<{
+parent: z.ZodOptional<z.ZodString>;
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+parent?: string | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}, {
+parent?: string | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}>>;
+
+// @public
 export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
+
+// @public
+export const listProjectsDescriptor: ResolvedCommandDescriptor<    {
+status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
+folder?: string | undefined;
+sequential?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}, QueryResult<OFProject>, z.ZodObject<{
+folder: z.ZodOptional<z.ZodString>;
+status: z.ZodOptional<z.ZodEnum<["active", "on-hold", "completed", "dropped"]>>;
+sequential: z.ZodOptional<z.ZodBoolean>;
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
+folder?: string | undefined;
+sequential?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}, {
+status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
+folder?: string | undefined;
+sequential?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}>>;
+
+// @public
+export const listTagsDescriptor: ResolvedCommandDescriptor<    {
+parent?: string | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}, QueryResult<OFTag>, z.ZodObject<{
+parent: z.ZodOptional<z.ZodString>;
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+parent?: string | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}, {
+parent?: string | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}>>;
 
 // @public
 export function listTemplates(): CliOutput<ListTemplatesResult>;
@@ -1720,6 +1895,29 @@ export function unfocus(): Promise<CliOutput<FocusResult>>;
 export function updateFolder(folderId: string, options: UpdateFolderOptions): Promise<CliOutput<OFFolder>>;
 
 // @public
+export const updateFolderDescriptor: ResolvedCommandDescriptor<    {
+folderId: string;
+name?: string | undefined;
+parentFolderId?: string | undefined;
+parentFolderName?: string | undefined;
+}, OFFolder, z.ZodObject<{
+folderId: z.ZodString;
+name: z.ZodOptional<z.ZodString>;
+parentFolderId: z.ZodOptional<z.ZodString>;
+parentFolderName: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+folderId: string;
+name?: string | undefined;
+parentFolderId?: string | undefined;
+parentFolderName?: string | undefined;
+}, {
+folderId: string;
+name?: string | undefined;
+parentFolderId?: string | undefined;
+parentFolderName?: string | undefined;
+}>>;
+
+// @public
 export interface UpdateFolderOptions {
     // (undocumented)
     name?: string | undefined;
@@ -1731,6 +1929,49 @@ export interface UpdateFolderOptions {
 
 // @public
 export function updateProject(projectId: string, options: UpdateProjectOptions): Promise<CliOutput<OFProject>>;
+
+// @public
+export const updateProjectDescriptor: ResolvedCommandDescriptor<    {
+projectId: string;
+status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
+sequential?: boolean | undefined;
+name?: string | undefined;
+note?: string | undefined;
+dueDate?: string | undefined;
+deferDate?: string | undefined;
+folderId?: string | undefined;
+folderName?: string | undefined;
+}, OFProject, z.ZodObject<{
+projectId: z.ZodString;
+name: z.ZodOptional<z.ZodString>;
+note: z.ZodOptional<z.ZodString>;
+status: z.ZodOptional<z.ZodEnum<["active", "on-hold", "completed", "dropped"]>>;
+folderId: z.ZodOptional<z.ZodString>;
+folderName: z.ZodOptional<z.ZodString>;
+sequential: z.ZodOptional<z.ZodBoolean>;
+dueDate: z.ZodOptional<z.ZodString>;
+deferDate: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+projectId: string;
+status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
+sequential?: boolean | undefined;
+name?: string | undefined;
+note?: string | undefined;
+dueDate?: string | undefined;
+deferDate?: string | undefined;
+folderId?: string | undefined;
+folderName?: string | undefined;
+}, {
+projectId: string;
+status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
+sequential?: boolean | undefined;
+name?: string | undefined;
+note?: string | undefined;
+dueDate?: string | undefined;
+deferDate?: string | undefined;
+folderId?: string | undefined;
+folderName?: string | undefined;
+}>>;
 
 // @public
 export interface UpdateProjectOptions {
@@ -1754,6 +1995,29 @@ export interface UpdateProjectOptions {
 
 // @public
 export function updateTag(tagId: string, options: UpdateTagOptions): Promise<CliOutput<OFTag>>;
+
+// @public
+export const updateTagDescriptor: ResolvedCommandDescriptor<    {
+tagId: string;
+name?: string | undefined;
+parentTagId?: string | undefined;
+parentTagName?: string | undefined;
+}, OFTag, z.ZodObject<{
+tagId: z.ZodString;
+name: z.ZodOptional<z.ZodString>;
+parentTagId: z.ZodOptional<z.ZodString>;
+parentTagName: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+tagId: string;
+name?: string | undefined;
+parentTagId?: string | undefined;
+parentTagName?: string | undefined;
+}, {
+tagId: string;
+name?: string | undefined;
+parentTagId?: string | undefined;
+parentTagName?: string | undefined;
+}>>;
 
 // @public
 export interface UpdateTagOptions {
