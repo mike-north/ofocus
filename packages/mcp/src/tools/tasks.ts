@@ -12,6 +12,8 @@ import {
   deleteTasksDescriptor,
   deferTaskDescriptor,
   deferTasksDescriptor,
+  applyRepetitionRuleDescriptor,
+  clearRepetitionRuleDescriptor,
   queryTasks,
   updateTask,
   openItem,
@@ -22,9 +24,11 @@ import { registerMcpTool } from "../registry-adapter.js";
 const RepetitionRuleSchema = z.object({
   frequency: z.enum(["daily", "weekly", "monthly", "yearly"]),
   interval: z.number().int().min(1),
-  repeatMethod: z.enum(["due-again", "defer-another"]),
+  repeatMethod: z.enum(["due-again", "defer-another", "scheduled"]),
   daysOfWeek: z.array(z.number().int().min(0).max(6)).min(1).optional(),
   dayOfMonth: z.number().int().min(1).max(31).optional(),
+  daysOfWeekPositions: z.array(z.number().int()).optional(),
+  monthsOfYear: z.array(z.number().int().min(1).max(12)).optional(),
 });
 
 export function registerTaskTools(server: McpServer): void {
@@ -133,6 +137,11 @@ export function registerTaskTools(server: McpServer): void {
 
   // task_duplicate — registered from the centralized descriptor in @ofocus/sdk
   registerMcpTool(server, duplicateTaskDescriptor);
+
+  // task_apply_repetition / task_clear_repetition — registered from the
+  // centralized descriptors in @ofocus/sdk.
+  registerMcpTool(server, applyRepetitionRuleDescriptor);
+  registerMcpTool(server, clearRepetitionRuleDescriptor);
 
   // open - Open an item in OmniFocus UI
   server.registerTool(

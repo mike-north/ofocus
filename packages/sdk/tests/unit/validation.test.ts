@@ -522,6 +522,46 @@ describe("validateRepetitionRule", () => {
       expect(error).not.toBeNull();
     });
   });
+
+  describe("daysOfWeekPositions without daysOfWeek", () => {
+    // Regression test: silent-drop bug — without daysOfWeek, buildRRule emits only
+    // FREQ=MONTHLY, silently dropping the Nth-weekday constraint entirely.
+    // Reported via Copilot review of packages/sdk/src/validation.ts:259.
+    it("rejects daysOfWeekPositions without daysOfWeek (silent-drop bug)", () => {
+      const error = validateRepetitionRule({
+        frequency: "monthly",
+        interval: 1,
+        repeatMethod: "due-again",
+        daysOfWeekPositions: [1],
+      });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(error?.message).toContain("daysOfWeek");
+    });
+
+    it("rejects daysOfWeekPositions with an empty daysOfWeek array", () => {
+      const error = validateRepetitionRule({
+        frequency: "monthly",
+        interval: 1,
+        repeatMethod: "due-again",
+        daysOfWeekPositions: [1],
+        daysOfWeek: [],
+      });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+    });
+
+    it("accepts daysOfWeekPositions when daysOfWeek is also set (valid Nth-weekday combination)", () => {
+      const error = validateRepetitionRule({
+        frequency: "monthly",
+        interval: 1,
+        repeatMethod: "due-again",
+        daysOfWeekPositions: [1],
+        daysOfWeek: [1], // first Monday of the month
+      });
+      expect(error).toBeNull();
+    });
+  });
 });
 
 describe("validateEstimatedMinutes", () => {

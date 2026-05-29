@@ -119,7 +119,11 @@ export interface PaginatedResult<T> {
 // TaskQueryOptions, ProjectQueryOptions, and TagQueryOptions live in
 // `./query/types.js` alongside the rest of the query vocabulary. Re-export
 // them for backwards-compatible imports from the SDK root types module.
-export type { TaskQueryOptions, ProjectQueryOptions, TagQueryOptions } from "./query/types.js";
+export type {
+  TaskQueryOptions,
+  ProjectQueryOptions,
+  TagQueryOptions,
+} from "./query/types.js";
 
 /**
  * Options for updating a task.
@@ -220,13 +224,59 @@ export interface BatchResult<T> {
 
 /**
  * Repetition rule for recurring tasks.
+ *
+ * Maps to OmniFocus's `Task.RepetitionRule` constructor:
+ * `new Task.RepetitionRule(ruleString, method)`
+ *
+ * Supported combinations (per RFC 5545 §3.3.10):
+ * - **Daily**: `{ frequency: "daily", interval: N }`
+ * - **Weekly with days**: `{ frequency: "weekly", daysOfWeek: [1,3,5] }`
+ *   → `FREQ=WEEKLY;BYDAY=MO,WE,FR`
+ * - **Monthly by day-of-month**: `{ frequency: "monthly", dayOfMonth: 15 }`
+ *   → `FREQ=MONTHLY;BYMONTHDAY=15`
+ * - **Monthly by Nth weekday**: `{ frequency: "monthly", daysOfWeek: [1], daysOfWeekPositions: [1] }`
+ *   → `FREQ=MONTHLY;BYDAY=1MO` (first Monday)
+ * - **Monthly cross-product**: `{ frequency: "monthly", daysOfWeek: [1,3], daysOfWeekPositions: [1,-1] }`
+ *   → `FREQ=MONTHLY;BYDAY=1MO,1WE,-1MO,-1WE` (first and last Monday and Wednesday)
+ * - **Yearly**: `{ frequency: "yearly" }`
+ * - **Yearly with months**: `{ frequency: "yearly", monthsOfYear: [3,6,9,12] }`
+ *   → `FREQ=YEARLY;BYMONTH=3,6,9,12`
+ *
+ * @see https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10
  */
 export interface RepetitionRule {
   frequency: "daily" | "weekly" | "monthly" | "yearly";
   interval: number;
-  repeatMethod: "due-again" | "defer-another";
+  /** How OmniFocus reschedules the task after completion. */
+  repeatMethod: "due-again" | "defer-another" | "scheduled";
   daysOfWeek?: number[] | undefined;
   dayOfMonth?: number | undefined;
+  /**
+   * Positional prefix for BYDAY when `frequency` is `"monthly"`.
+   *
+   * Values must be integers in `[-5, -1] ∪ [1, 5]` (RFC 5545 allows up to
+   * the 5th occurrence within a month). Positions apply to **all** listed
+   * `daysOfWeek` entries — the emitted BYDAY is the cross-product.
+   *
+   * @example
+   * `daysOfWeekPositions: [1, -1]` with `daysOfWeek: [1]` (Monday)
+   * → `BYDAY=1MO,-1MO` ("first and last Monday")
+   *
+   * `daysOfWeekPositions: [1, -1]` with `daysOfWeek: [1, 3]` (Mon, Wed)
+   * → `BYDAY=1MO,1WE,-1MO,-1WE` ("first Monday, first Wednesday, last Monday, last Wednesday")
+   *
+   * Only valid when `frequency` is `"monthly"`.
+   */
+  daysOfWeekPositions?: number[] | undefined;
+  /**
+   * Month-of-year values for `BYMONTH=` in YEARLY recurrences.
+   *
+   * Values must be integers in `[1, 12]` (1 = January, 12 = December).
+   * Only valid when `frequency` is `"yearly"`.
+   *
+   * @example `monthsOfYear: [3, 6, 9, 12]` → `BYMONTH=3,6,9,12`
+   */
+  monthsOfYear?: number[] | undefined;
 }
 
 // SearchOptions has moved to `./commands/search.js` where it extends

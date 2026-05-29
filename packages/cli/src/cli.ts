@@ -30,6 +30,8 @@ import {
   createTagDescriptor,
   updateTagDescriptor,
   deleteTagDescriptor,
+  applyRepetitionRuleDescriptor,
+  clearRepetitionRuleDescriptor,
   queryTasks,
   updateTask,
   listPerspectives,
@@ -553,6 +555,15 @@ Use --human flag for human-readable output (default is JSON).
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
   registerCliCommand(program, deferTasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+
+  // apply-repetition / clear-repetition — registered from the centralized
+  // descriptors in @ofocus/sdk.
+  registerCliCommand(program, applyRepetitionRuleDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, clearRepetitionRuleDescriptor, (result, cmd) => {
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 

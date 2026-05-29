@@ -26,12 +26,12 @@ title: string;
 note?: string | undefined;
 estimatedMinutes?: number | undefined;
 tags?: string[] | undefined;
+repeatMethod?: "due-again" | "defer-another" | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
 repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
 repeatInterval?: number | undefined;
-repeatMethod?: "due-again" | "defer-another" | undefined;
 repeatDaysOfWeek?: number[] | undefined;
 repeatDayOfMonth?: number | undefined;
 }, OFTask, z.ZodObject<{
@@ -52,12 +52,12 @@ title: string;
 note?: string | undefined;
 estimatedMinutes?: number | undefined;
 tags?: string[] | undefined;
+repeatMethod?: "due-again" | "defer-another" | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
 repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
 repeatInterval?: number | undefined;
-repeatMethod?: "due-again" | "defer-another" | undefined;
 repeatDaysOfWeek?: number[] | undefined;
 repeatDayOfMonth?: number | undefined;
 }, {
@@ -65,18 +65,70 @@ title: string;
 note?: string | undefined;
 estimatedMinutes?: number | undefined;
 tags?: string[] | undefined;
+repeatMethod?: "due-again" | "defer-another" | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
 repeatFrequency?: "daily" | "weekly" | "monthly" | "yearly" | undefined;
 repeatInterval?: number | undefined;
-repeatMethod?: "due-again" | "defer-another" | undefined;
 repeatDaysOfWeek?: number[] | undefined;
 repeatDayOfMonth?: number | undefined;
 }>>;
 
 // @public
 export type AggregateShape = "list" | "count" | "ids" | "single-first" | "single-last" | "groups";
+
+// @public
+export function applyRepetitionRule(taskId: string, rule: RepetitionRule): Promise<CliOutput<ApplyRepetitionRuleResult>>;
+
+// @public
+export const applyRepetitionRuleDescriptor: ResolvedCommandDescriptor<    {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
+taskId: string;
+interval: number;
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+}, ApplyRepetitionRuleResult, z.ZodObject<{
+taskId: z.ZodString;
+frequency: z.ZodEnum<["daily", "weekly", "monthly", "yearly"]>;
+interval: z.ZodDefault<z.ZodNumber>;
+repeatMethod: z.ZodDefault<z.ZodEnum<["due-again", "defer-another", "scheduled"]>>;
+daysOfWeek: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
+dayOfMonth: z.ZodOptional<z.ZodNumber>;
+daysOfWeekPositions: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
+monthsOfYear: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
+}, "strip", z.ZodTypeAny, {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
+taskId: string;
+interval: number;
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+}, {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+taskId: string;
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+repeatMethod?: "due-again" | "defer-another" | "scheduled" | undefined;
+interval?: number | undefined;
+}>>;
+
+// @public
+export interface ApplyRepetitionRuleResult {
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    method: string;
+    // (undocumented)
+    ruleString: string;
+}
 
 // @public
 export interface ArchiveOptions {
@@ -173,6 +225,26 @@ export interface BuildListQueryBodyArgs {
 
 // @public
 export function buildRRule(rule: RepetitionRule): string;
+
+// @public
+export function clearRepetitionRule(taskId: string): Promise<CliOutput<ClearRepetitionRuleResult>>;
+
+// @public
+export const clearRepetitionRuleDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+}, ClearRepetitionRuleResult, z.ZodObject<{
+taskId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+}, {
+taskId: string;
+}>>;
+
+// @public
+export interface ClearRepetitionRuleResult {
+    // (undocumented)
+    id: string;
+}
 
 // @public
 export interface CliError {
@@ -1498,17 +1570,21 @@ export interface RenamePerspectiveResult {
 }
 
 // @public
+export function repeatMethodToOmniJS(method: RepetitionRule["repeatMethod"]): string;
+
+// @public
 export interface RepetitionRule {
     // (undocumented)
     dayOfMonth?: number | undefined;
     // (undocumented)
     daysOfWeek?: number[] | undefined;
+    daysOfWeekPositions?: number[] | undefined;
     // (undocumented)
     frequency: "daily" | "weekly" | "monthly" | "yearly";
     // (undocumented)
     interval: number;
-    // (undocumented)
-    repeatMethod: "due-again" | "defer-another";
+    monthsOfYear?: number[] | undefined;
+    repeatMethod: "due-again" | "defer-another" | "scheduled";
 }
 
 // @public
@@ -2118,6 +2194,8 @@ export function validateRepetitionRule(rule: {
     repeatMethod: string;
     daysOfWeek?: number[] | undefined;
     dayOfMonth?: number | undefined;
+    daysOfWeekPositions?: number[] | undefined;
+    monthsOfYear?: number[] | undefined;
 } | undefined): CliError | null;
 
 // @public

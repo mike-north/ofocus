@@ -11,7 +11,7 @@ import {
   validateRepetitionRule,
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
-import { buildRRule } from "./repetition.js";
+import { buildRRule, repeatMethodToOmniJS } from "./repetition.js";
 import { sanitizeVarName } from "../utils/sanitize.js";
 import { defineCommand } from "../registry/define.js";
 
@@ -193,10 +193,7 @@ export async function updateTasks(
     updateParts.push(`task.repetitionRule = null;`);
   } else if (options.repeat !== undefined) {
     const rrule = buildRRule(options.repeat);
-    const method =
-      options.repeat.repeatMethod === "due-again"
-        ? "Task.RepetitionMethod.DueDate"
-        : "Task.RepetitionMethod.DeferDate";
+    const method = repeatMethodToOmniJS(options.repeat.repeatMethod);
     updateParts.push(
       `task.repetitionRule = new Task.RepetitionRule("${escapeJSString(rrule)}", ${method});`
     );

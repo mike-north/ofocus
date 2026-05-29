@@ -10,7 +10,7 @@ import {
   validateRepetitionRule,
 } from "../validation.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
-import { buildRRule } from "./repetition.js";
+import { buildRRule, repeatMethodToOmniJS } from "./repetition.js";
 import { sanitizeVarName } from "../utils/sanitize.js";
 
 /**
@@ -111,10 +111,7 @@ moveTasks([task], proj.ending);`);
     scriptParts.push(`task.repetitionRule = null;`);
   } else if (options.repeat !== undefined) {
     const rrule = buildRRule(options.repeat);
-    const method =
-      options.repeat.repeatMethod === "due-again"
-        ? "Task.RepetitionMethod.DueDate"
-        : "Task.RepetitionMethod.DeferDate";
+    const method = repeatMethodToOmniJS(options.repeat.repeatMethod);
     scriptParts.push(
       `task.repetitionRule = new Task.RepetitionRule("${escapeJSString(rrule)}", ${method});`
     );
