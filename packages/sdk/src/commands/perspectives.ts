@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput, OFPerspective, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateSearchQuery } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Options for querying a perspective.
@@ -428,3 +430,49 @@ return JSON.stringify({ found: found, isBuiltIn: isBuiltIn, name: perspName, id:
     )
   );
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptors
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `perspectives` command.
+ *
+ * Drives CLI subcommand `perspectives` and MCP tool `perspectives_list`.
+ *
+ * @public
+ */
+export const listPerspectivesDescriptor = defineCommand({
+  name: "listPerspectives",
+  cliName: "perspectives",
+  mcpName: "perspectives_list",
+  description: "List all perspectives in OmniFocus",
+  inputSchema: z.object({}),
+  handler: async (_input) => listPerspectives(),
+});
+
+/**
+ * Centralized descriptor for the `perspective` command.
+ *
+ * Drives CLI subcommand `perspective` and MCP tool `perspective_query`.
+ *
+ * @public
+ */
+export const queryPerspectiveDescriptor = defineCommand({
+  name: "queryPerspective",
+  cliName: "perspective",
+  mcpName: "perspective_query",
+  description: "Query tasks from a specific perspective",
+  cliPositional: ["name"] as const,
+  inputSchema: z.object({
+    name: z.string().describe("Perspective name"),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .optional()
+      .describe("Maximum number of results to return"),
+  }),
+  handler: async (input) =>
+    queryPerspective(input.name, { limit: input.limit }),
+});

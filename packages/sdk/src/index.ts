@@ -332,3 +332,47 @@ export type {
   EvaluateScriptInput,
   EvaluateScriptResult,
 } from "./commands/evaluate.js";
+
+// Batch 6: Advanced command descriptors (perspectives, review, focus, sync,
+// archive, attachments, taskpaper, templates, url, open).
+export {
+  listPerspectivesDescriptor,
+  queryPerspectiveDescriptor,
+} from "./commands/perspectives.js";
+export {
+  reviewProjectDescriptor,
+  queryProjectsForReviewDescriptor,
+  getReviewIntervalDescriptor,
+  setReviewIntervalDescriptor,
+} from "./commands/review.js";
+export {
+  focusOnDescriptor,
+  unfocusDescriptor,
+  getFocusedDescriptor,
+} from "./commands/focus.js";
+export {
+  getSyncStatusDescriptor,
+  triggerSyncDescriptor,
+} from "./commands/sync.js";
+export {
+  archiveTasksDescriptor,
+  compactDatabaseDescriptor,
+} from "./commands/archive.js";
+export {
+  addAttachmentDescriptor,
+  listAttachmentsDescriptor,
+  removeAttachmentDescriptor,
+} from "./commands/attachments.js";
+export {
+  exportTaskPaperDescriptor,
+  importTaskPaperDescriptor,
+} from "./commands/taskpaper.js";
+export {
+  saveTemplateDescriptor,
+  listTemplatesDescriptor,
+  getTemplateDescriptor,
+  createFromTemplateDescriptor,
+  deleteTemplateDescriptor,
+} from "./commands/templates.js";
+export { generateUrlDescriptor } from "./commands/url.js";
+export { openItemDescriptor } from "./commands/open.js";

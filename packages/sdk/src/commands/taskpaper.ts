@@ -1,7 +1,9 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { runOmniJSWrapped, escapeJSString, toOmniJSDate } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Options for exporting to TaskPaper format.
@@ -618,3 +620,76 @@ return JSON.stringify({
     errors: omniResult.data.errors,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptors
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `export` command.
+ *
+ * Drives CLI subcommand `export` and MCP tool `export_taskpaper`.
+ *
+ * @public
+ */
+export const exportTaskPaperDescriptor = defineCommand({
+  name: "exportTaskPaper",
+  cliName: "export",
+  mcpName: "export_taskpaper",
+  description: "Export tasks and projects to TaskPaper format",
+  inputSchema: z.object({
+    project: z
+      .string()
+      .optional()
+      .describe("Export only a specific project by name"),
+    includeCompleted: z
+      .boolean()
+      .optional()
+      .describe("Include completed tasks in the export"),
+    includeDropped: z
+      .boolean()
+      .optional()
+      .describe("Include dropped tasks in the export"),
+  }),
+  handler: async (input) =>
+    exportTaskPaper({
+      project: input.project,
+      includeCompleted: input.includeCompleted,
+      includeDropped: input.includeDropped,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `import` command.
+ *
+ * Drives CLI subcommand `import` and MCP tool `import_taskpaper`.
+ *
+ * Note: The CLI `import` command reads the TaskPaper content from a file path
+ * argument; the MCP tool accepts the raw content string directly. The
+ * descriptor uses `content` as the primary input, matching the MCP surface.
+ * The CLI hand-wired registration reads the file and passes its contents.
+ *
+ * @public
+ */
+export const importTaskPaperDescriptor = defineCommand({
+  name: "importTaskPaper",
+  cliName: "import-taskpaper",
+  mcpName: "import_taskpaper",
+  description: "Import tasks from TaskPaper formatted content",
+  inputSchema: z.object({
+    content: z.string().describe("TaskPaper formatted content to import"),
+    defaultProject: z
+      .string()
+      .optional()
+      .describe("Target project for tasks without a project"),
+    createProjects: z
+      .boolean()
+      .optional()
+      .describe("Create projects that do not exist"),
+  }),
+  handler: async (input) =>
+    importTaskPaper(input.content, {
+      defaultProject: input.defaultProject,
+      createProjects: input.createProjects,
+    }),
+});

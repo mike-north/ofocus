@@ -1,12 +1,14 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
+import { z } from "zod";
 import type { CliOutput, OFTask, OFProject } from "../types.js";
 import { success, failureMessage } from "../result.js";
 import { queryTasks } from "./tasks.js";
 import { queryProjects } from "./projects.js";
 import { createProject } from "./create-project.js";
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * A task within a template (without OmniFocus-specific IDs).
@@ -458,3 +460,123 @@ export function deleteTemplate(name: string): CliOutput<DeleteTemplateResult> {
     deleted: true,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptors
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `template-save` command.
+ *
+ * Drives CLI subcommand `template-save` and MCP tool `template_save`.
+ *
+ * @public
+ */
+export const saveTemplateDescriptor = defineCommand({
+  name: "saveTemplate",
+  cliName: "template-save",
+  mcpName: "template_save",
+  description: "Save a project as a reusable template",
+  cliPositional: ["name", "sourceProject"] as const,
+  inputSchema: z.object({
+    name: z.string().describe("Name for the template"),
+    sourceProject: z
+      .string()
+      .describe("Project ID or name to save as template"),
+    description: z.string().optional().describe("Template description"),
+  }),
+  handler: async (input) =>
+    saveTemplate({
+      name: input.name,
+      sourceProject: input.sourceProject,
+      description: input.description,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `template-list` command.
+ *
+ * Drives CLI subcommand `template-list` and MCP tool `templates_list`.
+ *
+ * @public
+ */
+export const listTemplatesDescriptor = defineCommand({
+  name: "listTemplates",
+  cliName: "template-list",
+  mcpName: "templates_list",
+  description: "List all saved project templates",
+  inputSchema: z.object({}),
+  handler: async (_input) => Promise.resolve(listTemplates()),
+});
+
+/**
+ * Centralized descriptor for the `template-get` command.
+ *
+ * Drives CLI subcommand `template-get` and MCP tool `template_get`.
+ *
+ * @public
+ */
+export const getTemplateDescriptor = defineCommand({
+  name: "getTemplate",
+  cliName: "template-get",
+  mcpName: "template_get",
+  description: "Get details of a specific project template",
+  cliPositional: ["templateName"] as const,
+  inputSchema: z.object({
+    templateName: z.string().describe("Name of the template"),
+  }),
+  handler: async (input) => Promise.resolve(getTemplate(input.templateName)),
+});
+
+/**
+ * Centralized descriptor for the `template-create` command.
+ *
+ * Drives CLI subcommand `template-create` and MCP tool `template_create_project`.
+ *
+ * @public
+ */
+export const createFromTemplateDescriptor = defineCommand({
+  name: "createFromTemplate",
+  cliName: "template-create",
+  mcpName: "template_create_project",
+  description: "Create a new project from a saved template",
+  cliPositional: ["templateName"] as const,
+  inputSchema: z.object({
+    templateName: z.string().describe("Name of the template to instantiate"),
+    projectName: z
+      .string()
+      .optional()
+      .describe("Name for the new project (defaults to template name)"),
+    folder: z.string().optional().describe("Folder to create the project in"),
+    baseDate: z
+      .string()
+      .optional()
+      .describe("Base date for calculating date offsets (defaults to today)"),
+  }),
+  handler: async (input) =>
+    createFromTemplate({
+      templateName: input.templateName,
+      projectName: input.projectName,
+      folder: input.folder,
+      baseDate: input.baseDate,
+    }),
+});
+
+/**
+ * Centralized descriptor for the `template-delete` command.
+ *
+ * Drives CLI subcommand `template-delete` and MCP tool `template_delete`.
+ *
+ * @public
+ */
+export const deleteTemplateDescriptor = defineCommand({
+  name: "deleteTemplate",
+  cliName: "template-delete",
+  mcpName: "template_delete",
+  description: "Delete a saved project template",
+  cliPositional: ["templateName"] as const,
+  inputSchema: z.object({
+    templateName: z.string().describe("Name of the template to delete"),
+  }),
+  handler: async (input) => Promise.resolve(deleteTemplate(input.templateName)),
+});

@@ -1,10 +1,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure, failureMessage } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
 import { validateId } from "../validation.js";
 import { escapeJSString, runOmniJSWrapped } from "../omnijs.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Attachment information.
@@ -240,3 +242,71 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+// ---------------------------------------------------------------------------
+// Centralized descriptors
+// ---------------------------------------------------------------------------
+
+/**
+ * Centralized descriptor for the `attach` command.
+ *
+ * Drives CLI subcommand `attach` and MCP tool `attachment_add`.
+ *
+ * @public
+ */
+export const addAttachmentDescriptor = defineCommand({
+  name: "addAttachment",
+  cliName: "attach",
+  mcpName: "attachment_add",
+  description: "Add a file attachment to a task",
+  cliPositional: ["taskId", "filePath"] as const,
+  inputSchema: z.object({
+    taskId: z.string().describe("ID of the task to attach the file to"),
+    filePath: z.string().describe("Path to the file to attach"),
+  }),
+  handler: async (input) => addAttachment(input.taskId, input.filePath),
+});
+
+/**
+ * Centralized descriptor for the `attachments` command.
+ *
+ * Drives CLI subcommand `attachments` and MCP tool `attachments_list`.
+ *
+ * @public
+ */
+export const listAttachmentsDescriptor = defineCommand({
+  name: "listAttachments",
+  cliName: "attachments",
+  mcpName: "attachments_list",
+  description: "List attachments on a task",
+  cliPositional: ["taskId"] as const,
+  inputSchema: z.object({
+    taskId: z.string().describe("ID of the task to list attachments for"),
+  }),
+  handler: async (input) => listAttachments(input.taskId),
+});
+
+/**
+ * Centralized descriptor for the `detach` command.
+ *
+ * Drives CLI subcommand `detach` and MCP tool `attachment_remove`.
+ *
+ * @public
+ */
+export const removeAttachmentDescriptor = defineCommand({
+  name: "removeAttachment",
+  cliName: "detach",
+  mcpName: "attachment_remove",
+  description: "Remove an attachment from a task",
+  cliPositional: ["taskId", "attachmentName"] as const,
+  inputSchema: z.object({
+    taskId: z.string().describe("ID of the task to remove the attachment from"),
+    attachmentName: z
+      .string()
+      .describe(
+        "Name of the attachment to remove (as returned by attachments)"
+      ),
+  }),
+  handler: async (input) =>
+    removeAttachment(input.taskId, input.attachmentName),
+});
