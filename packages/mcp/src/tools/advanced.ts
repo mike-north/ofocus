@@ -28,6 +28,7 @@ import {
   exportTaskPaper,
   importTaskPaper,
   generateUrl,
+  evaluateScriptDescriptor,
 } from "@ofocus/sdk";
 import { formatResult } from "../utils.js";
 import { registerMcpTool } from "../registry-adapter.js";
@@ -424,4 +425,7 @@ export function registerAdvancedTools(server: McpServer): void {
       return formatResult(result);
     }
   );
+
+  // Eval escape hatch — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, evaluateScriptDescriptor);
 }

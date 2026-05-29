@@ -76,6 +76,7 @@ const EXPECTED_ADVANCED_TOOLS = [
   "export_taskpaper",
   "import_taskpaper",
   "generate_url",
+  "omnifocus_eval",
 ];
 
 const ALL_EXPECTED_TOOLS = [
@@ -101,14 +102,14 @@ describe("Tool Registration", () => {
     expect(registeredTools.sort()).toEqual(ALL_EXPECTED_TOOLS.sort());
   });
 
-  it("should register exactly 60 tools", () => {
+  it("should register exactly 61 tools", () => {
     const mockServer = {
       registerTool: vi.fn(),
     } as unknown as McpServer;
 
     registerAllTools(mockServer);
 
-    expect(mockServer.registerTool).toHaveBeenCalledTimes(60);
+    expect(mockServer.registerTool).toHaveBeenCalledTimes(61);
   });
 
   describe("task tools", () => {

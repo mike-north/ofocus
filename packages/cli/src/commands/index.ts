@@ -401,4 +401,11 @@ export const commandRegistry: CommandInfo[] = [
       "Clear the repetition rule from an existing task. After clearing, the task will no longer recur. Requires the task ID which can be obtained from the tasks command.",
     usage: "ofocus clear-repetition <task-id>",
   },
+  // Eval escape hatch
+  {
+    name: "eval",
+    description:
+      "Evaluate arbitrary OmniJS against the user's OmniFocus database. LAST-RESORT tool — prefer tasks, projects, folders, tags, forecast, search, and their --filter/--sort/--fields flags for the vast majority of operations. Use eval only when no flag combination covers the need. Narrate intent before showing the script. The script runs unsandboxed and can mutate any OmniFocus data. Scripts must end with return <expression>; and are capped at 64 KB.",
+    usage: "ofocus eval [<script>] [--file <path>] [--args <json>]",
+  },
 ];
