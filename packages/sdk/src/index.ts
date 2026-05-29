@@ -253,8 +253,17 @@ export type {
 export { getSyncStatus, triggerSync } from "./commands/sync.js";
 export type { SyncStatus, SyncResult } from "./commands/sync.js";
 
-// Repetition helpers
-export { buildRRule } from "./commands/repetition.js";
+// Repetition helpers and commands
+export {
+  buildRRule,
+  repeatMethodToOmniJS,
+  applyRepetitionRule,
+  clearRepetitionRule,
+} from "./commands/repetition.js";
+export type {
+  ApplyRepetitionRuleResult,
+  ClearRepetitionRuleResult,
+} from "./commands/repetition.js";
 
 // Centralized command registry — drives CLI subcommands and MCP tools
 // from a single descriptor per command.
@@ -309,3 +318,7 @@ export {
   updateTagDescriptor,
   deleteTagDescriptor,
 } from "./commands/tags-crud.js";
+export {
+  applyRepetitionRuleDescriptor,
+  clearRepetitionRuleDescriptor,
+} from "./commands/repetition.js";

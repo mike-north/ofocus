@@ -387,4 +387,18 @@ export const commandRegistry: CommandInfo[] = [
       "Get or set the review interval for a project. Review intervals determine how often projects appear in the Review perspective. Omit --set to get current interval; use --set <days> to change it.",
     usage: "ofocus review-interval <project-id> [--set <days>]",
   },
+  // W2b: Repetition rule commands
+  {
+    name: "apply-repetition",
+    description:
+      "Apply a repetition rule to an existing task. Supports daily, weekly (with specific days via --days-of-week), monthly (by day-of-month or Nth-weekday via --days-of-week-positions), and yearly (with BYMONTH via --months-of-year) recurrences. Also accepts --repeat-method (due-again, defer-another, scheduled).",
+    usage:
+      "ofocus apply-repetition <task-id> --frequency <daily|weekly|monthly|yearly> [--interval <n>] [--repeat-method <due-again|defer-another|scheduled>] [--days-of-week <0..6...>] [--day-of-month <1..31>] [--days-of-week-positions <pos...>] [--months-of-year <1..12...>]",
+  },
+  {
+    name: "clear-repetition",
+    description:
+      "Clear the repetition rule from an existing task. After clearing, the task will no longer recur. Requires the task ID which can be obtained from the tasks command.",
+    usage: "ofocus clear-repetition <task-id>",
+  },
 ];
