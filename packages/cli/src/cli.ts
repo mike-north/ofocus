@@ -22,6 +22,7 @@ import {
   createProjectDescriptor,
   updateProjectDescriptor,
   deleteProjectDescriptor,
+  dropProjectDescriptor,
   listFoldersDescriptor,
   createFolderDescriptor,
   updateFolderDescriptor,
@@ -58,15 +59,13 @@ import {
   openItemDescriptor,
   getReviewIntervalDescriptor,
   setReviewIntervalDescriptor,
-  queryTasks,
-  updateTask,
+  // Batch 7: Task stragglers
+  queryTasksDescriptor,
+  updateTaskDescriptor,
+  getStatsDescriptor,
   // Phase 6
-  getStats,
-  // Phase 9: Project/Folder CRUD & Utilities
-  dropProject,
   importTaskPaper,
 } from "@ofocus/sdk";
-import type { RepetitionRule } from "@ofocus/sdk";
 import { listCommands } from "./commands/list-commands.js";
 import {
   output,
@@ -80,42 +79,6 @@ interface GlobalOptions {
   json?: boolean | undefined;
   human?: boolean | undefined;
   format?: string | undefined;
-}
-
-interface TasksCommandOptions {
-  project?: string | undefined;
-  tag?: string | undefined;
-  dueBefore?: string | undefined;
-  dueAfter?: string | undefined;
-  flagged?: boolean | undefined;
-  completed?: boolean | undefined;
-  available?: boolean | undefined;
-  limit?: number | undefined;
-  offset?: number | undefined;
-  all?: boolean | undefined;
-}
-
-interface UpdateCommandOptions {
-  title?: string | undefined;
-  note?: string | undefined;
-  due?: string | undefined;
-  defer?: string | undefined;
-  flag?: boolean | undefined;
-  project?: string | undefined;
-  tag?: string[] | undefined;
-  estimate?: number | undefined;
-  clearEstimate?: boolean | undefined;
-  repeat?: string | undefined;
-  every?: number | undefined;
-  repeatMethod?: string | undefined;
-  clearRepeat?: boolean | undefined;
-}
-
-interface StatsCommandOptions {
-  project?: string | undefined;
-  period?: "day" | "week" | "month" | "year" | undefined;
-  since?: string | undefined;
-  until?: string | undefined;
 }
 
 const AGENT_INSTRUCTIONS_URL =
@@ -206,27 +169,6 @@ Use --format json|toon for machine output (default: json). Use --human for human
     return cmd.optsWithGlobals();
   }
 
-  // Helper to parse repetition options into RepetitionRule
-  function parseRepetitionOptions(
-    repeat?: string,
-    every?: number,
-    repeatMethod?: string
-  ): RepetitionRule | undefined {
-    if (!repeat) return undefined;
-
-    const frequency = repeat as RepetitionRule["frequency"];
-    if (!["daily", "weekly", "monthly", "yearly"].includes(frequency)) {
-      return undefined;
-    }
-
-    return {
-      frequency,
-      interval: every ?? 1,
-      repeatMethod:
-        repeatMethod === "defer-another" ? "defer-another" : "due-again",
-    };
-  }
-
   // list-commands
   program
     .command("list-commands")
@@ -242,40 +184,10 @@ Use --format json|toon for machine output (default: json). Use --human for human
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 
-  // tasks
-  program
-    .command("tasks")
-    .description("Query tasks from OmniFocus")
-    .option("-p, --project <name>", "Filter by project name")
-    .option("-t, --tag <name>", "Filter by tag name")
-    .option("--due-before <date>", "Filter tasks due before date")
-    .option("--due-after <date>", "Filter tasks due after date")
-    .option("--flagged", "Show only flagged tasks")
-    .option("--completed", "Show only completed tasks")
-    .option("--available", "Show only available (actionable) tasks")
-    .option("--limit <n>", "Maximum results to return", parseInt)
-    .option("--offset <n>", "Number of results to skip", parseInt)
-    .option(
-      "--all",
-      "Return every matching task, ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
-    )
-    .action(async (options: TasksCommandOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await queryTasks({
-        project: options.project,
-        tag: options.tag,
-        dueBefore: options.dueBefore,
-        dueAfter: options.dueAfter,
-        flagged: options.flagged,
-        completed: options.completed,
-        available: options.available,
-        limit: options.limit,
-        offset: options.offset,
-        all: options.all,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // tasks — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, queryTasksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // projects — registered from the centralized descriptor in @ofocus/sdk
   registerCliCommand(program, listProjectsDescriptor, (result, cmd) => {
@@ -292,59 +204,10 @@ Use --format json|toon for machine output (default: json). Use --human for human
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 
-  // update
-  program
-    .command("update")
-    .description("Update task properties")
-    .argument("<task-id>", "Task ID to update")
-    .option("--title <text>", "New task title")
-    .option("-n, --note <text>", "New task note")
-    .option("-d, --due <date>", "New due date (empty string to clear)")
-    .option("--defer <date>", "New defer date (empty string to clear)")
-    .option("-f, --flag", "Flag the task")
-    .option("--no-flag", "Unflag the task")
-    .option("-p, --project <name>", "Move to project (empty string to remove)")
-    .option("-t, --tag <name...>", "Replace tags with these")
-    .option(
-      "-e, --estimate <minutes>",
-      "Estimated duration in minutes",
-      parseInt
-    )
-    .option("--clear-estimate", "Clear estimated duration")
-    .option(
-      "--repeat <frequency>",
-      "Repeat frequency (daily, weekly, monthly, yearly)"
-    )
-    .option("--every <n>", "Repeat every N periods (default: 1)", parseInt)
-    .option(
-      "--repeat-method <method>",
-      "Repeat method (due-again, defer-another)"
-    )
-    .option("--clear-repeat", "Clear repetition rule")
-    .action(
-      async (taskId: string, options: UpdateCommandOptions, cmd: Command) => {
-        const globalOpts = getGlobalOpts(cmd);
-        const result = await updateTask(taskId, {
-          title: options.title,
-          note: options.note,
-          due: options.due,
-          defer: options.defer,
-          flag: options.flag,
-          project: options.project,
-          tags: options.tag,
-          estimatedMinutes: options.estimate,
-          clearEstimate: options.clearEstimate,
-          repeat: parseRepetitionOptions(
-            options.repeat,
-            options.every,
-            options.repeatMethod
-          ),
-          clearRepeat: options.clearRepeat,
-        });
-        output(result, getOutputFormat(globalOpts));
-        if (!result.success) process.exitCode = 1;
-      }
-    );
+  // update — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, updateTaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 1: Create Projects & Folders
@@ -595,25 +458,10 @@ Use --format json|toon for machine output (default: json). Use --human for human
   // Phase 6: Statistics
   // ===========================================
 
-  // stats
-  program
-    .command("stats")
-    .description("Display productivity statistics")
-    .option("-p, --project <name>", "Filter by project name")
-    .option("--period <period>", "Time period: day, week, month, year")
-    .option("--since <date>", "Start date (ISO format)")
-    .option("--until <date>", "End date (ISO format)")
-    .action(async (options: StatsCommandOptions, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await getStats({
-        project: options.project,
-        period: options.period,
-        since: options.since,
-        until: options.until,
-      });
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // stats — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, getStatsDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // ===========================================
   // Phase 7: Project Templates
@@ -696,17 +544,10 @@ Use --format json|toon for machine output (default: json). Use --human for human
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 
-  // drop-project
-  program
-    .command("drop-project")
-    .description("Drop a project (marks as dropped but keeps history)")
-    .argument("<project-id>", "Project ID to drop")
-    .action(async (projectId: string, _opts: unknown, cmd: Command) => {
-      const globalOpts = getGlobalOpts(cmd);
-      const result = await dropProject(projectId);
-      output(result, getOutputFormat(globalOpts));
-      if (!result.success) process.exitCode = 1;
-    });
+  // drop-project — registered from the centralized descriptor in @ofocus/sdk
+  registerCliCommand(program, dropProjectDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
 
   // update-folder / delete-folder — registered from the centralized
   // descriptors in @ofocus/sdk.

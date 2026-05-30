@@ -1,5 +1,4 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
 import {
   createSubtaskDescriptor,
   querySubtasksDescriptor,
@@ -7,7 +6,6 @@ import {
   queryForecastDescriptor,
   queryDeferredDescriptor,
   quickCaptureDescriptor,
-  getStats,
   evaluateScriptDescriptor,
   // Batch 6: Advanced command descriptors
   listPerspectivesDescriptor,
@@ -30,8 +28,9 @@ import {
   exportTaskPaperDescriptor,
   importTaskPaperDescriptor,
   generateUrlDescriptor,
+  // Batch 7: task stragglers
+  getStatsDescriptor,
 } from "@ofocus/sdk";
-import { formatResult } from "../utils.js";
 import { registerMcpTool } from "../registry-adapter.js";
 
 export function registerAdvancedTools(server: McpServer): void {
@@ -58,31 +57,8 @@ export function registerAdvancedTools(server: McpServer): void {
   // quick_add — registered from the centralized descriptor in @ofocus/sdk
   registerMcpTool(server, quickCaptureDescriptor);
 
-  // Statistics
-  server.registerTool(
-    "stats",
-    {
-      description: "Get productivity statistics from OmniFocus",
-      inputSchema: {
-        period: z
-          .enum(["day", "week", "month", "year"])
-          .optional()
-          .describe("Time period for statistics"),
-        project: z.string().optional().describe("Filter by project name"),
-        since: z.string().optional().describe("Start date for custom period"),
-        until: z.string().optional().describe("End date for custom period"),
-      },
-    },
-    async (params) => {
-      const result = await getStats({
-        period: params.period,
-        project: params.project,
-        since: params.since,
-        until: params.until,
-      });
-      return formatResult(result);
-    }
-  );
+  // stats — registered from the centralized descriptor in @ofocus/sdk
+  registerMcpTool(server, getStatsDescriptor);
 
   // Sync — registered from centralized descriptors in @ofocus/sdk
   registerMcpTool(server, getSyncStatusDescriptor);

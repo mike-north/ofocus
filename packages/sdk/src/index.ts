@@ -106,10 +106,10 @@ export type {
 
 // Tasks
 export { addToInbox } from "./commands/inbox.js";
-export { queryTasks } from "./commands/tasks.js";
+export { queryTasks, queryTasksDescriptor } from "./commands/tasks.js";
 export { completeTask } from "./commands/complete.js";
 export type { CompleteResult } from "./commands/complete.js";
-export { updateTask } from "./commands/update.js";
+export { updateTask, updateTaskDescriptor } from "./commands/update.js";
 export { dropTask, deleteTask } from "./commands/drop.js";
 export type { DropResult, DeleteResult } from "./commands/drop.js";
 export { duplicateTask } from "./commands/duplicate.js";
@@ -240,7 +240,7 @@ export type {
 } from "./commands/attachments.js";
 
 // Statistics
-export { getStats } from "./commands/stats.js";
+export { getStats, getStatsDescriptor } from "./commands/stats.js";
 export type { StatsOptions, StatsResult } from "./commands/stats.js";
 
 // URL & deep linking
@@ -311,6 +311,7 @@ export { createProjectDescriptor } from "./commands/create-project.js";
 export {
   updateProjectDescriptor,
   deleteProjectDescriptor,
+  dropProjectDescriptor,
 } from "./commands/projects-crud.js";
 export {
   listFoldersDescriptor,

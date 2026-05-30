@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { CliOutput, TaskUpdateOptions, OFTask } from "../types.js";
 import { success, failure } from "../result.js";
 import { ErrorCode, createError } from "../errors.js";
@@ -12,6 +13,7 @@ import {
 import { escapeJSString, toOmniJSDate, runOmniJSWrapped } from "../omnijs.js";
 import { buildRRule, repeatMethodToOmniJS } from "./repetition.js";
 import { sanitizeVarName } from "../utils/sanitize.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Update properties of an existing task in OmniFocus.
@@ -172,3 +174,137 @@ return JSON.stringify({
 
   return success(result.data);
 }
+
+/**
+ * Shared Zod schema for a repetition rule — used in the `updateTaskDescriptor`
+ * for both the MCP tool (object supplied directly) and the CLI adapter (JSON
+ * string via `--repeat '<json>'` which is preprocessed into an object).
+ * Defined inline to keep it co-located with the descriptor.
+ */
+const RepetitionRuleSchema = z.object({
+  frequency: z
+    .enum(["daily", "weekly", "monthly", "yearly"])
+    .describe("Recurrence frequency"),
+  interval: z.number().int().min(1).describe("Repeat every N periods"),
+  repeatMethod: z
+    .enum(["due-again", "defer-another", "scheduled"])
+    .describe("How OmniFocus reschedules the task after completion"),
+  daysOfWeek: z
+    .array(z.number().int().min(0).max(6))
+    .min(1)
+    .optional()
+    .describe("Days of the week to repeat on (0=Sunday … 6=Saturday)"),
+  dayOfMonth: z
+    .number()
+    .int()
+    .min(1)
+    .max(31)
+    .optional()
+    .describe("Day of month for monthly repetitions"),
+  daysOfWeekPositions: z
+    .array(z.number().int())
+    .optional()
+    .describe(
+      "Positional prefix for BYDAY in monthly repetitions (e.g. 1 = first, -1 = last)"
+    ),
+  monthsOfYear: z
+    .array(z.number().int().min(1).max(12))
+    .optional()
+    .describe("Months of the year for yearly repetitions (1=Jan … 12=Dec)"),
+});
+
+/**
+ * Centralized descriptor for the `update` command.
+ *
+ * Drives the CLI subcommand `update` and the MCP tool `task_update`.
+ *
+ * The MCP tool supplies the `repeat` field as a JSON object directly.
+ * The CLI adapter receives every option as a string; `--repeat` must be
+ * passed as a JSON string. A `z.preprocess` wrapper on the `repeat` field
+ * transparently parses that JSON string into an object before Zod validates
+ * the shape, so the handler always receives a fully-typed object regardless
+ * of which transport was used. See the `repeat` field description for the
+ * expected JSON shape.
+ *
+ * @public
+ */
+export const updateTaskDescriptor = defineCommand({
+  name: "updateTask",
+  cliName: "update",
+  mcpName: "task_update",
+  description: "Update properties of an existing task.",
+  cliPositional: ["taskId"],
+  inputSchema: z.object({
+    taskId: z.string().describe("The ID of the task to update"),
+    title: z.string().optional().describe("New task title"),
+    note: z.string().optional().describe("New task note"),
+    due: z
+      .string()
+      .optional()
+      .describe("New due date (ISO 8601 or relative; empty string to clear)"),
+    defer: z
+      .string()
+      .optional()
+      .describe("New defer date (ISO 8601 or relative; empty string to clear)"),
+    flag: z
+      .boolean()
+      .optional()
+      .describe("Flag (true) or unflag (false) the task"),
+    project: z
+      .string()
+      .optional()
+      .describe("Move to project by name (empty string to move to inbox)"),
+    tags: z
+      .array(z.string())
+      .optional()
+      .describe("Replace all tags with this list"),
+    estimatedMinutes: z
+      .number()
+      .optional()
+      .describe("Estimated duration in minutes"),
+    clearEstimate: z
+      .boolean()
+      .optional()
+      .describe("Clear the estimated duration when true"),
+    repeat: z
+      .preprocess(
+        // CLI supplies --repeat as a JSON string; MCP supplies an object.
+        // If the value is a string, attempt JSON.parse — on failure return
+        // the raw string so Zod reports a clean VALIDATION_ERROR rather than
+        // throwing a SyntaxError.
+        (v) => {
+          if (typeof v !== "string") return v;
+          try {
+            return JSON.parse(v) as unknown;
+          } catch {
+            return v;
+          }
+        },
+        RepetitionRuleSchema
+      )
+      .optional()
+      .describe(
+        "Set a repetition rule on the task. " +
+          "MCP: pass as an object. " +
+          'CLI: pass as a JSON string, e.g. --repeat \'{"frequency":"weekly","interval":1,"repeatMethod":"due-again","daysOfWeek":[1,3,5]}\''
+      ),
+    clearRepeat: z
+      .boolean()
+      .optional()
+      .describe("Clear the repetition rule when true"),
+  }),
+  handler: async (input) =>
+    updateTask(input.taskId, {
+      title: input.title,
+      note: input.note,
+      due: input.due,
+      defer: input.defer,
+      flag: input.flag,
+      project: input.project,
+      tags: input.tags,
+      estimatedMinutes: input.estimatedMinutes,
+      clearEstimate: input.clearEstimate,
+      repeat: input.repeat,
+      clearRepeat: input.clearRepeat,
+    }),
+});

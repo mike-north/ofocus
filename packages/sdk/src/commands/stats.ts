@@ -1,8 +1,10 @@
+import { z } from "zod";
 import type { CliOutput } from "../types.js";
 import { success, failure, failureMessage } from "../result.js";
 import { queryTasks } from "./tasks.js";
 import { queryProjects } from "./projects.js";
 import { validateDateString } from "../validation.js";
+import { defineCommand } from "../registry/define.js";
 
 /**
  * Options for querying statistics.
@@ -292,3 +294,44 @@ export async function getStats(
     projectFilter: options.project ?? null,
   });
 }
+
+/**
+ * Centralized descriptor for the `stats` command.
+ *
+ * Drives the CLI subcommand `stats` and the MCP tool `stats`.
+ *
+ * @public
+ */
+export const getStatsDescriptor = defineCommand({
+  name: "getStats",
+  cliName: "stats",
+  mcpName: "stats",
+  description: "Get productivity statistics from OmniFocus.",
+  inputSchema: z.object({
+    project: z
+      .string()
+      .optional()
+      .describe("Filter statistics by project name"),
+    period: z
+      .enum(["day", "week", "month", "year"])
+      .optional()
+      .describe(
+        "Predefined time period for statistics (day, week, month, year)"
+      ),
+    since: z
+      .string()
+      .optional()
+      .describe("Custom period start date (ISO 8601 format)"),
+    until: z
+      .string()
+      .optional()
+      .describe("Custom period end date (ISO 8601 format)"),
+  }),
+  handler: async (input) =>
+    getStats({
+      project: input.project,
+      period: input.period,
+      since: input.since,
+      until: input.until,
+    }),
+});

@@ -40,6 +40,55 @@ describe("commandRegistry — subtask command usage strings", () => {
   });
 });
 
+// Regression: when the tasks/update/stats/drop-project commands moved to the
+// descriptor registry, their CLI flags were updated. These tests assert that
+// the `list-commands` registry reflects the expanded descriptor-derived
+// surface so it can't drift from the real flags.
+describe("commandRegistry — tasks/update straggler command usage strings", () => {
+  it("tasks advertises the full filter/sort/projection surface", () => {
+    const usage = usageFor("tasks");
+    // Core filter flags
+    expect(usage).toContain("--project");
+    expect(usage).toContain("--tag");
+    expect(usage).toContain("--flagged");
+    expect(usage).toContain("--completed");
+    expect(usage).toContain("--available");
+    expect(usage).toContain("--due-before");
+    expect(usage).toContain("--due-after");
+    // Extended predicates (new via descriptor)
+    expect(usage).toContain("--folder");
+    expect(usage).toContain("--tag-mode");
+    expect(usage).toContain("--in-inbox");
+    expect(usage).toContain("--has-due");
+    expect(usage).toContain("--status");
+    // Projection and sort
+    expect(usage).toContain("--fields");
+    expect(usage).toContain("--sort");
+    expect(usage).toContain("--reverse");
+    // Shape modifiers
+    expect(usage).toContain("--count");
+    expect(usage).toContain("--first");
+    expect(usage).toContain("--last");
+    expect(usage).toContain("--ids-only");
+    expect(usage).toContain("--group-by");
+    // Pagination
+    expect(usage).toContain("--limit");
+    expect(usage).toContain("--offset");
+    expect(usage).toContain("--all");
+  });
+
+  it("update advertises --tags and --estimated-minutes (not old --tag/--estimate)", () => {
+    const usage = usageFor("update");
+    expect(usage).toContain("--tags");
+    expect(usage).toContain("--estimated-minutes");
+    expect(usage).toContain("--clear-estimate");
+    expect(usage).toContain("--clear-repeat");
+    // Old short aliases must not appear
+    expect(usage).not.toMatch(/--tag\b(?!s)/);
+    expect(usage).not.toMatch(/--estimate\b(?!d)/);
+  });
+});
+
 // Regression: when the batch-ops commands moved to the descriptor registry,
 // each took its IDs as a variadic positional and update-batch gained the MCP
 // superset of flags (--title/--note, previously CLI-absent). The

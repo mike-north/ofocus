@@ -884,6 +884,17 @@ export interface DeleteTemplateResult {
 export function dropProject(projectId: string): Promise<CliOutput<DropProjectResult>>;
 
 // @public
+export const dropProjectDescriptor: ResolvedCommandDescriptor<    {
+projectId: string;
+}, DropProjectResult, z.ZodObject<{
+projectId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+projectId: string;
+}, {
+projectId: string;
+}>>;
+
+// @public
 export interface DropProjectResult {
     // (undocumented)
     dropped: boolean;
@@ -1157,6 +1168,29 @@ projectId: string;
 
 // @public
 export function getStats(options?: StatsOptions): Promise<CliOutput<StatsResult>>;
+
+// @public
+export const getStatsDescriptor: ResolvedCommandDescriptor<    {
+project?: string | undefined;
+period?: "day" | "week" | "month" | "year" | undefined;
+since?: string | undefined;
+until?: string | undefined;
+}, StatsResult, z.ZodObject<{
+project: z.ZodOptional<z.ZodString>;
+period: z.ZodOptional<z.ZodEnum<["day", "week", "month", "year"]>>;
+since: z.ZodOptional<z.ZodString>;
+until: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+project?: string | undefined;
+period?: "day" | "week" | "month" | "year" | undefined;
+since?: string | undefined;
+until?: string | undefined;
+}, {
+project?: string | undefined;
+period?: "day" | "week" | "month" | "year" | undefined;
+since?: string | undefined;
+until?: string | undefined;
+}>>;
 
 // @public
 export function getSyncStatus(): Promise<CliOutput<SyncStatus>>;
@@ -1953,6 +1987,241 @@ export function queryTags(options?: TagQueryOptions): Promise<CliOutput<QueryRes
 export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<QueryResult<OFTask>>>;
 
 // @public
+export const queryTasksDescriptor: ResolvedCommandDescriptor<    {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
+nullsFirst?: boolean | undefined;
+count?: boolean | undefined;
+first?: boolean | undefined;
+last?: boolean | undefined;
+idsOnly?: boolean | undefined;
+groupBy?: string | undefined;
+stats?: boolean | undefined;
+all?: boolean | undefined;
+completed?: boolean | undefined;
+dropped?: boolean | undefined;
+flagged?: boolean | undefined;
+notFlagged?: boolean | undefined;
+notCompleted?: boolean | undefined;
+notDropped?: boolean | undefined;
+blocked?: boolean | undefined;
+available?: boolean | undefined;
+inInbox?: boolean | undefined;
+hasDue?: boolean | undefined;
+noDue?: boolean | undefined;
+hasDefer?: boolean | undefined;
+hasNote?: boolean | undefined;
+hasAttachments?: boolean | undefined;
+hasSubtasks?: boolean | undefined;
+hasRepetition?: boolean | undefined;
+effectivelyCompleted?: boolean | undefined;
+effectivelyDropped?: boolean | undefined;
+status?: "active" | "completed" | "dropped" | "deferred" | undefined;
+project?: string | string[] | undefined;
+tag?: string | string[] | undefined;
+tagMode?: "any" | "all" | "none" | undefined;
+folder?: string | string[] | undefined;
+dueBefore?: string | undefined;
+dueAfter?: string | undefined;
+dueOn?: string | undefined;
+dueWithin?: string | undefined;
+deferBefore?: string | undefined;
+deferAfter?: string | undefined;
+deferOn?: string | undefined;
+deferWithin?: string | undefined;
+completedBefore?: string | undefined;
+completedAfter?: string | undefined;
+estimateLt?: number | undefined;
+estimateGt?: number | undefined;
+estimateEq?: number | undefined;
+nameContains?: string | undefined;
+nameStarts?: string | undefined;
+nameEquals?: string | undefined;
+nameRegex?: string | undefined;
+noteContains?: string | undefined;
+noteRegex?: string | undefined;
+caseSensitive?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}, QueryResult<OFTask>, z.ZodObject<{
+project: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
+tag: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
+tagMode: z.ZodOptional<z.ZodEnum<["any", "all", "none"]>>;
+folder: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
+flagged: z.ZodOptional<z.ZodBoolean>;
+notFlagged: z.ZodOptional<z.ZodBoolean>;
+completed: z.ZodOptional<z.ZodBoolean>;
+notCompleted: z.ZodOptional<z.ZodBoolean>;
+dropped: z.ZodOptional<z.ZodBoolean>;
+notDropped: z.ZodOptional<z.ZodBoolean>;
+blocked: z.ZodOptional<z.ZodBoolean>;
+available: z.ZodOptional<z.ZodBoolean>;
+inInbox: z.ZodOptional<z.ZodBoolean>;
+hasDue: z.ZodOptional<z.ZodBoolean>;
+noDue: z.ZodOptional<z.ZodBoolean>;
+hasDefer: z.ZodOptional<z.ZodBoolean>;
+hasNote: z.ZodOptional<z.ZodBoolean>;
+hasAttachments: z.ZodOptional<z.ZodBoolean>;
+hasSubtasks: z.ZodOptional<z.ZodBoolean>;
+hasRepetition: z.ZodOptional<z.ZodBoolean>;
+effectivelyCompleted: z.ZodOptional<z.ZodBoolean>;
+effectivelyDropped: z.ZodOptional<z.ZodBoolean>;
+status: z.ZodOptional<z.ZodEnum<["active", "completed", "dropped", "deferred"]>>;
+dueBefore: z.ZodOptional<z.ZodString>;
+dueAfter: z.ZodOptional<z.ZodString>;
+dueOn: z.ZodOptional<z.ZodString>;
+dueWithin: z.ZodOptional<z.ZodString>;
+deferBefore: z.ZodOptional<z.ZodString>;
+deferAfter: z.ZodOptional<z.ZodString>;
+deferOn: z.ZodOptional<z.ZodString>;
+deferWithin: z.ZodOptional<z.ZodString>;
+completedBefore: z.ZodOptional<z.ZodString>;
+completedAfter: z.ZodOptional<z.ZodString>;
+estimateLt: z.ZodOptional<z.ZodNumber>;
+estimateGt: z.ZodOptional<z.ZodNumber>;
+estimateEq: z.ZodOptional<z.ZodNumber>;
+nameContains: z.ZodOptional<z.ZodString>;
+nameStarts: z.ZodOptional<z.ZodString>;
+nameEquals: z.ZodOptional<z.ZodString>;
+nameRegex: z.ZodOptional<z.ZodString>;
+noteContains: z.ZodOptional<z.ZodString>;
+noteRegex: z.ZodOptional<z.ZodString>;
+caseSensitive: z.ZodOptional<z.ZodBoolean>;
+fields: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+excludeFields: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+sort: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+reverse: z.ZodOptional<z.ZodBoolean>;
+nullsFirst: z.ZodOptional<z.ZodBoolean>;
+count: z.ZodOptional<z.ZodBoolean>;
+first: z.ZodOptional<z.ZodBoolean>;
+last: z.ZodOptional<z.ZodBoolean>;
+idsOnly: z.ZodOptional<z.ZodBoolean>;
+groupBy: z.ZodOptional<z.ZodString>;
+stats: z.ZodOptional<z.ZodBoolean>;
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
+nullsFirst?: boolean | undefined;
+count?: boolean | undefined;
+first?: boolean | undefined;
+last?: boolean | undefined;
+idsOnly?: boolean | undefined;
+groupBy?: string | undefined;
+stats?: boolean | undefined;
+all?: boolean | undefined;
+completed?: boolean | undefined;
+dropped?: boolean | undefined;
+flagged?: boolean | undefined;
+notFlagged?: boolean | undefined;
+notCompleted?: boolean | undefined;
+notDropped?: boolean | undefined;
+blocked?: boolean | undefined;
+available?: boolean | undefined;
+inInbox?: boolean | undefined;
+hasDue?: boolean | undefined;
+noDue?: boolean | undefined;
+hasDefer?: boolean | undefined;
+hasNote?: boolean | undefined;
+hasAttachments?: boolean | undefined;
+hasSubtasks?: boolean | undefined;
+hasRepetition?: boolean | undefined;
+effectivelyCompleted?: boolean | undefined;
+effectivelyDropped?: boolean | undefined;
+status?: "active" | "completed" | "dropped" | "deferred" | undefined;
+project?: string | string[] | undefined;
+tag?: string | string[] | undefined;
+tagMode?: "any" | "all" | "none" | undefined;
+folder?: string | string[] | undefined;
+dueBefore?: string | undefined;
+dueAfter?: string | undefined;
+dueOn?: string | undefined;
+dueWithin?: string | undefined;
+deferBefore?: string | undefined;
+deferAfter?: string | undefined;
+deferOn?: string | undefined;
+deferWithin?: string | undefined;
+completedBefore?: string | undefined;
+completedAfter?: string | undefined;
+estimateLt?: number | undefined;
+estimateGt?: number | undefined;
+estimateEq?: number | undefined;
+nameContains?: string | undefined;
+nameStarts?: string | undefined;
+nameEquals?: string | undefined;
+nameRegex?: string | undefined;
+noteContains?: string | undefined;
+noteRegex?: string | undefined;
+caseSensitive?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}, {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
+nullsFirst?: boolean | undefined;
+count?: boolean | undefined;
+first?: boolean | undefined;
+last?: boolean | undefined;
+idsOnly?: boolean | undefined;
+groupBy?: string | undefined;
+stats?: boolean | undefined;
+all?: boolean | undefined;
+completed?: boolean | undefined;
+dropped?: boolean | undefined;
+flagged?: boolean | undefined;
+notFlagged?: boolean | undefined;
+notCompleted?: boolean | undefined;
+notDropped?: boolean | undefined;
+blocked?: boolean | undefined;
+available?: boolean | undefined;
+inInbox?: boolean | undefined;
+hasDue?: boolean | undefined;
+noDue?: boolean | undefined;
+hasDefer?: boolean | undefined;
+hasNote?: boolean | undefined;
+hasAttachments?: boolean | undefined;
+hasSubtasks?: boolean | undefined;
+hasRepetition?: boolean | undefined;
+effectivelyCompleted?: boolean | undefined;
+effectivelyDropped?: boolean | undefined;
+status?: "active" | "completed" | "dropped" | "deferred" | undefined;
+project?: string | string[] | undefined;
+tag?: string | string[] | undefined;
+tagMode?: "any" | "all" | "none" | undefined;
+folder?: string | string[] | undefined;
+dueBefore?: string | undefined;
+dueAfter?: string | undefined;
+dueOn?: string | undefined;
+dueWithin?: string | undefined;
+deferBefore?: string | undefined;
+deferAfter?: string | undefined;
+deferOn?: string | undefined;
+deferWithin?: string | undefined;
+completedBefore?: string | undefined;
+completedAfter?: string | undefined;
+estimateLt?: number | undefined;
+estimateGt?: number | undefined;
+estimateEq?: number | undefined;
+nameContains?: string | undefined;
+nameStarts?: string | undefined;
+nameEquals?: string | undefined;
+nameRegex?: string | undefined;
+noteContains?: string | undefined;
+noteRegex?: string | undefined;
+caseSensitive?: boolean | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+}>>;
+
+// @public
 export function quickCapture(input: string, options?: QuickOptions): Promise<CliOutput<OFTask>>;
 
 // @public
@@ -2625,6 +2894,109 @@ export interface UpdateTagOptions {
 
 // @public
 export function updateTask(taskId: string, options: TaskUpdateOptions): Promise<CliOutput<OFTask>>;
+
+// @public
+export const updateTaskDescriptor: ResolvedCommandDescriptor<    {
+taskId: string;
+project?: string | undefined;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+repeat?: {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+} | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+clearEstimate?: boolean | undefined;
+clearRepeat?: boolean | undefined;
+}, OFTask, z.ZodObject<{
+taskId: z.ZodString;
+title: z.ZodOptional<z.ZodString>;
+note: z.ZodOptional<z.ZodString>;
+due: z.ZodOptional<z.ZodString>;
+defer: z.ZodOptional<z.ZodString>;
+flag: z.ZodOptional<z.ZodBoolean>;
+project: z.ZodOptional<z.ZodString>;
+tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+estimatedMinutes: z.ZodOptional<z.ZodNumber>;
+clearEstimate: z.ZodOptional<z.ZodBoolean>;
+repeat: z.ZodOptional<z.ZodEffects<z.ZodObject<{
+frequency: z.ZodEnum<["daily", "weekly", "monthly", "yearly"]>;
+interval: z.ZodNumber;
+repeatMethod: z.ZodEnum<["due-again", "defer-another", "scheduled"]>;
+daysOfWeek: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
+dayOfMonth: z.ZodOptional<z.ZodNumber>;
+daysOfWeekPositions: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
+monthsOfYear: z.ZodOptional<z.ZodArray<z.ZodNumber, "many">>;
+}, "strip", z.ZodTypeAny, {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+}, {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+}>, {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+}, unknown>>;
+clearRepeat: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+taskId: string;
+project?: string | undefined;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+repeat?: {
+frequency: "daily" | "weekly" | "monthly" | "yearly";
+repeatMethod: "due-again" | "defer-another" | "scheduled";
+interval: number;
+daysOfWeek?: number[] | undefined;
+dayOfMonth?: number | undefined;
+daysOfWeekPositions?: number[] | undefined;
+monthsOfYear?: number[] | undefined;
+} | undefined;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+clearEstimate?: boolean | undefined;
+clearRepeat?: boolean | undefined;
+}, {
+taskId: string;
+project?: string | undefined;
+note?: string | undefined;
+estimatedMinutes?: number | undefined;
+tags?: string[] | undefined;
+repeat?: unknown;
+title?: string | undefined;
+due?: string | undefined;
+defer?: string | undefined;
+flag?: boolean | undefined;
+clearEstimate?: boolean | undefined;
+clearRepeat?: boolean | undefined;
+}>>;
 
 // @public
 export function updateTasks(taskIds: string[], options: TaskUpdateOptions): Promise<CliOutput<BatchResult<BatchCompleteItem>>>;

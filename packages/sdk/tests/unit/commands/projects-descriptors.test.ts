@@ -3,7 +3,10 @@ import { ErrorCode } from "../../../src/errors.js";
 import type { OmniJSResult } from "../../../src/omnijs.js";
 import type { OFProject } from "../../../src/types.js";
 import type { QueryResult } from "../../../src/query/index.js";
-import type { DeleteProjectResult } from "../../../src/commands/projects-crud.js";
+import type {
+  DeleteProjectResult,
+  DropProjectResult,
+} from "../../../src/commands/projects-crud.js";
 
 // Mock the omnijs module
 vi.mock("../../../src/omnijs.js", async () => {
@@ -21,6 +24,7 @@ import { createProjectDescriptor as cpDesc } from "../../../src/commands/create-
 import {
   updateProjectDescriptor as upDesc,
   deleteProjectDescriptor as dpDesc,
+  dropProjectDescriptor as drpDesc,
 } from "../../../src/commands/projects-crud.js";
 import { runOmniJSWrapped } from "../../../src/omnijs.js";
 
@@ -367,5 +371,75 @@ describe("deleteProjectDescriptor — handler forwarding", () => {
     const result = await dpDesc.handler({ projectId: 'bad"id' });
     expect(result.success).toBe(false);
     expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// dropProjectDescriptor
+// ---------------------------------------------------------------------------
+
+describe("dropProjectDescriptor — metadata", () => {
+  it("has correct name/cliName/mcpName", () => {
+    expect(drpDesc.name).toBe("dropProject");
+    expect(drpDesc.cliName).toBe("drop-project");
+    expect(drpDesc.mcpName).toBe("project_drop");
+  });
+
+  it("projectId is a required cliPositional", () => {
+    expect(drpDesc.cliPositional).toEqual(["projectId"]);
+  });
+
+  it("schema requires projectId", () => {
+    const parsed = drpDesc.inputSchema.safeParse({});
+    expect(parsed.success).toBe(false);
+  });
+
+  it("schema accepts valid projectId", () => {
+    const parsed = drpDesc.inputSchema.safeParse({ projectId: PROJ_ID });
+    expect(parsed.success).toBe(true);
+  });
+});
+
+describe("dropProjectDescriptor — handler forwarding", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("passes projectId to OmniJS script body", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: {
+        projectId: PROJ_ID,
+        projectName: "Test Project",
+        dropped: true,
+      } as DropProjectResult,
+    });
+
+    await drpDesc.handler({ projectId: PROJ_ID });
+
+    const body = getScriptBody();
+    expect(body).toContain(PROJ_ID);
+    expect(body).toContain("Project.Status.Dropped");
+  });
+
+  it("returns success with drop result", async () => {
+    const dropResult: DropProjectResult = {
+      projectId: PROJ_ID,
+      projectName: "Test Project",
+      dropped: true,
+    };
+    mockRunOmniJS.mockResolvedValue({ success: true, data: dropResult });
+
+    const result = await drpDesc.handler({ projectId: PROJ_ID });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.dropped).toBe(true);
+  });
+
+  it("returns failure for invalid project ID", async () => {
+    const result = await drpDesc.handler({ projectId: 'bad"id' });
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
+    expect(mockRunOmniJS).not.toHaveBeenCalled();
   });
 });
