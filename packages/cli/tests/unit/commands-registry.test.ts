@@ -1,5 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { commandRegistry } from "../../src/commands/index.js";
+import {
+  allCommandDescriptors,
+  // Representative descriptors from each domain, for the coverage test
+  addToInboxDescriptor,
+  listProjectsDescriptor,
+  listFoldersDescriptor,
+  listTagsDescriptor,
+  reviewProjectDescriptor,
+  queryForecastDescriptor,
+  searchTasksDescriptor,
+  getStatsDescriptor,
+  evaluateScriptDescriptor,
+} from "@ofocus/sdk";
 
 // Regression: when the subtask commands moved to the descriptor registry,
 // their CLI flags were renamed (--parent → --parent-task-id, --tag → --tags,
@@ -421,5 +434,160 @@ describe("commandRegistry — advanced command usage strings", () => {
   it("open advertises <id> positional only", () => {
     const usage = usageFor("open");
     expect(usage).toContain("<id>");
+  });
+});
+
+// ============================================================================
+// Catalog integrity — these tests guard the structural properties of the
+// descriptor-derived catalog and cannot be subverted by hand-editing a list.
+// ============================================================================
+
+describe("commandRegistry — catalog integrity", () => {
+  /** The three CLI commands that are hand-wired and not descriptor-driven. */
+  const HAND_WIRED_NAMES = ["list-commands", "import", "review-interval"];
+
+  it("contains every CLI-registered descriptor's cliName", () => {
+    const catalogNames = new Set(commandRegistry.map((c) => c.name));
+
+    // These descriptors exist in allCommandDescriptors for MCP use but are
+    // NOT directly registered in the CLI via registerCliCommand. The CLI
+    // hand-wires different commands that combine or wrap them:
+    //
+    // - "import-taskpaper": importTaskPaperDescriptor — CLI hand-wires "import"
+    //   as a file-path command instead.
+    // - "review-interval-get": getReviewIntervalDescriptor — CLI hand-wires
+    //   "review-interval" combining both get and set (via --set flag).
+    // - "review-interval-set": setReviewIntervalDescriptor — same as above.
+    const MCP_ONLY_CLI_NAMES = new Set([
+      "import-taskpaper",
+      "review-interval-get",
+      "review-interval-set",
+    ]);
+
+    for (const descriptor of allCommandDescriptors) {
+      if (MCP_ONLY_CLI_NAMES.has(descriptor.cliName as string)) continue;
+      expect(
+        catalogNames.has(descriptor.cliName as string),
+        `Expected catalog to contain descriptor cliName "${descriptor.cliName as string}" but it was missing`
+      ).toBe(true);
+    }
+  });
+
+  it("contains all three hand-wired command exceptions", () => {
+    const catalogNames = new Set(commandRegistry.map((c) => c.name));
+    for (const name of HAND_WIRED_NAMES) {
+      expect(
+        catalogNames.has(name),
+        `Expected catalog to contain hand-wired command "${name}" but it was missing`
+      ).toBe(true);
+    }
+  });
+
+  it("has no duplicate command names", () => {
+    const names = commandRegistry.map((c) => c.name);
+    const seen = new Set<string>();
+    const duplicates: string[] = [];
+    for (const name of names) {
+      if (seen.has(name)) {
+        duplicates.push(name);
+      }
+      seen.add(name);
+    }
+    expect(duplicates).toEqual([]);
+  });
+
+  it("is sorted alphabetically by name", () => {
+    const names = commandRegistry.map((c) => c.name);
+    const sorted = [...names].sort((a, b) => a.localeCompare(b));
+    expect(names).toEqual(sorted);
+  });
+
+  it("every entry has a non-empty name, description, and usage", () => {
+    for (const entry of commandRegistry) {
+      expect(
+        entry.name.trim().length,
+        `name empty for entry: ${JSON.stringify(entry)}`
+      ).toBeGreaterThan(0);
+      expect(
+        entry.description.trim().length,
+        `description empty for "${entry.name}"`
+      ).toBeGreaterThan(0);
+      expect(
+        entry.usage.trim().length,
+        `usage empty for "${entry.name}"`
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("every usage string starts with 'ofocus <name>'", () => {
+    for (const entry of commandRegistry) {
+      expect(
+        entry.usage.startsWith(`ofocus ${entry.name}`),
+        `Usage for "${entry.name}" should start with "ofocus ${entry.name}", got: "${entry.usage}"`
+      ).toBe(true);
+    }
+  });
+});
+
+describe("allCommandDescriptors (SDK registry) — coverage by domain", () => {
+  it("includes a representative descriptor from the Tasks domain", () => {
+    expect(allCommandDescriptors).toContain(addToInboxDescriptor);
+  });
+
+  it("includes a representative descriptor from the Projects domain", () => {
+    expect(allCommandDescriptors).toContain(listProjectsDescriptor);
+  });
+
+  it("includes a representative descriptor from the Folders domain", () => {
+    expect(allCommandDescriptors).toContain(listFoldersDescriptor);
+  });
+
+  it("includes a representative descriptor from the Tags domain", () => {
+    expect(allCommandDescriptors).toContain(listTagsDescriptor);
+  });
+
+  it("includes a representative descriptor from the Review domain", () => {
+    expect(allCommandDescriptors).toContain(reviewProjectDescriptor);
+  });
+
+  it("includes a representative descriptor from Forecast/Focus/Deferred", () => {
+    expect(allCommandDescriptors).toContain(queryForecastDescriptor);
+  });
+
+  it("includes the search descriptor", () => {
+    expect(allCommandDescriptors).toContain(searchTasksDescriptor);
+  });
+
+  it("includes the stats descriptor", () => {
+    expect(allCommandDescriptors).toContain(getStatsDescriptor);
+  });
+
+  it("includes the eval escape-hatch descriptor", () => {
+    expect(allCommandDescriptors).toContain(evaluateScriptDescriptor);
+  });
+
+  it("has no duplicate descriptor objects", () => {
+    const seen = new Set();
+    const duplicates: string[] = [];
+    for (const d of allCommandDescriptors) {
+      if (seen.has(d)) {
+        duplicates.push(d.cliName as string);
+      }
+      seen.add(d);
+    }
+    expect(duplicates).toEqual([]);
+  });
+
+  it("every descriptor has a non-empty cliName and description", () => {
+    for (const d of allCommandDescriptors) {
+      expect(
+        (d.cliName as string).trim().length,
+        `cliName empty for descriptor: ${d.name as string}`
+      ).toBeGreaterThan(0);
+      expect(
+        (d.description as string).trim().length,
+        `description empty for "${d.name as string}"`
+      ).toBeGreaterThan(0);
+    }
   });
 });

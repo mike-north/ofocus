@@ -4,6 +4,67 @@ import type { CliOutput, ResolvedCommandDescriptor } from "@ofocus/sdk";
 import { ErrorCode, createError, toKebabCase } from "@ofocus/sdk";
 
 /**
+ * Derive the CLI usage string for a descriptor — the same string that
+ * `registerCliCommand` would produce when registering Commander options.
+ *
+ * Format: `ofocus <cliName> [positionals...] [--flags...]`
+ *
+ * This is the single source of truth so that the `list-commands` catalog and
+ * the actual Commander registration always agree.
+ *
+ * The `any` type parameters are intentional: `usageStringForDescriptor` only
+ * reads `cliName`, `cliPositional`, and `inputSchema` — it never invokes the
+ * `handler`, so the contravariant `TInput` and covariant `TOutput` type
+ * parameters are irrelevant here. Using `any` avoids the unsound assignment
+ * that would occur with `unknown` (handler is contravariant on its input).
+ *
+ * @public
+ */
+export function usageStringForDescriptor(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see JSDoc above
+  descriptor: ResolvedCommandDescriptor<any, any, z.AnyZodObject>
+): string {
+  const parts: string[] = [`ofocus ${descriptor.cliName}`];
+  const shape = descriptor.inputSchema.shape as Record<string, z.ZodTypeAny>;
+  const positionalSet = new Set(descriptor.cliPositional);
+
+  // Positional arguments in declared order.
+  // Field names are camelCase in the schema (e.g. "taskId") but are displayed
+  // as kebab-case in the usage string (e.g. "<task-id>") to match conventions.
+  for (const fieldName of descriptor.cliPositional) {
+    const fieldSchema = shape[fieldName];
+    if (fieldSchema === undefined) continue;
+    const { inner } = unwrapField(fieldSchema);
+    const required = !isFieldOptional(fieldSchema);
+    const displayName = toKebabCase(fieldName);
+    const token =
+      inner instanceof z.ZodArray ? `${displayName}...` : displayName;
+    parts.push(required ? `<${token}>` : `[${token}]`);
+  }
+
+  // Remaining fields become --flag options.
+  for (const [fieldName, fieldSchema] of Object.entries(shape)) {
+    if (positionalSet.has(fieldName)) continue;
+    const flag = `--${toKebabCase(fieldName)}`;
+    const { inner } = unwrapField(fieldSchema);
+
+    if (inner instanceof z.ZodBoolean) {
+      // Boolean flags get both --flag and --no-flag forms (matching Commander
+      // registration in registerCliCommand).
+      parts.push(`[${flag}]`);
+      parts.push(`[--no-${toKebabCase(fieldName)}]`);
+    } else if (inner instanceof z.ZodArray) {
+      parts.push(`[${flag} <values...>]`);
+    } else {
+      // ZodNumber, ZodString, ZodEnum, ZodUnion, ZodLiteral, etc.
+      parts.push(`[${flag} <value>]`);
+    }
+  }
+
+  return parts.join(" ");
+}
+
+/**
  * Callback that handles the result of a CLI command. Receives the
  * descriptor's `CliOutput` envelope and the Commander {@link Command} so
  * implementations can read global options off `cmd.optsWithGlobals()`.
