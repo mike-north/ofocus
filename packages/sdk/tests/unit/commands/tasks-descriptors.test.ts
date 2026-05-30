@@ -283,9 +283,10 @@ describe("queryTasksDescriptor — handler forwarding", () => {
     await queryTasksDescriptor.handler({ available: true });
 
     const body = getScriptBody();
-    // available: true compiles to "!t.completed && !t.effectivelyDropped && !t.blocked"
-    expect(body).toContain("!t.completed");
-    expect(body).toContain("!t.blocked");
+    // available: true compiles to the taskStatus enum form:
+    // (t.taskStatus === Task.Status.Available || Next || DueSoon || Overdue)
+    expect(body).toContain("Task.Status.Available");
+    expect(body).toContain("t.taskStatus");
   });
 
   it("forwards dueBefore filter into OmniJS query body", async () => {

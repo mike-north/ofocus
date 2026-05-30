@@ -147,7 +147,7 @@ describe("updateTaskDescriptor — handler forwarding", () => {
 
     const body = getScriptBody();
     expect(body).toContain(TASK_ID);
-    expect(body).toContain("flattenedTasks");
+    expect(body).toContain("Task.byIdentifier");
   });
 
   it("passes title update into OmniJS script body", async () => {

@@ -505,6 +505,8 @@ describe("registerCliCommand", () => {
 
       expect(handler).toHaveBeenCalledWith({ fields: undefined });
     });
+  });
+
   // ── union-containing-array fields are registered as variadic options ─────
 
   it("registers z.union([z.string(), z.array(z.string())]) as a variadic <values...> option", () => {

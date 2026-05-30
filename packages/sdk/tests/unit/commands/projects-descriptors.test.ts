@@ -419,7 +419,7 @@ describe("dropProjectDescriptor — handler forwarding", () => {
 
     const body = getScriptBody();
     expect(body).toContain(PROJ_ID);
-    expect(body).toContain("markDropped");
+    expect(body).toContain("Project.Status.Dropped");
   });
 
   it("returns success with drop result", async () => {
