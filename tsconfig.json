@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "packages/sdk" },
+    { "path": "packages/productivity" },
     { "path": "packages/cli" },
     { "path": "packages/ofocus" }
   ]

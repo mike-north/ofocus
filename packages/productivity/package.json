@@ -1,13 +1,10 @@
 {
-  "name": "ofocus",
-  "version": "0.5.0",
-  "description": "OmniFocus CLI for AI agents - SDK and CLI combined",
+  "name": "@ofocus/productivity",
+  "version": "0.0.0",
+  "description": "OmniFocus productivity niceties (Layer 2) built on @ofocus/sdk",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "ofocus": "./dist/index.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,25 +15,22 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc --build"
+    "build": "tsc --build",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:watch": "vitest"
   },
   "keywords": [
     "omnifocus",
-    "cli",
-    "sdk",
     "productivity",
-    "applescript"
+    "omnijs"
   ],
   "author": "",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/mnorth/ofocus.git",
-    "directory": "packages/ofocus"
-  },
-  "homepage": "https://github.com/mnorth/ofocus#readme",
-  "bugs": {
-    "url": "https://github.com/mnorth/ofocus/issues"
+    "directory": "packages/productivity"
   },
   "publishConfig": {
     "access": "public"
@@ -46,8 +40,9 @@
   },
   "dependencies": {
     "@ofocus/sdk": "workspace:*",
-    "@ofocus/productivity": "workspace:*",
-    "@ofocus/cli": "workspace:*",
-    "@ofocus/mcp": "workspace:*"
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

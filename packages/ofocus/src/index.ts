@@ -6,6 +6,9 @@ import { resolve } from "node:path";
 // Re-export everything from SDK
 export * from "@ofocus/sdk";
 
+// Layer 2 productivity niceties
+export * from "@ofocus/productivity";
+
 // Re-export CLI utilities
 export { createCli, outputJson, outputHuman } from "@ofocus/cli";
 
