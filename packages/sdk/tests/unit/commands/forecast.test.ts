@@ -134,10 +134,12 @@ describe("queryForecast", () => {
       expect(getScriptBody()).toContain("!t.completed");
     });
 
-    it("always emits effectivelyDropped: false predicate (!t.effectivelyDropped)", async () => {
+    it("always emits effectivelyDropped: false predicate (Task.Status.Dropped inequality)", async () => {
+      // effectivelyDropped:false now correctly uses Task.Status.Dropped since
+      // OmniJS Task has no effectivelyDropped boolean property.
       await queryForecast();
 
-      expect(getScriptBody()).toContain("!t.effectivelyDropped");
+      expect(getScriptBody()).toContain("Task.Status.Dropped");
     });
   });
 

@@ -131,36 +131,56 @@ export function compileTaskPredicates(
   if (options.completed === false) conditions.push("!t.completed");
   if (options.notCompleted === true) conditions.push("!t.completed");
 
-  // TODO: OmniJS Task has no `dropped` / `blocked` / `effectivelyDropped`
-  // boolean properties (they read back `undefined`), so these filters never
-  // match — e.g. `tasks --dropped` always returns 0. The correct expressions
-  // use the status enum, e.g. `t.taskStatus === Task.Status.Dropped` and
-  // `t.taskStatus === Task.Status.Blocked`. Deferred from the live-integration
-  // fix PR because it spans several predicates + their unit tests and is not
-  // exercised by a failing integration test. Verify with
-  // `tasks --dropped` returning a non-empty set once a dropped task exists.
-  if (options.dropped === true) conditions.push("t.dropped");
-  if (options.dropped === false) conditions.push("!t.dropped");
-  if (options.notDropped === true) conditions.push("!t.dropped");
+  // OmniJS Task exposes no `dropped` / `blocked` / `effectivelyDropped` boolean
+  // properties (they read back `undefined`). The correct API is `t.taskStatus`
+  // compared against `Task.Status.*` enum values, which were verified live:
+  //   Task.Status.Available, Blocked, Completed, Dropped, DueSoon, Next, Overdue
+  //
+  // Key observations from live introspection:
+  // - Task.Status.Completed captures both own completion AND effective completion
+  //   through a completed parent/project ancestor.
+  // - Task.Status.Dropped captures both directly-dropped tasks AND tasks whose
+  //   parent project/ancestor is dropped (i.e. effective drop).
+  // - "Available" in OmniFocus terminology means actionable: Available + Next +
+  //   DueSoon + Overdue. All four statuses represent tasks that can be acted on
+  //   (i.e. not Blocked, not Completed, not Dropped).
+  if (options.dropped === true)
+    conditions.push("(t.taskStatus === Task.Status.Dropped)");
+  if (options.dropped === false)
+    conditions.push("(t.taskStatus !== Task.Status.Dropped)");
+  if (options.notDropped === true)
+    conditions.push("(t.taskStatus !== Task.Status.Dropped)");
 
-  if (options.blocked === true) conditions.push("t.blocked");
-  if (options.blocked === false) conditions.push("!t.blocked");
+  if (options.blocked === true)
+    conditions.push("(t.taskStatus === Task.Status.Blocked)");
+  if (options.blocked === false)
+    conditions.push("(t.taskStatus !== Task.Status.Blocked)");
 
+  // effectivelyCompleted: Task.Status.Completed covers own completion as well
+  // as completion through a completed parent/ancestor project.
   if (options.effectivelyCompleted === true)
-    conditions.push("t.effectivelyCompleted");
+    conditions.push("(t.taskStatus === Task.Status.Completed)");
   if (options.effectivelyCompleted === false)
-    conditions.push("!t.effectivelyCompleted");
+    conditions.push("(t.taskStatus !== Task.Status.Completed)");
 
+  // effectivelyDropped: Task.Status.Dropped covers both directly-dropped tasks
+  // and tasks inside a dropped project/ancestor.
   if (options.effectivelyDropped === true)
-    conditions.push("t.effectivelyDropped");
+    conditions.push("(t.taskStatus === Task.Status.Dropped)");
   if (options.effectivelyDropped === false)
-    conditions.push("!t.effectivelyDropped");
+    conditions.push("(t.taskStatus !== Task.Status.Dropped)");
 
+  // available: actionable tasks are those in Available, Next, DueSoon, or
+  // Overdue status — i.e. not Blocked, not Completed, not Dropped.
   if (options.available === true) {
-    conditions.push("(!t.completed && !t.effectivelyDropped && !t.blocked)");
+    conditions.push(
+      "(t.taskStatus === Task.Status.Available || t.taskStatus === Task.Status.Next || t.taskStatus === Task.Status.DueSoon || t.taskStatus === Task.Status.Overdue)"
+    );
   }
   if (options.available === false) {
-    conditions.push("(t.completed || t.effectivelyDropped || t.blocked)");
+    conditions.push(
+      "(t.taskStatus === Task.Status.Blocked || t.taskStatus === Task.Status.Completed || t.taskStatus === Task.Status.Dropped)"
+    );
   }
 
   if (options.inInbox === true)
@@ -198,13 +218,16 @@ export function compileTaskPredicates(
   if (options.status !== undefined) {
     switch (options.status) {
       case "active":
-        conditions.push("(!t.completed && !t.dropped)");
+        // Active tasks are those not completed and not dropped.
+        conditions.push(
+          "(t.taskStatus !== Task.Status.Completed && t.taskStatus !== Task.Status.Dropped)"
+        );
         break;
       case "completed":
-        conditions.push("t.completed");
+        conditions.push("(t.taskStatus === Task.Status.Completed)");
         break;
       case "dropped":
-        conditions.push("t.dropped");
+        conditions.push("(t.taskStatus === Task.Status.Dropped)");
         break;
       case "deferred":
         // "deferred" = task has a defer date that is in the future
@@ -1056,8 +1079,10 @@ export function compileProjectPredicates(
   }
 
   // ── Numeric: remainingTaskCount ──────────────────────────────────────────
+  // Count tasks that are not completed and not dropped (including effective drop).
+  // Uses taskStatus enum since effectivelyDropped is not a real OmniJS property.
   const remainingExpr =
-    "t.task.flattenedTasks.filter(function(s){ return !s.completed && !s.effectivelyDropped; }).length";
+    "t.task.flattenedTasks.filter(function(s){ return s.taskStatus !== Task.Status.Completed && s.taskStatus !== Task.Status.Dropped; }).length";
 
   if (options.remainingTaskCountLt !== undefined) {
     const err = validateFinite(
