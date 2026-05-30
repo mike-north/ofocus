@@ -167,9 +167,15 @@ List tasks with defer dates.
 | deferredAfter | `string` | no | Only tasks deferred after this date |
 | deferredBefore | `string` | no | Only tasks deferred before this date |
 | blockedOnly | `boolean` | no | Only show tasks currently blocked by their defer date |
+| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| reverse | `boolean` | no | Reverse the sort order (default: false) |
 | limit | `number` | no | Maximum number of results to return (default: 100) |
 | offset | `number` | no | Number of results to skip for pagination |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+
+**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `perspective_query`
 
@@ -197,11 +203,15 @@ List subtasks of a parent task.
 | parentTaskId | `string` | yes | ID of the parent task |
 | completed | `boolean` | no | Filter by completion status (true = only completed, false = only incomplete) |
 | flagged | `boolean` | no | Filter by flagged status |
+| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| reverse | `boolean` | no | Reverse the sort order (default: false) |
 | limit | `number` | no | Maximum number of results to return (default: 100) |
 | offset | `number` | no | Number of results to skip for pagination |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
-**Example:** `{ "parentTaskId": "<parentTaskId>" }`
+**Example:** `{ "parentTaskId": "<parentTaskId>", "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `tasks_list`
 
@@ -286,12 +296,16 @@ Search tasks by name or note content.
 | --- | --- | --- | --- |
 | query | `string` | yes | Search query text |
 | scope | `name \| note \| both` | no | Where to search (default: both) |
-| limit | `number` | no | Maximum results to return (default: 100) |
 | includeCompleted | `boolean` | no | Include completed tasks in the results |
+| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| reverse | `boolean` | no | Reverse the sort order (default: false) |
+| limit | `number` | no | Maximum results to return (default: 100) |
 | offset | `number` | no | Number of results to skip for pagination |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
-**Example:** `{ "query": "<query>" }`
+**Example:** `{ "query": "<query>", "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `task_update`
 
@@ -414,9 +428,15 @@ List and filter projects from OmniFocus
 | folder | `string` | no | Filter by folder name or ID |
 | status | `active \| on-hold \| completed \| dropped` | no | Filter by project status (active, on-hold, completed, dropped) |
 | sequential | `boolean` | no | Filter by sequential/parallel type |
+| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| reverse | `boolean` | no | Reverse the sort order (default: false) |
 | limit | `number` | no | Maximum number of results to return |
 | offset | `number` | no | Number of results to skip for pagination |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+
+**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `project_update`
 
@@ -467,9 +487,15 @@ List folders from OmniFocus
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | parent | `string` | no | Filter by parent folder name or ID |
+| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| reverse | `boolean` | no | Reverse the sort order (default: false) |
 | limit | `number` | no | Maximum number of results to return |
 | offset | `number` | no | Number of results to skip for pagination |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+
+**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `folder_update`
 
@@ -515,9 +541,15 @@ List tags from OmniFocus
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | parent | `string` | no | Filter by parent tag name or ID |
+| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| reverse | `boolean` | no | Reverse the sort order (default: false) |
 | limit | `number` | no | Maximum number of results to return |
 | offset | `number` | no | Number of results to skip for pagination |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+
+**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `tag_update`
 
@@ -542,9 +574,15 @@ Query tasks due within N days (like the OmniFocus Forecast view).
 | --- | --- | --- | --- |
 | days | `number` | no | Number of days ahead to include (default: 7) |
 | includeDeferred | `boolean` | no | Include tasks deferred to the same window |
+| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| reverse | `boolean` | no | Reverse the sort order (default: false) |
 | limit | `number` | no | Maximum number of results to return (default: 100) |
 | offset | `number` | no | Number of results to skip for pagination |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+
+**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 ## Focus
 

@@ -188,7 +188,7 @@ List tasks with defer dates.
 **Usage:**
 
 ```bash
-ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredBefore>] [--blocked-only] [--limit <limit>] [--offset <offset>] [--all]
+ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredBefore>] [--blocked-only] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -198,6 +198,10 @@ ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredB
 | `--deferred-after` | `string` | no | Only tasks deferred after this date |
 | `--deferred-before` | `string` | no | Only tasks deferred before this date |
 | `--blocked-only` / `--no-blocked-only` | `boolean` | no | Only show tasks currently blocked by their defer date |
+| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
 | `--limit` | `number` | no | Maximum number of results to return (default: 100) |
 | `--offset` | `number` | no | Number of results to skip for pagination |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
@@ -235,7 +239,7 @@ List subtasks of a parent task.
 **Usage:**
 
 ```bash
-ofocus subtasks <parentTaskId> [--completed] [--flagged] [--limit <limit>] [--offset <offset>] [--all]
+ofocus subtasks <parentTaskId> [--completed] [--flagged] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -244,6 +248,10 @@ ofocus subtasks <parentTaskId> [--completed] [--flagged] [--limit <limit>] [--of
 | --- | --- | --- | --- |
 | `--completed` / `--no-completed` | `boolean` | no | Filter by completion status (true = only completed, false = only incomplete) |
 | `--flagged` / `--no-flagged` | `boolean` | no | Filter by flagged status |
+| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
 | `--limit` | `number` | no | Maximum number of results to return (default: 100) |
 | `--offset` | `number` | no | Number of results to skip for pagination |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
@@ -343,7 +351,7 @@ Search tasks by name or note content.
 **Usage:**
 
 ```bash
-ofocus search <query> [--scope <scope>] [--limit <limit>] [--include-completed] [--offset <offset>] [--all]
+ofocus search <query> [--scope <scope>] [--include-completed] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -351,8 +359,12 @@ ofocus search <query> [--scope <scope>] [--limit <limit>] [--include-completed] 
 | Flag | Type | Required | Description |
 | --- | --- | --- | --- |
 | `--scope` | `name \| note \| both` | no | Where to search (default: both) |
-| `--limit` | `number` | no | Maximum results to return (default: 100) |
 | `--include-completed` / `--no-include-completed` | `boolean` | no | Include completed tasks in the results |
+| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
+| `--limit` | `number` | no | Maximum results to return (default: 100) |
 | `--offset` | `number` | no | Number of results to skip for pagination |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
@@ -495,7 +507,7 @@ List and filter projects from OmniFocus
 **Usage:**
 
 ```bash
-ofocus projects [--folder <folder>] [--status <status>] [--sequential] [--limit <limit>] [--offset <offset>] [--all]
+ofocus projects [--folder <folder>] [--status <status>] [--sequential] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -505,6 +517,10 @@ ofocus projects [--folder <folder>] [--status <status>] [--sequential] [--limit 
 | `--folder` | `string` | no | Filter by folder name or ID |
 | `--status` | `active \| on-hold \| completed \| dropped` | no | Filter by project status (active, on-hold, completed, dropped) |
 | `--sequential` / `--no-sequential` | `boolean` | no | Filter by sequential/parallel type |
+| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
 | `--limit` | `number` | no | Maximum number of results to return |
 | `--offset` | `number` | no | Number of results to skip for pagination |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
@@ -568,7 +584,7 @@ List folders from OmniFocus
 **Usage:**
 
 ```bash
-ofocus folders [--parent <parent>] [--limit <limit>] [--offset <offset>] [--all]
+ofocus folders [--parent <parent>] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -576,6 +592,10 @@ ofocus folders [--parent <parent>] [--limit <limit>] [--offset <offset>] [--all]
 | Flag | Type | Required | Description |
 | --- | --- | --- | --- |
 | `--parent` | `string` | no | Filter by parent folder name or ID |
+| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
 | `--limit` | `number` | no | Maximum number of results to return |
 | `--offset` | `number` | no | Number of results to skip for pagination |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
@@ -634,7 +654,7 @@ List tags from OmniFocus
 **Usage:**
 
 ```bash
-ofocus tags [--parent <parent>] [--limit <limit>] [--offset <offset>] [--all]
+ofocus tags [--parent <parent>] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -642,6 +662,10 @@ ofocus tags [--parent <parent>] [--limit <limit>] [--offset <offset>] [--all]
 | Flag | Type | Required | Description |
 | --- | --- | --- | --- |
 | `--parent` | `string` | no | Filter by parent tag name or ID |
+| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
 | `--limit` | `number` | no | Maximum number of results to return |
 | `--offset` | `number` | no | Number of results to skip for pagination |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
@@ -673,7 +697,7 @@ Query tasks due within N days (like the OmniFocus Forecast view).
 **Usage:**
 
 ```bash
-ofocus forecast [--days <days>] [--include-deferred] [--limit <limit>] [--offset <offset>] [--all]
+ofocus forecast [--days <days>] [--include-deferred] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -682,6 +706,10 @@ ofocus forecast [--days <days>] [--include-deferred] [--limit <limit>] [--offset
 | --- | --- | --- | --- |
 | `--days` | `number` | no | Number of days ahead to include (default: 7) |
 | `--include-deferred` / `--no-include-deferred` | `boolean` | no | Include tasks deferred to the same window |
+| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
 | `--limit` | `number` | no | Maximum number of results to return (default: 100) |
 | `--offset` | `number` | no | Number of results to skip for pagination |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
