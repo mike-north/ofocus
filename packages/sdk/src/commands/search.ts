@@ -17,6 +17,8 @@ import {
   compileTaskPredicates,
   taskFieldSpec,
   taskGroupKeys,
+  listProjectionSchema,
+  listSortSchema,
   type QueryResult,
   type BaseListQueryOptions,
   type TaskQueryOptions,
@@ -175,16 +177,21 @@ export const searchTasksDescriptor = defineCommand({
       .enum(["name", "note", "both"])
       .optional()
       .describe("Where to search (default: both)"),
+    includeCompleted: z
+      .boolean()
+      .optional()
+      .describe("Include completed tasks in the results"),
+    // ── Projection ───────────────────────────────────────────────────────────
+    ...listProjectionSchema,
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    ...listSortSchema,
+    // ── Pagination ───────────────────────────────────────────────────────────
     limit: z
       .number()
       .int()
       .positive()
       .optional()
       .describe("Maximum results to return (default: 100)"),
-    includeCompleted: z
-      .boolean()
-      .optional()
-      .describe("Include completed tasks in the results"),
     offset: z
       .number()
       .int()
@@ -204,6 +211,10 @@ export const searchTasksDescriptor = defineCommand({
       limit: input.limit,
       offset: input.offset,
       includeCompleted: input.includeCompleted,
+      fields: input.fields,
+      excludeFields: input.excludeFields,
+      sort: input.sort,
+      reverse: input.reverse,
       all: input.all,
     }),
 });

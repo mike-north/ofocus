@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Command } from "commander";
 import { z } from "zod";
-import { defineCommand } from "@ofocus/sdk";
+import { defineCommand, commaSeparatedStringArray } from "@ofocus/sdk";
 import { success, failure, ErrorCode, createError } from "@ofocus/sdk";
 import { registerCliCommand } from "../../src/registry-adapter.js";
 
@@ -167,7 +167,14 @@ describe("registerCliCommand", () => {
 
     registerCliCommand(program, cmd, onOutput);
 
-    await program.parseAsync(["node", "test", "thing", "Buy milk", "--note", "From the store"]);
+    await program.parseAsync([
+      "node",
+      "test",
+      "thing",
+      "Buy milk",
+      "--note",
+      "From the store",
+    ]);
 
     expect(handler).toHaveBeenCalledWith({
       title: "Buy milk",
@@ -202,9 +209,9 @@ describe("registerCliCommand", () => {
     expect(onOutput).toHaveBeenCalledOnce();
     const [result] = onOutput.mock.calls[0]!;
     expect((result as { success: boolean }).success).toBe(false);
-    expect(
-      (result as { error?: { code: string } }).error?.code
-    ).toBe(ErrorCode.VALIDATION_ERROR);
+    expect((result as { error?: { code: string } }).error?.code).toBe(
+      ErrorCode.VALIDATION_ERROR
+    );
     expect(process.exitCode).toBe(1);
   });
 
@@ -367,9 +374,132 @@ describe("registerCliCommand", () => {
     expect(onOutput).toHaveBeenCalledOnce();
     const [result] = onOutput.mock.calls[0]!;
     expect((result as { success: boolean }).success).toBe(false);
-    expect(
-      (result as { error?: { code: string } }).error?.code
-    ).toBe(ErrorCode.VALIDATION_ERROR);
+    expect((result as { error?: { code: string } }).error?.code).toBe(
+      ErrorCode.VALIDATION_ERROR
+    );
     expect(process.exitCode).toBe(1);
+  });
+
+  // ── commaSeparatedStringArray via registerCliCommand ────────────────────────
+
+  describe("comma-separated array fields (commaSeparatedStringArray)", () => {
+    it("--fields id,name,dueDate (comma form) resolves to ['id','name','dueDate']", async () => {
+      const handler = vi.fn(
+        async (input: { fields?: string[] }) =>
+          await Promise.resolve(success({ fields: input.fields ?? [] }))
+      );
+
+      const program = new Command();
+      const cmd = defineCommand({
+        name: "thing",
+        description: "Do.",
+        inputSchema: z.object({
+          fields: commaSeparatedStringArray,
+        }),
+        handler,
+      });
+
+      registerCliCommand(program, cmd, () => undefined);
+
+      await program.parseAsync([
+        "node",
+        "test",
+        "thing",
+        "--fields",
+        "id,name,dueDate",
+      ]);
+
+      expect(handler).toHaveBeenCalledWith({
+        fields: ["id", "name", "dueDate"],
+      });
+    });
+
+    it("--fields id name dueDate (space form) resolves to ['id','name','dueDate']", async () => {
+      const handler = vi.fn(
+        async (input: { fields?: string[] }) =>
+          await Promise.resolve(success({ fields: input.fields ?? [] }))
+      );
+
+      const program = new Command();
+      const cmd = defineCommand({
+        name: "thing",
+        description: "Do.",
+        inputSchema: z.object({
+          fields: commaSeparatedStringArray,
+        }),
+        handler,
+      });
+
+      registerCliCommand(program, cmd, () => undefined);
+
+      await program.parseAsync([
+        "node",
+        "test",
+        "thing",
+        "--fields",
+        "id",
+        "name",
+        "dueDate",
+      ]);
+
+      expect(handler).toHaveBeenCalledWith({
+        fields: ["id", "name", "dueDate"],
+      });
+    });
+
+    it("--fields id,name dueDate (mixed form) resolves to ['id','name','dueDate']", async () => {
+      const handler = vi.fn(
+        async (input: { fields?: string[] }) =>
+          await Promise.resolve(success({ fields: input.fields ?? [] }))
+      );
+
+      const program = new Command();
+      const cmd = defineCommand({
+        name: "thing",
+        description: "Do.",
+        inputSchema: z.object({
+          fields: commaSeparatedStringArray,
+        }),
+        handler,
+      });
+
+      registerCliCommand(program, cmd, () => undefined);
+
+      await program.parseAsync([
+        "node",
+        "test",
+        "thing",
+        "--fields",
+        "id,name",
+        "dueDate",
+      ]);
+
+      expect(handler).toHaveBeenCalledWith({
+        fields: ["id", "name", "dueDate"],
+      });
+    });
+
+    it("omitting --fields passes undefined to the handler", async () => {
+      const handler = vi.fn(
+        async (input: { fields?: string[] }) =>
+          await Promise.resolve(success({ fields: input.fields }))
+      );
+
+      const program = new Command();
+      const cmd = defineCommand({
+        name: "thing",
+        description: "Do.",
+        inputSchema: z.object({
+          fields: commaSeparatedStringArray,
+        }),
+        handler,
+      });
+
+      registerCliCommand(program, cmd, () => undefined);
+
+      await program.parseAsync(["node", "test", "thing"]);
+
+      expect(handler).toHaveBeenCalledWith({ fields: undefined });
+    });
   });
 });

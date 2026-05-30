@@ -140,8 +140,15 @@ export function registerCliCommand<TSchema extends z.AnyZodObject>(
 }
 
 /**
- * Strip ZodOptional, ZodNullable, and ZodDefault wrappers to expose the
- * underlying type for Commander mapping.
+ * Strip ZodOptional, ZodNullable, ZodDefault, and ZodEffects wrappers to
+ * expose the underlying type for Commander mapping.
+ *
+ * `ZodEffects` is produced by `z.preprocess(...)` and `z.transform(...)`.
+ * Stripping it allows Commander to see the inner `ZodArray` so the flag is
+ * rendered as variadic (`--flag <values...>`) rather than singular
+ * (`--flag <value>`). The preprocess function still runs when Zod parses the
+ * collected array at `safeParse` time — Commander's role is only to collect
+ * the raw tokens.
  */
 function unwrapField(schema: z.ZodTypeAny): {
   inner: z.ZodTypeAny;
@@ -164,6 +171,13 @@ function unwrapField(schema: z.ZodTypeAny): {
     if (current instanceof z.ZodDefault) {
       optional = true;
       current = current.removeDefault() as z.ZodTypeAny;
+      continue;
+    }
+    if (current instanceof z.ZodEffects) {
+      // z.preprocess / z.transform — peek at the inner output schema so
+      // Commander can determine the correct flag shape. The effects fn still
+      // runs during safeParse.
+      current = current._def.schema as z.ZodTypeAny;
       continue;
     }
     break;
@@ -189,7 +203,10 @@ function addOptionForField(
     // Negation form so callers can explicitly set the field to false.
     // Commander stores both under the camelCase field name; `--no-foo`
     // sets `foo: false`, matching the old hand-written CLI conventions.
-    cmd.option(`--no-${toKebabCase(fieldName)}`, `Disable --${toKebabCase(fieldName)}`);
+    cmd.option(
+      `--no-${toKebabCase(fieldName)}`,
+      `Disable --${toKebabCase(fieldName)}`
+    );
     return;
   }
 

@@ -17,6 +17,8 @@ import {
   compileSort,
   folderFieldSpec,
   folderGroupKeys,
+  listProjectionSchema,
+  listSortSchema,
   type FolderQueryOptions,
   type QueryResult,
 } from "../query/index.js";
@@ -39,6 +41,11 @@ export const listFoldersDescriptor = defineCommand({
       .string()
       .optional()
       .describe("Filter by parent folder name or ID"),
+    // ── Projection ───────────────────────────────────────────────────────────
+    ...listProjectionSchema,
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    ...listSortSchema,
+    // ── Pagination ───────────────────────────────────────────────────────────
     limit: z
       .number()
       .int()
@@ -61,6 +68,10 @@ export const listFoldersDescriptor = defineCommand({
   handler: async (input) =>
     queryFolders({
       parent: input.parent,
+      fields: input.fields,
+      excludeFields: input.excludeFields,
+      sort: input.sort,
+      reverse: input.reverse,
       limit: input.limit,
       offset: input.offset,
       all: input.all,

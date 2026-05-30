@@ -13,6 +13,8 @@ import {
   compileTaskPredicates,
   taskFieldSpec,
   taskGroupKeys,
+  listProjectionSchema,
+  listSortSchema,
   type QueryResult,
   type BaseListQueryOptions,
   type TaskQueryOptions,
@@ -188,6 +190,11 @@ export const queryForecastDescriptor = defineCommand({
       .boolean()
       .optional()
       .describe("Include tasks deferred to the same window"),
+    // ── Projection ───────────────────────────────────────────────────────────
+    ...listProjectionSchema,
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    ...listSortSchema,
+    // ── Pagination ───────────────────────────────────────────────────────────
     limit: z
       .number()
       .int()
@@ -211,6 +218,10 @@ export const queryForecastDescriptor = defineCommand({
     queryForecast({
       days: input.days,
       includeDeferred: input.includeDeferred,
+      fields: input.fields,
+      excludeFields: input.excludeFields,
+      sort: input.sort,
+      reverse: input.reverse,
       limit: input.limit,
       offset: input.offset,
       all: input.all,

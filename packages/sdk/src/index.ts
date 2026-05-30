@@ -79,6 +79,10 @@ export {
   folderFieldSpec,
   tagFieldSpec,
   taskGroupKeys,
+  splitCommaSeparated,
+  commaSeparatedStringArray,
+  listProjectionSchema,
+  listSortSchema,
 } from "./query/index.js";
 export type {
   BaseListQueryOptions,

@@ -327,6 +327,9 @@ export interface CommandInfo {
 }
 
 // @public
+export const commaSeparatedStringArray: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+
+// @public
 export function compactDatabase(): Promise<CliOutput<CompactResult>>;
 
 // @public
@@ -1244,21 +1247,37 @@ export interface ListAttachmentsResult {
 
 // @public
 export const listFoldersDescriptor: ResolvedCommandDescriptor<    {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, QueryResult<OFFolder>, z.ZodObject<{
-parent: z.ZodOptional<z.ZodString>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
 all: z.ZodOptional<z.ZodBoolean>;
+sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+reverse: z.ZodOptional<z.ZodBoolean>;
+fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+parent: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, {
+fields?: unknown;
+excludeFields?: unknown;
+sort?: unknown;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
@@ -1272,7 +1291,17 @@ export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
 export const listPerspectivesDescriptor: ResolvedCommandDescriptor<    {}, OFPerspective[], z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
 
 // @public
+export const listProjectionSchema: {
+    readonly fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+    readonly excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+};
+
+// @public
 export const listProjectsDescriptor: ResolvedCommandDescriptor<    {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
 folder?: string | undefined;
@@ -1280,13 +1309,21 @@ sequential?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, QueryResult<OFProject>, z.ZodObject<{
-folder: z.ZodOptional<z.ZodString>;
-status: z.ZodOptional<z.ZodEnum<["active", "on-hold", "completed", "dropped"]>>;
-sequential: z.ZodOptional<z.ZodBoolean>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
 all: z.ZodOptional<z.ZodBoolean>;
+sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+reverse: z.ZodOptional<z.ZodBoolean>;
+fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+folder: z.ZodOptional<z.ZodString>;
+status: z.ZodOptional<z.ZodEnum<["active", "on-hold", "completed", "dropped"]>>;
+sequential: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
 folder?: string | undefined;
@@ -1294,6 +1331,10 @@ sequential?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, {
+fields?: unknown;
+excludeFields?: unknown;
+sort?: unknown;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
 folder?: string | undefined;
@@ -1306,22 +1347,44 @@ offset?: number | undefined;
 export type ListQueryFn<T, O extends PaginationOptions> = (options: O) => Promise<CliOutput<QueryResult<T>>>;
 
 // @public
+export const listSortSchema: {
+    readonly sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+    readonly reverse: z.ZodOptional<z.ZodBoolean>;
+};
+
+// @public
 export const listTagsDescriptor: ResolvedCommandDescriptor<    {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, QueryResult<OFTag>, z.ZodObject<{
-parent: z.ZodOptional<z.ZodString>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
 all: z.ZodOptional<z.ZodBoolean>;
+sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+reverse: z.ZodOptional<z.ZodBoolean>;
+fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+parent: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, {
+fields?: unknown;
+excludeFields?: unknown;
+sort?: unknown;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 parent?: string | undefined;
 limit?: number | undefined;
@@ -1681,6 +1744,10 @@ export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput
 
 // @public
 export const queryDeferredDescriptor: ResolvedCommandDescriptor<    {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -1688,13 +1755,21 @@ blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
-deferredAfter: z.ZodOptional<z.ZodString>;
-deferredBefore: z.ZodOptional<z.ZodString>;
-blockedOnly: z.ZodOptional<z.ZodBoolean>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
 all: z.ZodOptional<z.ZodBoolean>;
+sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+reverse: z.ZodOptional<z.ZodBoolean>;
+fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+deferredAfter: z.ZodOptional<z.ZodString>;
+deferredBefore: z.ZodOptional<z.ZodString>;
+blockedOnly: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -1702,6 +1777,10 @@ blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
 }, {
+fields?: unknown;
+excludeFields?: unknown;
+sort?: unknown;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -1721,24 +1800,40 @@ export function queryForecast(options?: ForecastOptions): Promise<CliOutput<Quer
 
 // @public
 export const queryForecastDescriptor: ResolvedCommandDescriptor<    {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 days?: number | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 includeDeferred?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
-days: z.ZodOptional<z.ZodNumber>;
-includeDeferred: z.ZodOptional<z.ZodBoolean>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
 all: z.ZodOptional<z.ZodBoolean>;
+sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+reverse: z.ZodOptional<z.ZodBoolean>;
+fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+days: z.ZodOptional<z.ZodNumber>;
+includeDeferred: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 days?: number | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 includeDeferred?: boolean | undefined;
 }, {
+fields?: unknown;
+excludeFields?: unknown;
+sort?: unknown;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 days?: number | undefined;
 limit?: number | undefined;
@@ -1807,20 +1902,32 @@ export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOption
 // @public
 export const querySubtasksDescriptor: ResolvedCommandDescriptor<    {
 parentTaskId: string;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 completed?: boolean | undefined;
 flagged?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
-parentTaskId: z.ZodString;
-completed: z.ZodOptional<z.ZodBoolean>;
-flagged: z.ZodOptional<z.ZodBoolean>;
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
 all: z.ZodOptional<z.ZodBoolean>;
+sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+reverse: z.ZodOptional<z.ZodBoolean>;
+fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+parentTaskId: z.ZodString;
+completed: z.ZodOptional<z.ZodBoolean>;
+flagged: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 parentTaskId: string;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 completed?: boolean | undefined;
 flagged?: boolean | undefined;
@@ -1828,6 +1935,10 @@ limit?: number | undefined;
 offset?: number | undefined;
 }, {
 parentTaskId: string;
+fields?: unknown;
+excludeFields?: unknown;
+sort?: unknown;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 completed?: boolean | undefined;
 flagged?: boolean | undefined;
@@ -2011,20 +2122,32 @@ export function searchTasks(query: string, options?: SearchOptions): Promise<Cli
 // @public
 export const searchTasksDescriptor: ResolvedCommandDescriptor<    {
 query: string;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 scope?: "name" | "note" | "both" | undefined;
 includeCompleted?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
-query: z.ZodString;
-scope: z.ZodOptional<z.ZodEnum<["name", "note", "both"]>>;
 limit: z.ZodOptional<z.ZodNumber>;
-includeCompleted: z.ZodOptional<z.ZodBoolean>;
 offset: z.ZodOptional<z.ZodNumber>;
 all: z.ZodOptional<z.ZodBoolean>;
+sort: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+reverse: z.ZodOptional<z.ZodBoolean>;
+fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
+query: z.ZodString;
+scope: z.ZodOptional<z.ZodEnum<["name", "note", "both"]>>;
+includeCompleted: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 query: string;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sort?: string[] | undefined;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -2032,6 +2155,10 @@ scope?: "name" | "note" | "both" | undefined;
 includeCompleted?: boolean | undefined;
 }, {
 query: string;
+fields?: unknown;
+excludeFields?: unknown;
+sort?: unknown;
+reverse?: boolean | undefined;
 all?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
@@ -2056,6 +2183,9 @@ intervalDays: number;
 projectId: string;
 intervalDays: number;
 }>>;
+
+// @public
+export function splitCommaSeparated(values: string[]): string[];
 
 // @public
 export interface StatsOptions {
