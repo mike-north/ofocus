@@ -301,4 +301,36 @@ describe("PaginationError handling", () => {
       expect(fn).not.toHaveBeenCalled();
     }
   );
+
+  // Regression: the non-list-shape error message must be generic — it must not
+  // reference only "paginate()" when the failure is triggered via paginatePages().
+  it("non-list error message is generic regardless of which entry point is used", async () => {
+    const nonListData = { kind: "count", count: 5 };
+    const makeCountQueryFn = () =>
+      makeScriptedQueryFn([
+        success(nonListData as unknown as QueryResult<Item>),
+      ]);
+
+    const paginateError = await collect(paginate(makeCountQueryFn().fn)).catch(
+      (e: unknown) => e
+    );
+    const paginatePagesError = await collect(
+      paginatePages(makeCountQueryFn().fn)
+    ).catch((e: unknown) => e);
+
+    // Both errors must include both entry points in the message so neither is
+    // misleadingly attributed to just one helper.
+    expect(paginateError).toBeInstanceOf(PaginationError);
+    expect(paginatePagesError).toBeInstanceOf(PaginationError);
+    expect((paginateError as PaginationError).message).toMatch(/paginate\(\)/);
+    expect((paginateError as PaginationError).message).toMatch(
+      /paginatePages\(\)/
+    );
+    expect((paginatePagesError as PaginationError).message).toMatch(
+      /paginate\(\)/
+    );
+    expect((paginatePagesError as PaginationError).message).toMatch(
+      /paginatePages\(\)/
+    );
+  });
 });

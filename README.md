@@ -343,7 +343,7 @@ For unbounded or extremely large queries (e.g., every task in a large database),
 
 ### Auto-iterate in the SDK (`paginate` / `paginatePages`)
 
-In TypeScript, rather than stepping `offset`/`hasMore` yourself (or materializing everything with `--all`), pass any single-`options` list query (`queryTasks`, `queryProjects`, `queryTags`, `queryFolders`, `queryDeferred`, `queryForecast`, …) to `paginate` and iterate every matching item with a `for await` loop:
+In TypeScript, rather than stepping `offset`/`hasMore` yourself (or materializing everything with `--all`), pass a single-`options` list query — queries like `queryTasks`, `queryProjects`, `queryTags`, `queryFolders`, `queryDeferred`, and `queryForecast` conform directly — to `paginate` and iterate every matching item with a `for await` loop:
 
 ```typescript
 import {
@@ -370,7 +370,9 @@ The element and options types are inferred from the query function — no type a
 Queries that take a required leading argument — `searchTasks(query, options)` and `querySubtasks(parentTaskId, options)` — don't match the single-`options` shape directly. Wrap them in a closure first:
 
 ```typescript
-for await (const task of paginate((options) => searchTasks("invoice", options))) {
+for await (const task of paginate((options) =>
+  searchTasks("invoice", options)
+)) {
   console.log(task.name);
 }
 ```
