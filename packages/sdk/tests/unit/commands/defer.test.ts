@@ -357,7 +357,7 @@ describe("defer descriptors — handler forwarding", () => {
 
     expect(result.success).toBe(true);
     const body = getScriptBody();
-    expect(body).toContain(`flattenedTasks.byId("${ID_A}")`);
+    expect(body).toContain(`Task.byIdentifier("${ID_A}")`);
     expect(body).toContain("7 * 86400000");
   });
 

@@ -66,8 +66,23 @@ const inputSchema = z.object({
       "Path to a file containing OmniJS source. Read at execution time. " +
         "Mutually exclusive with --script. CLI: --file <path>"
     ),
+  // The CLI passes `--args` as a raw JSON string, while MCP passes an object.
+  // Preprocess JSON-parses a string input into an object before validation so
+  // both adapters work. On parse failure the raw string is returned unchanged
+  // so Zod emits a clean "Expected object, received string" error rather than
+  // the preprocess throwing.
   args: z
-    .record(z.string(), z.unknown())
+    .preprocess(
+      (v) => {
+        if (typeof v !== "string") return v;
+        try {
+          return JSON.parse(v) as unknown;
+        } catch {
+          return v;
+        }
+      },
+      z.record(z.string(), z.unknown())
+    )
     .optional()
     .describe(
       "Arguments injected into the script as a global `args` constant " +

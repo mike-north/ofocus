@@ -41,7 +41,7 @@ export async function duplicateTask(
   }`;
 
   const body = `
-var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+var task = Task.byIdentifier("${escapeJSString(taskId)}");
 if (!task) {
   throw new Error("Task not found: ${escapeJSString(taskId)}");
 }
@@ -78,7 +78,6 @@ return JSON.stringify({
   return success(result.data);
 }
 
-
 /**
  * Centralized descriptor for the `duplicate` command.
  *
@@ -90,8 +89,7 @@ export const duplicateTaskDescriptor = defineCommand({
   name: "duplicateTask",
   cliName: "duplicate",
   mcpName: "task_duplicate",
-  description:
-    "Duplicate an existing task, optionally including its subtasks.",
+  description: "Duplicate an existing task, optionally including its subtasks.",
   cliPositional: ["taskId"],
   inputSchema: z.object({
     taskId: z.string().describe("The ID of the task to duplicate"),

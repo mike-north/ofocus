@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { IntegrationTestContext } from "./setup.js";
+import { IntegrationTestContext, expectListItems } from "./setup.js";
 import {
   createFolder,
   queryFolders,
@@ -252,7 +252,7 @@ describe("Folder Integration", () => {
       // Verify hierarchy via query (queryFolders expects parent NAME, not ID)
       const level3Query = await queryFolders({ parent: level2Name });
       expect(level3Query.success).toBe(true);
-      const foundLevel3 = level3Query.data!.find(
+      const foundLevel3 = expectListItems(level3Query.data!).find(
         (f) => f.id === level3Result.data!.id
       );
       expect(foundLevel3).toBeDefined();

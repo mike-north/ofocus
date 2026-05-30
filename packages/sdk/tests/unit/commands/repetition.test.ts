@@ -607,7 +607,7 @@ describe("applyRepetitionRuleDescriptor", () => {
     });
 
     const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
-    expect(body).toContain('flattenedTasks.byId("task123")');
+    expect(body).toContain('Task.byIdentifier("task123")');
     expect(body).toContain(
       'new Task.RepetitionRule("FREQ=DAILY", Task.RepetitionMethod.DueDate)'
     );
@@ -713,7 +713,7 @@ describe("clearRepetitionRuleDescriptor", () => {
     await clearRepetitionRuleDescriptor.handler({ taskId: "task123" });
 
     const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
-    expect(body).toContain('flattenedTasks.byId("task123")');
+    expect(body).toContain('Task.byIdentifier("task123")');
     expect(body).toContain("task.repetitionRule = null");
   });
 

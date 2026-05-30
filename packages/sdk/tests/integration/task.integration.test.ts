@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { IntegrationTestContext, sleep } from "./setup.js";
+import { IntegrationTestContext, sleep, expectListItems } from "./setup.js";
 import {
   addToInbox,
   queryTasks,
@@ -345,7 +345,7 @@ describe("Task Integration", () => {
       expect(searchResult.success).toBe(true);
       expect(searchResult.data).toBeDefined();
 
-      const found = searchResult.data!.find(
+      const found = expectListItems(searchResult.data!).find(
         (t) => t.id === createResult.data!.id
       );
       expect(found).toBeDefined();

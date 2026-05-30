@@ -53,19 +53,23 @@ var itemId = "${escapedId}";
 var itemType = null;
 var itemName = null;
 
-// Try task first
-var task = Task.byIdentifier(itemId);
-if (task) {
-  itemType = "task";
-  itemName = task.name;
+// Try project FIRST. A project is backed by a task sharing its primary key,
+// so Task.byIdentifier(projectId) also resolves (to the backing task) and
+// checking Task first would misclassify project IDs as "task" — producing a
+// task URL instead of a project URL. Project.byIdentifier returns null for a
+// regular task ID, so this ordering classifies both correctly.
+var project = Project.byIdentifier(itemId);
+if (project) {
+  itemType = "project";
+  itemName = project.name;
 }
 
-// Try project
+// Try task
 if (!itemType) {
-  var project = Project.byIdentifier(itemId);
-  if (project) {
-    itemType = "project";
-    itemName = project.name;
+  var task = Task.byIdentifier(itemId);
+  if (task) {
+    itemType = "task";
+    itemName = task.name;
   }
 }
 

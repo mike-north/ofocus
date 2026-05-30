@@ -308,7 +308,31 @@ export function getTemplate(name: string): CliOutput<ProjectTemplate> {
   const content = fs.readFileSync(templatePath, "utf-8");
   const template = JSON.parse(content) as ProjectTemplate;
 
-  return success(template);
+  return success(normalizeTemplate(template));
+}
+
+/**
+ * Normalize a template loaded from disk so it satisfies the {@link ProjectTemplate}
+ * contract at runtime.
+ *
+ * Templates are persisted as JSON and read back via `JSON.parse(...) as
+ * ProjectTemplate` with no schema validation. Older or hand-edited template
+ * files (and templates whose tasks had no tags, since `JSON.stringify` drops
+ * `undefined` fields) can therefore come back with a missing `tags` field even
+ * though the type declares it non-optional. Default it to an empty array so
+ * downstream consumers (task creation) can safely iterate `task.tags`.
+ */
+function normalizeTemplate(template: ProjectTemplate): ProjectTemplate {
+  return {
+    ...template,
+    tasks: template.tasks.map((task): TemplateTask => {
+      // `task` originates from `JSON.parse(...) as ProjectTemplate` with no
+      // schema validation, so a persisted task may genuinely lack `tags` even
+      // though the declared type says otherwise. Treat the field as untrusted.
+      const rawTags = (task as { tags?: string[] }).tags;
+      return { ...task, tags: rawTags ?? [] };
+    }),
+  };
 }
 
 /**
@@ -360,6 +384,8 @@ var newTask = new Task("${escapeJSString(task.title)}", proj.task.ending);`);
     );
   }
 
+  // `task.tags` is guaranteed to be an array here: templates loaded from disk
+  // are run through normalizeTemplate (which defaults a missing `tags` to []).
   for (const [i, tagName] of task.tags.entries()) {
     const varName = `tag_${String(i)}`;
     scriptParts.push(`

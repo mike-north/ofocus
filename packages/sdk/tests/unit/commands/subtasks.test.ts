@@ -628,10 +628,10 @@ describe("createSubtaskDescriptor.handler — argument order regression", () => 
     // title becomes the task name
     expect(body).toContain('new Task("My Subtask"');
     // parentTaskId is the lookup, not the title
-    expect(body).toContain('flattenedTasks.byId("parent-xyz")');
+    expect(body).toContain('Task.byIdentifier("parent-xyz")');
     // and crucially NOT the swapped form
     expect(body).not.toContain('new Task("parent-xyz"');
-    expect(body).not.toContain('flattenedTasks.byId("My Subtask")');
+    expect(body).not.toContain('Task.byIdentifier("My Subtask")');
   });
 
   it("forwards optional fields to the SDK function", async () => {
@@ -676,8 +676,8 @@ describe("moveTaskToParentDescriptor.handler — argument order", () => {
 
     const body = getScriptBody();
     // First byId lookup is the task being moved; second is the destination parent
-    const taskIdx = body.indexOf('flattenedTasks.byId("task-abc")');
-    const parentIdx = body.indexOf('flattenedTasks.byId("parent-def")');
+    const taskIdx = body.indexOf('Task.byIdentifier("task-abc")');
+    const parentIdx = body.indexOf('Task.byIdentifier("parent-def")');
     expect(taskIdx).toBeGreaterThanOrEqual(0);
     expect(parentIdx).toBeGreaterThanOrEqual(0);
     expect(taskIdx).toBeLessThan(parentIdx);

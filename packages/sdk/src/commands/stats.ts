@@ -188,10 +188,14 @@ export async function getStats(
 
   const { start, end } = calculatePeriod(options);
 
-  // Get all tasks (including completed for the stats)
+  // Get all tasks — both completed and incomplete — for the stats. Omitting
+  // the `completed` filter returns the full set (a `completed: true` filter
+  // would wrongly restrict the stats to completed tasks only, so incomplete
+  // due-today / overdue / flagged tasks would never be counted). `all: true`
+  // bypasses the default page limit so the counts cover the entire database.
   const allTasksResult = await queryTasks({
     project: options.project,
-    completed: true,
+    all: true,
   });
 
   if (!allTasksResult.success) {
@@ -210,16 +214,16 @@ export async function getStats(
   const availableTasksResult = await queryTasks({
     project: options.project,
     available: true,
+    all: true,
   });
 
   const availableTasks =
-    availableTasksResult.success &&
-    availableTasksResult.data?.kind === "list"
+    availableTasksResult.success && availableTasksResult.data?.kind === "list"
       ? availableTasksResult.data.items
       : [];
 
   // Get projects
-  const projectsResult = await queryProjects({});
+  const projectsResult = await queryProjects({ all: true });
 
   const projects =
     projectsResult.success && projectsResult.data?.kind === "list"

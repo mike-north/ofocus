@@ -251,7 +251,7 @@ var theProject = Project.byIdentifier("${escapeJSString(projectId)}");
 if (!theProject) {
   throw new Error("Project not found: ${escapeJSString(projectId)}");
 }
-theProject.markDropped();
+theProject.status = Project.Status.Dropped;
 
 return JSON.stringify({
   projectId: theProject.id.primaryKey,

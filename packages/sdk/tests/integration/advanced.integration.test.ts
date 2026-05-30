@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { IntegrationTestContext, sleep } from "./setup.js";
+import { IntegrationTestContext, sleep, expectListItems } from "./setup.js";
 import {
   addToInbox,
   createProject,
@@ -116,21 +116,35 @@ describe("Advanced Integration", () => {
       // Just verify it returns without error
     });
 
-    it("creates task due today and finds it in forecast", async () => {
+    it("creates a task due within the forecast window and finds it in the forecast", async () => {
       const taskName = ctx.generateName("forecast-task");
-      const today = new Date().toISOString().split("T")[0]!;
 
-      const taskResult = await addToInbox(taskName, { due: today });
+      // queryForecast's documented contract is "tasks due within the next N
+      // days" — the dueWithin predicate is `dueDate >= now && dueDate <= now+Nd`.
+      // A date-only "today" due date resolves to local midnight, which is in
+      // the past (overdue) for any afternoon run and is therefore correctly
+      // excluded. To deterministically exercise the in-window path regardless
+      // of wall-clock time, set the due date two hours in the future. We emit a
+      // timezone-less local datetime (`YYYY-MM-DDTHH:MM:SS`) so OmniFocus
+      // interprets it in its local timezone, matching `new Date()` in the
+      // predicate.
+      const due = new Date(Date.now() + 2 * 60 * 60 * 1000);
+      const pad = (n: number): string => String(n).padStart(2, "0");
+      const dueLocal =
+        `${String(due.getFullYear())}-${pad(due.getMonth() + 1)}-${pad(due.getDate())}` +
+        `T${pad(due.getHours())}:${pad(due.getMinutes())}:${pad(due.getSeconds())}`;
+
+      const taskResult = await addToInbox(taskName, { due: dueLocal });
       expect(taskResult.success).toBe(true);
       ctx.trackTask(taskResult.data!.id);
 
-      const forecastResult = await queryForecast({
-        start: today,
-        end: today,
-      });
+      // Default 7-day forecast window comfortably contains a due date 2h out.
+      const forecastResult = await queryForecast({});
 
       expect(forecastResult.success).toBe(true);
-      const found = forecastResult.data!.find(
+      // queryForecast returns a discriminated QueryResult; the tasks live on
+      // `.items`, not on `data` directly.
+      const found = expectListItems(forecastResult.data!).find(
         (t) => t.id === taskResult.data!.id
       );
       expect(found).toBeDefined();
@@ -158,8 +172,9 @@ describe("Advanced Integration", () => {
       expect(deferredResult.success).toBe(true);
       expect(deferredResult.data).toBeDefined();
 
-      // Our task should be in the deferred list
-      const found = deferredResult.data!.find(
+      // Our task should be in the deferred list (queryDeferred returns a
+      // list-shaped QueryResult; tasks live on `.items`).
+      const found = expectListItems(deferredResult.data!).find(
         (t) => t.id === taskResult.data!.id
       );
       expect(found).toBeDefined();
@@ -281,7 +296,7 @@ describe("Advanced Integration", () => {
       const searchResult = await searchTasks(uniqueId);
 
       expect(searchResult.success).toBe(true);
-      const found = searchResult.data!.find(
+      const found = expectListItems(searchResult.data!).find(
         (t) => t.id === taskResult.data!.id
       );
       expect(found).toBeDefined();
@@ -302,7 +317,7 @@ describe("Advanced Integration", () => {
       const searchResult = await searchTasks(uniqueId, { scope: "both" });
 
       expect(searchResult.success).toBe(true);
-      const found = searchResult.data!.find(
+      const found = expectListItems(searchResult.data!).find(
         (t) => t.id === taskResult.data!.id
       );
       expect(found).toBeDefined();
@@ -325,7 +340,7 @@ describe("Advanced Integration", () => {
       const searchResult = await searchTasks(prefix, { limit: 2 });
 
       expect(searchResult.success).toBe(true);
-      expect(searchResult.data!.length).toBeLessThanOrEqual(2);
+      expect(expectListItems(searchResult.data!).length).toBeLessThanOrEqual(2);
     });
   });
 });

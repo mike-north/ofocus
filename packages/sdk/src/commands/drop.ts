@@ -32,7 +32,7 @@ export async function dropTask(taskId: string): Promise<CliOutput<DropResult>> {
   if (idError) return failure(idError);
 
   const body = `
-var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+var task = Task.byIdentifier("${escapeJSString(taskId)}");
 if (!task) {
   throw new Error("Task not found: ${escapeJSString(taskId)}");
 }
@@ -41,7 +41,7 @@ task.drop(true);
 return JSON.stringify({
   taskId: task.id.primaryKey,
   taskName: task.name,
-  dropped: task.dropped
+  dropped: task.taskStatus === Task.Status.Dropped
 });`;
 
   const result = await runOmniJSWrapped<DropResult>(body);
@@ -72,7 +72,7 @@ export async function deleteTask(
   if (idError) return failure(idError);
 
   const body = `
-var task = flattenedTasks.byId("${escapeJSString(taskId)}");
+var task = Task.byIdentifier("${escapeJSString(taskId)}");
 if (!task) {
   return JSON.stringify({ error: "not found", taskId: "${escapeJSString(taskId)}" });
 }
@@ -103,7 +103,6 @@ return JSON.stringify({ taskId: "${escapeJSString(taskId)}", deleted: true });`;
 
   return success(result.data as DeleteResult);
 }
-
 
 /**
  * Centralized descriptor for the `drop` command.

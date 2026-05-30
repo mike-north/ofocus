@@ -138,6 +138,52 @@ describe("input schema validation", () => {
     expect(result.success).toBe(true);
   });
 
+  // --- Regression tests: the CLI adapter passes `--args` as a raw JSON
+  // string (Commander stores all option values as strings), while MCP passes
+  // an object. Before the z.preprocess fix the string form was rejected with
+  // "args: Expected object, received string", so `ofocus eval ... --args
+  // '{"greeting":"hello"}'` always failed. The preprocess JSON-parses a string
+  // into an object so both adapters work. ---
+
+  it("parses a JSON-string args (CLI path) into an object", () => {
+    const result = evaluateScriptDescriptor.inputSchema.safeParse({
+      script: "return args.greeting;",
+      args: '{"greeting":"hello"}',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // The string must be parsed into the equivalent object.
+      expect(result.data.args).toEqual({ greeting: "hello" });
+    }
+  });
+
+  it("passes through an object args (MCP path) unchanged", () => {
+    const result = evaluateScriptDescriptor.inputSchema.safeParse({
+      script: "return args.greeting;",
+      args: { greeting: "hello" },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.args).toEqual({ greeting: "hello" });
+    }
+  });
+
+  it("rejects a non-JSON string args with a clean validation error (not a thrown parse error)", () => {
+    const result = evaluateScriptDescriptor.inputSchema.safeParse({
+      script: "return args;",
+      args: "not json at all",
+    });
+    // The raw string is returned on parse failure so Zod emits the standard
+    // "Expected object, received string" error rather than the preprocess
+    // throwing a SyntaxError.
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues[0];
+      expect(issue?.path).toEqual(["args"]);
+      expect(issue?.message).toContain("object");
+    }
+  });
+
   // --- Regression tests for PR #40: size cap must count UTF-8 bytes, not code units ---
   // MAX_SCRIPT_BYTES = 65536 (64 KB).
 

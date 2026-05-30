@@ -991,13 +991,13 @@ file?: string | undefined;
 }, unknown, z.ZodObject<{
 script: z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>;
 file: z.ZodOptional<z.ZodString>;
-args: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+args: z.ZodOptional<z.ZodEffects<z.ZodRecord<z.ZodString, z.ZodUnknown>, Record<string, unknown>, unknown>>;
 }, "strip", z.ZodTypeAny, {
 args?: Record<string, unknown> | undefined;
 script?: string | undefined;
 file?: string | undefined;
 }, {
-args?: Record<string, unknown> | undefined;
+args?: unknown;
 script?: string | undefined;
 file?: string | undefined;
 }>>;
