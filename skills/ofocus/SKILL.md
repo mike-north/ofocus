@@ -5,12 +5,14 @@ description: Interact with OmniFocus on macOS via CLI. Manage tasks, projects, f
 
 # OmniFocus CLI Skill
 
+<!-- generated: DO NOT EDIT BY HAND — see scripts/generate-agent-docs.ts -->
+
 Use the `ofocus` CLI to interact with OmniFocus on macOS. All commands return JSON by default.
 
 ## Prerequisites
 
 - macOS with OmniFocus installed
-- Install: `npm install -g @ofocus/cli`
+- Install: `npm install -g ofocus`
 
 ## Output Format
 
@@ -19,229 +21,142 @@ Use the `ofocus` CLI to interact with OmniFocus on macOS. All commands return JS
 
 ## Command Quick Reference
 
-### Discovery
+### Tasks
 
 ```bash
-ofocus list-commands          # List all available commands
+ofocus inbox <title> [--note <note>] [--due <due>] [--defer <defer>] [--flag] [--tags <val...>] [--estimated-minutes <estimatedMinutes>] [--repeat-frequency <repeatFrequency>] [--repeat-interval <repeatInterval>] [--repeat-method <repeatMethod>] [--repeat-days-of-week <val...>] [--repeat-day-of-month <repeatDayOfMonth>]  # Add a new task to the OmniFocus inbox.
+ofocus complete <taskId>  # Mark a task as complete in OmniFocus.
+ofocus subtask <title> --parent-task-id <parentTaskId> [--note <note>] [--due <due>] [--defer <defer>] [--flag] [--tags <val...>] [--estimated-minutes <estimatedMinutes>]  # Create a subtask under an existing parent task.
+ofocus defer <taskId> [--days <days>] [--to <to>]  # Defer a task by a number of days or to a specific date.
+ofocus delete <taskId>  # Permanently delete a task from OmniFocus. Cannot be undone.
+ofocus template-delete <templateName>  # Delete a saved project template
+ofocus drop <taskId>  # Drop a task (marks it as dropped but preserves history).
+ofocus duplicate <taskId> [--include-subtasks]  # Duplicate an existing task, optionally including its subtasks.
+ofocus attachments <taskId>  # List attachments on a task
+ofocus perspectives  # List all perspectives in OmniFocus
+ofocus template-list  # List all saved project templates
+ofocus move-to-parent <taskId> --parent-task-id <parentTaskId>  # Move a task to become a subtask of another task.
+ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredBefore>] [--blocked-only] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]  # List tasks with defer dates.
+ofocus perspective <name> [--limit <limit>]  # Query tasks from a specific perspective
+ofocus projects-for-review  # List projects that are due for review
+ofocus subtasks <parentTaskId> [--completed] [--flagged] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]  # List subtasks of a parent task.
+ofocus tasks [--project <project>] [--tag <tag>] [--tag-mode <tagMode>] [--folder <folder>] [--flagged] [--not-flagged] [--completed] [--not-completed] [--dropped] [--not-dropped] [--blocked] [--available] [--in-inbox] [--has-due] [--no-due] [--has-defer] [--has-note] [--has-attachments] [--has-subtasks] [--has-repetition] [--effectively-completed] [--effectively-dropped] [--status <status>] [--due-before <dueBefore>] [--due-after <dueAfter>] [--due-on <dueOn>] [--due-within <dueWithin>] [--defer-before <deferBefore>] [--defer-after <deferAfter>] [--defer-on <deferOn>] [--defer-within <deferWithin>] [--completed-before <completedBefore>] [--completed-after <completedAfter>] [--estimate-lt <estimateLt>] [--estimate-gt <estimateGt>] [--estimate-eq <estimateEq>] [--name-contains <nameContains>] [--name-starts <nameStarts>] [--name-equals <nameEquals>] [--name-regex <nameRegex>] [--note-contains <noteContains>] [--note-regex <noteRegex>] [--case-sensitive] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--nulls-first] [--count] [--first] [--last] [--ids-only] [--group-by <groupBy>] [--stats] [--limit <limit>] [--offset <offset>] [--all]  # List and filter tasks from OmniFocus.
+ofocus quick <input> [--note <note>]  # Quick-capture a task using natural-language entry syntax.
+ofocus search <query> [--scope <scope>] [--include-completed] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]  # Search tasks by name or note content.
+ofocus update <taskId> [--title <title>] [--note <note>] [--due <due>] [--defer <defer>] [--flag] [--project <project>] [--tags <val...>] [--estimated-minutes <estimatedMinutes>] [--clear-estimate] [--repeat <repeat>] [--clear-repeat]  # Update properties of an existing task.
 ```
 
-### Task Management
+### Batch
 
 ```bash
-ofocus inbox "Task title"                    # Add task to inbox
-ofocus inbox "Task" --due "Friday" --flag    # With due date and flag
-ofocus tasks                                 # List all tasks
-ofocus tasks --project "Work" --available    # Filter by project, actionable only
-ofocus tasks --flagged --due-before "Sunday" # Flagged tasks due this week
-ofocus complete <task-id>                    # Mark complete
-ofocus update <task-id> --title "New title" --due "tomorrow"
-ofocus drop <task-id>                        # Mark dropped (preserves history)
-ofocus delete <task-id>                      # Permanently delete
-ofocus duplicate <task-id>                   # Clone a task
-ofocus search "keyword"                      # Full-text search
-ofocus defer <task-id> --days 3              # Defer by days
-```
-
-### Quick Capture (Natural Language)
-
-```bash
-ofocus quick "Call John @phone #Work due:tomorrow"
-ofocus quick "Weekly report ! ~1h repeat:weekly due:friday"
-# Syntax: @tag, #project, ! (flag), ~30m (duration), due:, defer:, repeat:
-```
-
-### Subtasks
-
-```bash
-ofocus subtask "Subtask title" --parent <task-id>
-ofocus subtasks <task-id>                    # List subtasks
-ofocus move-to-parent <task-id> --parent <parent-id>
+ofocus complete-batch <taskIds...>  # Complete multiple tasks in a single operation.
+ofocus defer-batch <taskIds...> [--days <days>] [--to <to>]  # Defer multiple tasks by a number of days or to a specific date.
+ofocus delete-batch <taskIds...>  # Permanently delete multiple tasks in a single operation.
+ofocus update-batch <taskIds...> [--title <title>] [--note <note>] [--due <due>] [--defer <defer>] [--flag] [--project <project>] [--tags <val...>] [--estimated-minutes <estimatedMinutes>]  # Apply the same property changes to multiple tasks at once.
 ```
 
 ### Projects
 
 ```bash
-ofocus projects                              # List all projects
-ofocus projects --folder "Work" --status active
-ofocus create-project "Project Name"
-ofocus create-project "Q2 Goals" --folder "Work" --sequential --due "March 31"
-ofocus update-project <proj-id> --name "New Name" --status on-hold
-ofocus drop-project <proj-id>                # Mark dropped
-ofocus delete-project <proj-id>              # Permanently delete
-```
-
-### Project Review
-
-```bash
-ofocus projects-for-review                   # Projects due for review
-ofocus review <proj-id>                      # Mark as reviewed
-ofocus review-interval <proj-id>             # Get review interval
-ofocus review-interval <proj-id> --set 14    # Set to 14 days
+ofocus create-project <name> [--note <note>] [--folder-id <folderId>] [--folder-name <folderName>] [--sequential] [--status <status>] [--due-date <dueDate>] [--defer-date <deferDate>]  # Create a new project in OmniFocus
+ofocus delete-project <projectId>  # Permanently delete a project from OmniFocus
+ofocus drop-project <projectId>  # Drop a project in OmniFocus (marks as dropped but preserves history).
+ofocus projects [--folder <folder>] [--status <status>] [--sequential] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]  # List and filter projects from OmniFocus
+ofocus update-project <projectId> [--name <name>] [--note <note>] [--status <status>] [--folder-id <folderId>] [--folder-name <folderName>] [--sequential] [--due-date <dueDate>] [--defer-date <deferDate>]  # Update properties of an existing project
 ```
 
 ### Folders
 
 ```bash
-ofocus folders                               # List all folders
-ofocus folders --parent "Work"               # List subfolders
-ofocus create-folder "Folder Name"
-ofocus create-folder "Subfolder" --parent "Parent"
-ofocus update-folder <folder-id> --name "New Name"
-ofocus delete-folder <folder-id>
+ofocus create-folder <name> [--parent-folder-id <parentFolderId>] [--parent-folder-name <parentFolderName>]  # Create a new folder in OmniFocus
+ofocus delete-folder <folderId>  # Permanently delete a folder from OmniFocus
+ofocus folders [--parent <parent>] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]  # List folders from OmniFocus
+ofocus update-folder <folderId> [--name <name>] [--parent-folder-id <parentFolderId>] [--parent-folder-name <parentFolderName>]  # Update properties of an existing folder
 ```
 
 ### Tags
 
 ```bash
-ofocus tags                                  # List all tags
-ofocus create-tag "Tag Name"
-ofocus create-tag "Child" --parent "Parent Tag"
-ofocus update-tag <tag-id> --name "New Name"
-ofocus delete-tag <tag-id>
+ofocus create-tag <name> [--parent-tag-id <parentTagId>] [--parent-tag-name <parentTagName>]  # Create a new tag in OmniFocus
+ofocus delete-tag <tagId>  # Delete a tag from OmniFocus
+ofocus tags [--parent <parent>] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]  # List tags from OmniFocus
+ofocus update-tag <tagId> [--name <name>] [--parent-tag-id <parentTagId>] [--parent-tag-name <parentTagName>]  # Update an existing tag in OmniFocus
 ```
 
-### Batch Operations
+### Forecast
 
 ```bash
-ofocus complete-batch <id1> <id2> <id3>      # Complete multiple
-ofocus update-batch <id1> <id2> --flag --due "Friday"
-ofocus delete-batch <id1> <id2> <id3>
-ofocus defer-batch <id1> <id2> --days 7
+ofocus forecast [--days <days>] [--include-deferred] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]  # Query tasks due within N days (like the OmniFocus Forecast view).
 ```
 
-### Perspectives
+### Focus
 
 ```bash
-ofocus perspectives                          # List all perspectives
-ofocus perspective "Due Soon"                # Query tasks from perspective
+ofocus focus <target> [--by-id]  # Focus on a specific project or folder by name or ID
+ofocus focused  # Get the currently focused project or folder
+ofocus unfocus  # Clear the current focus in OmniFocus
 ```
 
-### Forecast & Planning
+### Review
 
 ```bash
-ofocus forecast                              # Next 7 days
-ofocus forecast --days 14 --include-deferred
-ofocus deferred                              # Tasks with defer dates
-ofocus deferred --blocked-only
-```
-
-### Focus Mode
-
-```bash
-ofocus focus "Project Name"                  # Focus on project/folder
-ofocus focus <id> --by-id
-ofocus unfocus                               # Clear focus
-ofocus focused                               # Show current focus
+ofocus review <projectId>  # Mark a project as reviewed in OmniFocus
 ```
 
 ### Templates
 
 ```bash
-ofocus template-save "Template Name" <proj-id>
-ofocus template-list
-ofocus template-get "Template Name"
-ofocus template-create "Template Name" --project-name "New Project"
-ofocus template-delete "Template Name"
-```
-
-### Import/Export
-
-```bash
-ofocus export                                # Export to TaskPaper
-ofocus export --project "Work" --include-completed
-ofocus import tasks.taskpaper
-```
-
-### Statistics
-
-```bash
-ofocus stats                                 # Overall stats
-ofocus stats --project "Work" --period week
+ofocus template-create <templateName> [--project-name <projectName>] [--folder <folder>] [--base-date <baseDate>]  # Create a new project from a saved template
+ofocus template-get <templateName>  # Get details of a specific project template
+ofocus template-save <name> <sourceProject> [--description <description>]  # Save a project as a reusable template
 ```
 
 ### Attachments
 
 ```bash
-ofocus attach <task-id> /path/to/file
-ofocus attachments <task-id>                 # List attachments
-ofocus detach <task-id> <attachment-name>
+ofocus attach <taskId> <filePath>  # Add a file attachment to a task
+ofocus detach <taskId> <attachmentName>  # Remove an attachment from a task
 ```
 
-### Database & Sync
+### Sync
 
 ```bash
-ofocus sync                                  # Trigger sync
-ofocus sync-status                           # Check sync status
-ofocus compact                               # Optimize database
-ofocus archive --dry-run                     # Preview archival
+ofocus sync-status  # Get the current sync status of OmniFocus
+ofocus sync  # Trigger a sync in OmniFocus
+```
+
+### TaskPaper
+
+```bash
+ofocus export [--project <project>] [--include-completed] [--include-dropped]  # Export tasks and projects to TaskPaper format
+ofocus import-taskpaper --content <content> [--default-project <defaultProject>] [--create-projects]  # Import tasks from TaskPaper formatted content
 ```
 
 ### Utilities
 
 ```bash
-ofocus url <id>                              # Get omnifocus:// URL
-ofocus open <id>                             # Open item in OmniFocus UI
+ofocus archive [--completed-before <completedBefore>] [--dropped-before <droppedBefore>] [--project <project>] [--dry-run]  # Archive completed or dropped tasks and projects
+ofocus compact  # Compact the OmniFocus database
+ofocus url <id>  # Generate an OmniFocus URL scheme deep link for a task, project, folder, or tag
+ofocus stats [--project <project>] [--period <period>] [--since <since>] [--until <until>]  # Get productivity statistics from OmniFocus.
+ofocus open <id>  # Open an item in the OmniFocus user interface (task, project, folder, or tag)
 ```
 
-## Error Handling
-
-Errors return structured JSON:
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "Task not found",
-    "suggestion": "Verify the task ID exists"
-  }
-}
-```
-
-Common codes: `INVALID_ID_FORMAT`, `NOT_FOUND`, `VALIDATION_ERROR`, `APPLESCRIPT_ERROR`, `OMNIFOCUS_NOT_RUNNING`
-
-## Large Response Commands ⚠️
-
-These commands can return large amounts of data. **Always use filters** to narrow results:
-
-| Command       | Risk                        | Mitigation                                                           |
-| ------------- | --------------------------- | -------------------------------------------------------------------- |
-| `tasks`       | High - can return thousands | Use `--flagged`, `--project`, `--tag`, `--available`, `--due-before` |
-| `projects`    | Medium                      | Use `--folder`, `--status`                                           |
-| `tags`        | Medium                      | Use `--parent`                                                       |
-| `folders`     | Low-Medium                  | Use `--parent`                                                       |
-| `subtasks`    | Medium                      | Already scoped to parent task                                        |
-| `forecast`    | Medium                      | Use `--days` to limit range                                          |
-| `deferred`    | Medium                      | Use `--blocked-only`                                                 |
-| `export`      | High                        | Use `--project` to limit scope                                       |
-| `perspective` | Varies                      | Depends on perspective definition                                    |
-
-### Pagination
-
-All query commands support `--limit` and `--offset`:
+### Other
 
 ```bash
-# Default returns up to 100 items
-ofocus tasks --flagged
+ofocus apply-repetition <taskId> --frequency <frequency> --interval <interval> --repeat-method <repeatMethod> [--days-of-week <val...>] [--day-of-month <dayOfMonth>] [--days-of-week-positions <val...>] [--months-of-year <val...>]  # Apply a repetition rule to an existing task. Supports daily, weekly (with BYDAY), monthly (by day-of-month or Nth-weekday), and yearly (with BYMONTH) recurrences.
+ofocus clear-repetition <taskId>  # Clear the repetition rule from an existing task.
+ofocus eval [script] [--file <file>] [--args <args>]  # Evaluate arbitrary OmniJS against the user's OmniFocus database. Last-resort tool.
 
-# Get next page if needed
-ofocus tasks --flagged --limit 100 --offset 100
+Before using this tool, prefer the declarative commands (tasks, projects, folders, tags, forecast, search, deferred, etc.) with --filter, --sort, --fields, --group-by, --count — they cover the vast majority of queries with no scripting required.
+
+If eval is genuinely necessary, narrate the intent in plain language first, then show the script — the user should be able to read the explanation and verify it matches the code before running it.
+
+The script runs unsandboxed in the user's OmniFocus and can mutate any task, project, folder, tag, or perspective. Treat this like running shell code on the user's machine.
+
+Scripts must end with a return <expression>; statement and are capped at 64 KB. The return value must be JSON-serializable. Errors from OmniJS are surfaced verbatim.
+ofocus review-interval-get <projectId>  # Get the review interval for a project in days
+ofocus review-interval-set <projectId> --interval-days <intervalDays>  # Set the review interval for a project in days
 ```
 
-The response includes pagination metadata:
-
-- `totalCount`: Total matching items
-- `hasMore`: Whether more pages exist
-- `returnedCount`: Items in this response
-
-**Best practice**: Start with filters, use default limit (100), paginate only if `hasMore` is true.
-
-## Best Practices
-
-1. **Filter first**: Always use filters (`--flagged`, `--project`, `--tag`, etc.) before fetching
-2. **Get IDs from filtered queries**: Use filtered `tasks`, `projects`, etc. to obtain valid IDs
-3. **Prefer drop over delete**: Use `drop` to preserve history
-4. **Use batch operations**: More efficient for multiple items
-5. **Check focus state**: Run `focused` to understand current scope
-6. **Sync after changes**: Run `sync` if immediate synchronization needed
-7. **Paginate large results**: Check `hasMore` and use `--offset` for additional pages
