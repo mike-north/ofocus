@@ -4,6 +4,7 @@ import { registerProjectTools } from "./projects.js";
 import { registerTagTools } from "./tags.js";
 import { registerFolderTools } from "./folders.js";
 import { registerAdvancedTools } from "./advanced.js";
+import { registerProductivityTools } from "./productivity.js";
 
 /**
  * Register all OFocus MCP tools with the server.
@@ -14,4 +15,5 @@ export function registerAllTools(server: McpServer): void {
   registerTagTools(server);
   registerFolderTools(server);
   registerAdvancedTools(server);
+  registerProductivityTools(server);
 }
