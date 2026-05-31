@@ -97,6 +97,18 @@ describe("classifyUrgency", () => {
   it("treats note edits and added items as non-urgent", () => {
     expect(classifyUrgency(nonUrgent, { dueThresholdMs: threshold, agentTag: "agent" })).toBe(false);
   });
+  it("does NOT re-fire when an already-in-window due date is merely re-dated within the window", () => {
+    // from and to both <= threshold ⇒ it did not "cross into" the window.
+    const reDated = { changes: { updated: [{ object: { name: "R" }, delta: { dueDate: { from: "2026-05-29", to: "2026-05-30" } } }] } };
+    expect(classifyUrgency(reDated, { dueThresholdMs: threshold })).toBe(false);
+  });
+  it("overdue-only mode (threshold = now): due-later-today is NOT urgent, but a newly-overdue item is", () => {
+    const nowMs = Date.parse("2026-05-30T10:00:00.000Z");
+    const dueLaterToday = { changes: { updated: [{ object: { name: "L" }, delta: { dueDate: { from: null, to: "2026-05-30T20:00:00.000Z" } } }] } };
+    const newlyOverdue = { changes: { updated: [{ object: { name: "O" }, delta: { dueDate: { from: "2026-06-10", to: "2026-05-30T08:00:00.000Z" } } }] } };
+    expect(classifyUrgency(dueLaterToday, { dueThresholdMs: nowMs })).toBe(false);
+    expect(classifyUrgency(newlyOverdue, { dueThresholdMs: nowMs })).toBe(true);
+  });
 });
 
 describe("formatNudge", () => {

@@ -61,7 +61,16 @@ function firstUrgent(changesPayload, { dueThresholdMs = null, agentTag = null } 
     }
     if (dueThresholdMs != null && delta.dueDate && typeof delta.dueDate.to === "string") {
       const due = Date.parse(delta.dueDate.to);
-      if (Number.isFinite(due) && due <= dueThresholdMs) return { c, reason: "due" };
+      // Urgent only when the due date CROSSES INTO the window (spec §4.3): the new
+      // due is at/under the threshold AND the old due was outside it (absent/invalid,
+      // or later than the threshold). A task already inside the window that is merely
+      // re-dated to another in-window date does not re-fire.
+      const fromRaw = delta.dueDate.from;
+      const from = typeof fromRaw === "string" ? Date.parse(fromRaw) : NaN;
+      const wasOutside = !Number.isFinite(from) || from > dueThresholdMs;
+      if (Number.isFinite(due) && due <= dueThresholdMs && wasOutside) {
+        return { c, reason: "due" };
+      }
     }
     if (agentTag && delta.tags) {
       const from = Array.isArray(delta.tags.from) ? delta.tags.from : [];
