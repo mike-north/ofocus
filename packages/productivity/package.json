@@ -1,13 +1,10 @@
 {
-  "name": "@ofocus/cli",
-  "version": "0.5.0",
-  "description": "OmniFocus CLI - Command-line interface for OmniFocus",
+  "name": "@ofocus/productivity",
+  "version": "0.0.0",
+  "description": "OmniFocus productivity niceties (Layer 2) built on @ofocus/sdk",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "ofocus-cli": "./dist/index.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,23 +17,20 @@
   "scripts": {
     "build": "tsc --build",
     "test": "vitest run",
-    "test:unit": "vitest run --dir tests/unit",
+    "test:unit": "vitest run tests/unit",
     "test:watch": "vitest"
   },
   "keywords": [
     "omnifocus",
-    "cli"
+    "productivity",
+    "omnijs"
   ],
   "author": "",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/mnorth/ofocus.git",
-    "directory": "packages/cli"
-  },
-  "homepage": "https://github.com/mnorth/ofocus/tree/main/packages/cli#readme",
-  "bugs": {
-    "url": "https://github.com/mnorth/ofocus/issues"
+    "directory": "packages/productivity"
   },
   "publishConfig": {
     "access": "public"
@@ -45,11 +39,10 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@ofocus/productivity": "workspace:*",
     "@ofocus/sdk": "workspace:*",
-    "@toon-format/toon": "^2.3.0",
-    "commander": "^14.0.3",
-    "is-agentic-tui": "^0.2.0",
     "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

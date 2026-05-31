@@ -90,11 +90,23 @@ async function loadDescriptors(): Promise<DescriptorView[]> {
       "Could not import @ofocus/sdk dist. Run `pnpm build` first."
     );
   }
+  let productivity: Record<string, unknown>;
+  try {
+    productivity = (await import(
+      "../packages/productivity/dist/index.js"
+    )) as Record<string, unknown>;
+  } catch {
+    throw new Error(
+      "Could not import @ofocus/productivity dist. Run `pnpm build` first."
+    );
+  }
 
   const descriptors: DescriptorView[] = [];
-  for (const [key, value] of Object.entries(sdk)) {
-    if (isDescriptor(value) && key.endsWith("Descriptor")) {
-      descriptors.push(value);
+  for (const source of [sdk, productivity]) {
+    for (const [key, value] of Object.entries(source)) {
+      if (isDescriptor(value) && key.endsWith("Descriptor")) {
+        descriptors.push(value);
+      }
     }
   }
   return descriptors;
@@ -128,6 +140,8 @@ const EXPLICIT_DOMAIN_MAP: Record<string, string> = {
   focusOn: "Focus",
   unfocus: "Focus",
   getFocused: "Focus",
+  // Productivity (Layer 2)
+  changes: "Productivity",
 };
 
 /**
@@ -237,6 +251,7 @@ const DOMAIN_ORDER = [
   "Sync",
   "TaskPaper",
   "Utilities",
+  "Productivity",
   "Other",
 ];
 

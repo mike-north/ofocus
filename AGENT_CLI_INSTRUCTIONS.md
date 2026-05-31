@@ -962,6 +962,30 @@ Open an item in the OmniFocus user interface (task, project, folder, or tag)
 ofocus open <id>
 ```
 
+## Productivity
+
+#### `ofocus changes`
+
+Detect what changed in OmniFocus since the last look. Cache-first and instant by default; --fresh forces a live scan; --pending returns accumulated deltas for a notification hook.
+
+**Usage:**
+
+```bash
+ofocus changes [--watch <watch>] [--fresh] [--pending] [--generation-since <generationSince>] [--reset] [--refresh-inline] [--semantic]
+```
+
+**Flags:**
+
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--watch` | `string` | no | Named watch (default: 'default') |
+| `--fresh` / `--no-fresh` | `boolean` | no | Force a synchronous live scan |
+| `--pending` / `--no-pending` | `boolean` | no | Return accumulated pending deltas (notification-hook path) |
+| `--generation-since` | `number` | no | With --pending: only deltas newer than this generation |
+| `--reset` / `--no-reset` | `boolean` | no | Re-baseline the watch to current state |
+| `--refresh-inline` / `--no-refresh-inline` | `boolean` | no | Internal: run the background scan + pending accumulation inline |
+| `--semantic` / `--no-semantic` | `boolean` | no | Attach a fast-model natural-language summary (opt-in; uses OFOCUS_SUMMARY_CMD) |
+
 ## Other
 
 #### `ofocus apply-repetition`

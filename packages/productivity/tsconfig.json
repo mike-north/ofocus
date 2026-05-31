@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
+  "references": [{ "path": "../sdk" }],
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"],
-  "references": [{ "path": "../sdk" }, { "path": "../productivity" }]
+  "exclude": ["node_modules", "dist", "tests"]
 }

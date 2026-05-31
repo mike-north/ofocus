@@ -24,6 +24,8 @@ import {
   TAG_TOOLS,
   FOLDER_TOOLS,
   ADVANCED_TOOLS,
+  PRODUCTIVITY_TOOLS,
+  ALL_TOOLS,
 } from "./fixtures/expected-tools.js";
 
 // ---------------------------------------------------------------------------
@@ -99,9 +101,9 @@ describe("MCP smoke: tool listing", () => {
     expect(tools.length).toBeGreaterThanOrEqual(MINIMUM_TOOL_COUNT);
   });
 
-  it("registers exactly 61 tools (current count)", async () => {
+  it("registers exactly ALL_TOOLS.length tools (current count)", async () => {
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(61);
+    expect(tools).toHaveLength(ALL_TOOLS.length);
   });
 
   it("every tool has a non-empty name and description", async () => {
@@ -166,6 +168,17 @@ describe("MCP smoke: tool listing", () => {
       expect(
         names.has(expected),
         `expected advanced tool "${expected}" to be registered`
+      ).toBe(true);
+    }
+  });
+
+  it("registers the productivity tools", async () => {
+    const { tools } = await client.listTools();
+    const names = new Set(tools.map((t) => t.name));
+    for (const expected of PRODUCTIVITY_TOOLS) {
+      expect(
+        names.has(expected),
+        `expected productivity tool "${expected}" to be registered`
       ).toBe(true);
     }
   });

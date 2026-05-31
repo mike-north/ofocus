@@ -26,14 +26,14 @@ describe("Tool Registration", () => {
     expect(registeredTools.sort()).toEqual([...ALL_TOOLS].sort());
   });
 
-  it("should register exactly 61 tools", () => {
+  it("should register exactly ALL_TOOLS.length tools", () => {
     const mockServer = {
       registerTool: vi.fn(),
     } as unknown as McpServer;
 
     registerAllTools(mockServer);
 
-    expect(mockServer.registerTool).toHaveBeenCalledTimes(61);
+    expect(mockServer.registerTool).toHaveBeenCalledTimes(ALL_TOOLS.length);
   });
 
   describe("task tools", () => {
