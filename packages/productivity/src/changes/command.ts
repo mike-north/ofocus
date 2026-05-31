@@ -179,7 +179,10 @@ export async function runChanges(
       writeCache(path, next);
       return success(
         toOutput(next, emptyChangeSet(), {
-          notModified: fpEqual,
+          // Consistent with the --fresh path: "not modified" reflects the actual
+          // watched-field diff, not a fingerprint change that produced no deltas
+          // (e.g. a lastSyncDate-only change).
+          notModified: changeSetEmpty(diff),
           baselined: false,
           stale: false,
         }),

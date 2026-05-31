@@ -34,9 +34,24 @@ export function resolveStateDir(stateDir?: string): string {
   return join(homedir(), ".ofocus");
 }
 
-/** Resolve the cache file path for a named watch. */
+/**
+ * Reduce a user-provided watch name to a safe filename component. Prevents path
+ * traversal (e.g. `../../etc`) and collisions from path separators by replacing
+ * any character outside `[A-Za-z0-9_-]` with `_`. Empty/whitespace-only names
+ * fall back to `default`.
+ */
+export function sanitizeWatchName(name: string): string {
+  const safe = name.trim().replace(/[^A-Za-z0-9_-]/g, "_");
+  return safe.length > 0 ? safe : "default";
+}
+
+/** Resolve the cache file path for a named watch (name is sanitized). */
 export function resolveCachePath(name: string, stateDir?: string): string {
-  return join(resolveStateDir(stateDir), "watch", `${name}.json`);
+  return join(
+    resolveStateDir(stateDir),
+    "watch",
+    `${sanitizeWatchName(name)}.json`,
+  );
 }
 
 /** Atomically write a cache file (temp + rename), creating parent dirs. */

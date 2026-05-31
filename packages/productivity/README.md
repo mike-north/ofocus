@@ -28,7 +28,7 @@ Detect what changed in OmniFocus since the last look. Results include field-leve
 | ---- | ----------- |
 | `--reset` | Clear the stored snapshot and exit. |
 | `--semantic` | Append a natural-language summary produced by `OFOCUS_SUMMARY_CMD` (fail-open — omitted if the command is unset or fails). |
-| `--generation-since <n>` | Compare against a specific database generation number rather than the stored snapshot. |
+| `--generation-since <n>` | Used with `--pending`: only deliver accumulated deltas whose generation is greater than `<n>` (otherwise reports `notModified`). Lets a notification hook avoid re-reporting deltas it has already drained. |
 
 ### Environment variables
 

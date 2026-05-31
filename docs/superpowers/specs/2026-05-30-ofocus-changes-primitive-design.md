@@ -203,9 +203,10 @@ TOON by default (matching the tool convention); `--format json` for standard JSO
 }
 ```
 
-- **First run** (no cache): baseline silently and return `{ generation: 1, summary: all-zero,
+- **First run** (no cache): baseline silently and return `{ generation: 0, summary: all-zero,
   changes: empty }` with `baselined: true` — *not* every object as "added" (avoids a
-  spurious full dump). `--reset` behaves the same on an existing watch.
+  spurious full dump). A new watch starts at generation `0`; the generation only bumps when a
+  refresh accumulates changes. `--reset` behaves the same on an existing watch.
 - Each changed object carries **both** the full current `object` and the field-level
   `delta`. The agent reads whichever it needs; it never reconstructs state.
 
@@ -235,8 +236,11 @@ OFOCUS_SUMMARY_CMD='claude -p "Summarize these OmniFocus changes in 2 sentences"
 
 - Diff packet (JSON) is piped to the command **on stdin** (never argv — avoids
   escaping/length/injection).
-- stdout is captured as `semanticSummary` and **cached by `generation`**
-  (`semanticByGeneration`) so a given diff is summarized at most once.
+- stdout is captured as `semanticSummary`.
+  - **Planned follow-up (not yet shipped):** cache the summary by `generation`
+    (`semanticByGeneration`) so a given diff is summarized at most once. As shipped, each
+    `--semantic` call invokes the summarizer; the `semanticByGeneration` cache field exists
+    in the schema but is not yet read/written.
 - **Fail-open:** unconfigured / missing binary / non-zero exit / timeout → return the
   structured diff with a `summaryNote`, never fail the command.
 - **Presentation, never truth:** the summary never feeds the fingerprint, snapshot, or
