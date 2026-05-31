@@ -13,6 +13,22 @@
 
 **Commit conventions (every commit):** author `--author="Mike North <michael.l.north@gmail.com>"` (personal repo), no AI trailers, run from the worktree root `/Users/mnorth/Development/ofocus/.claude/worktrees/hopeful-ardinghelli-351d16`. Tests use **vitest**. Branch: `claude/ofocus-assistant-plugin` (already created off `main`).
 
+> **REVISION (tiered urgency-aware model — supersedes the hook tasks below):** The spec
+> moved to a tiered model (spec §4). The authoritative event/decision design is now:
+> **SessionStart** (digest, advances `lastSeenGeneration`), **Stop** (end-of-turn surface,
+> advances `lastSeenGeneration`), **PreToolUse** (gated: an *urgent* delta interjects + advances
+> the cursor; otherwise a throttled, **non-advancing** soft nudge governed by `NUDGE_INTERVAL`).
+> Urgency is a deterministic classifier over the peeked deltas (newly-overdue/due-today,
+> newly-flagged, optional agent-tag gain). State per session: `lastSeenGeneration`,
+> `lastNudgedAt`, `lastSeenAt`. New config: `OFOCUS_ASSISTANT_NUDGE_INTERVAL_MS`,
+> `OFOCUS_ASSISTANT_URGENT_DUE_TODAY`, `OFOCUS_ASSISTANT_AGENT_TAG`.
+> Tasks 1–2 (scaffold, `sessionKey`) and the unchanged helpers (`shouldRefresh`, `readState`,
+> `writeState`, `setLastRefresh`, `pruneSessions`, `formatDigest`) stand as written. Tasks 3–7
+> are executed against spec §4 (the controller dispatches the exact tiered-model code): the
+> single-nudge `shouldNudge`/`recordNudge`/`lastNudgedGeneration` are replaced by
+> `shouldSurface` + `classifyUrgency` + `formatUrgent` + `recordSeen`/`recordSoftNudge` +
+> `lastSeenGeneration`, and `hooks.json` binds SessionStart **+ Stop +** PreToolUse.
+
 ---
 
 ## Authoritative facts (from hook-development skill + Claude Code docs)
