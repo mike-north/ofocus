@@ -1,0 +1,14 @@
+{
+  "description": "OmniFocus assistant: SessionStart digest + Stop end-of-turn surface + gated PreToolUse interjection.",
+  "hooks": {
+    "SessionStart": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.mjs\"", "timeout": 15 } ] }
+    ],
+    "Stop": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.mjs\"", "timeout": 12 } ] }
+    ],
+    "PreToolUse": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.mjs\"", "timeout": 10 } ] }
+    ]
+  }
+}
