@@ -51,18 +51,29 @@ plugin/ofocus-assistant/
 
 ### 4.1 Events and behavior
 
-**`SessionStart`** — full digest:
-1. Run `ofocus changes --watch <W> --fresh --format json` (live scan + diff).
-2. Format a concise human-readable digest from the returned `changes`/`summary` (e.g. *"Since you were last here: 3 new inbox items, 1 newly overdue (Pay invoice), project 'Falcon' → on-hold."*).
-3. Emit it as `additionalContext` so the agent starts the session aware.
-4. Record `lastNudgedGeneration = <returned generation>` in hook-local state (so PreToolUse won't immediately re-nudge for what was just digested).
+Every hook invocation reads the **`session_id`** from the hook's stdin payload (Claude Code
+provides `session_id`, `transcript_path`, `cwd`, `hook_event_name`). All nudge tracking is
+**per session_id** so concurrent agent sessions never silence each other (§4.3). A single
+**shared watch** `<W>` (default `agent`) is used by all sessions — one snapshot, one set of
+(shared, debounced) background scans. Reads are **non-draining** so a session never mutates
+shared state; only the background `--refresh-inline` (shared work) advances the snapshot.
 
-**`PreToolUse`** — lightweight nudge, at most once per change-batch:
-1. **Peek (non-draining):** run `ofocus changes --watch <W> --format json` — the default cached read returns `pending` + `generation` **without** draining or scanning (cheap; no OmniJS). 
-2. **Nudge condition:** if `summary` is non-empty (pending has content) **and** `generation > lastNudgedGeneration` → inject a one-line nudge:
+**`SessionStart`** — digest for this session:
+1. **Ensure freshness (shared):** if `now - lastRefreshAt > REFRESH_INTERVAL`, spawn a detached `ofocus changes --watch <W> --refresh-inline` and set `lastRefreshAt = now` (shared debounce).
+2. **Peek (non-draining):** `ofocus changes --watch <W> --format json` → returns `pending` + `generation` without clearing or scanning.
+3. If `pending` is non-empty, format a concise digest from `changes`/`summary` (e.g. *"Since the last refresh: 3 new inbox items, 1 newly overdue (Pay invoice), project 'Falcon' → on-hold."*) and emit it as `additionalContext`.
+4. Set `sessions[session_id].lastNudgedGeneration = generation` (so PreToolUse won't immediately re-nudge this session for what it was just shown).
+
+**`PreToolUse`** — lightweight nudge, at most once per change-batch **per session**:
+1. **Peek (non-draining):** `ofocus changes --watch <W> --format json` → `pending` + `generation` (cheap; no OmniJS scan).
+2. **Nudge condition:** if `summary` is non-empty **and** `generation > sessions[session_id].lastNudgedGeneration` → inject a one-line nudge:
    > 📥 OmniFocus changed (N items) since you last reviewed. If you don't already have a task to review the OmniFocus inbox/changes, add one to your task list.
-   Then set `lastNudgedGeneration = generation` in hook-local state.
-3. **Debounced refresh:** if `now - lastRefreshAt > REFRESH_INTERVAL` (default 5 min), spawn a **detached** `ofocus changes --watch <W> --refresh-inline` (the background scan that repopulates `pending`) and set `lastRefreshAt = now`.
+   Then set `sessions[session_id].lastNudgedGeneration = generation`.
+3. **Debounced refresh (shared):** if `now - lastRefreshAt > REFRESH_INTERVAL` (default 5 min), spawn a detached `ofocus changes --watch <W> --refresh-inline` and set `lastRefreshAt = now`.
+
+A brand-new `session_id` has no stored cursor (treated as `-1`), so it gets the SessionStart
+digest and is then nudged only for changes that arrive *after* it joined — exactly "what's
+new for this agent."
 
 ### 4.2 Why this is correct and low-noise
 - The nudge fires **at most once per new change-batch** — gated by the hook's `lastNudgedGeneration`, not per tool call.
@@ -70,13 +81,29 @@ plugin/ofocus-assistant/
 - The hook **peeks without draining** (default read never clears `pending`), so the actual deltas remain for the agent to consume on its own schedule via the triage skill / `ofocus changes --pending` (draining) or `--fresh`. Two clean roles: **hook = signal; agent = consume**.
 - The expensive OmniJS scan only runs on the debounced background refresh and at SessionStart — never inline on a tool call.
 
-### 4.3 Hook-local state
-A small JSON file, separate from the tool's watch cache, keyed per watch:
+### 4.3 Hook-local state (per-session)
+A small JSON file, separate from the tool's watch cache. `lastRefreshAt` is **per watch**
+(shared debounce — the background scan benefits everyone); `lastNudgedGeneration` is **per
+session_id**:
 ```
 $OFOCUS_STATE_DIR/hook-state.json   (default $OFOCUS_STATE_DIR = ~/.ofocus)
-{ "<watch>": { "lastRefreshAt": "<ISO>", "lastNudgedGeneration": <n> } }
+{
+  "<watch>": {
+    "lastRefreshAt": "<ISO>",
+    "sessions": {
+      "<session_id>": { "lastNudgedGeneration": <n>, "lastSeenAt": "<ISO>" }
+    }
+  }
+}
 ```
-This is the plugin's own state — the tool's `deliveredGeneration` continues to track *actual* drains by the agent, independent of the hook's nudge dedup.
+This is the plugin's own state — independent of the tool's `deliveredGeneration`. Notes:
+- **Concurrent writes:** multiple sessions' hooks may update this file at once. Each write is a
+  read-modify-write that touches only *its own* `session_id` entry (plus `lastRefreshAt`) and
+  is written atomically (temp + rename). A rare lost update is self-healing — worst case a
+  session is nudged once more than necessary; nothing is silently dropped from OmniFocus.
+- **GC:** prune `sessions` entries whose `lastSeenAt` is older than a window (default 7 days)
+  on each write, so the file can't grow unbounded. (A future `SessionEnd` hook could prune the
+  ending session's entry immediately; deferred.)
 
 ### 4.4 Configuration (env)
 - `OFOCUS_ASSISTANT_WATCH` — watch name (default `agent`).
@@ -100,7 +127,7 @@ A monitoring hook must never break the session. On any failure — `ofocus` not 
 - **Co-planning:** break large/ambiguous tasks into subtasks (`ofocus subtask`); turn vague inbox notes into actionable next actions.
 - **Review:** surface projects due for review (`ofocus projects-for-review`) and stalled work; mark reviewed (`ofocus review`).
 - **Compute-don't-reason discipline:** for "what's due today / this week / what changed / workload," call the deterministic commands (`ofocus forecast`, `ofocus changes`, `ofocus stats`) rather than pulling raw task lists into context and reasoning over them. The skill explicitly points the agent at these.
-- **Acting on a nudge:** when the agent has a self-created "review OmniFocus changes" task (from the hook nudge), it drains the deltas with `ofocus changes --watch <W> --pending` and triages them.
+- **Acting on a nudge:** when the agent has a self-created "review OmniFocus changes" task (from the hook nudge), it triages from **live state** — `ofocus tasks --in-inbox`, `--flagged`, `ofocus forecast` — rather than draining the shared delta log. (The shared watch's `--pending` drain is single-consumer and would clobber other concurrent sessions, so the multi-agent-safe path is to review current state; the nudge is only the *signal* that there's something to look at.)
 
 The skill references the `ofocus` command surface (already documented in the generated `skills/ofocus/SKILL.md`) rather than restating it.
 
@@ -110,10 +137,11 @@ Per the project's multi-layer + spec-first conventions; a plugin is mostly confi
 
 - **Hook script unit tests (`notify.mjs`, vitest):** extract the pure logic into testable functions and assert:
   - **Digest formatting** — given a `changes` JSON payload, produces the expected human-readable summary (spec-derived strings, not snapshots).
-  - **Nudge decision** — nudges iff `pending` non-empty **and** `generation > lastNudgedGeneration`; does not nudge when generation is unchanged (idempotency) or pending is empty.
-  - **Debounce decision** — spawns refresh iff `now - lastRefreshAt > interval`.
-  - **Fail-open** — malformed/empty CLI output or a thrown error yields no injected context and no throw.
-  - Inject a fake `ofocus` (a stub executable / mocked exec) and a temp `OFOCUS_STATE_DIR`; never touch real OmniFocus.
+  - **Per-session nudge decision** — nudges session S iff `pending` non-empty **and** `generation > sessions[S].lastNudgedGeneration`; does not nudge when S's generation is unchanged (idempotency) or pending is empty. **Multi-agent:** session A nudging (advancing A's cursor) does NOT silence session B — B with an older cursor still nudges. (The core multi-agent test.)
+  - **Per-session state isolation** — a read-modify-write for session A preserves session B's entry; GC prunes only entries older than the window.
+  - **Debounce decision** — spawns refresh iff `now - lastRefreshAt > interval` (shared, not per-session).
+  - **Fail-open** — malformed/empty CLI output, a thrown error, or absent `session_id` yields no injected context and no throw.
+  - Inject a fake `ofocus` (a stub executable / mocked exec), a synthetic hook stdin payload carrying `session_id`, and a temp `OFOCUS_STATE_DIR`; never touch real OmniFocus.
 - **Manifest validation:** validate `plugin.json` and `hooks.json` against the plugin schema (`plugin-dev:plugin-validator`).
 - **Skill review:** run `plugin-dev:skill-reviewer` on `SKILL.md` for triggering quality and accuracy; verify every referenced command exists in the CLI.
 - **Manual UAT** (not CI-automatable — loading a live plugin needs a Claude Code session; see `manual-test-design`): install the plugin, make an OmniFocus change, start a session → confirm the SessionStart digest; then within a session, after a background refresh, confirm a PreToolUse (or fallback) nudge appears exactly once and the agent self-schedules a review task. Document these steps in the plugin README.
@@ -131,7 +159,8 @@ Per the project's multi-layer + spec-first conventions; a plugin is mostly confi
 
 ## 8. Open implementation questions (resolve during planning, not blocking design)
 
-1. **PreToolUse `additionalContext` support** — verify; fall back to `UserPromptSubmit` if unsupported (§4.5).
-2. **Hook test runner wiring** — whether the plugin's `notify.test.ts` runs under the repo's existing vitest setup or a small standalone config (the plugin is outside the `packages/*` workspace).
-3. **`ofocus` binary name** — the installed CLI bin is `ofocus-cli`; the umbrella `ofocus` package provides `ofocus`. Confirm which the hook should invoke (prefer `ofocus`, fall back to `ofocus-cli`).
-4. **Plugin discovery** — whether to add a `.claude-plugin/marketplace.json` now for installability, or defer (currently deferred, §2).
+1. **PreToolUse `additionalContext` support** — verify; fall back to `UserPromptSubmit` if unsupported (§4.5). Confirm the hook stdin payload exposes `session_id` for the chosen event(s) (it does for SessionStart/PreToolUse/UserPromptSubmit per current docs — verify the exact field name).
+2. **Hook-state write concurrency** — confirm atomic temp+rename read-modify-write is sufficient under realistic concurrency; decide whether a lightweight lockfile is worth it (current decision: no — accept rare self-healing lost updates, §4.3).
+3. **Hook test runner wiring** — whether the plugin's `notify.test.ts` runs under the repo's existing vitest setup or a small standalone config (the plugin is outside the `packages/*` workspace).
+4. **`ofocus` binary name** — the installed CLI bin is `ofocus-cli`; the umbrella `ofocus` package provides `ofocus`. Confirm which the hook should invoke (prefer `ofocus`, fall back to `ofocus-cli`).
+5. **Plugin discovery** — whether to add a `.claude-plugin/marketplace.json` now for installability, or defer (currently deferred, §2).
