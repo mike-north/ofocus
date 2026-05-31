@@ -66,7 +66,13 @@ import {
   // Phase 6
   importTaskPaper,
 } from "@ofocus/sdk";
-import { changesDescriptor } from "@ofocus/productivity";
+import {
+  changesDescriptor,
+  nextOccurrencesDescriptor,
+  occurrencesDescriptor,
+  todayDescriptor,
+  thisWeekDescriptor,
+} from "@ofocus/productivity";
 import { listCommands } from "./commands/list-commands.js";
 import {
   output,
@@ -212,6 +218,20 @@ Use --format json|toon for machine output (default: json). Use --human for human
 
   // changes — registered from the centralized descriptor in @ofocus/productivity
   registerCliCommand(program, changesDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+
+  // Temporal engine (A2) — registered from @ofocus/productivity descriptors
+  registerCliCommand(program, nextOccurrencesDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, occurrencesDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, todayDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, thisWeekDescriptor, (result, cmd) => {
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 

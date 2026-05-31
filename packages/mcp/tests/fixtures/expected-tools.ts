@@ -82,7 +82,13 @@ export const ADVANCED_TOOLS = [
   "omnifocus_eval",
 ] as const;
 
-export const PRODUCTIVITY_TOOLS = ["changes"] as const;
+export const PRODUCTIVITY_TOOLS = [
+  "changes",
+  "next_occurrences",
+  "occurrences",
+  "today",
+  "this_week",
+] as const;
 
 export const ALL_TOOLS = [
   ...TASK_TOOLS,

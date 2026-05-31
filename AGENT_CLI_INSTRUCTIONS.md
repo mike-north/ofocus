@@ -1071,3 +1071,56 @@ ofocus review-interval-set <projectId> --interval-days <intervalDays>
 | --- | --- | --- | --- |
 | `--interval-days` | `number` | yes | Review interval in days |
 
+#### `ofocus next-occurrences`
+
+Read a task's repetition rule and project its next occurrence dates. Schedule-anchored repeats (Fixed/DueDate) are predictable; completion-anchored repeats (Start) are projected and may shift.
+
+**Usage:**
+
+```bash
+ofocus next-occurrences <taskId> [--count <count>] [--from <from>]
+```
+
+**Flags:**
+
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--count` | `number` | no | How many future occurrences (default 5) |
+| `--from` | `string` | no | ISO date; only occurrences after this are returned (default now) |
+
+#### `ofocus occurrences`
+
+Project every incomplete repeating task forward over a window and list the upcoming occurrences, ascending by date.
+
+**Usage:**
+
+```bash
+ofocus occurrences [--days <days>]
+```
+
+**Flags:**
+
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--days` | `number` | no | Window length in days (default 14) |
+
+#### `ofocus this-week`
+
+Digest of tasks due over the next seven days, grouped by calendar day and annotated with how soon each is due.
+
+**Usage:**
+
+```bash
+ofocus this-week
+```
+
+#### `ofocus today`
+
+Digest of what needs attention today: overdue, due today, and flagged tasks, each annotated with how overdue or how soon it is.
+
+**Usage:**
+
+```bash
+ofocus today
+```
+
