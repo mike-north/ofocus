@@ -51,12 +51,22 @@ plugin/ofocus-assistant/
 
 ### 4.1 Events and behavior
 
-Every hook invocation reads the **`session_id`** from the hook's stdin payload (Claude Code
-provides `session_id`, `transcript_path`, `cwd`, `hook_event_name`). All nudge tracking is
-**per session_id** so concurrent agent sessions never silence each other (§4.3). A single
-**shared watch** `<W>` (default `agent`) is used by all sessions — one snapshot, one set of
-(shared, debounced) background scans. Reads are **non-draining** so a session never mutates
-shared state; only the background `--refresh-inline` (shared work) advances the snapshot.
+Every hook invocation derives a **session key** from its stdin payload, via a fallback chain
+so it never depends on a single field being present:
+1. `session_id` (Claude Code's documented per-session identifier), else
+2. `transcript_path` (also unique per session, in the same payload), else
+3. the literal `"_shared"` — degrades to a single shared cursor (pre-multi-agent behavior).
+
+The plugin does **not** ask the agent to mint an id — the hook has no reliable channel to
+receive one, so identity comes only from the payload/environment. The exact field name(s)
+must be **confirmed empirically** with a probe hook early in implementation (§8.1); the
+fallback chain means a wrong guess degrades gracefully rather than breaking.
+
+All nudge tracking is **per session key** so concurrent agent sessions never silence each
+other (§4.3). A single **shared watch** `<W>` (default `agent`) is used by all sessions — one
+snapshot, one set of (shared, debounced) background scans. Reads are **non-draining** so a
+session never mutates shared state; only the background `--refresh-inline` (shared work)
+advances the snapshot.
 
 **`SessionStart`** — digest for this session:
 1. **Ensure freshness (shared):** if `now - lastRefreshAt > REFRESH_INTERVAL`, spawn a detached `ofocus changes --watch <W> --refresh-inline` and set `lastRefreshAt = now` (shared debounce).
@@ -140,8 +150,9 @@ Per the project's multi-layer + spec-first conventions; a plugin is mostly confi
   - **Per-session nudge decision** — nudges session S iff `pending` non-empty **and** `generation > sessions[S].lastNudgedGeneration`; does not nudge when S's generation is unchanged (idempotency) or pending is empty. **Multi-agent:** session A nudging (advancing A's cursor) does NOT silence session B — B with an older cursor still nudges. (The core multi-agent test.)
   - **Per-session state isolation** — a read-modify-write for session A preserves session B's entry; GC prunes only entries older than the window.
   - **Debounce decision** — spawns refresh iff `now - lastRefreshAt > interval` (shared, not per-session).
-  - **Fail-open** — malformed/empty CLI output, a thrown error, or absent `session_id` yields no injected context and no throw.
-  - Inject a fake `ofocus` (a stub executable / mocked exec), a synthetic hook stdin payload carrying `session_id`, and a temp `OFOCUS_STATE_DIR`; never touch real OmniFocus.
+  - **Session-key fallback chain** — derives the key from `session_id`, else `transcript_path`, else `"_shared"`; tested for all three payload shapes.
+  - **Fail-open** — malformed/empty CLI output or a thrown error yields no injected context and no throw (a missing session id degrades to the `"_shared"` key, not a crash).
+  - Inject a fake `ofocus` (a stub executable / mocked exec), a synthetic hook stdin payload (varying which identifier fields are present), and a temp `OFOCUS_STATE_DIR`; never touch real OmniFocus.
 - **Manifest validation:** validate `plugin.json` and `hooks.json` against the plugin schema (`plugin-dev:plugin-validator`).
 - **Skill review:** run `plugin-dev:skill-reviewer` on `SKILL.md` for triggering quality and accuracy; verify every referenced command exists in the CLI.
 - **Manual UAT** (not CI-automatable — loading a live plugin needs a Claude Code session; see `manual-test-design`): install the plugin, make an OmniFocus change, start a session → confirm the SessionStart digest; then within a session, after a background refresh, confirm a PreToolUse (or fallback) nudge appears exactly once and the agent self-schedules a review task. Document these steps in the plugin README.
@@ -159,7 +170,7 @@ Per the project's multi-layer + spec-first conventions; a plugin is mostly confi
 
 ## 8. Open implementation questions (resolve during planning, not blocking design)
 
-1. **PreToolUse `additionalContext` support** — verify; fall back to `UserPromptSubmit` if unsupported (§4.5). Confirm the hook stdin payload exposes `session_id` for the chosen event(s) (it does for SessionStart/PreToolUse/UserPromptSubmit per current docs — verify the exact field name).
+1. **Probe the hook payload (do this FIRST).** Add a throwaway hook that writes its raw stdin to a file, trigger it once, and confirm: (a) which events carry `session_id` and/or `transcript_path` and the exact field names, and (b) whether `PreToolUse` supports injecting `additionalContext`. This single probe resolves both the session-key chain (§4.1) and the injection mechanism (§4.5). If `PreToolUse` can't inject context, fall back to `UserPromptSubmit` (which carries the same identifiers). Do not write the real hook until this is confirmed.
 2. **Hook-state write concurrency** — confirm atomic temp+rename read-modify-write is sufficient under realistic concurrency; decide whether a lightweight lockfile is worth it (current decision: no — accept rare self-healing lost updates, §4.3).
 3. **Hook test runner wiring** — whether the plugin's `notify.test.ts` runs under the repo's existing vitest setup or a small standalone config (the plugin is outside the `packages/*` workspace).
 4. **`ofocus` binary name** — the installed CLI bin is `ofocus-cli`; the umbrella `ofocus` package provides `ofocus`. Confirm which the hook should invoke (prefer `ofocus`, fall back to `ofocus-cli`).
