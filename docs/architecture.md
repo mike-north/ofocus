@@ -10,7 +10,7 @@ structural changes or adding commands.
 
 ## 1. What OFocus is
 
-OFocus is a SDK + CLI + MCP server for driving OmniFocus 4 on macOS. It lets programs and
+OFocus is an SDK + CLI + MCP server for driving OmniFocus 4 on macOS. It lets programs and
 AI agents query and mutate tasks, projects, folders, tags, and perspectives. There is no
 OmniFocus HTTP API — everything goes through **OmniJS** (OmniFocus's built-in JavaScript
 automation), evaluated out-of-process via `osascript`.
