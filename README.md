@@ -27,12 +27,13 @@ ofocus complete <task-id>
 
 ## Packages
 
-| Package                         | Description                                     |
-| ------------------------------- | ----------------------------------------------- |
-| [`@ofocus/sdk`](./packages/sdk) | Core SDK with zero runtime dependencies         |
-| [`@ofocus/cli`](./packages/cli) | CLI using Commander.js                          |
-| [`@ofocus/mcp`](./packages/mcp) | MCP server for AI agents                        |
-| [`ofocus`](./packages/ofocus)   | Umbrella package re-exporting SDK, CLI, and MCP |
+| Package                                                 | Description                                                     |
+| ------------------------------------------------------- | --------------------------------------------------------------- |
+| [`@ofocus/sdk`](./packages/sdk)                         | Core SDK with zero runtime dependencies                         |
+| [`@ofocus/productivity`](./packages/productivity)       | Productivity niceties (change detection, etc.) built on the SDK |
+| [`@ofocus/cli`](./packages/cli)                         | CLI using Commander.js                                          |
+| [`@ofocus/mcp`](./packages/mcp)                         | MCP server for AI agents                                        |
+| [`ofocus`](./packages/ofocus)                           | Umbrella package re-exporting SDK, CLI, and MCP                 |
 
 ## API Reference
 
@@ -84,6 +85,7 @@ ofocus complete <task-id>
 | `quick "<input>"`         | Quick capture with natural language  |
 | `export`                  | Export to TaskPaper format           |
 | `import <file>`           | Import from TaskPaper format         |
+| `changes`                 | Detect what changed since the last look (cache-first; --fresh / --pending) |
 | `stats`                   | Display productivity statistics      |
 | `template-save`           | Save a project as a template         |
 | `template-list`           | List available templates             |
