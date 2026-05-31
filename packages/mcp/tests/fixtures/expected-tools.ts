@@ -82,10 +82,13 @@ export const ADVANCED_TOOLS = [
   "omnifocus_eval",
 ] as const;
 
+export const PRODUCTIVITY_TOOLS = ["changes"] as const;
+
 export const ALL_TOOLS = [
   ...TASK_TOOLS,
   ...PROJECT_TOOLS,
   ...TAG_TOOLS,
   ...FOLDER_TOOLS,
   ...ADVANCED_TOOLS,
+  ...PRODUCTIVITY_TOOLS,
 ] as const;
