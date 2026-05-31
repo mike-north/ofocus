@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { PLUGIN_NAME } from "../hooks/lib.mjs";
 import { sessionKey } from "../hooks/lib.mjs";
+import { shouldNudge, shouldRefresh } from "../hooks/lib.mjs";
 
 describe("plugin scaffold", () => {
   it("exposes the plugin name", () => {
@@ -18,5 +19,32 @@ describe("sessionKey", () => {
   it("falls back to _shared when neither present", () => {
     expect(sessionKey({})).toBe("_shared");
     expect(sessionKey({ session_id: "" })).toBe("_shared");
+  });
+});
+
+describe("shouldNudge", () => {
+  it("nudges when pending is non-empty and generation > cursor", () => {
+    expect(shouldNudge({ cursor: 2, generation: 3, pendingNonEmpty: true })).toBe(true);
+  });
+  it("does not nudge when generation == cursor", () => {
+    expect(shouldNudge({ cursor: 3, generation: 3, pendingNonEmpty: true })).toBe(false);
+  });
+  it("does not nudge when pending is empty", () => {
+    expect(shouldNudge({ cursor: 0, generation: 5, pendingNonEmpty: false })).toBe(false);
+  });
+  it("treats a missing cursor as -1", () => {
+    expect(shouldNudge({ cursor: -1, generation: 0, pendingNonEmpty: true })).toBe(true);
+  });
+});
+
+describe("shouldRefresh", () => {
+  it("refreshes when no prior refresh", () => {
+    expect(shouldRefresh(null, 1000, 500)).toBe(true);
+  });
+  it("refreshes when older than the interval", () => {
+    expect(shouldRefresh("1970-01-01T00:00:00.000Z", 600, 500)).toBe(true);
+  });
+  it("debounces when within the interval", () => {
+    expect(shouldRefresh("1970-01-01T00:00:00.300Z", 600, 500)).toBe(false);
   });
 });
