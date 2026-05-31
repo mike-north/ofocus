@@ -7,6 +7,7 @@
 import type { ResolvedCommandDescriptor } from "@ofocus/sdk";
 import { changesDescriptor } from "./changes/command.js";
 import { nextOccurrencesDescriptor } from "./commands/next-occurrences.js";
+import { occurrencesDescriptor } from "./commands/occurrences.js";
 
 export { changesDescriptor } from "./changes/command.js";
 export type { ChangesOutput, ChangesDeps } from "./changes/command.js";
@@ -23,6 +24,18 @@ export type {
   NextOccurrencesDeps,
 } from "./commands/next-occurrences.js";
 
+export {
+  runOccurrences,
+  occurrencesDescriptor,
+} from "./commands/occurrences.js";
+export type {
+  OccurrencesOutput,
+  OccurrencesInput,
+  OccurrencesDeps,
+  Occurrence,
+  OccurrencesWindow,
+} from "./commands/occurrences.js";
+
 /**
  * Every command descriptor contributed by the productivity package.
  * The CLI, MCP server, and docs generator compose this with the SDK's
@@ -35,5 +48,5 @@ export const productivityDescriptors: readonly ResolvedCommandDescriptor<
   any,
   any,
   any
->[] = [changesDescriptor, nextOccurrencesDescriptor];
+>[] = [changesDescriptor, nextOccurrencesDescriptor, occurrencesDescriptor];
 /* eslint-enable @typescript-eslint/no-explicit-any */
