@@ -59,6 +59,7 @@ import {
   evaluateScriptDescriptor,
   queryTasksDescriptor,
 } from "@ofocus/sdk";
+import { productivityDescriptors } from "@ofocus/productivity";
 import { usageStringForDescriptor } from "../registry-adapter.js";
 
 /**
@@ -176,7 +177,15 @@ const HAND_WIRED_COMMANDS: CommandInfo[] = [
  * are appended explicitly and sorted into the final catalog alphabetically.
  */
 function buildCommandRegistry(): CommandInfo[] {
-  const fromDescriptors: CommandInfo[] = CLI_DESCRIPTORS.map((d) => ({
+  // `CLI_DESCRIPTORS` and `productivityDescriptors` are both arrays of resolved
+  // descriptors but with structurally distinct element types (different schema
+  // generics). The `.map` below only reads `cliName`/`description` and forwards
+  // each element to `usageStringForDescriptor`, so widening to that adapter's
+  // accepted element type is sufficient and safe.
+  const fromDescriptors: CommandInfo[] = [
+    ...CLI_DESCRIPTORS,
+    ...productivityDescriptors,
+  ].map((d) => ({
     name: d.cliName,
     description: d.description,
     usage: usageStringForDescriptor(d),

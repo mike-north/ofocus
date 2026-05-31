@@ -66,6 +66,7 @@ import {
   // Phase 6
   importTaskPaper,
 } from "@ofocus/sdk";
+import { changesDescriptor } from "@ofocus/productivity";
 import { listCommands } from "./commands/list-commands.js";
 import {
   output,
@@ -206,6 +207,11 @@ Use --format json|toon for machine output (default: json). Use --human for human
 
   // update — registered from the centralized descriptor in @ofocus/sdk
   registerCliCommand(program, updateTaskDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+
+  // changes — registered from the centralized descriptor in @ofocus/productivity
+  registerCliCommand(program, changesDescriptor, (result, cmd) => {
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 

@@ -62,6 +62,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@ofocus/productivity':
+        specifier: workspace:*
+        version: link:../productivity
       '@ofocus/sdk':
         specifier: workspace:*
         version: link:../sdk
