@@ -127,6 +127,28 @@ export async function runNextOccurrences(
   input: NextOccurrencesInput,
   deps: NextOccurrencesDeps,
 ): Promise<CliOutput<NextOccurrencesOutput>> {
+  // Guard direct/test callers. The zod schema enforces these at the CLI/MCP
+  // boundary, but the handler must validate too since it is called directly.
+  if (input.from !== undefined && Number.isNaN(Date.parse(input.from))) {
+    return failure(
+      createError(
+        ErrorCode.VALIDATION_ERROR,
+        `Invalid --from date: ${input.from}`,
+      ),
+    );
+  }
+  if (
+    input.count !== undefined &&
+    (!Number.isInteger(input.count) || input.count < 1)
+  ) {
+    return failure(
+      createError(
+        ErrorCode.VALIDATION_ERROR,
+        "count must be a positive integer",
+      ),
+    );
+  }
+
   const rule = await deps.readTaskRule(input.taskId);
   if (rule === null) {
     return failure(

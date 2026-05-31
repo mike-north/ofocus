@@ -63,3 +63,33 @@ describe("parseRRule", () => {
     expect(buildRRule(parsed!)).toBe(s);
   });
 });
+
+describe("parseRRule — strict rejection (regression, PR #61 review)", () => {
+  it.each([
+    "FREQ=DAILY;COUNT=3",
+    "FREQ=DAILY;UNTIL=20260101T000000Z",
+    "FREQ=WEEKLY;WKST=MO;BYDAY=MO",
+    "FREQ=MONTHLY;BYSETPOS=1;BYDAY=MO",
+    "FREQ=DAILY;INTERVAL=2x",
+    "FREQ=DAILY;INTERVAL=abc",
+    "FREQ=DAILY;INTERVAL=0",
+    "FREQ=YEARLY;BYMONTH=13;BYMONTHDAY=1",
+    "FREQ=YEARLY;BYMONTH=3x;BYMONTHDAY=1",
+    "FREQ=MONTHLY;BYMONTHDAY=32",
+    "FREQ=MONTHLY;BYMONTHDAY=0",
+    "FREQ=MONTHLY;BYDAY=6MO",
+    "FREQ=MONTHLY;BYDAY=0MO",
+  ])("rejects unsupported/malformed rule %s", (s) => {
+    expect(parseRRule(s, "due-again")).toBeNull();
+  });
+
+  // Additional edge cases beyond the PR-listed set.
+  it.each([
+    "FREQ=YEARLY;BYMONTH=0;BYMONTHDAY=1", // BYMONTH below range
+    "FREQ=MONTHLY;BYMONTHDAY=15x", // trailing garbage on BYMONTHDAY
+    "FREQ=MONTHLY;BYDAY=-6FR", // negative position out of range
+    "FREQ=MONTHLY;INTERVAL=-1", // negative interval
+  ])("rejects out-of-range/malformed rule %s", (s) => {
+    expect(parseRRule(s, "due-again")).toBeNull();
+  });
+});

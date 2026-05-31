@@ -12,6 +12,37 @@ import type { RepetitionRule } from "@ofocus/sdk";
 const BYDAY_TOKEN_RE = /^([+-]?\d+)?([A-Z]{2})$/;
 
 /**
+ * The complete set of RRULE keys that `buildRRule` from `@ofocus/sdk` can emit.
+ * Any key outside this set means the rule uses RRULE features the parser (and
+ * the downstream expander) does not support, so the whole rule is rejected.
+ */
+const ALLOWED_KEYS = new Set([
+  "FREQ",
+  "INTERVAL",
+  "BYDAY",
+  "BYMONTH",
+  "BYMONTHDAY",
+]);
+
+/**
+ * Strictly parse an integer from a string. Returns the integer only if the
+ * entire string is a base-10 integer literal; otherwise `null`.
+ *
+ * Unlike `parseInt`, this rejects partial/garbage values like `"2x"`, `"abc"`,
+ * or `"15.5"` instead of silently accepting a prefix.
+ *
+ * @param s             - The candidate string.
+ * @param allowNegative - When `true`, a leading `-` is permitted (used for
+ *   positional BYDAY tokens). Defaults to `false` (INTERVAL/BYMONTH/BYMONTHDAY
+ *   are always positive in the supported subset).
+ */
+function strictInt(s: string, allowNegative = false): number | null {
+  const re = allowNegative ? /^[+-]?\d+$/ : /^\d+$/;
+  if (!re.test(s)) return null;
+  return Number.parseInt(s, 10);
+}
+
+/**
  * Map a raw FREQ string to a frequency value, or `null` if unrecognised.
  * Avoids index-signature lookups so TypeScript can narrow the return type.
  */
@@ -84,6 +115,9 @@ export function parseRRule(
     const key = part.slice(0, eqIdx);
     const value = part.slice(eqIdx + 1);
     if (key.length > 0) {
+      // Strict: any key outside the supported `buildRRule` subset (e.g. COUNT,
+      // UNTIL, WKST, BYSETPOS) means the rule is unsupported — reject it whole.
+      if (!ALLOWED_KEYS.has(key)) return null;
       params.set(key, value);
     }
   }
@@ -95,9 +129,14 @@ export function parseRRule(
   if (frequency === null) return null;
 
   // --- INTERVAL (optional, default 1) ---
+  let interval = 1;
   const intervalRaw = params.get("INTERVAL");
-  const interval =
-    intervalRaw !== undefined ? parseInt(intervalRaw, 10) : 1;
+  if (intervalRaw !== undefined) {
+    const parsedInterval = strictInt(intervalRaw);
+    // INTERVAL must be a strictly-positive integer in the supported subset.
+    if (parsedInterval === null || parsedInterval <= 0) return null;
+    interval = parsedInterval;
+  }
 
   // --- BYDAY (optional) ---
   // Two forms produced by buildRRule:
@@ -145,7 +184,10 @@ export function parseRRule(
           return null;
         }
 
-        const pos = parseInt(posStr, 10);
+        const pos = strictInt(posStr, true);
+        // Positions must be a nonzero integer in [-5,-1] ∪ [1,5] — the range
+        // `buildRRule` emits. Anything else (0, ±6, garbage) is unsupported.
+        if (pos === null || pos === 0 || pos < -5 || pos > 5) return null;
         if (!seenPositions.has(pos)) {
           seenPositions.add(pos);
           positions.push(pos);
@@ -182,14 +224,24 @@ export function parseRRule(
   let monthsOfYear: number[] | undefined;
   const bymonthRaw = params.get("BYMONTH");
   if (bymonthRaw !== undefined) {
-    monthsOfYear = bymonthRaw.split(",").map((s) => parseInt(s, 10));
+    const months: number[] = [];
+    for (const entry of bymonthRaw.split(",")) {
+      const month = strictInt(entry);
+      // Each month must be a strict integer in 1..12.
+      if (month === null || month < 1 || month > 12) return null;
+      months.push(month);
+    }
+    monthsOfYear = months;
   }
 
   // --- BYMONTHDAY (optional) → dayOfMonth ---
   let dayOfMonth: number | undefined;
   const bymonthdayRaw = params.get("BYMONTHDAY");
   if (bymonthdayRaw !== undefined) {
-    dayOfMonth = parseInt(bymonthdayRaw, 10);
+    const day = strictInt(bymonthdayRaw);
+    // BYMONTHDAY must be a strict integer in 1..31 in the supported subset.
+    if (day === null || day < 1 || day > 31) return null;
+    dayOfMonth = day;
   }
 
   // Assemble result, omitting undefined optional fields to satisfy

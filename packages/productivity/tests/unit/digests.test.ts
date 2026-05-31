@@ -14,6 +14,7 @@ import {
   endOfUtcDay,
   groupByDay,
   partitionToday,
+  startOfNextUtcDay,
 } from "../../src/commands/digests.js";
 
 /**
@@ -52,6 +53,34 @@ describe("endOfUtcDay", () => {
     // 00:00:00 and 23:00:00 on the same UTC day collapse to the same end-of-day.
     expect(endOfUtcDay("2026-01-15T00:00:00.000Z")).toBe(END_OF_TODAY);
     expect(endOfUtcDay("2026-01-15T23:00:00.000Z")).toBe(END_OF_TODAY);
+  });
+});
+
+describe("startOfNextUtcDay", () => {
+  // Regression (PR #61 review): the `today` due query must include the entire
+  // current UTC day, so the exclusive upper bound is the next day's midnight.
+  it("returns 00:00:00.000Z of the day after the input's UTC calendar day", () => {
+    expect(startOfNextUtcDay("2026-01-15T12:00:00.000Z")).toBe(
+      "2026-01-16T00:00:00.000Z",
+    );
+  });
+
+  it("ignores the time-of-day and advances exactly one UTC day", () => {
+    expect(startOfNextUtcDay("2026-01-15T00:00:00.000Z")).toBe(
+      "2026-01-16T00:00:00.000Z",
+    );
+    expect(startOfNextUtcDay("2026-01-15T23:59:59.999Z")).toBe(
+      "2026-01-16T00:00:00.000Z",
+    );
+  });
+
+  it("rolls over month and year boundaries", () => {
+    expect(startOfNextUtcDay("2026-01-31T08:00:00.000Z")).toBe(
+      "2026-02-01T00:00:00.000Z",
+    );
+    expect(startOfNextUtcDay("2026-12-31T08:00:00.000Z")).toBe(
+      "2027-01-01T00:00:00.000Z",
+    );
   });
 });
 

@@ -230,6 +230,44 @@ describe("runNextOccurrences", () => {
     ]);
   });
 
+  // Regression (PR #61 review): the handler must guard direct/test calls even
+  // though the zod schema enforces these constraints at the CLI/MCP boundary.
+  it("fails with a validation error when `from` is not a valid date", async () => {
+    const rule = makeRule({
+      id: "a",
+      name: "Pay rent",
+      ruleString: "FREQ=MONTHLY;BYMONTHDAY=1",
+      method: "DueDate",
+      dueDate: "2026-01-01T09:00:00.000Z",
+    });
+    const out = await runNextOccurrences(
+      { taskId: "a", from: "not-a-date" },
+      { readTaskRule: stubReader(rule), now: "2026-01-15T00:00:00.000Z" },
+    );
+
+    expect(out.success).toBe(false);
+    if (out.success) throw new Error("expected failure");
+    expect(out.error.message).toContain("not-a-date");
+  });
+
+  it("fails with a validation error when `count` is not a positive integer", async () => {
+    const rule = makeRule({
+      id: "a",
+      name: "Pay rent",
+      ruleString: "FREQ=MONTHLY;BYMONTHDAY=1",
+      method: "DueDate",
+      dueDate: "2026-01-01T09:00:00.000Z",
+    });
+    const out = await runNextOccurrences(
+      { taskId: "a", count: 0 },
+      { readTaskRule: stubReader(rule), now: "2026-01-15T00:00:00.000Z" },
+    );
+
+    expect(out.success).toBe(false);
+    if (out.success) throw new Error("expected failure");
+    expect(out.error.message).toContain("count");
+  });
+
   it("defaults the repeatMethod to 'due-again' when the OmniFocus method is null", async () => {
     const rule = makeRule({
       id: "nm",

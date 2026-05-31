@@ -114,6 +114,21 @@ export function endOfUtcDay(nowISO: string): string {
   return `${date}T23:59:59.999Z`;
 }
 
+/**
+ * `00:00:00.000Z` of the UTC calendar day *after* the input instant's day.
+ *
+ * Used as the *exclusive* upper bound for "due today" in the real `today`
+ * query, where `dueBefore` is a strict `<`: using start-of-next-day ensures the
+ * entire current day (including `23:59:59.999Z`) is included.
+ */
+export function startOfNextUtcDay(nowISO: string): string {
+  // Build midnight UTC of the input's day, then add exactly one day. Using the
+  // millisecond arithmetic keeps month/year rollover correct.
+  const startOfDay = `${utcDateKey(nowISO)}T00:00:00.000Z`;
+  const nextMs = Date.parse(startOfDay) + MS_PER_DAY;
+  return new Date(nextMs).toISOString();
+}
+
 /** Extract the `YYYY-MM-DD` UTC calendar-day key from an ISO 8601 instant. */
 function utcDateKey(iso: string): string {
   // Canonical ISO 8601 UTC instants always lead with `YYYY-MM-DD`.
@@ -309,9 +324,9 @@ function propagateFailure<T>(
  * Centralized descriptor for the `today` command.
  *
  * Drives the CLI subcommand `today` and the MCP tool `today`. The real fetcher
- * unions (a) not-completed tasks due before end-of-today (overdue + due-today)
- * with (b) not-completed flagged tasks, deduping by id, and propagates any
- * query failure.
+ * unions (a) not-completed, not-dropped tasks due before start-of-next-day
+ * (overdue + due-today) with (b) not-completed, not-dropped flagged tasks,
+ * deduping by id, and propagates any query failure.
  *
  * @public
  */
@@ -326,9 +341,14 @@ export const todayDescriptor = defineCommand({
   inputSchema: z.object({}),
   handler: async (): Promise<CliOutput<TodayDigest>> => {
     const now = new Date().toISOString();
+    // `notCompleted` does not exclude dropped tasks; `dropped: false` adds the
+    // `taskStatus !== Task.Status.Dropped` predicate so dropped/effectively-
+    // dropped tasks never reach the digest. `dueBefore` is a strict `<`, so we
+    // use start-of-next-day to include all of today (through 23:59:59.999Z).
     const dueResult = await queryTasks({
       notCompleted: true,
-      dueBefore: endOfUtcDay(now),
+      dropped: false,
+      dueBefore: startOfNextUtcDay(now),
       all: true,
     });
     if (!dueResult.success || dueResult.data === null) {
@@ -336,6 +356,7 @@ export const todayDescriptor = defineCommand({
     }
     const flaggedResult = await queryTasks({
       notCompleted: true,
+      dropped: false,
       flagged: true,
       all: true,
     });
