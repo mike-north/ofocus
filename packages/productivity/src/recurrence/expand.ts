@@ -23,10 +23,14 @@
 import type { RepetitionRule } from "@ofocus/sdk";
 
 /**
- * Upper bound on how many periods (days / weeks / months / years, depending on
- * frequency) we will scan before giving up. Guards against pathological rules
- * that never produce `count` occurrences (e.g. an impossible BYMONTHDAY). When
- * the cap is reached we return whatever has been collected so far.
+ * Upper bound on how many periods (days / weeks / months / years) we scan
+ * PAST the `from` boundary before giving up. Guards against pathological rules
+ * that never produce `count` occurrences (e.g. an impossible BYMONTHDAY).
+ * When the cap is reached we return whatever has been collected so far.
+ *
+ * The skip-ahead logic (see below) ensures we start the scan at the period
+ * containing `from`, so this cap governs the search window after `from`, not
+ * the absolute distance from the anchor.
  */
 const MAX_PERIODS = 2000;
 
@@ -115,7 +119,12 @@ function nthWeekdayOfMonth(
 
 /**
  * Map a 0-indexed weekday (Sun=0..Sat=6) to its offset from Monday, where
- * Monday=0..Sunday=6. Used for week stepping with WKST=Monday.
+ * Monday=0..Sunday=6. Used for week stepping with WKST=Monday (RFC 5545 default).
+ *
+ * This ordering ensures days are emitted in chronological order within a
+ * Monday-started week: Mon(0) < Tue(1) < Wed(2) < Thu(3) < Fri(4) < Sat(5) < Sun(6).
+ * Note that sorting by raw weekday number would place Sunday (0) first, which is
+ * chronologically last in a Mon-started week — Bug 1.
  */
 function offsetFromMonday(weekday: number): number {
   return (weekday + 6) % 7;
@@ -165,9 +174,60 @@ function monthCandidates(
   return iso !== null ? [iso] : [];
 }
 
+/** Milliseconds per day — used for skip-ahead distance estimates and day arithmetic. */
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Midnight-UTC epoch-ms for a given Y/M/D (0-indexed month). Used as a
+ * base for day-offset arithmetic so that large offsets don't need to be
+ * smuggled through `makeISO`'s anchor-relative Y/M/D approach.
+ */
+function midnightUTC(year: number, month: number, day: number): number {
+  return Date.UTC(year, month, day, 0, 0, 0, 0);
+}
+
+/**
+ * Construct an ISO string that is `dayOffset` days after `baseMidnightMs`,
+ * carrying the given `time` of day. Returns `null` only when `Date.UTC`
+ * produces a non-finite result (which is not possible for valid inputs, but
+ * guards against theoretical overflow at extreme years).
+ *
+ * Unlike `makeISO`, this function does NOT check that Y/M/D round-trips: the
+ * offset arithmetic guarantees the right date when `baseMidnightMs` is a
+ * true midnight-UTC value and `dayOffset` is an integer.
+ */
+function makeISOFromOffset(
+  baseMidnightMs: number,
+  dayOffset: number,
+  time: TimeOfDay
+): string | null {
+  const targetMs =
+    baseMidnightMs +
+    dayOffset * MS_PER_DAY +
+    time.hours * 3_600_000 +
+    time.minutes * 60_000 +
+    time.seconds * 1_000 +
+    time.ms;
+  if (!Number.isFinite(targetMs)) {
+    return null;
+  }
+  return new Date(targetMs).toISOString();
+}
+
 /**
  * Enumerate the next `count` occurrences of `rule`, anchored at `anchorISO`,
  * that fall strictly after the `from` boundary (default: the anchor itself).
+ *
+ * ## Skip-ahead
+ *
+ * Period loops are indexed from the anchor (period 0). When `from` is far in
+ * the future the loop would have to iterate through millions of periods before
+ * finding any qualifying occurrence — exceeding `MAX_PERIODS` and returning
+ * nothing. To avoid this, each frequency computes a conservative lower bound
+ * for the first period that could possibly produce an occurrence after `from`
+ * and starts scanning there. The period index used for interval activeness
+ * (`periodIndex % interval === 0`) is always the index **from the anchor**, so
+ * block/month/year activeness is unchanged after the jump.
  *
  * @param rule The recurrence rule to expand.
  * @param anchorISO The anchor instant (ISO 8601). Defines the recurrence's
@@ -203,6 +263,7 @@ export function expandOccurrences(
 
   // Strictly-after boundary as an epoch-ms threshold.
   const fromMs = new Date(opts?.fromISO ?? anchorISO).getTime();
+  const anchorMs = anchor.getTime();
 
   const interval = rule.interval >= 1 ? rule.interval : 1;
   const results: string[] = [];
@@ -223,38 +284,73 @@ export function expandOccurrences(
 
   switch (rule.frequency) {
     case "daily": {
-      for (let k = 1; k <= MAX_PERIODS && results.length < count; k++) {
-        consider(
-          makeISO(anchorYear, anchorMonth, anchorDay + k * interval, time)
-        );
+      // Use midnight-UTC of the anchor day as the base for day-offset arithmetic.
+      // This avoids passing a large raw day-of-month into makeISO (which validates
+      // Y/M/D round-trips and would reject the value because the month overflows).
+      const anchorMidnight = midnightUTC(anchorYear, anchorMonth, anchorDay);
+
+      // Skip-ahead: estimate how many days separate the anchor from `from`, then
+      // back off by 1 to avoid missing the first occurrence on the boundary day.
+      // k is anchor-relative so k * interval remains correct after the jump.
+      const daysAhead = Math.max(
+        0,
+        Math.floor((fromMs - anchorMs) / MS_PER_DAY) - 1
+      );
+      // Round down to the nearest multiple of interval so activeness is preserved.
+      const startK = Math.floor(daysAhead / interval) * interval;
+      for (
+        let k = startK + interval;
+        k <= startK + interval + MAX_PERIODS * interval && results.length < count;
+        k += interval
+      ) {
+        consider(makeISOFromOffset(anchorMidnight, k, time));
       }
       break;
     }
 
     case "weekly": {
+      // FIX (Bug 1): sort by offsetFromMonday so days are emitted in
+      // chronological order within a Mon-started week (Mon=0…Sun=6), NOT by
+      // raw weekday number (which would put Sunday=0 first — chronologically last).
       const days =
         rule.daysOfWeek && rule.daysOfWeek.length > 0
-          ? [...rule.daysOfWeek].sort((a, b) => a - b)
+          ? [...rule.daysOfWeek].sort(
+              (a, b) => offsetFromMonday(a) - offsetFromMonday(b)
+            )
           : [anchorWeekday];
 
-      // Monday of the anchor's UTC week (WKST=Monday).
-      const anchorMondayDay = anchorDay - offsetFromMonday(anchorWeekday);
+      // Midnight-UTC of the Monday that starts the anchor's week (WKST=Monday).
+      // Using epoch-ms arithmetic avoids large day-of-month values in makeISO.
+      const anchorMidnight = midnightUTC(anchorYear, anchorMonth, anchorDay);
+      const anchorMondayMidnight =
+        anchorMidnight - offsetFromMonday(anchorWeekday) * MS_PER_DAY;
 
-      for (let w = 0; w < MAX_PERIODS && results.length < count; w++) {
+      // Skip-ahead: estimate week-blocks between anchor and `from`.
+      const weeksAhead = Math.max(
+        0,
+        Math.floor((fromMs - anchorMs) / (7 * MS_PER_DAY)) - 1
+      );
+      // Round down to nearest active block start (preserves interval activeness).
+      const startW = Math.floor(weeksAhead / interval) * interval;
+
+      for (
+        let w = startW;
+        w < startW + MAX_PERIODS * interval && results.length < count;
+        w++
+      ) {
         if (w % interval !== 0) {
           continue;
         }
-        // This block's Monday: anchor's Monday + 7*w days.
-        const blockMondayDay = anchorMondayDay + 7 * w;
+        // Day-offset from anchorMondayMidnight to the Monday of this block.
+        const blockMondayOffset = 7 * w;
         for (const weekday of days) {
           if (results.length >= count) {
             break;
           }
           consider(
-            makeISO(
-              anchorYear,
-              anchorMonth,
-              blockMondayDay + offsetFromMonday(weekday),
+            makeISOFromOffset(
+              anchorMondayMidnight,
+              blockMondayOffset + offsetFromMonday(weekday),
               time
             )
           );
@@ -264,19 +360,28 @@ export function expandOccurrences(
     }
 
     case "monthly": {
-      for (let m = 0; m < MAX_PERIODS && results.length < count; m++) {
+      // Skip-ahead: estimate months between anchor and `from`.
+      const fromDate = new Date(fromMs);
+      const monthsAhead = Math.max(
+        0,
+        (fromDate.getUTCFullYear() - anchorYear) * 12 +
+          (fromDate.getUTCMonth() - anchorMonth) -
+          1
+      );
+      // Round down to nearest active month start.
+      const startM = Math.floor(monthsAhead / interval) * interval;
+
+      for (
+        let m = startM;
+        m < startM + MAX_PERIODS * interval && results.length < count;
+        m++
+      ) {
         if (m % interval !== 0) {
           continue;
         }
         const year = anchorYear + Math.floor((anchorMonth + m) / 12);
         const month = (anchorMonth + m) % 12;
-        const candidates = monthCandidates(
-          rule,
-          year,
-          month,
-          anchorDay,
-          time
-        );
+        const candidates = monthCandidates(rule, year, month, anchorDay, time);
         for (const iso of candidates) {
           if (results.length >= count) {
             break;
@@ -293,7 +398,20 @@ export function expandOccurrences(
           ? [...rule.monthsOfYear].sort((a, b) => a - b)
           : [anchorMonth + 1]; // monthsOfYear is 1-based (1=Jan)
 
-      for (let y = 0; y < MAX_PERIODS && results.length < count; y++) {
+      // Skip-ahead: estimate years between anchor and `from`.
+      const fromDate = new Date(fromMs);
+      const yearsAhead = Math.max(
+        0,
+        fromDate.getUTCFullYear() - anchorYear - 1
+      );
+      // Round down to nearest active year start.
+      const startY = Math.floor(yearsAhead / interval) * interval;
+
+      for (
+        let y = startY;
+        y < startY + MAX_PERIODS * interval && results.length < count;
+        y++
+      ) {
         if (y % interval !== 0) {
           continue;
         }
