@@ -3,6 +3,10 @@ import { PLUGIN_NAME } from "../hooks/lib.mjs";
 import { sessionKey } from "../hooks/lib.mjs";
 import { shouldNudge, shouldRefresh } from "../hooks/lib.mjs";
 import { formatNudge, formatDigest } from "../hooks/lib.mjs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { readState, writeState, getCursor, recordNudge, setLastRefresh, pruneSessions } from "../hooks/lib.mjs";
 
 describe("plugin scaffold", () => {
   it("exposes the plugin name", () => {
@@ -80,5 +84,38 @@ describe("formatDigest", () => {
   });
   it("returns empty string when nothing changed", () => {
     expect(formatDigest({ summary: { added: 0, updated: 0, removed: 0 }, changes: { added: [], updated: [], removed: [] } })).toBe("");
+  });
+});
+
+describe("hook state", () => {
+  let dir;
+  beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "ofa-state-")); });
+  afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
+  const path = () => join(dir, "hook-state.json");
+
+  it("returns an empty object when the state file is absent", () => {
+    expect(readState(path())).toEqual({});
+  });
+  it("getCursor returns -1 for an unknown session", () => {
+    expect(getCursor({}, "agent", "s1")).toBe(-1);
+  });
+  it("recordNudge stores the cursor per session without disturbing others", () => {
+    let st = recordNudge({}, "agent", "A", 3, "2026-05-30T00:00:00.000Z");
+    st = recordNudge(st, "agent", "B", 1, "2026-05-30T00:00:00.000Z");
+    expect(getCursor(st, "agent", "A")).toBe(3);
+    expect(getCursor(st, "agent", "B")).toBe(1);
+  });
+  it("GC prunes sessions older than the window", () => {
+    let st = recordNudge({}, "agent", "old", 1, "2020-01-01T00:00:00.000Z");
+    st = recordNudge(st, "agent", "new", 2, "2026-05-30T00:00:00.000Z");
+    const nowMs = Date.parse("2026-05-30T00:00:00.000Z");
+    const pruned = pruneSessions(st, nowMs, 7 * 24 * 3600 * 1000);
+    expect(getCursor(pruned, "agent", "old")).toBe(-1);
+    expect(getCursor(pruned, "agent", "new")).toBe(2);
+  });
+  it("setLastRefresh is per-watch and round-trips through write/read", () => {
+    let st = setLastRefresh({}, "agent", "2026-05-30T00:00:00.000Z");
+    writeState(path(), st);
+    expect(readState(path())["agent"].lastRefreshAt).toBe("2026-05-30T00:00:00.000Z");
   });
 });
