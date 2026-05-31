@@ -854,3 +854,35 @@ Set the review interval for a project in days
 
 **Example:** `{ "projectId": "<projectId>", "intervalDays": "<intervalDays>" }`
 
+#### `next_occurrences`
+
+Read a task's repetition rule and project its next occurrence dates. Schedule-anchored repeats (Fixed/DueDate) are predictable; completion-anchored repeats (Start) are projected and may shift.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| taskId | `string` | yes | The ID of the task whose occurrences to project |
+| count | `number` | no | How many future occurrences (default 5) |
+| from | `string` | no | ISO date; only occurrences after this are returned (default now) |
+
+**Example:** `{ "taskId": "<taskId>" }`
+
+#### `occurrences`
+
+Project every incomplete repeating task forward over a window and list the upcoming occurrences, ascending by date.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| days | `number` | no | Window length in days (default 14) |
+
+#### `this_week`
+
+Digest of tasks due over the next seven days, grouped by calendar day and annotated with how soon each is due.
+
+_No parameters._
+
+#### `today`
+
+Digest of what needs attention today: overdue, due today, and flagged tasks, each annotated with how overdue or how soon it is.
+
+_No parameters._
+

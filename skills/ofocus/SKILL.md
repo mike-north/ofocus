@@ -164,5 +164,9 @@ The script runs unsandboxed in the user's OmniFocus and can mutate any task, pro
 Scripts must end with a return <expression>; statement and are capped at 64 KB. The return value must be JSON-serializable. Errors from OmniJS are surfaced verbatim.
 ofocus review-interval-get <projectId>  # Get the review interval for a project in days
 ofocus review-interval-set <projectId> --interval-days <intervalDays>  # Set the review interval for a project in days
+ofocus next-occurrences <taskId> [--count <count>] [--from <from>]  # Read a task's repetition rule and project its next occurrence dates. Schedule-anchored repeats (Fixed/DueDate) are predictable; completion-anchored repeats (Start) are projected and may shift.
+ofocus occurrences [--days <days>]  # Project every incomplete repeating task forward over a window and list the upcoming occurrences, ascending by date.
+ofocus this-week  # Digest of tasks due over the next seven days, grouped by calendar day and annotated with how soon each is due.
+ofocus today  # Digest of what needs attention today: overdue, due today, and flagged tasks, each annotated with how overdue or how soon it is.
 ```
 
