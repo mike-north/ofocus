@@ -56,6 +56,17 @@ OFOCUS_SUMMARY_CMD="llm -m gpt-4o" ofocus changes --semantic
 ofocus changes --reset
 ```
 
+## Temporal
+
+Inspect upcoming repeating tasks and get focused digests of what needs attention.
+
+| Command | Description |
+| ------- | ----------- |
+| `ofocus next-occurrences <taskId> [--count N] [--from <date>]` | Project the next N due dates for a specific repeating task, accounting for its repeat rule and method. |
+| `ofocus occurrences [--days N]` | List all upcoming repeat instances across every repeating task in a rolling window (default 14 days). |
+| `ofocus today` | Digest of overdue, due-today, and flagged tasks, each annotated with how overdue or how soon it is due. |
+| `ofocus this-week` | Day-by-day forecast for the next seven days, with tasks grouped by calendar day and annotated with time until due. |
+
 ## License
 
 MIT
