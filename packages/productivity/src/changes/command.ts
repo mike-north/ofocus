@@ -135,7 +135,10 @@ export async function runChanges(
       baselined: false,
       stale: false,
     });
-    writeCache(path, clearPending(cache));
+    // Only drain/advance when we actually delivered new deltas. Clearing when
+    // `--generation-since` is ahead of the current generation would silently
+    // discard pending deltas the caller never saw.
+    if (hasNew) writeCache(path, clearPending(cache));
     return success(await attachSummary(out, input, deps));
   }
 

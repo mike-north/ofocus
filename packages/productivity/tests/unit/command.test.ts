@@ -54,6 +54,22 @@ describe("runChanges", () => {
     expect(again.data!.notModified).toBe(true);
   });
 
+  it("--pending with generation-since ahead of current does NOT discard undelivered pending", async () => {
+    // Regression: a stale/racing caller passing --generation-since beyond the
+    // current generation must not wipe pending deltas it never saw.
+    await runChanges({ watch: "w", fresh: true }, deps(snapV1));
+    await runChanges({ watch: "w", refreshInline: true }, deps(snapV2)); // accumulates updated:1 at generation 1
+    const ahead = await runChanges(
+      { watch: "w", pending: true, generationSince: 5 },
+      deps(snapV2),
+    );
+    expect(ahead.data!.notModified).toBe(true);
+    expect(ahead.data!.summary.updated).toBe(0);
+    // The pending delta must survive and be delivered on a normal in-range drain.
+    const drain = await runChanges({ watch: "w", pending: true }, deps(snapV2));
+    expect(drain.data!.summary.updated).toBe(1);
+  });
+
   it("default cached read returns stale and triggers a background refresh", async () => {
     await runChanges({ watch: "w", fresh: true }, deps(snapV1));
     let spawned = 0;
