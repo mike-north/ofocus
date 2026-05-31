@@ -53,7 +53,7 @@ export interface Occurrence {
 
 /** The time window the projection covers. */
 export interface OccurrencesWindow {
-  /** Window start (inclusive lower bound; the injected `now`). */
+  /** Window start (exclusive lower bound; the injected `now` — occurrences are strictly after this). */
   from: string;
   /** Window end (inclusive upper bound; `now` + `days`). */
   until: string;
