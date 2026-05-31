@@ -19,4 +19,14 @@ describe("summarize", () => {
     expect(res.summary).toBeUndefined();
     expect(res.note).toBeTruthy();
   });
+
+  it("does not throw on a broken stdin pipe (large packet to a non-reading command)", async () => {
+    // Regression: `true` (and `false`) close their stdin read end immediately,
+    // so writing the packet fails with EPIPE. That write error must be swallowed,
+    // not surface as an unhandled exception that crashes the test run.
+    const big = { blob: "x".repeat(200_000) };
+    await expect(summarize(big, "true")).resolves.toEqual(
+      expect.objectContaining({ note: expect.any(String) }),
+    );
+  });
 });

@@ -47,6 +47,14 @@ export async function summarize(
         });
       }
     });
+    // Writing to a command that doesn't read stdin (or exits immediately, e.g.
+    // `false`) closes the read end and makes the write fail with EPIPE. The
+    // result is driven by the close/error/timeout handlers, so swallow the
+    // broken-pipe error here rather than letting it surface as an unhandled
+    // exception (fail-open, spec §8).
+    child.stdin.on("error", () => {
+      /* ignore broken pipe — child outcome is handled above */
+    });
     child.stdin.end(JSON.stringify(packet));
   });
 }
