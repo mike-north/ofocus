@@ -6,6 +6,7 @@ import { diffSnapshots } from "./diff.js";
 import { fingerprintsEqual } from "./fingerprint.js";
 import { accumulatePending, clearPending, mergeChangeSets } from "./generation.js";
 import { scanFingerprint, scanWatched } from "./scan.js";
+import { summarize as semanticSummarize } from "./semantic.js";
 import {
   type ChangeSet,
   type Fingerprint,
@@ -24,6 +25,8 @@ export interface ChangesOutput {
   stale: boolean;
   summary: { added: number; updated: number; removed: number };
   changes: ChangeSet;
+  semanticSummary?: string;
+  summaryNote?: string;
 }
 
 const DEFAULT_CLASSES: WatchedClass[] = ["tasks", "projects"];
@@ -35,6 +38,8 @@ export interface ChangesDeps {
   stateDir?: string;
   spawnBackgroundRefresh?: (watch: string, stateDir?: string) => void;
   now?: string;
+  /** Injected summarizer; the descriptor binds OFOCUS_SUMMARY_CMD. Returns {summary?|note?}. */
+  summarize?: (packet: unknown) => Promise<{ summary?: string; note?: string }>;
 }
 
 interface ChangesInput {
@@ -47,6 +52,7 @@ interface ChangesInput {
   generationSince?: number | undefined;
   reset?: boolean | undefined;
   refreshInline?: boolean | undefined;
+  semantic?: boolean | undefined;
 }
 
 function freshCache(name: string, classes: WatchedClass[], now: string): CacheFile {
@@ -91,6 +97,18 @@ function toOutput(
   };
 }
 
+async function attachSummary(
+  output: ChangesOutput,
+  input: ChangesInput,
+  deps: ChangesDeps,
+): Promise<ChangesOutput> {
+  if (input.semantic !== true || deps.summarize === undefined) return output;
+  const res = await deps.summarize({ summary: output.summary, changes: output.changes });
+  if (res.summary !== undefined) output.semanticSummary = res.summary;
+  if (res.note !== undefined) output.summaryNote = res.note;
+  return output;
+}
+
 /**
  * Core handler. `deps` is injected in tests; the descriptor passes real scanners.
  * Read modes (spec §3): --pending (hook drain), --reset/first-run (baseline),
@@ -118,7 +136,7 @@ export async function runChanges(
       stale: false,
     });
     writeCache(path, clearPending(cache));
-    return success(out);
+    return success(await attachSummary(out, input, deps));
   }
 
   // --reset OR first run: baseline to current; no diff dump (spec §6).
@@ -178,11 +196,15 @@ export async function runChanges(
     const next = clearPending(advanced);
     writeCache(path, next);
     return success(
-      toOutput(next, all, {
-        notModified: changeSetEmpty(all),
-        baselined: false,
-        stale: false,
-      }),
+      await attachSummary(
+        toOutput(next, all, {
+          notModified: changeSetEmpty(all),
+          baselined: false,
+          stale: false,
+        }),
+        input,
+        deps,
+      ),
     );
   }
 
@@ -222,11 +244,16 @@ export const changesDescriptor = defineCommand({
       .boolean()
       .optional()
       .describe("Internal: run the background scan + pending accumulation inline"),
+    semantic: z
+      .boolean()
+      .optional()
+      .describe("Attach a fast-model natural-language summary (opt-in; uses OFOCUS_SUMMARY_CMD)"),
   }),
   handler: async (parsed): Promise<CliOutput<ChangesOutput>> =>
     runChanges(parsed, {
       scanWatched,
       scanFingerprint,
+      summarize: (packet) => semanticSummarize(packet, process.env["OFOCUS_SUMMARY_CMD"]),
       now: new Date().toISOString(),
     }),
 });
