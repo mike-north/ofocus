@@ -62,6 +62,15 @@ receive one, so identity comes only from the payload/environment. The exact fiel
 must be **confirmed empirically** with a probe hook early in implementation (§8.1); the
 fallback chain means a wrong guess degrades gracefully rather than breaking.
 
+**Why payload-derived, not agent-generated (fork/resume rationale):** a payload key inherits
+Claude Code's own session identity. **Forking** a session yields a fresh `session_id` /
+`transcript_path`, so the branches diverge and track independently (neither silences the
+other). **Resuming** the same session keeps the same identity, so monitoring continues
+seamlessly. An agent-remembered id gets both wrong — it is copied into the conversation
+history, so a fork carries the *same* id into both branches (a shared-cursor collision), and
+it can drift across compaction. By never owning identity, the hook gets correct fork/resume
+behavior for free.
+
 All nudge tracking is **per session key** so concurrent agent sessions never silence each
 other (§4.3). A single **shared watch** `<W>` (default `agent`) is used by all sessions — one
 snapshot, one set of (shared, debounced) background scans. Reads are **non-draining** so a
