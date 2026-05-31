@@ -10,6 +10,7 @@ import { changesDescriptor } from "./changes/command.js";
 export { changesDescriptor } from "./changes/command.js";
 export type { ChangesOutput, ChangesDeps } from "./changes/command.js";
 export * from "./changes/types.js";
+export { resolveDbPackagePath, readDbMtime } from "./changes/fda.js";
 
 /**
  * Every command descriptor contributed by the productivity package.
