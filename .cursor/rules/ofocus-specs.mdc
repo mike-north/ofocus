@@ -1,0 +1,30 @@
+---
+description: OFocus spec discipline — consult the specs and flag dissonance between spec, plan, and code.
+globs:
+alwaysApply: true
+---
+
+# OFocus — spec discipline
+
+Canonical guidance: [`docs/agent-guide.md`](../../docs/agent-guide.md). Architecture:
+[`docs/architecture.md`](../../docs/architecture.md). Specs (the contracts):
+`docs/superpowers/specs/`.
+
+Before non-trivial work, read the relevant spec; then hold the code to it.
+
+- **Specs are the contract.** Read the relevant spec **before** changing the change-detection
+  engine (`@ofocus/productivity` `changes`), the descriptor registry, or layer/package
+  boundaries. If spec, plan, and code disagree, **stop and reconcile** — fix the code to match
+  the spec, or update the spec in the same change if the contract is intentionally changing.
+  Never silently diverge.
+- **Package discipline.** `@ofocus/sdk` stays minimal (only `zod`); network/process/heavy
+  things live in `@ofocus/productivity`+ and are fail-open. Deterministic-but-fuzzy logic is
+  Layer 2, not the plugin.
+- **Single source of truth.** Commands are defined once via `defineCommand`; CLI/MCP/docs
+  derive from descriptors — don't hand-maintain parallel lists. Regenerate agent docs
+  (`pnpm build`) when the command surface changes.
+- **Spec-first tests** (assert spec-derived values, not program output); **changeset** for
+  published-package changes; **generated files** (`AGENT_*.md`, `skills/ofocus/SKILL.md`,
+  `packages/sdk/docs/*`) are edited via their generator, not by hand.
+
+Full dissonance checklist: [`docs/agent-guide.md`](../../docs/agent-guide.md) §3–4.
