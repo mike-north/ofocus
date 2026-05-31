@@ -7,6 +7,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readState, writeState, getCursor, recordNudge, setLastRefresh, pruneSessions } from "../hooks/lib.mjs";
+import { resolveConfig } from "../hooks/lib.mjs";
 
 describe("plugin scaffold", () => {
   it("exposes the plugin name", () => {
@@ -117,5 +118,29 @@ describe("hook state", () => {
     let st = setLastRefresh({}, "agent", "2026-05-30T00:00:00.000Z");
     writeState(path(), st);
     expect(readState(path())["agent"].lastRefreshAt).toBe("2026-05-30T00:00:00.000Z");
+  });
+});
+
+describe("resolveConfig", () => {
+  it("uses defaults when env is empty", () => {
+    const c = resolveConfig({});
+    expect(c.watch).toBe("agent");
+    expect(c.refreshIntervalMs).toBe(300000);
+    expect(c.bin).toBe("ofocus");
+    expect(c.disabled).toBe(false);
+    expect(c.stateDir.length).toBeGreaterThan(0);
+  });
+  it("honors env overrides", () => {
+    const c = resolveConfig({
+      OFOCUS_ASSISTANT_WATCH: "work",
+      OFOCUS_ASSISTANT_REFRESH_INTERVAL_MS: "60000",
+      OFOCUS_BIN: "/usr/local/bin/ofocus",
+      OFOCUS_ASSISTANT_DISABLE: "1",
+      OFOCUS_STATE_DIR: "/tmp/x",
+    });
+    expect(c).toMatchObject({ watch: "work", refreshIntervalMs: 60000, bin: "/usr/local/bin/ofocus", disabled: true, stateDir: "/tmp/x" });
+  });
+  it("ignores a non-numeric interval and uses the default", () => {
+    expect(resolveConfig({ OFOCUS_ASSISTANT_REFRESH_INTERVAL_MS: "abc" }).refreshIntervalMs).toBe(300000);
   });
 });

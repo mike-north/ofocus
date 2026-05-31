@@ -145,3 +145,26 @@ export function pruneSessions(state, nowMs, windowMs = SESSION_GC_WINDOW_MS) {
   }
   return next;
 }
+
+// ---------------------------------------------------------------------------
+// Config resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve plugin config from an env-like object (default: process.env).
+ * @param {Record<string,string|undefined>} [env]
+ */
+export function resolveConfig(env = process.env) {
+  const watch = (env.OFOCUS_ASSISTANT_WATCH ?? "").trim() || "agent";
+  const rawInterval = Number(env.OFOCUS_ASSISTANT_REFRESH_INTERVAL_MS);
+  const refreshIntervalMs = Number.isFinite(rawInterval) && rawInterval > 0 ? rawInterval : 300000;
+  const bin = (env.OFOCUS_BIN ?? "").trim() || "ofocus";
+  const disabled = Boolean((env.OFOCUS_ASSISTANT_DISABLE ?? "").trim());
+  const stateDir = (env.OFOCUS_STATE_DIR ?? "").trim() || join(homedir(), ".ofocus");
+  return { watch, refreshIntervalMs, bin, disabled, stateDir };
+}
+
+/** Path to the hook's own state file. */
+export function stateFilePath(stateDir) {
+  return join(stateDir, "hook-state.json");
+}
