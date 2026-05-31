@@ -142,6 +142,12 @@ ofocus stats [--project <project>] [--period <period>] [--since <since>] [--unti
 ofocus open <id>  # Open an item in the OmniFocus user interface (task, project, folder, or tag)
 ```
 
+### Productivity
+
+```bash
+ofocus changes [--watch <watch>] [--fresh] [--pending] [--generation-since <generationSince>] [--reset] [--refresh-inline] [--semantic]  # Detect what changed in OmniFocus since the last look. Cache-first and instant by default; --fresh forces a live scan; --pending returns accumulated deltas for a notification hook.
+```
+
 ### Other
 
 ```bash

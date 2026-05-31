@@ -770,6 +770,22 @@ Open an item in the OmniFocus user interface (task, project, folder, or tag)
 
 **Example:** `{ "id": "<id>" }`
 
+## Productivity
+
+#### `changes`
+
+Detect what changed in OmniFocus since the last look. Cache-first and instant by default; --fresh forces a live scan; --pending returns accumulated deltas for a notification hook.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| watch | `string` | no | Named watch (default: 'default') |
+| fresh | `boolean` | no | Force a synchronous live scan |
+| pending | `boolean` | no | Return accumulated pending deltas (notification-hook path) |
+| generationSince | `number` | no | With --pending: only deltas newer than this generation |
+| reset | `boolean` | no | Re-baseline the watch to current state |
+| refreshInline | `boolean` | no | Internal: run the background scan + pending accumulation inline |
+| semantic | `boolean` | no | Attach a fast-model natural-language summary (opt-in; uses OFOCUS_SUMMARY_CMD) |
+
 ## Other
 
 #### `task_apply_repetition`
