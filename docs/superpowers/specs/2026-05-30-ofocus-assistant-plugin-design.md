@@ -226,12 +226,13 @@ Per the project's multi-layer + spec-first conventions; a plugin is mostly confi
 
 | File                                                    | Responsibility                                                                                                                                               |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `plugin/ofocus-assistant/.claude-plugin/plugin.json`    | Manifest: identity + points at `hooks/hooks.json` and `skills/`.                                                                                             |
+| `plugin/ofocus-assistant/.claude-plugin/plugin.json`    | Manifest: identity fields only (name/version/description/author). `hooks/hooks.json` and `skills/*/SKILL.md` are auto-discovered by Claude Code from the plugin root — no manifest linkage needed. |
 | `plugin/ofocus-assistant/hooks/hooks.json`              | Binds `SessionStart`, `Stop`, and `PreToolUse` (or the §4.6 fallbacks) to `notify.mjs <event>`.                                                              |
 | `plugin/ofocus-assistant/hooks/notify.mjs`              | The hook: peek / digest / end-of-turn surface / urgency-gated interjection / soft nudge / debounced refresh + fail-open. Pure logic factored for unit tests. |
 | `plugin/ofocus-assistant/skills/ofocus-triage/SKILL.md` | Triage / co-planning guidance.                                                                                                                               |
 | `plugin/ofocus-assistant/README.md`                     | What it is, install, config env vars, the manual UAT steps.                                                                                                  |
-| `plugin/ofocus-assistant/tests/notify.test.ts`          | Unit tests for the hook's pure logic.                                                                                                                        |
+| `plugin/ofocus-assistant/tests/lib.test.mjs`            | Unit tests for the hook's pure logic (session key, surface/urgency/soft-nudge decisions, per-session state + GC, formatting).                                |
+| `plugin/ofocus-assistant/tests/notify.test.mjs`         | Subprocess/integration tests for the hook entry against a stub `ofocus`.                                                                                      |
 
 ## 8. Open implementation questions (resolve during planning, not blocking design)
 

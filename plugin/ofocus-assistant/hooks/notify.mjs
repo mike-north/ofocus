@@ -29,6 +29,10 @@ function triggerRefresh(cfg) {
     const child = spawn(cfg.bin, ["changes", "--watch", cfg.watch, "--refresh-inline"], {
       detached: true, stdio: "ignore",
     });
+    // The "error" event (e.g. bin not found) is emitted ASYNCHRONOUSLY, so the
+    // surrounding try/catch can't catch it — without a listener Node would throw
+    // an unhandled error and crash the hook. Swallow it (fail-open).
+    child.on("error", () => {});
     child.unref();
   } catch { /* fail-open */ }
 }
@@ -52,6 +56,17 @@ function main() {
   const nowMs = Date.parse(nowIso);
   const path = stateFilePath(cfg.stateDir);
 
+  let state = pruneSessions(readState(path), nowMs);
+
+  // Ensure freshness first (shared, debounced, detached) — per spec §4.2 the
+  // SessionStart sequence is "ensure freshness → peek", giving the digest the
+  // best chance to reflect recent changes. Harmless for Stop/PreToolUse since
+  // the refresh is fire-and-forget and the peek does not depend on lastRefreshAt.
+  if (shouldRefresh(state[cfg.watch]?.lastRefreshAt ?? null, nowMs, cfg.refreshIntervalMs)) {
+    triggerRefresh(cfg);
+    state = setLastRefresh(state, cfg.watch, nowIso);
+  }
+
   let data;
   try { data = peek(cfg); } catch { return; }
   if (!data) return;
@@ -59,13 +74,6 @@ function main() {
   const generation = typeof data.generation === "number" ? data.generation : 0;
   const summary = data.summary ?? { added: 0, updated: 0, removed: 0 };
   const pendingNonEmpty = (summary.added + summary.updated + summary.removed) > 0;
-
-  let state = pruneSessions(readState(path), nowMs);
-
-  if (shouldRefresh(state[cfg.watch]?.lastRefreshAt ?? null, nowMs, cfg.refreshIntervalMs)) {
-    triggerRefresh(cfg);
-    state = setLastRefresh(state, cfg.watch, nowIso);
-  }
 
   const seen = getSeenGeneration(state, cfg.watch, key);
   const surface = shouldSurface({ seenGeneration: seen, generation, pendingNonEmpty });
