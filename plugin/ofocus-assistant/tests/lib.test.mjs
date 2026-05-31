@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { PLUGIN_NAME } from "../hooks/lib.mjs";
 import { sessionKey } from "../hooks/lib.mjs";
 import { shouldNudge, shouldRefresh } from "../hooks/lib.mjs";
+import { formatNudge, formatDigest } from "../hooks/lib.mjs";
 
 describe("plugin scaffold", () => {
   it("exposes the plugin name", () => {
@@ -46,5 +47,38 @@ describe("shouldRefresh", () => {
   });
   it("debounces when within the interval", () => {
     expect(shouldRefresh("1970-01-01T00:00:00.300Z", 600, 500)).toBe(false);
+  });
+});
+
+const summary = { added: 2, updated: 1, removed: 0 };
+const changesPayload = {
+  summary,
+  changes: {
+    added: [{ object: { name: "Call dentist" } }, { object: { name: "Buy milk" } }],
+    updated: [{ object: { name: "Pay invoice" }, delta: { dueDate: { from: "2026-06-02", to: "2026-05-30" } } }],
+    removed: [],
+  },
+};
+
+describe("formatNudge", () => {
+  it("states the total item count and the self-dedup instruction", () => {
+    const msg = formatNudge(summary);
+    expect(msg).toContain("3");
+    expect(msg).toMatch(/task list/i);
+  });
+  it("returns empty string for an all-zero summary", () => {
+    expect(formatNudge({ added: 0, updated: 0, removed: 0 })).toBe("");
+  });
+});
+
+describe("formatDigest", () => {
+  it("summarizes counts and names a few items", () => {
+    const d = formatDigest(changesPayload);
+    expect(d).toContain("2 added");
+    expect(d).toContain("1 updated");
+    expect(d).toContain("Call dentist");
+  });
+  it("returns empty string when nothing changed", () => {
+    expect(formatDigest({ summary: { added: 0, updated: 0, removed: 0 }, changes: { added: [], updated: [], removed: [] } })).toBe("");
   });
 });

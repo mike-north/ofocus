@@ -39,3 +39,43 @@ export function shouldRefresh(lastRefreshAt, nowMs, intervalMs) {
   if (!Number.isFinite(last)) return true;
   return nowMs - last > intervalMs;
 }
+
+/** Total item count across a summary. */
+function totalCount(summary) {
+  return (summary?.added ?? 0) + (summary?.updated ?? 0) + (summary?.removed ?? 0);
+}
+
+/**
+ * One-line nudge for PreToolUse. Empty string ⇒ do not inject.
+ * @param {{added:number,updated:number,removed:number}} summary
+ */
+export function formatNudge(summary) {
+  const n = totalCount(summary);
+  if (n === 0) return "";
+  return (
+    `📥 OmniFocus changed (${n} item${n === 1 ? "" : "s"}) since you last reviewed. ` +
+    `If you don't already have a task to review the OmniFocus inbox/changes, add one to your task list.`
+  );
+}
+
+/**
+ * Multi-line SessionStart digest. Empty string ⇒ nothing to show.
+ * @param {{summary:object, changes:{added:any[],updated:any[],removed:any[]}}} payload
+ */
+export function formatDigest(payload) {
+  const s = payload?.summary ?? { added: 0, updated: 0, removed: 0 };
+  if (totalCount(s) === 0) return "";
+  const parts = [];
+  if (s.added) parts.push(`${s.added} added`);
+  if (s.updated) parts.push(`${s.updated} updated`);
+  if (s.removed) parts.push(`${s.removed} removed`);
+  const names = [
+    ...(payload.changes?.added ?? []),
+    ...(payload.changes?.updated ?? []),
+  ]
+    .map((c) => c?.object?.name)
+    .filter((n) => typeof n === "string")
+    .slice(0, 5);
+  const detail = names.length > 0 ? ` — e.g. ${names.join(", ")}` : "";
+  return `OmniFocus changes since the last refresh: ${parts.join(", ")}${detail}.`;
+}
