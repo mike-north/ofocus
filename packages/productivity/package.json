@@ -1,6 +1,6 @@
 {
   "name": "@ofocus/productivity",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "OmniFocus productivity niceties (Layer 2) built on @ofocus/sdk",
   "type": "module",
   "main": "dist/index.js",
