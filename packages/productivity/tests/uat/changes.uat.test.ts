@@ -114,5 +114,8 @@ suite("ofocus changes (UAT)", () => {
       expect(p2.success).toBe(true);
       expect(p2.data.notModified).toBe(true);
     },
+    // Live OmniFocus scans take ~4-5s and can exceed vitest's default 5s
+    // per-test timeout under concurrent JXA load; allow generous headroom.
+    30_000,
   );
 });
