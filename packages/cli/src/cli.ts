@@ -72,6 +72,7 @@ import {
   occurrencesDescriptor,
   todayDescriptor,
   thisWeekDescriptor,
+  resolveDescriptor,
 } from "@ofocus/productivity";
 import { listCommands } from "./commands/list-commands.js";
 import {
@@ -232,6 +233,9 @@ Use --format json|toon for machine output (default: json). Use --human for human
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
   registerCliCommand(program, thisWeekDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, resolveDescriptor, (result, cmd) => {
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 

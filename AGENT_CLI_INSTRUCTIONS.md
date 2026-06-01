@@ -1104,6 +1104,23 @@ ofocus occurrences [--days <days>]
 | --- | --- | --- | --- |
 | `--days` | `number` | no | Window length in days (default 14) |
 
+#### `ofocus resolve`
+
+Resolve a fuzzy reference to an OmniFocus entity. Returns a confidently resolved match, a tight ranked candidate set (ambiguous), or none. --kind temporal-anchor matches a repeating task and returns its next occurrence.
+
+**Usage:**
+
+```bash
+ofocus resolve <query> [--kind <kind>] [--limit <limit>]
+```
+
+**Flags:**
+
+| Flag | Type | Required | Description |
+| --- | --- | --- | --- |
+| `--kind` | `project \| task \| tag \| folder \| temporal-anchor \| any` | no | What to resolve (default: project; 'any' = project + task) |
+| `--limit` | `number` | no | Max candidates (default 5) |
+
 #### `ofocus this-week`
 
 Digest of tasks due over the next seven days, grouped by calendar day and annotated with how soon each is due.

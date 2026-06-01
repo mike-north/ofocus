@@ -166,6 +166,7 @@ ofocus review-interval-get <projectId>  # Get the review interval for a project 
 ofocus review-interval-set <projectId> --interval-days <intervalDays>  # Set the review interval for a project in days
 ofocus next-occurrences <taskId> [--count <count>] [--from <from>]  # Read a task's repetition rule and project its next occurrence dates. Schedule-anchored repeats (Fixed/DueDate) are predictable; completion-anchored repeats (Start) are projected and may shift.
 ofocus occurrences [--days <days>]  # Project every incomplete repeating task forward over a window and list the upcoming occurrences, ascending by date.
+ofocus resolve <query> [--kind <kind>] [--limit <limit>]  # Resolve a fuzzy reference to an OmniFocus entity. Returns a confidently resolved match, a tight ranked candidate set (ambiguous), or none. --kind temporal-anchor matches a repeating task and returns its next occurrence.
 ofocus this-week  # Digest of tasks due over the next seven days, grouped by calendar day and annotated with how soon each is due.
 ofocus today  # Digest of what needs attention today: overdue, due today, and flagged tasks, each annotated with how overdue or how soon it is.
 ```
