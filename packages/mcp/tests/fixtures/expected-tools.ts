@@ -88,6 +88,7 @@ export const PRODUCTIVITY_TOOLS = [
   "occurrences",
   "today",
   "this_week",
+  "resolve",
 ] as const;
 
 export const ALL_TOOLS = [
