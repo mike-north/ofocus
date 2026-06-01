@@ -54,16 +54,17 @@ export type ResolveOutput =
 
 /**
  * Dependencies for {@link runResolve}; the descriptor injects query-backed
- * implementations. Each fetcher returns ranking candidates with `score: 0`
- * (the scorer overwrites it).
+ * implementations. Each entity fetcher returns a {@link CliOutput} so a failed
+ * underlying query (e.g. OmniFocus is not running) can be propagated as a
+ * failure rather than silently treated as an empty candidate set.
  *
  * @public
  */
 export interface ResolveDeps {
-  fetchProjects: () => Promise<ResolveCandidate[]>;
-  fetchTasks: () => Promise<ResolveCandidate[]>;
-  fetchTags: () => Promise<ResolveCandidate[]>;
-  fetchFolders: () => Promise<ResolveCandidate[]>;
+  fetchProjects: () => Promise<CliOutput<ResolveCandidate[]>>;
+  fetchTasks: () => Promise<CliOutput<ResolveCandidate[]>>;
+  fetchTags: () => Promise<CliOutput<ResolveCandidate[]>>;
+  fetchFolders: () => Promise<CliOutput<ResolveCandidate[]>>;
   resolveAnchor: (
     query: string,
     limit: number,
@@ -105,28 +106,57 @@ export async function runResolve(
   const limit = input.limit ?? RANK_THRESHOLDS.limit;
 
   if (kind === "temporal-anchor") {
-    return success(await deps.resolveAnchor(query, limit));
+    // scanRepeatingTasks() throws when OmniFocus is not reachable; wrap so the
+    // command always returns a CliOutput rather than a rejected promise.
+    try {
+      return success(await deps.resolveAnchor(query, limit));
+    } catch (e) {
+      return failure(
+        createError(
+          ErrorCode.UNKNOWN_ERROR,
+          e instanceof Error ? e.message : "resolve failed",
+        ),
+      );
+    }
   }
 
-  let items: ResolveCandidate[];
-  switch (kind) {
-    case "project":
-      items = await deps.fetchProjects();
-      break;
-    case "task":
-      items = await deps.fetchTasks();
-      break;
-    case "tag":
-      items = await deps.fetchTags();
-      break;
-    case "folder":
-      items = await deps.fetchFolders();
-      break;
-    case "any":
-      items = [...(await deps.fetchProjects()), ...(await deps.fetchTasks())];
-      break;
+  let res: CliOutput<ResolveCandidate[]>;
+  if (kind === "any") {
+    const p = await deps.fetchProjects();
+    if (!p.success || p.data === null) {
+      return failure(
+        p.error ?? createError(ErrorCode.UNKNOWN_ERROR, "project query failed"),
+      );
+    }
+    const t = await deps.fetchTasks();
+    if (!t.success || t.data === null) {
+      return failure(
+        t.error ?? createError(ErrorCode.UNKNOWN_ERROR, "task query failed"),
+      );
+    }
+    res = success([...p.data, ...t.data]);
+  } else {
+    switch (kind) {
+      case "project":
+        res = await deps.fetchProjects();
+        break;
+      case "task":
+        res = await deps.fetchTasks();
+        break;
+      case "tag":
+        res = await deps.fetchTags();
+        break;
+      case "folder":
+        res = await deps.fetchFolders();
+        break;
+    }
   }
-  const ranked = rankCandidates(query, items, { limit });
+  if (!res.success || res.data === null) {
+    return failure(
+      res.error ?? createError(ErrorCode.UNKNOWN_ERROR, "entity query failed"),
+    );
+  }
+  const ranked = rankCandidates(query, res.data, { limit });
   return success(classify(ranked, RANK_THRESHOLDS));
 }
 
@@ -213,57 +243,85 @@ function realDeps(): ResolveDeps {
   return {
     fetchProjects: async () => {
       const res = await queryProjects({ all: true });
-      if (!res.success || res.data === null) return [];
-      return itemsOf<{ id: string; name: string; folderName: string | null }>(
-        res.data,
-      ).map((p) => ({
-        id: p.id,
-        name: p.name,
-        kind: "project" as const,
-        score: 0,
-        ...(p.folderName ? { context: p.folderName } : {}),
-      }));
+      if (!res.success || res.data === null) {
+        return failure(
+          res.error ??
+            createError(ErrorCode.UNKNOWN_ERROR, "failed to query projects"),
+        );
+      }
+      return success(
+        itemsOf<{ id: string; name: string; folderName: string | null }>(
+          res.data,
+        ).map((p) => ({
+          id: p.id,
+          name: p.name,
+          kind: "project" as const,
+          score: 0,
+          ...(p.folderName ? { context: p.folderName } : {}),
+        })),
+      );
     },
     fetchTasks: async () => {
       const res = await queryTasks({ all: true, notCompleted: true });
-      if (!res.success || res.data === null) return [];
-      return itemsOf<{ id: string; name: string; projectName: string | null }>(
-        res.data,
-      ).map((t) => ({
-        id: t.id,
-        name: t.name,
-        kind: "task" as const,
-        score: 0,
-        ...(t.projectName ? { context: t.projectName } : {}),
-      }));
+      if (!res.success || res.data === null) {
+        return failure(
+          res.error ??
+            createError(ErrorCode.UNKNOWN_ERROR, "failed to query tasks"),
+        );
+      }
+      return success(
+        itemsOf<{ id: string; name: string; projectName: string | null }>(
+          res.data,
+        ).map((t) => ({
+          id: t.id,
+          name: t.name,
+          kind: "task" as const,
+          score: 0,
+          ...(t.projectName ? { context: t.projectName } : {}),
+        })),
+      );
     },
     fetchTags: async () => {
       const res = await queryTags({ all: true });
-      if (!res.success || res.data === null) return [];
-      return itemsOf<{ id: string; name: string; parentName: string | null }>(
-        res.data,
-      ).map((t) => ({
-        id: t.id,
-        name: t.name,
-        kind: "tag" as const,
-        score: 0,
-        ...(t.parentName ? { context: t.parentName } : {}),
-      }));
+      if (!res.success || res.data === null) {
+        return failure(
+          res.error ??
+            createError(ErrorCode.UNKNOWN_ERROR, "failed to query tags"),
+        );
+      }
+      return success(
+        itemsOf<{ id: string; name: string; parentName: string | null }>(
+          res.data,
+        ).map((t) => ({
+          id: t.id,
+          name: t.name,
+          kind: "tag" as const,
+          score: 0,
+          ...(t.parentName ? { context: t.parentName } : {}),
+        })),
+      );
     },
     fetchFolders: async () => {
       const res = await queryFolders({ all: true });
-      if (!res.success || res.data === null) return [];
-      return itemsOf<{
-        id: string;
-        name: string;
-        parentName?: string | null;
-      }>(res.data).map((f) => ({
-        id: f.id,
-        name: f.name,
-        kind: "folder" as const,
-        score: 0,
-        ...(f.parentName ? { context: f.parentName } : {}),
-      }));
+      if (!res.success || res.data === null) {
+        return failure(
+          res.error ??
+            createError(ErrorCode.UNKNOWN_ERROR, "failed to query folders"),
+        );
+      }
+      return success(
+        itemsOf<{
+          id: string;
+          name: string;
+          parentName?: string | null;
+        }>(res.data).map((f) => ({
+          id: f.id,
+          name: f.name,
+          kind: "folder" as const,
+          score: 0,
+          ...(f.parentName ? { context: f.parentName } : {}),
+        })),
+      );
     },
     resolveAnchor: buildAnchorResolver({
       scanRepeatingTasks,

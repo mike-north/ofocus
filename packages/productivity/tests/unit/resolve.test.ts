@@ -3,10 +3,12 @@
  *
  * Entity resolution and ranking are driven by the deterministic fuzzy scorer in
  * `src/resolve/rank.ts`; these tests assert the disambiguation contract
- * (resolved / ambiguous / none) for the supported kinds, and the temporal-anchor
- * resolver's next-occurrence attachment and calendar-fallback note.
+ * (resolved / ambiguous / none) for the supported kinds, the temporal-anchor
+ * resolver's next-occurrence attachment and calendar-fallback note, and failure
+ * propagation when an underlying entity query fails (spec §4).
  */
 import { describe, it, expect } from "vitest";
+import { success, failure, createError, ErrorCode } from "@ofocus/sdk";
 import {
   runResolve,
   buildAnchorResolver,
@@ -19,11 +21,13 @@ const projects: ResolveCandidate[] = [
   { id: "b", name: "Falcon Mobile App", kind: "project", context: "Work/Apps", score: 0 },
   { id: "c", name: "Quarterly Taxes", kind: "project", score: 0 },
 ];
+
+/** Build a ResolveDeps stub; all fetchers return success with default fixtures. */
 const deps = (over: Partial<ResolveDeps> = {}): ResolveDeps => ({
-  fetchProjects: async () => projects.map((p) => ({ ...p, score: 0 })),
-  fetchTasks: async () => [],
-  fetchTags: async () => [],
-  fetchFolders: async () => [],
+  fetchProjects: async () => success(projects.map((p) => ({ ...p, score: 0 }))),
+  fetchTasks: async () => success([]),
+  fetchTags: async () => success([]),
+  fetchFolders: async () => success([]),
   resolveAnchor: async () => ({ status: "none", suggestions: [] }),
   ...over,
 });
@@ -34,39 +38,61 @@ describe("runResolve (entity)", () => {
     expect(out.success).toBe(true);
     expect(out.data!.status).toBe("resolved");
   });
+
   it("ambiguous → two Falcon projects, candidates carry context", async () => {
     const out = await runResolve({ query: "falcon", kind: "project" }, deps());
+    expect(out.success).toBe(true);
     const d = out.data!;
+    // The scorer may resolve to "Project Falcon" if it wins clearly, or return
+    // ambiguous when the two Falcon projects score too close. Accept both —
+    // the assertion of interest is that context is preserved.
     expect(["ambiguous", "resolved"]).toContain(d.status);
     if (d.status === "ambiguous") {
       expect(d.candidates.map((c) => c.id).sort()).toEqual(["a", "b"]);
       expect(d.candidates.some((c) => c.context !== undefined)).toBe(true);
     }
   });
+
   it("none → unrelated query", async () => {
-    expect((await runResolve({ query: "zzzzz nonsense", kind: "project" }, deps())).data!.status).toBe("none");
+    const out = await runResolve({ query: "zzzzz nonsense", kind: "project" }, deps());
+    expect(out.success).toBe(true);
+    expect(out.data!.status).toBe("none");
   });
+
   it("empty query → failure", async () => {
-    expect((await runResolve({ query: "   ", kind: "project" }, deps())).success).toBe(false);
+    const out = await runResolve({ query: "   ", kind: "project" }, deps());
+    expect(out.success).toBe(false);
   });
+
   it("kind 'any' unions project + task", async () => {
     const out = await runResolve({ query: "falcon", kind: "any" }, deps({
-      fetchTasks: async () => [{ id: "t1", name: "Falcon launch checklist", kind: "task", context: "Project Falcon", score: 0 }],
+      fetchTasks: async () => success([
+        { id: "t1", name: "Falcon launch checklist", kind: "task", context: "Project Falcon", score: 0 },
+      ]),
     }));
+    expect(out.success).toBe(true);
     const d = out.data!;
-    if (d.status === "ambiguous") expect(d.candidates.some((c) => c.kind === "task")).toBe(true);
+    // When project + task both have falcon items the result could be ambiguous
+    // or resolved depending on margin; verify task candidates are present in
+    // the ambiguous case.
+    if (d.status === "ambiguous") {
+      expect(d.candidates.some((c) => c.kind === "task")).toBe(true);
+    }
   });
-  it("defaults to project kind and routes to fetchProjects", async () => {
+
+  it("defaults to project kind and routes to fetchProjects only", async () => {
     let tasksCalled = false;
     const out = await runResolve({ query: "Project Falcon" }, deps({
       fetchTasks: async () => {
         tasksCalled = true;
-        return [];
+        return success([]);
       },
     }));
+    expect(out.success).toBe(true);
     expect(out.data!.status).toBe("resolved");
     expect(tasksCalled).toBe(false);
   });
+
   it("kind 'temporal-anchor' delegates to resolveAnchor", async () => {
     const out = await runResolve({ query: "anything", kind: "temporal-anchor" }, deps({
       resolveAnchor: async () => ({
@@ -77,6 +103,27 @@ describe("runResolve (entity)", () => {
     }));
     expect(out.success).toBe(true);
     expect(out.data!.status).toBe("resolved");
+  });
+
+  it("propagates an underlying query failure (does not report 'none')", async () => {
+    const out = await runResolve({ query: "Project Falcon", kind: "project" }, deps({
+      fetchProjects: async () => failure(createError(ErrorCode.UNKNOWN_ERROR, "OmniFocus not running")),
+    }));
+    expect(out.success).toBe(false);
+  });
+
+  it("propagates a task-fetch failure on kind 'any'", async () => {
+    const out = await runResolve({ query: "falcon", kind: "any" }, deps({
+      fetchTasks: async () => failure(createError(ErrorCode.UNKNOWN_ERROR, "OmniFocus not running")),
+    }));
+    expect(out.success).toBe(false);
+  });
+
+  it("propagates a project-fetch failure on kind 'any'", async () => {
+    const out = await runResolve({ query: "falcon", kind: "any" }, deps({
+      fetchProjects: async () => failure(createError(ErrorCode.UNKNOWN_ERROR, "project query failed")),
+    }));
+    expect(out.success).toBe(false);
   });
 });
 
@@ -99,14 +146,16 @@ describe("buildAnchorResolver (temporal-anchor)", () => {
       expect(typeof r.resolved.nextOccurrence).toBe("string");
     }
   });
+
   it("none + calendar hint when nothing matches", async () => {
     const r = await resolver("dentist appointment", 5);
     expect(r.status).toBe("none");
     if (r.status === "none") expect(r.note ?? "").toMatch(/calendar/i);
   });
+
   it("ambiguous candidates carry a null nextOccurrence", async () => {
-    // Two distinct daily-standup-ish repeating tasks tie at the same score, so
-    // classify() returns ambiguous; the resolver must not enrich candidates.
+    // Two daily-standup-ish tasks score equally; classify() returns ambiguous;
+    // the resolver must not do recurrence work — candidates get null.
     const ambiguous = buildAnchorResolver({
       scanRepeatingTasks: async () => [
         { id: "m", name: "Standup Morning", ruleString: "FREQ=DAILY", method: "DueDate" as const, dueDate: "2026-06-01T09:00:00.000Z", deferDate: null, completionDate: null },
