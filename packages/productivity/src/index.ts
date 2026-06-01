@@ -10,8 +10,10 @@ import {
   thisWeekDescriptor,
   todayDescriptor,
 } from "./commands/digests.js";
+import { linkDescriptor, unlinkDescriptor, linksDescriptor } from "./commands/link.js";
 import { nextOccurrencesDescriptor } from "./commands/next-occurrences.js";
 import { occurrencesDescriptor } from "./commands/occurrences.js";
+import { readinessDescriptor } from "./commands/readiness.js";
 import { resolveDescriptor } from "./commands/resolve.js";
 
 export { changesDescriptor } from "./changes/command.js";
@@ -68,6 +70,32 @@ export {
 } from "./commands/resolve.js";
 export type { ResolveOutput, ResolveDeps } from "./commands/resolve.js";
 
+export {
+  runLink,
+  runUnlink,
+  runLinks,
+  linkDescriptor,
+  unlinkDescriptor,
+  linksDescriptor,
+} from "./commands/link.js";
+export type {
+  LinkDeps,
+  LinkResult,
+  LinksResult,
+  ListedLink,
+} from "./commands/link.js";
+export { runReadiness, readinessDescriptor } from "./commands/readiness.js";
+export { FileLinkStore } from "./links/store.js";
+export type { LinkStore } from "./links/store.js";
+export * from "./links/types.js";
+export {
+  readiness,
+  blockCoverage,
+  suggestedDue,
+  needsRefresh,
+  eventNeedsRefresh,
+} from "./links/readiness.js";
+
 /**
  * Every command descriptor contributed by the productivity package.
  * The CLI, MCP server, and docs generator compose this with the SDK's
@@ -87,5 +115,9 @@ export const productivityDescriptors: readonly ResolvedCommandDescriptor<
   todayDescriptor,
   thisWeekDescriptor,
   resolveDescriptor,
+  linkDescriptor,
+  unlinkDescriptor,
+  linksDescriptor,
+  readinessDescriptor,
 ];
 /* eslint-enable @typescript-eslint/no-explicit-any */
