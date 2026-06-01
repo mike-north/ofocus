@@ -56,22 +56,24 @@ export function score(query: string, name: string): number {
       .join("");
     if (initials === q) signals.push(0.7);
   }
-  // Edit-distance similarity is computed per-token (best matching pair) so a
-  // typo inside a single word of a multi-word name (e.g. "falcn" vs
-  // "project falcon") still scores well; whole-string Levenshtein would dilute
-  // the signal across the unmatched words. Reduces to whole-string similarity
-  // when both query and name are single tokens.
-  const qSims = qts.length > 0 ? qts : [q];
-  const nSims = nts.length > 0 ? nts : [n];
-  let bestSim = 0;
-  for (const qt of qSims) {
-    for (const nt of nSims) {
-      const dist = levenshtein(qt, nt);
-      const sim = 1 - dist / Math.max(qt.length, nt.length);
-      if (sim > bestSim) bestSim = sim;
+  // Edit-distance typo tolerance: require EVERY query token to closely match some
+  // name token (≥0.8 ⇒ at most a small typo), so coincidental single-token overlap
+  // (e.g. "call mom" vs "Tall Mom Jeans") doesn't inflate the score.
+  if (qts.length > 0 && nts.length > 0) {
+    let total = 0;
+    let allStrong = true;
+    for (const qt of qts) {
+      let best = 0;
+      for (const nt of nts) {
+        const d = levenshtein(qt, nt);
+        const sim = 1 - d / Math.max(qt.length, nt.length);
+        if (sim > best) best = sim;
+      }
+      if (best < 0.8) { allStrong = false; break; }
+      total += best;
     }
+    if (allStrong) signals.push((total / qts.length) * 0.85);
   }
-  if (bestSim > 0.6) signals.push(bestSim * 0.9);
   const best = signals.length > 0 ? Math.max(...signals) : 0;
   return Math.min(1, Math.max(0, best));
 }
@@ -111,7 +113,9 @@ export function classify<T extends { score: number }>(
   const top = scored[0];
   if (top === undefined) return { status: "none", suggestions: [] };
   const second = scored[1];
-  const clearWinner = second === undefined || top.score - second.score >= t.margin;
+  const clearWinner =
+    second === undefined ||
+    Math.round((top.score - second.score) * 100) >= Math.round(t.margin * 100);
   if (top.score >= t.tHigh && clearWinner) return { status: "resolved", resolved: top, confidence: "high" };
   const candidates = scored.filter((c) => c.score >= t.tLow);
   if (candidates.length > 0) return { status: "ambiguous", candidates };

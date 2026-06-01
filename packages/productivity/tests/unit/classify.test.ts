@@ -41,4 +41,14 @@ describe("classify", () => {
   it("none: empty input", () => {
     expect(classify([], RANK_THRESHOLDS).status).toBe("none");
   });
+  it("resolved: winner exactly margin (0.15) ahead is resolved (float-safe)", () => {
+    const cand = (id: string, sc: number) => ({ id, name: id, kind: "project" as const, score: sc });
+    expect(classify([cand("a", 0.95), cand("b", 0.8)]).status).toBe("resolved");
+  });
+  it("ambiguous: candidate exactly at tLow (0.4) is included", () => {
+    const cand = (id: string, sc: number) => ({ id, name: id, kind: "project" as const, score: sc });
+    const r = classify([cand("a", 0.6), cand("b", 0.4)]);
+    expect(r.status).toBe("ambiguous");
+    if (r.status === "ambiguous") expect(r.candidates.map((c) => c.id)).toContain("b");
+  });
 });

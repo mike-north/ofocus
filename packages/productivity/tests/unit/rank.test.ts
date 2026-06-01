@@ -33,4 +33,14 @@ describe("score", () => {
   it("unrelated query scores near zero", () => {
     expect(score("quarterly taxes", "Project Falcon")).toBeLessThan(0.3);
   });
+  it("does not false-positive on coincidental token overlap", () => {
+    // 'mom'↔'mom' must not carry an unrelated multi-word match above the candidate floor.
+    expect(score("call mom", "Tall Mom Jeans")).toBeLessThan(0.4);
+    expect(score("fix bug", "Fox Bag")).toBeLessThan(0.4);
+    expect(score("review", "Renew License")).toBeLessThan(0.4);
+  });
+  it("empty name does not throw / NaN", () => {
+    expect(score("x", "")).toBe(0);
+    expect(score("", "")).toBe(0);
+  });
 });
