@@ -64,6 +64,19 @@ describe("runResolve (entity)", () => {
     expect(out.success).toBe(false);
   });
 
+  // Direct callers bypass the zod schema that guards limit at the CLI/MCP
+  // boundary, so the handler validates it itself for consistent errors.
+  it.each([0, -1, 2.5])("non-positive/non-integer limit %p → failure", async (limit) => {
+    const out = await runResolve({ query: "falcon", kind: "project", limit }, deps());
+    expect(out.success).toBe(false);
+    expect(out.error?.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("omitted limit is accepted (uses default)", async () => {
+    const out = await runResolve({ query: "falcon", kind: "project" }, deps());
+    expect(out.success).toBe(true);
+  });
+
   it("kind 'any' unions project + task", async () => {
     const out = await runResolve({ query: "falcon", kind: "any" }, deps({
       fetchTasks: async () => success([

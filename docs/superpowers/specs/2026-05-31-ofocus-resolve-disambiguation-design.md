@@ -32,12 +32,12 @@ Today the tool offers substring `search` and `nameContains/Starts/Equals/Regex` 
 All in `@ofocus/productivity` (L2). The candidate sets come from the **existing SDK entity queries** (and A2's repeating-task scan) — `resolve` ranks them **in-process** and classifies; no new OmniJS for entity resolution.
 
 ### 3.1 Pure ranking engine — `src/resolve/rank.ts`
-- **`score(query: string, name: string): number`** → `0..1`. Multi-signal, case-insensitive, whitespace-normalized (trim + collapse). Signals combined as a **weighted maximum** (the best-matching signal wins, with small blending):
+- **`score(query: string, name: string): number`** → `0..1`. Multi-signal, case-insensitive, whitespace-normalized (trim + collapse). Signals are combined as a straight **maximum** — the single best-matching signal wins (no blending):
   - **exact** (normalized equality) → `1.0`
   - **prefix** (name starts with query) → high
   - **substring** (query appears in name) → medium-high
   - **token-subsequence** — every query token matches a name token (prefix match), order-independent ("falcon scalability" matches "Scalability — Falcon") → medium-high scaled by coverage
-  - **edit-distance** — normalized Levenshtein over the whole string (catches typos: "Falcn") → `1 − dist/maxLen`
+  - **edit-distance (per-token, coverage-gated)** — fires only when **every** query token closely matches (normalized Levenshtein similarity ≥ 0.8) some name token; the signal is the average of those per-token best similarities × 0.85. This catches typos like "falcn" → "falcon" inside "Project Falcon" while avoiding false positives from a single coincidentally-overlapping token (e.g. "call mom" vs "Tall Mom Jeans"). (A whole-string Levenshtein was tried first but produced those false positives.)
   - **acronym/initialism** — query letters match the leading letters of consecutive name tokens ("PF" → **P**roject **F**alcon) → medium
   - Empty query → `0`.
 - **`rankCandidates<T extends {name:string}>(query, items, opts): Scored<T>[]`** — score each item, sort descending (stable; tie-break by shorter name then name asc for determinism), drop below a floor, take top `opts.limit`.

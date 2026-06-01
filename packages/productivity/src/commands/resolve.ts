@@ -102,6 +102,17 @@ export async function runResolve(
       ),
     );
   }
+  if (
+    input.limit !== undefined &&
+    (!Number.isInteger(input.limit) || input.limit < 1)
+  ) {
+    return failure(
+      createError(
+        ErrorCode.VALIDATION_ERROR,
+        `limit must be a positive integer, got: ${String(input.limit)}`,
+      ),
+    );
+  }
   const kind = input.kind ?? "project";
   const limit = input.limit ?? RANK_THRESHOLDS.limit;
 
