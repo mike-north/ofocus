@@ -89,6 +89,10 @@ export const PRODUCTIVITY_TOOLS = [
   "today",
   "this_week",
   "resolve",
+  "link",
+  "unlink",
+  "links",
+  "readiness",
 ] as const;
 
 export const ALL_TOOLS = [

@@ -17,9 +17,9 @@ import {
   failure,
   success,
 } from "@ofocus/sdk";
-import { FileLinkStore, type LinkStore } from "../links/store.js";
-import { readTaskStates } from "../links/scan-task-state.js";
+import type { LinkStore } from "../links/store.js";
 import { blockCoverage, needsRefresh } from "../links/readiness.js";
+import { eventArgSchema, toEventInput, realLinkDeps } from "./links-shared.js";
 import type {
   BlockCoverage,
   EventInput,
@@ -287,47 +287,6 @@ export async function runLinks(
   });
 
   return success({ links: listed, pruned });
-}
-
-/** Production dependencies. */
-function realLinkDeps(): LinkDeps {
-  return {
-    store: new FileLinkStore(),
-    fetchTaskStates: readTaskStates,
-    now: new Date().toISOString(),
-  };
-}
-
-/** Zod schema for an agent-supplied event; CLI passes it as a JSON string. */
-const eventObjectSchema = z.object({
-  eventId: z.string().min(1).describe("Stable event id from your calendar source"),
-  title: z.string().describe("Event title"),
-  start: z.string().describe("Event start (ISO 8601)"),
-  end: z.string().describe("Event end (ISO 8601)"),
-  location: z.string().optional().describe("Event location"),
-  source: z.string().optional().describe("Calendar source, e.g. google | ms365"),
-});
-
-/** Accept either a structured object (MCP) or a JSON string (CLI). */
-const eventArgSchema = z.preprocess((v) => {
-  if (typeof v !== "string") return v;
-  try {
-    return JSON.parse(v);
-  } catch {
-    return v; // leave as-is so object validation fails with a clear error
-  }
-}, eventObjectSchema);
-
-/** Map the zod-inferred event to an EventInput (handles exactOptionalPropertyTypes). */
-function toEventInput(e: z.infer<typeof eventObjectSchema>): EventInput {
-  return {
-    eventId: e.eventId,
-    title: e.title,
-    start: e.start,
-    end: e.end,
-    ...(e.location !== undefined ? { location: e.location } : {}),
-    ...(e.source !== undefined ? { source: e.source } : {}),
-  };
 }
 
 /**

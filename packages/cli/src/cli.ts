@@ -73,6 +73,10 @@ import {
   todayDescriptor,
   thisWeekDescriptor,
   resolveDescriptor,
+  linkDescriptor,
+  unlinkDescriptor,
+  linksDescriptor,
+  readinessDescriptor,
 } from "@ofocus/productivity";
 import { listCommands } from "./commands/list-commands.js";
 import {
@@ -236,6 +240,18 @@ Use --format json|toon for machine output (default: json). Use --human for human
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
   registerCliCommand(program, resolveDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, linkDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, unlinkDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, linksDescriptor, (result, cmd) => {
+    output(result, getOutputFormat(getGlobalOpts(cmd)));
+  });
+  registerCliCommand(program, readinessDescriptor, (result, cmd) => {
     output(result, getOutputFormat(getGlobalOpts(cmd)));
   });
 

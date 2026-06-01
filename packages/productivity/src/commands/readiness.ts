@@ -6,6 +6,7 @@
  *
  * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
  */
+import { z } from "zod";
 import {
   type CliOutput,
   ErrorCode,
@@ -14,11 +15,9 @@ import {
   failure,
   success,
 } from "@ofocus/sdk";
-import { z } from "zod";
-import { FileLinkStore } from "../links/store.js";
-import { readTaskStates } from "../links/scan-task-state.js";
 import { readiness } from "../links/readiness.js";
 import type { LinkDeps } from "./link.js";
+import { eventArgSchema, toEventInput, realLinkDeps } from "./links-shared.js";
 import type {
   EventInput,
   EventSnapshot,
@@ -145,43 +144,6 @@ export async function runReadiness(
   }));
 
   return success(readiness(event, entries, now));
-}
-
-function realLinkDeps(): LinkDeps {
-  return {
-    store: new FileLinkStore(),
-    fetchTaskStates: readTaskStates,
-    now: new Date().toISOString(),
-  };
-}
-
-const eventObjectSchema = z.object({
-  eventId: z.string().min(1),
-  title: z.string(),
-  start: z.string(),
-  end: z.string(),
-  location: z.string().optional(),
-  source: z.string().optional(),
-});
-const eventArgSchema = z.preprocess((v) => {
-  if (typeof v !== "string") return v;
-  try {
-    return JSON.parse(v);
-  } catch {
-    return v;
-  }
-}, eventObjectSchema);
-
-/** Map the zod-inferred event to an EventInput (handles exactOptionalPropertyTypes). */
-function toEventInput(e: z.infer<typeof eventObjectSchema>): EventInput {
-  return {
-    eventId: e.eventId,
-    title: e.title,
-    start: e.start,
-    end: e.end,
-    ...(e.location !== undefined ? { location: e.location } : {}),
-    ...(e.source !== undefined ? { source: e.source } : {}),
-  };
 }
 
 /**
