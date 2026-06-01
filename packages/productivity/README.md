@@ -56,6 +56,40 @@ OFOCUS_SUMMARY_CMD="llm -m gpt-4o" ofocus changes --semantic
 ofocus changes --reset
 ```
 
+## Resolve
+
+Turn a fuzzy human reference into a concrete OmniFocus entity. The scorer is deterministic (no calendar access; temporal anchors are resolved against the recurrence engine, not a live calendar).
+
+```bash
+ofocus resolve <query> [--kind <kind>] [--limit N]
+```
+
+| Flag | Default | Description |
+| ---- | ------- | ----------- |
+| `--kind` | `project` | Entity kind to search. One of `project`, `task`, `tag`, `folder`, `temporal-anchor`, `any` (`any` = project + task). |
+| `--limit` | `5` | Maximum number of candidates returned in ambiguous/none results. |
+
+### Result statuses
+
+| Status | Meaning |
+| ------ | ------- |
+| `resolved` | A single high-confidence match that clearly beats the runner-up. The `resolved` field carries `id`, `name`, `kind`, and (for `temporal-anchor`) `nextOccurrence`. |
+| `ambiguous` | A tight ranked candidate set — the caller must choose. Each candidate has `id`, `name`, `kind`, and a numeric `score`. |
+| `none` | Nothing crossed the match floor. A `suggestions` array (possibly empty) lists near-misses. |
+
+### Examples
+
+```bash
+# Resolve a project by fuzzy name
+ofocus resolve "falcon" --kind project --format json
+
+# Resolve a repeating task and get its next occurrence
+ofocus resolve "stand-up" --kind temporal-anchor --format json
+
+# Search across projects and tasks
+ofocus resolve "billing" --kind any --limit 3 --format json
+```
+
 ## Temporal
 
 Inspect upcoming repeating tasks and get focused digests of what needs attention.
