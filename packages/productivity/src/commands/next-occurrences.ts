@@ -85,8 +85,10 @@ export interface NextOccurrencesOutput {
  *
  * `null` (a repeating task without a resolvable method) defaults to
  * `"due-again"`, matching the most common schedule-anchored behaviour.
+ *
+ * @public
  */
-function methodMap(
+export function methodMap(
   method: OmniRepeatMethod | null,
 ): RepetitionRule["repeatMethod"] {
   switch (method) {

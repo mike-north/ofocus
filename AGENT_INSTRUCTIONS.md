@@ -874,6 +874,18 @@ Project every incomplete repeating task forward over a window and list the upcom
 | --- | --- | --- | --- |
 | days | `number` | no | Window length in days (default 14) |
 
+#### `resolve`
+
+Resolve a fuzzy reference to an OmniFocus entity. Returns a confidently resolved match, a tight ranked candidate set (ambiguous), or none. --kind temporal-anchor matches a repeating task and returns its next occurrence.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| query | `string` | yes | Fuzzy reference, e.g. 'Project Falcon' or 'next stand-up' |
+| kind | `project \| task \| tag \| folder \| temporal-anchor \| any` | no | What to resolve (default: project; 'any' = project + task) |
+| limit | `number` | no | Max candidates (default 5) |
+
+**Example:** `{ "query": "<query>" }`
+
 #### `this_week`
 
 Digest of tasks due over the next seven days, grouped by calendar day and annotated with how soon each is due.

@@ -12,6 +12,7 @@ import {
 } from "./commands/digests.js";
 import { nextOccurrencesDescriptor } from "./commands/next-occurrences.js";
 import { occurrencesDescriptor } from "./commands/occurrences.js";
+import { resolveDescriptor } from "./commands/resolve.js";
 
 export { changesDescriptor } from "./changes/command.js";
 export type { ChangesOutput, ChangesDeps } from "./changes/command.js";
@@ -60,6 +61,13 @@ export type {
   WeekItem,
 } from "./commands/digests.js";
 
+export {
+  runResolve,
+  buildAnchorResolver,
+  resolveDescriptor,
+} from "./commands/resolve.js";
+export type { ResolveOutput, ResolveDeps } from "./commands/resolve.js";
+
 /**
  * Every command descriptor contributed by the productivity package.
  * The CLI, MCP server, and docs generator compose this with the SDK's
@@ -78,5 +86,6 @@ export const productivityDescriptors: readonly ResolvedCommandDescriptor<
   occurrencesDescriptor,
   todayDescriptor,
   thisWeekDescriptor,
+  resolveDescriptor,
 ];
 /* eslint-enable @typescript-eslint/no-explicit-any */
