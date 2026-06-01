@@ -112,7 +112,7 @@ Descriptors via `defineCommand`; injected deps (`LinkStore` + task fetcher + `no
 ## 4. Error handling
 Reuse `CliError`/`ErrorCode`.
 - **Invalid event data:** unparseable `--event` JSON, missing required field, non-ISO `start`/`end`, or `end < start` → `VALIDATION_ERROR`.
-- **Unknown task at link time:** validate `taskId` against a live task fetch. If the task does not exist → `VALIDATION_ERROR`. If **OmniFocus is unreachable**, store the link anyway (L2 fail-open) and mark `taskVerified: false` so the caller knows verification was skipped.
+- **Unknown task at link time:** validate `taskId` against a live task fetch. If the task does not exist → `TASK_NOT_FOUND`. If **OmniFocus is unreachable**, store the link anyway (L2 fail-open) and mark `taskVerified: false` so the caller knows verification was skipped.
 - **Persistence failures are hard failures:** a mutation (`link`/`unlink`/`--prune`) that cannot write the store returns `failure` — a link that didn't persist must never look saved.
 - **Reads are lenient:** a missing store → empty result (success). A corrupt store → `failure` with a clear message (never silently drop state).
 - **Unknown `OFOCUS_LINK_STORE`** → `VALIDATION_ERROR`.
