@@ -1,3 +1,5 @@
+import type { DisambiguationResult } from "./types.js";
+
 function norm(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -72,4 +74,46 @@ export function score(query: string, name: string): number {
   if (bestSim > 0.6) signals.push(bestSim * 0.9);
   const best = signals.length > 0 ? Math.max(...signals) : 0;
   return Math.min(1, Math.max(0, best));
+}
+
+export interface RankThresholds {
+  tHigh: number;
+  margin: number;
+  tLow: number;
+  limit: number;
+}
+
+export const RANK_THRESHOLDS: RankThresholds = { tHigh: 0.85, margin: 0.15, tLow: 0.4, limit: 5 };
+
+export interface RankOpts {
+  limit?: number;
+  floor?: number;
+}
+
+export function rankCandidates<T extends { name: string }>(
+  query: string,
+  items: readonly T[],
+  opts: RankOpts = {},
+): (T & { score: number })[] {
+  const floor = opts.floor ?? 0.2;
+  const limit = opts.limit ?? RANK_THRESHOLDS.limit;
+  return items
+    .map((it) => ({ ...it, score: Math.round(score(query, it.name) * 100) / 100 }))
+    .filter((c) => c.score >= floor)
+    .sort((a, b) => b.score - a.score || a.name.length - b.name.length || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
+
+export function classify<T extends { score: number }>(
+  scored: readonly T[],
+  t: RankThresholds = RANK_THRESHOLDS,
+): DisambiguationResult<T> {
+  const top = scored[0];
+  if (top === undefined) return { status: "none", suggestions: [] };
+  const second = scored[1];
+  const clearWinner = second === undefined || top.score - second.score >= t.margin;
+  if (top.score >= t.tHigh && clearWinner) return { status: "resolved", resolved: top, confidence: "high" };
+  const candidates = scored.filter((c) => c.score >= t.tLow);
+  if (candidates.length > 0) return { status: "ambiguous", candidates };
+  return { status: "none", suggestions: scored.slice(0, 3) };
 }
