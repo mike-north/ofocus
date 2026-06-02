@@ -1,0 +1,24 @@
+{
+  "name": "ofocus",
+  "owner": {
+    "name": "Mike North"
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "description": "OmniFocus AI assistant — proactive change notifications and inbox triage/co-planning, built on the ofocus CLI."
+  },
+  "plugins": [
+    {
+      "name": "ofocus-assistant",
+      "source": "./plugins/ofocus-assistant",
+      "description": "Proactive OmniFocus change notifications (tiered, per-session, low-noise) plus an inbox-triage and co-planning skill. Built on the ofocus CLI.",
+      "tags": [
+        "omnifocus",
+        "productivity",
+        "notifications",
+        "triage",
+        "calendar"
+      ]
+    }
+  ]
+}

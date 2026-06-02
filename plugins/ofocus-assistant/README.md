@@ -4,6 +4,26 @@ A Claude Code plugin that turns OmniFocus into a collaborative surface: it proac
 
 > Requires macOS with OmniFocus and the `ofocus` CLI installed and on `PATH`.
 
+## Install
+
+Two parts — the CLI engine the hooks call, then the plugin itself:
+
+```bash
+# 1. The ofocus CLI (provides the `ofocus` binary the hooks shell out to)
+npm install -g ofocus
+
+# 2. The plugin — either install front-end works (both read this repo's marketplace index):
+
+#    a) cross-tool installer (Claude Code / Cursor)
+npx plugins add mike-north/ofocus
+
+#    b) Claude Code native
+#       /plugin marketplace add mike-north/ofocus
+#       /plugin install ofocus-assistant@ofocus
+```
+
+Hooks load at session start, so **restart Claude Code** after installing. If the CLI lives somewhere off `PATH`, point the plugin at it with `OFOCUS_BIN=/path/to/ofocus`. The plugin is fail-open: if `ofocus` is missing it injects nothing and never blocks a turn.
+
 ## What it does
 
 A tiered, low-noise change-notification model over a shared `ofocus changes` watch, plus a triage skill. Tracking is keyed per session, so concurrent agent sessions never silence each other.
@@ -16,16 +36,16 @@ A tiered, low-noise change-notification model over a shared `ofocus changes` wat
 
 ## Configuration (env)
 
-| Variable | Default | Meaning |
-| --- | --- | --- |
-| `OFOCUS_ASSISTANT_WATCH` | `agent` | The shared `ofocus changes` watch name. |
-| `OFOCUS_ASSISTANT_REFRESH_INTERVAL_MS` | `300000` | Debounce for the shared background refresh (5 min). |
-| `OFOCUS_ASSISTANT_NUDGE_INTERVAL_MS` | `600000` | Soft-nudge throttle (10 min). |
-| `OFOCUS_ASSISTANT_URGENT_DUE_TODAY` | `true` | Treat newly due-today (not just overdue) as urgent. |
-| `OFOCUS_ASSISTANT_AGENT_TAG` | (unset) | If set, a task gaining this tag is treated as urgent. |
-| `OFOCUS_BIN` | `ofocus` | Path/name of the ofocus CLI. |
-| `OFOCUS_STATE_DIR` | `~/.ofocus` | Where the watch cache and hook state live. |
-| `OFOCUS_ASSISTANT_DISABLE` | (unset) | If set, the hook is a silent no-op. |
+| Variable                               | Default     | Meaning                                               |
+| -------------------------------------- | ----------- | ----------------------------------------------------- |
+| `OFOCUS_ASSISTANT_WATCH`               | `agent`     | The shared `ofocus changes` watch name.               |
+| `OFOCUS_ASSISTANT_REFRESH_INTERVAL_MS` | `300000`    | Debounce for the shared background refresh (5 min).   |
+| `OFOCUS_ASSISTANT_NUDGE_INTERVAL_MS`   | `600000`    | Soft-nudge throttle (10 min).                         |
+| `OFOCUS_ASSISTANT_URGENT_DUE_TODAY`    | `true`      | Treat newly due-today (not just overdue) as urgent.   |
+| `OFOCUS_ASSISTANT_AGENT_TAG`           | (unset)     | If set, a task gaining this tag is treated as urgent. |
+| `OFOCUS_BIN`                           | `ofocus`    | Path/name of the ofocus CLI.                          |
+| `OFOCUS_STATE_DIR`                     | `~/.ofocus` | Where the watch cache and hook state live.            |
+| `OFOCUS_ASSISTANT_DISABLE`             | (unset)     | If set, the hook is a silent no-op.                   |
 
 The hook is **fail-open**: if `ofocus` is missing or errors, it injects nothing and never blocks a tool call or turn.
 
