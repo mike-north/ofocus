@@ -854,6 +854,29 @@ Set the review interval for a project in days
 
 **Example:** `{ "projectId": "<projectId>", "intervalDays": "<intervalDays>" }`
 
+#### `link`
+
+Link an OmniFocus task to a calendar event the agent supplies. --type prep-for (task done before the event) or time-block (event reserves work time). ofocus never reads a calendar; pass event data via --event.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| taskId | `string` | yes | The task to link |
+| event | `unknown` | yes | Event JSON: {"eventId","title","start","end","location"?,"source"?} |
+| type | `prep-for \| time-block` | no | Link type (default: prep-for) |
+| note | `string` | no | Optional note describing the link |
+
+**Example:** `{ "taskId": "<taskId>", "event": "<event>" }`
+
+#### `links`
+
+List task↔event links for a task (--task) or an event (--event-id). Each link is annotated with refresh status and (for time-blocks) coverage. --prune drops links whose task no longer exists.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| task | `string` | no | List links for this task id |
+| eventId | `string` | no | List links for this event id |
+| prune | `boolean` | no | Remove links whose task no longer exists |
+
 #### `next_occurrences`
 
 Read a task's repetition rule and project its next occurrence dates. Schedule-anchored repeats (Fixed/DueDate) are predictable; completion-anchored repeats (Start) are projected and may shift.
@@ -873,6 +896,18 @@ Project every incomplete repeating task forward over a window and list the upcom
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | days | `number` | no | Window length in days (default 14) |
+
+#### `readiness`
+
+Assess meeting readiness for a calendar event: are its prep-for tasks done, and are they on track relative to the event start? Pass --event to refresh the stored snapshot with current calendar data.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| eventId | `string` | yes | The event id to assess |
+| event | `unknown` | no | Optional fresh event JSON to refresh the stored snapshot |
+| now | `string` | no | Override the current instant (ISO 8601; for testing/determinism) |
+
+**Example:** `{ "eventId": "<eventId>" }`
 
 #### `resolve`
 
@@ -897,4 +932,16 @@ _No parameters._
 Digest of what needs attention today: overdue, due today, and flagged tasks, each annotated with how overdue or how soon it is.
 
 _No parameters._
+
+#### `unlink`
+
+Remove a task↔event link by task id, event id, and type.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| taskId | `string` | yes | The linked task id |
+| eventId | `string` | yes | The linked event id |
+| type | `prep-for \| time-block` | no | Link type (default: prep-for) |
+
+**Example:** `{ "taskId": "<taskId>", "eventId": "<eventId>" }`
 

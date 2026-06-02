@@ -90,6 +90,44 @@ ofocus resolve "stand-up" --kind temporal-anchor --format json
 ofocus resolve "billing" --kind any --limit 3 --format json
 ```
 
+## Calendar links
+
+Link OmniFocus tasks to calendar events the agent supplies (`ofocus` never reads a calendar itself) and reason about them deterministically.
+
+```bash
+# Link a task as prep for a meeting (event data comes from your calendar tool)
+ofocus link <taskId> --type prep-for \
+  --event '{"eventId":"abc","title":"1:1 with Sarah","start":"2026-06-02T15:00:00Z","end":"2026-06-02T15:30:00Z"}'
+
+# Reserve a work block for a task
+ofocus link <taskId> --type time-block --event '{...}'
+
+# Is this meeting's prep done and on track?
+ofocus readiness --event-id abc --format json
+
+# Refresh the stored event with current calendar data while assessing
+ofocus readiness --event-id abc --event '{...current event...}' --format json
+
+# List links (each annotated with refresh status; time-blocks show coverage)
+ofocus links --task <taskId> --format json
+ofocus links --event-id abc --format json
+
+# Drop links whose task no longer exists
+ofocus links --task <taskId> --prune
+
+# Remove a specific link
+ofocus unlink <taskId> --event-id abc --type prep-for
+```
+
+| Link type | Computation |
+| --------- | ----------- |
+| `prep-for` | Meeting **readiness** (`ready` / `not-ready` / `at-risk`) + lead-time `suggestedDue` (event start − estimate) and a `late` flag. |
+| `time-block` | **Block coverage** — whether the reserved block is at least the task's estimated minutes. |
+
+Each link carries a **`needsRefresh`** signal: when the stored event snapshot is older than 24h, or the event start has passed while prep is still open, `ofocus` flags it so the agent re-supplies current calendar data.
+
+Links are stored under `OFOCUS_STATE_DIR` (default `~/.ofocus`) via a pluggable `LinkStore` (cloud backends can be added behind the same interface).
+
 ## Temporal
 
 Inspect upcoming repeating tasks and get focused digests of what needs attention.
