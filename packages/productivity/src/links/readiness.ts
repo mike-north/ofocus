@@ -139,7 +139,9 @@ export function readiness(
     const sd = suggestedDue(event.start, e.state.estimatedMinutes);
     const done = e.state.completed;
     const late =
-      !done && sd !== null && (e.state.dueDate === null || e.state.dueDate > sd);
+      !done &&
+      sd !== null &&
+      (e.state.dueDate === null || Date.parse(e.state.dueDate) > Date.parse(sd));
     return {
       taskId: e.taskId,
       name: e.state.name,
@@ -163,7 +165,11 @@ export function readiness(
     const nowMs = Date.parse(now);
     const startMs = Date.parse(event.start);
     const pastSuggested = tasks.some(
-      (t) => t.status === "pending" && t.suggestedDue !== null && now >= t.suggestedDue,
+      (t) =>
+        t.status === "pending" &&
+        t.suggestedDue !== null &&
+        !Number.isNaN(nowMs) &&
+        nowMs >= Date.parse(t.suggestedDue),
     );
     const nearTerm =
       !Number.isNaN(nowMs) &&

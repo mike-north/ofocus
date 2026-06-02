@@ -130,6 +130,17 @@ describe("runLink", () => {
     expect(out.success).toBe(false);
     expect(out.error?.code).toBe("VALIDATION_ERROR");
   });
+
+  it("preserves the original createdAt when re-linking the same composite key", async () => {
+    const d = deps({ now: "2026-06-01T09:00:00.000Z" });
+    await runLink({ taskId: "t1", event: EVENT }, d);
+    const later = { ...deps(), store: d.store, now: "2026-06-05T09:00:00.000Z" };
+    await runLink({ taskId: "t1", event: { ...EVENT, title: "moved" } }, later);
+    const stored = await d.store.byTask("t1");
+    expect(stored).toHaveLength(1);
+    expect(stored[0]!.createdAt).toBe("2026-06-01T09:00:00.000Z"); // original, not 06-05
+    expect(stored[0]!.event.capturedAt).toBe("2026-06-05T09:00:00.000Z"); // snapshot refreshed
+  });
 });
 
 describe("runUnlink", () => {

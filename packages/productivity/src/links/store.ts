@@ -79,7 +79,9 @@ export class FileLinkStore implements LinkStore {
     if (!existsSync(this.path)) return [];
     const raw = readFileSync(this.path, "utf8");
     const parsed = JSON.parse(raw) as Partial<LinksFile>; // throws on corrupt → caller surfaces failure
-    if (parsed.version !== 1 || !Array.isArray(parsed.links)) return [];
+    if (parsed.version !== 1 || !Array.isArray(parsed.links)) {
+      throw new Error("links store has an unexpected shape or version");
+    }
     return parsed.links;
   }
 

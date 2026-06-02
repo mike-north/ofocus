@@ -74,7 +74,7 @@ export interface LinkStore {
   - **Atomic writes:** write to a temp file in the same dir, then `rename` over the target.
   - **Path safety:** reuse the `OFOCUS_STATE_DIR` resolution + sanitize approach from the `changes` cache.
   - **Resilient reads:** a missing file → empty link set (success, not an error). A corrupt/unparseable file → reported as a `failure` on read (don't silently discard user state), with a clear `STATE_CORRUPT`-style message.
-- **Adapter selection:** env var `OFOCUS_LINK_STORE` (default `"file"`). v1 implements `file` only; an unknown value → `VALIDATION_ERROR` at startup of a link command.
+- **Adapter selection (deferred):** v1 always uses `FileLinkStore`. An `OFOCUS_LINK_STORE` env switch (with `VALIDATION_ERROR` on an unknown backend) is deferred until a second adapter exists — wiring a selector with only one backend would be dead code. The `LinkStore` interface + conformance suite (the parts that make a cloud adapter additive) are in v1.
 - **Conformance suite:** a reusable test factory exercises any `LinkStore` implementation (upsert/idempotency/remove/by-task/by-event/all) so a future Airtable/cloud adapter is verified against the same contract.
 
 ### 3.3 Pure computation — `src/links/readiness.ts`
@@ -115,7 +115,7 @@ Reuse `CliError`/`ErrorCode`.
 - **Unknown task at link time:** validate `taskId` against a live task fetch. If the task does not exist → `TASK_NOT_FOUND`. If **OmniFocus is unreachable**, store the link anyway (L2 fail-open) and mark `taskVerified: false` so the caller knows verification was skipped.
 - **Persistence failures are hard failures:** a mutation (`link`/`unlink`/`--prune`) that cannot write the store returns `failure` — a link that didn't persist must never look saved.
 - **Reads are lenient:** a missing store → empty result (success). A corrupt store → `failure` with a clear message (never silently drop state).
-- **Unknown `OFOCUS_LINK_STORE`** → `VALIDATION_ERROR`.
+- **Backend selection** is not configurable in v1 (always `file`); the `OFOCUS_LINK_STORE` switch + its validation are deferred (see §3.2).
 
 ## 5. Testing (spec-first, multi-layer; no snapshots)
 Every expected value is hand-derived; no gold-master/snapshot assertions.

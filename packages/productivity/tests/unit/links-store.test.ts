@@ -120,6 +120,12 @@ describe("FileLinkStore", () => {
     await expect(store.all()).rejects.toThrow();
   });
 
+  it("present but wrong-shape/version file → throws (no silent state drop)", async () => {
+    writeFileSync(join(dir, "links.json"), JSON.stringify({ version: 2, links: [] }), "utf8");
+    const store = new FileLinkStore(dir);
+    await expect(store.all()).rejects.toThrow();
+  });
+
   it("writes atomically (no leftover temp file)", async () => {
     const store = new FileLinkStore(dir);
     await store.upsert(link());

@@ -165,11 +165,20 @@ export async function runLink(
   }
 
   const linkType: LinkType = input.type ?? "prep-for";
+  let createdAt = deps.now;
+  try {
+    const existing = (await deps.store.byTask(taskId)).find(
+      (l) => l.linkType === linkType && l.event.eventId === snap.value.eventId,
+    );
+    if (existing !== undefined) createdAt = existing.createdAt;
+  } catch {
+    // best-effort; if the store can't be read here, fall back to now and let upsert surface errors
+  }
   const link: TaskEventLink = {
     taskId,
     linkType,
     event: snap.value,
-    createdAt: deps.now,
+    createdAt,
     ...(input.note !== undefined ? { note: input.note } : {}),
   };
   try {

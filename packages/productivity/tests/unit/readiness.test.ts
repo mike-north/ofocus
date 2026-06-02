@@ -217,4 +217,14 @@ describe("readiness", () => {
     const r = readiness(stale, [{ taskId: "t1", state: state() }], NOW);
     expect(r.refresh.needsRefresh).toBe(true);
   });
+
+  it("non-canonical now (offset form) is compared by timestamp, not string", () => {
+    // event start 15:00Z, estimate 30m → suggestedDue 14:30Z (canonical).
+    // now expressed with a +00:00 offset and no millis: 14:45 is AFTER 14:30,
+    // but lexicographically "2026-06-02T14:45:00+00:00" < "2026-06-02T14:30:00.000Z"
+    // would be a WRONG string ordering — numeric compare must classify at-risk.
+    const entries: PrepEntry[] = [{ taskId: "t1", state: state() }];
+    const r = readiness(event(), entries, "2026-06-02T14:45:00+00:00");
+    expect(r.verdict).toBe("at-risk");
+  });
 });
