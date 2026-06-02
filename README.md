@@ -25,81 +25,99 @@ ofocus tasks --flagged
 ofocus complete <task-id>
 ```
 
+## Claude Code plugin
+
+This repo also ships an [`ofocus-assistant`](./plugins/ofocus-assistant) Claude Code plugin — proactive OmniFocus change notifications plus an inbox-triage/co-planning skill, built on the CLI above. It's distributed via this repo's plugin marketplace index (`.claude-plugin/marketplace.json`):
+
+```bash
+npm install -g ofocus            # the CLI the plugin's hooks call
+npx plugins add mike-north/ofocus # the plugin (Claude Code / Cursor)
+```
+
+Or with Claude Code's native plugin manager:
+
+```
+/plugin marketplace add mike-north/ofocus
+/plugin install ofocus-assistant@ofocus
+```
+
+See the [plugin README](./plugins/ofocus-assistant) for the notification model and configuration.
+
 ## Packages
 
-| Package                                                 | Description                                                     |
-| ------------------------------------------------------- | --------------------------------------------------------------- |
-| [`@ofocus/sdk`](./packages/sdk)                         | Core SDK with zero runtime dependencies                         |
-| [`@ofocus/productivity`](./packages/productivity)       | Productivity niceties (change detection, etc.) built on the SDK |
-| [`@ofocus/cli`](./packages/cli)                         | CLI using Commander.js                                          |
-| [`@ofocus/mcp`](./packages/mcp)                         | MCP server for AI agents                                        |
-| [`ofocus`](./packages/ofocus)                           | Umbrella package re-exporting SDK, CLI, and MCP                 |
+| Package                                           | Description                                                     |
+| ------------------------------------------------- | --------------------------------------------------------------- |
+| [`@ofocus/sdk`](./packages/sdk)                   | Core SDK with zero runtime dependencies                         |
+| [`@ofocus/productivity`](./packages/productivity) | Productivity niceties (change detection, etc.) built on the SDK |
+| [`@ofocus/cli`](./packages/cli)                   | CLI using Commander.js                                          |
+| [`@ofocus/mcp`](./packages/mcp)                   | MCP server for AI agents                                        |
+| [`ofocus`](./packages/ofocus)                     | Umbrella package re-exporting SDK, CLI, and MCP                 |
 
 ## API Reference
 
 ### CLI Commands
 
-| Command                   | Description                          |
-| ------------------------- | ------------------------------------ |
-| `inbox <title>`           | Add a task to the OmniFocus inbox    |
-| `tasks`                   | Query and filter tasks               |
-| `projects`                | List and query projects              |
-| `folders`                 | List and query folders               |
-| `tags`                    | List and query tags                  |
-| `complete <task-id>`      | Mark a task as complete              |
-| `update <task-id>`        | Update task properties               |
-| `drop <task-id>`          | Drop a task (preserves history)      |
-| `delete <task-id>`        | Permanently delete a task            |
-| `create-project <name>`   | Create a new project                 |
-| `update-project <id>`     | Update project properties            |
-| `delete-project <id>`     | Permanently delete a project         |
-| `drop-project <id>`       | Drop a project (preserves history)   |
-| `create-folder <name>`    | Create a new folder                  |
-| `update-folder <id>`      | Update folder properties             |
-| `delete-folder <id>`      | Permanently delete a folder          |
-| `create-tag <name>`       | Create a new tag                     |
-| `update-tag <id>`         | Update tag properties                |
-| `delete-tag <id>`         | Permanently delete a tag             |
-| `subtask <title>`         | Create a subtask under a parent task |
-| `subtasks <parent-id>`    | Query subtasks of a task             |
-| `move-to-parent <id>`     | Move a task to become a subtask      |
-| `complete-batch <ids...>` | Complete multiple tasks              |
-| `update-batch <ids...>`   | Update multiple tasks                |
-| `delete-batch <ids...>`   | Delete multiple tasks                |
-| `search <query>`          | Full-text search across tasks        |
-| `perspectives`            | List all perspectives                |
-| `perspective <name>`      | Query tasks from a perspective       |
-| `review <project-id>`     | Mark a project as reviewed           |
-| `projects-for-review`     | List projects due for review         |
-| `review-interval <id>`    | Get/set project review interval      |
-| `forecast`                | Query tasks by date range            |
-| `focus <name>`            | Focus on a project or folder         |
-| `unfocus`                 | Clear focus                          |
-| `focused`                 | Show current focus state             |
-| `deferred`                | List tasks with defer dates          |
-| `url <id>`                | Generate OmniFocus URL deep link     |
-| `defer <task-id>`         | Defer a task                         |
-| `defer-batch <ids...>`    | Defer multiple tasks                 |
-| `duplicate <task-id>`     | Clone a task with all properties     |
-| `open <id>`               | Open an item in OmniFocus UI         |
-| `quick "<input>"`         | Quick capture with natural language  |
-| `export`                  | Export to TaskPaper format           |
-| `import <file>`           | Import from TaskPaper format         |
+| Command                   | Description                                                                |
+| ------------------------- | -------------------------------------------------------------------------- |
+| `inbox <title>`           | Add a task to the OmniFocus inbox                                          |
+| `tasks`                   | Query and filter tasks                                                     |
+| `projects`                | List and query projects                                                    |
+| `folders`                 | List and query folders                                                     |
+| `tags`                    | List and query tags                                                        |
+| `complete <task-id>`      | Mark a task as complete                                                    |
+| `update <task-id>`        | Update task properties                                                     |
+| `drop <task-id>`          | Drop a task (preserves history)                                            |
+| `delete <task-id>`        | Permanently delete a task                                                  |
+| `create-project <name>`   | Create a new project                                                       |
+| `update-project <id>`     | Update project properties                                                  |
+| `delete-project <id>`     | Permanently delete a project                                               |
+| `drop-project <id>`       | Drop a project (preserves history)                                         |
+| `create-folder <name>`    | Create a new folder                                                        |
+| `update-folder <id>`      | Update folder properties                                                   |
+| `delete-folder <id>`      | Permanently delete a folder                                                |
+| `create-tag <name>`       | Create a new tag                                                           |
+| `update-tag <id>`         | Update tag properties                                                      |
+| `delete-tag <id>`         | Permanently delete a tag                                                   |
+| `subtask <title>`         | Create a subtask under a parent task                                       |
+| `subtasks <parent-id>`    | Query subtasks of a task                                                   |
+| `move-to-parent <id>`     | Move a task to become a subtask                                            |
+| `complete-batch <ids...>` | Complete multiple tasks                                                    |
+| `update-batch <ids...>`   | Update multiple tasks                                                      |
+| `delete-batch <ids...>`   | Delete multiple tasks                                                      |
+| `search <query>`          | Full-text search across tasks                                              |
+| `perspectives`            | List all perspectives                                                      |
+| `perspective <name>`      | Query tasks from a perspective                                             |
+| `review <project-id>`     | Mark a project as reviewed                                                 |
+| `projects-for-review`     | List projects due for review                                               |
+| `review-interval <id>`    | Get/set project review interval                                            |
+| `forecast`                | Query tasks by date range                                                  |
+| `focus <name>`            | Focus on a project or folder                                               |
+| `unfocus`                 | Clear focus                                                                |
+| `focused`                 | Show current focus state                                                   |
+| `deferred`                | List tasks with defer dates                                                |
+| `url <id>`                | Generate OmniFocus URL deep link                                           |
+| `defer <task-id>`         | Defer a task                                                               |
+| `defer-batch <ids...>`    | Defer multiple tasks                                                       |
+| `duplicate <task-id>`     | Clone a task with all properties                                           |
+| `open <id>`               | Open an item in OmniFocus UI                                               |
+| `quick "<input>"`         | Quick capture with natural language                                        |
+| `export`                  | Export to TaskPaper format                                                 |
+| `import <file>`           | Import from TaskPaper format                                               |
 | `changes`                 | Detect what changed since the last look (cache-first; --fresh / --pending) |
-| `stats`                   | Display productivity statistics      |
-| `template-save`           | Save a project as a template         |
-| `template-list`           | List available templates             |
-| `template-get <name>`     | Get template details                 |
-| `template-create <name>`  | Create project from template         |
-| `template-delete <name>`  | Delete a template                    |
-| `attach <task-id> <file>` | Add file attachment to task          |
-| `attachments <task-id>`   | List task attachments                |
-| `detach <task-id> <id>`   | Remove attachment from task          |
-| `archive`                 | Archive completed/dropped tasks      |
-| `compact`                 | Trigger database compaction          |
-| `sync-status`             | Get sync status                      |
-| `sync`                    | Trigger synchronization              |
-| `eval [script]`           | Run arbitrary OmniJS (last resort)   |
+| `stats`                   | Display productivity statistics                                            |
+| `template-save`           | Save a project as a template                                               |
+| `template-list`           | List available templates                                                   |
+| `template-get <name>`     | Get template details                                                       |
+| `template-create <name>`  | Create project from template                                               |
+| `template-delete <name>`  | Delete a template                                                          |
+| `attach <task-id> <file>` | Add file attachment to task                                                |
+| `attachments <task-id>`   | List task attachments                                                      |
+| `detach <task-id> <id>`   | Remove attachment from task                                                |
+| `archive`                 | Archive completed/dropped tasks                                            |
+| `compact`                 | Trigger database compaction                                                |
+| `sync-status`             | Get sync status                                                            |
+| `sync`                    | Trigger synchronization                                                    |
+| `eval [script]`           | Run arbitrary OmniJS (last resort)                                         |
 
 ### MCP Tools
 
