@@ -159,13 +159,16 @@ suite("packaged install smoke (pack → install → run)", () => {
     expect(lstatSync(bin).isSymbolicLink()).toBe(true);
   });
 
+  // Per-test timeouts exceed each subprocess's own timeout so Vitest's 5s
+  // default never fires first (spawning node + loading the CLI, or hitting a
+  // loaded OmniFocus, can exceed 5s).
   it("reports the real package version via --version (not a hardcoded literal)", () => {
     const out = execFileSync("node", [bin, "--version"], {
       encoding: "utf8",
       timeout: 15_000,
     }).trim();
     expect(out).toBe(umbrellaVersion());
-  });
+  }, 20_000);
 
   it("--help produces output through the symlinked bin (not silent; imports resolve)", () => {
     const out = execFileSync("node", [bin, "--help"], {
@@ -173,7 +176,7 @@ suite("packaged install smoke (pack → install → run)", () => {
       timeout: 15_000,
     });
     expect(out.trim()).not.toBe("");
-  });
+  }, 20_000);
 
   (omniFocusPresent ? it : it.skip)(
     "runs a real command end-to-end through the installed bin (loads SDK script assets)",
@@ -185,6 +188,7 @@ suite("packaged install smoke (pack → install → run)", () => {
       );
       const parsed = JSON.parse(out) as { success: boolean };
       expect(parsed.success).toBe(true);
-    }
+    },
+    35_000
   );
 });
