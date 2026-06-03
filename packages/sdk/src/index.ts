@@ -36,6 +36,9 @@ export type { ErrorCode as ErrorCodeType } from "./errors.js";
 // Result helpers
 export { success, failure, failureMessage } from "./result.js";
 
+// Bin-entry helper (correct main-module detection through symlinked global bins)
+export { isMainModule } from "./utils/is-main-module.js";
+
 // Auto-paginating async iteration over list queries
 export { paginate, paginatePages, PaginationError } from "./pagination.js";
 export type { ListQueryFn, QueryFnItem } from "./pagination.js";

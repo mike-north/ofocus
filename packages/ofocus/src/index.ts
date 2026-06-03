@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-import { pathToFileURL } from "node:url";
-import { resolve } from "node:path";
+import { isMainModule } from "@ofocus/sdk";
 
 // Re-export everything from SDK
 export * from "@ofocus/sdk";
@@ -18,12 +17,9 @@ export { createServer, registerAllTools, formatResult } from "@ofocus/mcp";
 // Run CLI when executed directly
 import { createCli } from "@ofocus/cli";
 
-// Only parse if this is the main module (CLI entry point)
-// Check if running as a script vs being imported as a module
-const scriptPath = process.argv[1];
-const isMainModule =
-  scriptPath !== undefined &&
-  pathToFileURL(resolve(scriptPath)).href === import.meta.url;
-if (isMainModule) {
+// Only parse if this is the main module (CLI entry point), not when imported as
+// a library. `isMainModule` resolves symlinks so the CLI runs through a
+// symlinked global bin (see @ofocus/sdk).
+if (isMainModule(import.meta.url)) {
   createCli().parse();
 }
