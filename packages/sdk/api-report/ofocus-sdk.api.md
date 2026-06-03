@@ -1262,6 +1262,9 @@ export interface InboxOptions {
 }
 
 // @public
+export function isMainModule(importMetaUrl: string): boolean;
+
+// @public
 export function listAttachments(taskId: string): Promise<CliOutput<ListAttachmentsResult>>;
 
 // @public

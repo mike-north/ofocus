@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { pathToFileURL } from "node:url";
-import { resolve, dirname, join } from "node:path";
+import { dirname, join } from "node:path";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { isMainModule } from "@ofocus/sdk";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerAllTools } from "./tools/index.js";
@@ -47,13 +47,9 @@ async function main(): Promise<void> {
   console.error("OFocus MCP server running on stdio");
 }
 
-// Only run when executed directly, not when imported as a module
-const scriptPath = process.argv[1];
-const isMainModule =
-  scriptPath !== undefined &&
-  pathToFileURL(resolve(scriptPath)).href === import.meta.url;
-
-if (isMainModule) {
+// Only run when executed directly (incl. through a symlinked global bin), not
+// when imported as a module.
+if (isMainModule(import.meta.url)) {
   main().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Fatal error:", message);
