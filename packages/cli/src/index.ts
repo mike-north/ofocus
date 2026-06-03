@@ -3,7 +3,12 @@
 import { isMainModule } from "@ofocus/sdk";
 
 // Re-export CLI utilities
-export { createCli, outputJson, outputHuman } from "./cli.js";
+export {
+  createCli,
+  readPackageVersion,
+  outputJson,
+  outputHuman,
+} from "./cli.js";
 export { output, outputToon, type OutputFormat } from "./output.js";
 export { commandRegistry } from "./commands/index.js";
 export { listCommands } from "./commands/list-commands.js";
