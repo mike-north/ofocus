@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { Command, Option, Help } from "commander";
 import { isAgenticTui } from "is-agentic-tui";
 import {
@@ -96,13 +97,46 @@ interface GlobalOptions {
 const AGENT_INSTRUCTIONS_URL =
   "https://raw.githubusercontent.com/mike-north/ofocus/refs/heads/main/AGENT_INSTRUCTIONS.md";
 
-export function createCli(): Command {
+/**
+ * Read the `version` field from the package.json that sits one directory above
+ * the given module URL — i.e. the package root relative to its compiled
+ * `dist/` entry point (and equally relative to the `src/` source during
+ * tests, since both `src/` and `dist/` are direct children of the package
+ * root).
+ *
+ * Sourcing `--version` this way keeps it in lockstep with the published
+ * package version: there is no hand-maintained literal to drift. Each binary
+ * passes its own `import.meta.url`, so `ofocus-cli` reports the `@ofocus/cli`
+ * version while the umbrella `ofocus` binary reports the `ofocus` version.
+ *
+ * @param moduleUrl Typically `import.meta.url` of the entry-point module.
+ */
+export function readPackageVersion(moduleUrl: string): string {
+  const pkgUrl = new URL("../package.json", moduleUrl);
+  const pkg = JSON.parse(readFileSync(pkgUrl, "utf8")) as { version?: unknown };
+  if (typeof pkg.version !== "string") {
+    throw new Error(`Missing "version" string in ${pkgUrl.href}`);
+  }
+  return pkg.version;
+}
+
+/**
+ * Build the OmniFocus CLI command tree.
+ *
+ * @param version The version string reported by `--version`. Defaults to the
+ *   `@ofocus/cli` package version, read from its own `package.json`. The
+ *   umbrella `ofocus` package passes its own version so `ofocus --version`
+ *   reflects the package the user actually installed.
+ */
+export function createCli(
+  version: string = readPackageVersion(import.meta.url)
+): Command {
   const program = new Command();
 
   program
     .name("ofocus")
     .description("OmniFocus CLI for AI agents")
-    .version("0.0.1");
+    .version(version);
 
   // Customize help for AI agents
   // Use the default Help.formatHelp method to avoid recursion when falling through
