@@ -1,5 +1,24 @@
 # @ofocus/cli
 
+## 0.6.1
+
+### Patch Changes
+
+- 9718c79: Fix `ofocus --version` reporting a stale `0.0.1` instead of the real package version.
+
+  The version is now sourced at runtime from the package's own `package.json` rather than a hardcoded literal, so it stays in lockstep with the published version automatically. The umbrella `ofocus` binary reports the `ofocus` package version (what users install); `ofocus-cli` reports the `@ofocus/cli` version.
+
+- 60fe4cf: Fix the published bins producing no output when installed globally. Global bins
+  are symlinked, so each entry's main-module check (`process.argv[1]` vs
+  `import.meta.url`) never matched and the bin was never invoked — `ofocus`,
+  `ofocus-cli`, and the `ofocus-mcp` server were all silent through a symlinked
+  install. Adds a shared `isMainModule(importMetaUrl)` helper to `@ofocus/sdk` that
+  resolves symlinks (`realpathSync`) before comparing, and applies it across all
+  three bin entries so they run as expected.
+- Updated dependencies [60fe4cf]
+  - @ofocus/sdk@0.6.0
+  - @ofocus/productivity@0.1.1
+
 ## 0.6.0
 
 ### Minor Changes
