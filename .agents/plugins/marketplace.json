@@ -1,0 +1,20 @@
+{
+  "name": "ofocus",
+  "interface": {
+    "displayName": "ofocus"
+  },
+  "plugins": [
+    {
+      "name": "ofocus-assistant",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ofocus-assistant"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -12,15 +12,21 @@ Two parts — the CLI engine the hooks call, then the plugin itself:
 # 1. The ofocus CLI (provides the `ofocus` binary the hooks shell out to)
 npm install -g ofocus
 
-# 2. The plugin — either install front-end works (both read this repo's marketplace index):
+# 2. The plugin — install via your agent tool's native flow:
 
-#    a) cross-tool installer (Claude Code / Cursor)
+#    cross-tool installer (Claude Code / Cursor)
 npx plugins add mike-north/ofocus
 
-#    b) Claude Code native
+#    Claude Code / Cursor native marketplace
 #       /plugin marketplace add mike-north/ofocus
 #       /plugin install ofocus-assistant@ofocus
+
+#    Codex
+#       codex plugin marketplace add mike-north/ofocus
 ```
+
+The marketplace registries are generated and freshness-checked by the
+[`aipm`](https://github.com/ai-plugin-marketplace) toolkit (targets: Claude, Cursor, Codex, and the Vercel/`npx plugins` universal surface) — run `pnpm marketplace:build` after changing plugin sources and commit the generated `.claude-plugin/` / `.cursor-plugin/` / `.agents/` registries.
 
 Hooks load at session start, so **restart Claude Code** after installing. If the CLI lives somewhere off `PATH`, point the plugin at it with `OFOCUS_BIN=/path/to/ofocus`. The plugin is fail-open: if `ofocus` is missing it injects nothing and never blocks a turn.
 

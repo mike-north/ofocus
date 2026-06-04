@@ -11,5 +11,12 @@ skills/ofocus/SKILL.md
 # Build outputs
 packages/*/dist/
 
+# aipm-generated marketplace registries — governed by `aipm validate` freshness,
+# not Prettier. Reformatting them would drift from `aipm build` output.
+/.claude-plugin/
+/.cursor-plugin/
+/.agents/
+/dist/
+
 # Package manager
 pnpm-lock.yaml
