@@ -14,6 +14,8 @@
     "format:check": "prettier --check .",
     "test": "pnpm -r run test && vitest run --config scripts/vitest.config.ts && pnpm test:plugin",
     "test:plugin": "vitest run --config plugins/ofocus-assistant/vitest.config.ts",
+    "marketplace:build": "aipm build",
+    "marketplace:validate": "aipm validate",
     "test:unit": "pnpm -r run test:unit",
     "generate:agent-docs": "node --import tsx/esm scripts/generate-agent-docs.ts",
     "typecheck": "tsc --build --dry",
@@ -49,6 +51,8 @@
     "*": "prettier --write --ignore-unknown"
   },
   "devDependencies": {
+    "@ai-plugin-marketplace/cli": "^0.2.0",
+    "@ai-plugin-marketplace/core": "^0.3.0",
     "@changesets/cli": "^2.29.8",
     "@eslint/js": "^9.20.0",
     "@microsoft/api-documenter": "^7.28.9",
