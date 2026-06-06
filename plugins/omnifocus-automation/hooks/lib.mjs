@@ -1,9 +1,9 @@
-// Pure, dependency-free helpers for the ofocus-assistant hook (tiered model).
+// Pure, dependency-free helpers for the omnifocus-automation hook (tiered model).
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-export const PLUGIN_NAME = "ofocus-assistant";
+export const PLUGIN_NAME = "omnifocus-automation";
 const SESSION_GC_WINDOW_MS = 7 * 24 * 3600 * 1000;
 
 // ── session identity ────────────────────────────────────────────────

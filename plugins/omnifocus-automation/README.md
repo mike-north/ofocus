@@ -1,6 +1,6 @@
-# ofocus-assistant
+# Omnifocus Automation
 
-A Claude Code plugin that turns OmniFocus into a collaborative surface: it proactively surfaces what changed and helps triage your inbox and plan — built on the `ofocus` CLI.
+A Claude Code plugin (`omnifocus-automation`) that turns OmniFocus into a collaborative surface: it proactively surfaces what changed and helps triage your inbox and plan — built on the `ofocus` CLI.
 
 > Requires macOS with OmniFocus and the `ofocus` CLI installed and on `PATH`.
 
@@ -19,7 +19,7 @@ npx plugins add mike-north/ofocus
 
 #    Claude Code / Cursor native marketplace
 #       /plugin marketplace add mike-north/ofocus
-#       /plugin install ofocus-assistant@ofocus
+#       /plugin install omnifocus-automation@ofocus
 
 #    Codex
 #       codex plugin marketplace add mike-north/ofocus

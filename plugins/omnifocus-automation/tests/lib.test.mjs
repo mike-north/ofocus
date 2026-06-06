@@ -26,7 +26,7 @@ import {
 
 describe("scaffold", () => {
   it("exposes the plugin name", () => {
-    expect(PLUGIN_NAME).toBe("ofocus-assistant");
+    expect(PLUGIN_NAME).toBe("omnifocus-automation");
   });
 });
 

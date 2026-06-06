@@ -27,7 +27,7 @@ ofocus complete <task-id>
 
 ## Claude Code plugin
 
-This repo also ships an [`ofocus-assistant`](./plugins/ofocus-assistant) Claude Code plugin — proactive OmniFocus change notifications plus an inbox-triage/co-planning skill, built on the CLI above. It's distributed via this repo's plugin marketplace index (`.claude-plugin/marketplace.json`):
+This repo also ships an [Omnifocus Automation](./plugins/omnifocus-automation) (`omnifocus-automation`) Claude Code plugin — proactive OmniFocus change notifications plus an inbox-triage/co-planning skill, built on the CLI above. It's distributed via this repo's plugin marketplace index (`.claude-plugin/marketplace.json`):
 
 ```bash
 npm install -g ofocus            # the CLI the plugin's hooks call
@@ -38,10 +38,10 @@ Or with Claude Code's native plugin manager:
 
 ```
 /plugin marketplace add mike-north/ofocus
-/plugin install ofocus-assistant@ofocus
+/plugin install omnifocus-automation@ofocus
 ```
 
-See the [plugin README](./plugins/ofocus-assistant) for the notification model and configuration.
+See the [plugin README](./plugins/omnifocus-automation) for the notification model and configuration.
 
 ## Packages
 

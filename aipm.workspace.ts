@@ -1,7 +1,7 @@
 import { defineWorkspace } from "@ai-plugin-marketplace/core";
 
 // Opts the repo into generated marketplace registries. `name: "ofocus"` keeps the
-// install id stable: `/plugin install ofocus-assistant@ofocus`.
+// install id stable: `/plugin install omnifocus-automation@ofocus`.
 export default defineWorkspace({
   marketplace: {
     name: "ofocus",

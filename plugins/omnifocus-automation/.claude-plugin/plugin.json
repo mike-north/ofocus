@@ -1,6 +1,6 @@
 {
   "schemaVersion": "0.1.0",
-  "name": "ofocus-assistant",
+  "name": "omnifocus-automation",
   "version": "0.1.0",
   "description": "OmniFocus AI assistant: proactive change notifications + inbox triage and co-planning, built on the ofocus CLI.",
   "author": { "name": "Mike North" },

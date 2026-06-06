@@ -8,8 +8,8 @@
   },
   "plugins": [
     {
-      "name": "ofocus-assistant",
-      "source": "./plugins/ofocus-assistant",
+      "name": "omnifocus-automation",
+      "source": "./plugins/omnifocus-automation",
       "description": "Proactive OmniFocus change notifications (tiered, per-session, low-noise) plus an inbox-triage and co-planning skill. Built on the ofocus CLI.",
       "tags": [
         "omnifocus",
