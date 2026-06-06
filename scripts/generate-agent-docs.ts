@@ -682,10 +682,15 @@ export function renderCliInstructions(descriptors: DescriptorView[]): string {
     `This document is the authoritative reference for the \`ofocus\` CLI.`
   );
   lines.push(
-    `All commands output JSON by default. Use \`--human\` for human-readable output.`
+    `All commands output JSON by default. **Prefer \`--format toon\` for machine output** — it carries the same ` +
+      `envelope in ~40% fewer tokens. Use \`--human\` for human-readable output.`
   );
   lines.push("");
   lines.push(`## Output Format`);
+  lines.push("");
+  lines.push(
+    `Every command returns the same envelope, in either JSON (default) or the token-efficient TOON encoding (\`--format toon\`):`
+  );
   lines.push("");
   lines.push("```json");
   lines.push(`{ "success": true, "data": { ... } }`);
@@ -733,7 +738,8 @@ export function renderSkillMd(descriptors: DescriptorView[]): string {
   );
   lines.push("");
   lines.push(
-    `Use the \`ofocus\` CLI to interact with OmniFocus on macOS. All commands return JSON by default.`
+    `Use the \`ofocus\` CLI to interact with OmniFocus on macOS. ` +
+      `Machine output defaults to JSON; **prefer \`--format toon\` on every command** — it carries the same data in ~40% fewer tokens.`
   );
   lines.push("");
   lines.push(`## Prerequisites`);
@@ -744,9 +750,11 @@ export function renderSkillMd(descriptors: DescriptorView[]): string {
   lines.push(`## Output Format`);
   lines.push("");
   lines.push(
-    `- Default: JSON with \`success\` and \`data\` or \`error\` fields`
+    `- **Prefer \`--format toon\`** for all machine output. TOON encodes the same envelope as JSON ` +
+      `(\`success\` plus \`data\` or \`error\`) in ~40% fewer tokens — no fields are dropped. Use it whenever you read command output.`
   );
-  lines.push(`- Use \`--human\` flag for human-readable output`);
+  lines.push(`- \`--format json\` is the default; pass it explicitly only when you need standard JSON.`);
+  lines.push(`- \`--human\` is for human-readable display, not for parsing.`);
   lines.push("");
   lines.push(`## Command Quick Reference`);
   lines.push("");
