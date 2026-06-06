@@ -92,7 +92,6 @@ export async function queryTags(
       count: options.count,
       first: options.first,
       last: options.last,
-      idsOnly: options.idsOnly,
       groupBy: options.groupBy,
     }
   );

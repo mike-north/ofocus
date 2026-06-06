@@ -753,7 +753,6 @@ describe("validateAllFlag", () => {
           count: undefined,
           first: undefined,
           last: undefined,
-          idsOnly: undefined,
           groupBy: undefined,
         })
       ).toBeNull();
@@ -823,14 +822,11 @@ describe("validateAllFlag", () => {
       expect(error?.message).toContain("Cannot combine --all with --last");
     });
 
-    it("rejects all=true combined with idsOnly=true", () => {
-      const error = validateAllFlag(true, undefined, undefined, {
-        idsOnly: true,
-      });
-      expect(error).not.toBeNull();
-      expect(error?.code).toBe(ErrorCode.VALIDATION_ERROR);
-      expect(error?.message).toContain("Cannot combine --all with --ids-only");
-    });
+    // NOTE: `--ids-only` is intentionally NOT rejected with `--all` (issue #71).
+    // The `ids` shape returns every matching id, so `--all` is naturally
+    // satisfied — `idsOnly` is not part of AllFlagShapeModifiers. Compatibility
+    // is covered end-to-end by the command-level regression test in
+    // tests/unit/commands/tasks.test.ts.
 
     it("rejects all=true combined with groupBy set to a field name", () => {
       const error = validateAllFlag(true, undefined, undefined, {

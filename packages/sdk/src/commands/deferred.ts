@@ -67,7 +67,6 @@ export async function queryDeferred(
       count: options.count,
       first: options.first,
       last: options.last,
-      idsOnly: options.idsOnly,
       groupBy: options.groupBy,
     }
   );

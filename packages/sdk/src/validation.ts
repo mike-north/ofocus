@@ -357,12 +357,15 @@ export function validateSearchQuery(query: string): CliError | null {
  * These modifiers change the *shape* of the response — they produce a scalar
  * or single-item result that has no concept of "all items".  Combining them
  * with `--all` is contradictory and rejected.
+ *
+ * `--ids-only` is intentionally absent: the `ids` shape is still a full list
+ * (every matching id), so `--all` is naturally satisfied by it rather than
+ * contradictory. The two combine freely.
  */
 export interface AllFlagShapeModifiers {
   count?: boolean | undefined;
   first?: boolean | undefined;
   last?: boolean | undefined;
-  idsOnly?: boolean | undefined;
   groupBy?: string | undefined;
 }
 
@@ -371,9 +374,12 @@ export interface AllFlagShapeModifiers {
  *
  * `--all` is mutually exclusive with:
  * - `--limit` / `--offset` — combining them produces a meaningless result.
- * - `--count`, `--first`, `--last`, `--ids-only`, `--group-by` — these shape
- *   modifiers change the response shape to a scalar or single item, making
- *   `--all` (which controls list slicing) contradictory.
+ * - `--count`, `--first`, `--last`, `--group-by` — these shape modifiers change
+ *   the response shape to a scalar or single item, making `--all` (which
+ *   controls list slicing) contradictory.
+ *
+ * `--ids-only` is *compatible*: the `ids` shape returns every matching id, so
+ * `--all` is naturally satisfied by it.
  *
  * Returns null if valid, or a CliError if the combination is illegal.
  */
@@ -409,12 +415,6 @@ export function validateAllFlag(
       return createError(
         ErrorCode.VALIDATION_ERROR,
         "Cannot combine --all with --last"
-      );
-    }
-    if (shapeModifiers.idsOnly === true) {
-      return createError(
-        ErrorCode.VALIDATION_ERROR,
-        "Cannot combine --all with --ids-only"
       );
     }
     if (shapeModifiers.groupBy !== undefined) {

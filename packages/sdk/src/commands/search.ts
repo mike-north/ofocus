@@ -72,7 +72,6 @@ export async function searchTasks(
       count: options.count,
       first: options.first,
       last: options.last,
-      idsOnly: options.idsOnly,
       groupBy: options.groupBy,
     }
   );
