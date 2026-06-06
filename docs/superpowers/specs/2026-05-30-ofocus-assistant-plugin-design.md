@@ -1,7 +1,8 @@
-# Layer B — The `ofocus-assistant` Claude Code Plugin
+# Layer B — The `omnifocus-automation` Claude Code Plugin
 
 **Date:** 2026-05-30
 **Status:** Design — pending review
+**Plugin id:** `omnifocus-automation` (display title "OmniFocus Automation"; originally drafted as `ofocus-assistant` and renamed for clarity — references below updated to match)
 **Layer:** **L3 — Agent interaction patterns** (a Claude Code plugin)
 **North star:** [OFocus Agent Collaboration — Design Principles](./2026-05-30-ofocus-agent-principles.md)
 (realizes pattern **4 — Push state, don't poll-and-diff**, and is the consumer of the L2 `ofocus changes` primitive)
@@ -37,8 +38,8 @@ A self-contained plugin directory in-repo, indexed by a repo-root marketplace ma
 
 ```
 .claude-plugin/
-  marketplace.json            # repo-root marketplace index: lists the plugin (source: ./plugins/ofocus-assistant)
-plugins/ofocus-assistant/
+  marketplace.json            # repo-root marketplace index: lists the plugin (source: ./plugins/omnifocus-automation)
+plugins/omnifocus-automation/
   .claude-plugin/
     plugin.json               # manifest (template-shaped — see below)
   hooks/
@@ -231,14 +232,14 @@ Per the project's multi-layer + spec-first conventions; a plugin is mostly confi
 
 | File                                                     | Responsibility                                                                                                                                                                                                                                                                                                                     |
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.claude-plugin/marketplace.json`                        | Repo-root marketplace index listing the plugin (`source: ./plugins/ofocus-assistant`); read by `npx plugins add` and `/plugin marketplace add`.                                                                                                                                                                                    |
-| `plugins/ofocus-assistant/.claude-plugin/plugin.json`    | Manifest: identity (name/version/description/author) + `schemaVersion`, `keywords`, and explicit `skills` + `hooks` paths (template-shaped). The explicit `hooks` points at the same `hooks/hooks.json` Claude Code auto-discovers, so it dedups (no double-firing); explicit fields are additive documentation, not new behavior. |
-| `plugins/ofocus-assistant/hooks/hooks.json`              | Binds `SessionStart`, `Stop`, and `PreToolUse` (or the §4.6 fallbacks) to `notify.mjs <event>`.                                                                                                                                                                                                                                    |
-| `plugins/ofocus-assistant/hooks/notify.mjs`              | The hook: peek / digest / end-of-turn surface / urgency-gated interjection / soft nudge / debounced refresh + fail-open. Pure logic factored for unit tests.                                                                                                                                                                       |
-| `plugins/ofocus-assistant/skills/ofocus-triage/SKILL.md` | Triage / co-planning guidance.                                                                                                                                                                                                                                                                                                     |
-| `plugins/ofocus-assistant/README.md`                     | What it is, install, config env vars, the manual UAT steps.                                                                                                                                                                                                                                                                        |
-| `plugins/ofocus-assistant/tests/lib.test.mjs`            | Unit tests for the hook's pure logic (session key, surface/urgency/soft-nudge decisions, per-session state + GC, formatting).                                                                                                                                                                                                      |
-| `plugins/ofocus-assistant/tests/notify.test.mjs`         | Subprocess/integration tests for the hook entry against a stub `ofocus`.                                                                                                                                                                                                                                                           |
+| `.claude-plugin/marketplace.json`                        | Repo-root marketplace index listing the plugin (`source: ./plugins/omnifocus-automation`); read by `npx plugins add` and `/plugin marketplace add`.                                                                                                                                                                                    |
+| `plugins/omnifocus-automation/.claude-plugin/plugin.json`    | Manifest: identity (name/version/description/author) + `schemaVersion`, `keywords`, and explicit `skills` + `hooks` paths (template-shaped). The explicit `hooks` points at the same `hooks/hooks.json` Claude Code auto-discovers, so it dedups (no double-firing); explicit fields are additive documentation, not new behavior. |
+| `plugins/omnifocus-automation/hooks/hooks.json`              | Binds `SessionStart`, `Stop`, and `PreToolUse` (or the §4.6 fallbacks) to `notify.mjs <event>`.                                                                                                                                                                                                                                    |
+| `plugins/omnifocus-automation/hooks/notify.mjs`              | The hook: peek / digest / end-of-turn surface / urgency-gated interjection / soft nudge / debounced refresh + fail-open. Pure logic factored for unit tests.                                                                                                                                                                       |
+| `plugins/omnifocus-automation/skills/ofocus-triage/SKILL.md` | Triage / co-planning guidance.                                                                                                                                                                                                                                                                                                     |
+| `plugins/omnifocus-automation/README.md`                     | What it is, install, config env vars, the manual UAT steps.                                                                                                                                                                                                                                                                        |
+| `plugins/omnifocus-automation/tests/lib.test.mjs`            | Unit tests for the hook's pure logic (session key, surface/urgency/soft-nudge decisions, per-session state + GC, formatting).                                                                                                                                                                                                      |
+| `plugins/omnifocus-automation/tests/notify.test.mjs`         | Subprocess/integration tests for the hook entry against a stub `ofocus`.                                                                                                                                                                                                                                                           |
 
 ## 8. Open implementation questions (resolve during planning, not blocking design)
 

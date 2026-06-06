@@ -1,4 +1,4 @@
-# Omnifocus Automation
+# OmniFocus Automation
 
 A Claude Code plugin (`omnifocus-automation`) that turns OmniFocus into a collaborative surface: it proactively surfaces what changed and helps triage your inbox and plan — built on the `ofocus` CLI.
 
