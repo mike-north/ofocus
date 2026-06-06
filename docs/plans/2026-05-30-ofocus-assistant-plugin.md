@@ -8,8 +8,8 @@
 
 **Tech Stack:** Node ESM (`.mjs`, Node ≥20 built-ins only), Claude Code plugin format (`plugin.json` + `hooks/hooks.json`), vitest (standalone config for the plugin), the `ofocus` CLI.
 
-**Spec:** [`docs/superpowers/specs/2026-05-30-ofocus-assistant-plugin-design.md`](../specs/2026-05-30-ofocus-assistant-plugin-design.md)
-**Principles:** [`docs/superpowers/specs/2026-05-30-ofocus-agent-principles.md`](../specs/2026-05-30-ofocus-agent-principles.md)
+**Spec:** [`docs/specs/2026-05-30-ofocus-assistant-plugin-design.md`](../specs/2026-05-30-ofocus-assistant-plugin-design.md)
+**Principles:** [`docs/specs/2026-05-30-ofocus-agent-principles.md`](../specs/2026-05-30-ofocus-agent-principles.md)
 
 **Commit conventions (every commit):** author `--author="Mike North <michael.l.north@gmail.com>"` (personal repo), no AI trailers, run from the worktree root `/Users/mnorth/Development/ofocus/.claude/worktrees/hopeful-ardinghelli-351d16`. Tests use **vitest**. Branch: `claude/ofocus-assistant-plugin` (already created off `main`).
 

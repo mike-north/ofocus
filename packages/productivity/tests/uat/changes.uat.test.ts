@@ -4,7 +4,7 @@
  * is not built, this suite SKIPS (keeps `pnpm test` green pre-build). The live
  * scan additionally requires the OmniFocus app and is skipped where absent (CI).
  *
- * @see ../../../../docs/superpowers/specs/2026-05-30-ofocus-changes-primitive-design.md
+ * @see ../../../../docs/specs/2026-05-30-ofocus-changes-primitive-design.md
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";

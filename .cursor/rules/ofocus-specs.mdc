@@ -8,7 +8,7 @@ alwaysApply: true
 
 Canonical guidance: [`docs/agent-guide.md`](../../docs/agent-guide.md). Architecture:
 [`docs/architecture.md`](../../docs/architecture.md). Specs (the contracts):
-`docs/superpowers/specs/`.
+`docs/specs/`.
 
 Before non-trivial work, read the relevant spec; then hold the code to it.
 

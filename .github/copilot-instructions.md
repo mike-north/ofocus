@@ -2,13 +2,13 @@
 
 Canonical guidance: [`docs/agent-guide.md`](../docs/agent-guide.md). Architecture:
 [`docs/architecture.md`](../docs/architecture.md). Design specs (the contracts):
-[`docs/superpowers/specs/`](../docs/superpowers/specs/).
+[`docs/specs/`](../docs/specs/).
 
 When **generating** code or **reviewing** a pull request in this repo, hold the change to the
 specs and flag any dissonance:
 
 - **Specs are the contract.** If a change's behavior contradicts a spec
-  (`docs/superpowers/specs/*`) — e.g. the `changes` read-mode semantics, a watch baselining at
+  (`docs/specs/*`) — e.g. the `changes` read-mode semantics, a watch baselining at
   generation `0`, `--semantic` being fail-open — call it out. A PR that changes behavior but
   leaves a spec asserting the old contract is a defect; the spec should be updated in the same
   PR (or the code corrected).

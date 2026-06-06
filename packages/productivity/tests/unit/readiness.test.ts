@@ -4,7 +4,7 @@
  *
  * Expected values are hand-derived from the spec, not captured from output.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.3
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.3
  */
 import { describe, expect, it } from "vitest";
 import {

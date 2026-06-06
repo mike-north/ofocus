@@ -8,7 +8,7 @@ update guidance in the agent guide, not here.
 
 - **Architecture:** [`docs/architecture.md`](./docs/architecture.md) — package graph, the
   OmniJS bridge, the descriptor registry, query/error/output models, how to add a command.
-- **Specs (the contracts):** [`docs/superpowers/specs/`](./docs/superpowers/specs/) — the
+- **Specs (the contracts):** [`docs/specs/`](./docs/specs/) — the
   principles/roadmap and the `changes` primitive. Read the relevant spec **before** changing
   the change-detection engine, the descriptor registry, or layer/package boundaries.
 - **Detect dissonance.** Treat the spec as the contract. If spec, plan, and code disagree,

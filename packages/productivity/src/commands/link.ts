@@ -6,7 +6,7 @@
  * the `--event` JSON argument (a structured object over MCP; a JSON string over
  * the CLI, transparently parsed by a `z.preprocess` wrapper).
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
  */
 import { z } from "zod";
 import {

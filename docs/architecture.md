@@ -3,7 +3,7 @@
 **Status:** Living document — describes how the OFocus SDK/CLI/MCP actually work today.
 **Audience:** contributors and agents working in this repo. Read this before making
 structural changes or adding commands.
-**See also:** [Agent collaboration principles & roadmap](./superpowers/specs/2026-05-30-ofocus-agent-principles.md)
+**See also:** [Agent collaboration principles & roadmap](./specs/2026-05-30-ofocus-agent-principles.md)
 · [docs index](./README.md)
 
 ---
@@ -42,7 +42,7 @@ The SDK never imports productivity, cli, or mcp.
 
 ## 3. The three layers
 
-A design discipline (full version in the [principles doc](./superpowers/specs/2026-05-30-ofocus-agent-principles.md)):
+A design discipline (full version in the [principles doc](./specs/2026-05-30-ofocus-agent-principles.md)):
 
 - **L1 — programmatic core** (`@ofocus/sdk`): explicit, direct, deterministic OmniFocus
   operations. "Give me exactly what I ask for."
@@ -176,7 +176,7 @@ implementation of "compute, don't make the caller reason." It keeps a per-watch 
 snapshot under `~/.ofocus/watch/<name>.json` (override with `OFOCUS_STATE_DIR`), and answers
 "what changed since I last looked?" with field-level diffs, a `{count, maxModified}`
 fingerprint fast path, an opaque cursor, and a generation/pending model for push-style
-delivery. Full design: [changes primitive spec](./superpowers/specs/2026-05-30-ofocus-changes-primitive-design.md).
+delivery. Full design: [changes primitive spec](./specs/2026-05-30-ofocus-changes-primitive-design.md).
 
 ## 9. How to add a command
 

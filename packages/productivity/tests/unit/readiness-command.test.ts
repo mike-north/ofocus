@@ -1,7 +1,7 @@
 /**
  * Unit tests for the readiness command handler (injected store + task fetcher).
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
  */
 import { describe, expect, it } from "vitest";
 import { runReadiness } from "../../src/commands/readiness.js";
