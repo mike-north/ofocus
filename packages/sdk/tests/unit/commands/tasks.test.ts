@@ -504,5 +504,44 @@ describe("queryTasks", () => {
       expect(body).toContain("rows.map(__mapFn)");
       expect(body).not.toContain("__paged");
     });
+
+    it("accepts all=true combined with idsOnly=true (regression: issue #71)", async () => {
+      // #71: --all + --ids-only is a natural combination for batch ID
+      // collection. The `ids` shape already returns every matching id, so --all
+      // is satisfied rather than contradictory. Pre-fix this returned a
+      // VALIDATION_ERROR ("Cannot combine --all with --ids-only").
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { kind: "ids", ids: ["a", "b"] },
+      } as OmniJSResult<QueryResult<OFTask>>);
+
+      const result = await queryTasks({
+        all: true,
+        idsOnly: true,
+        inInbox: true,
+        nameEquals: "x",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.error).toBeNull();
+      expect(result.data?.kind).toBe("ids");
+      if (result.data?.kind === "ids") {
+        expect(result.data.ids).toEqual(["a", "b"]);
+      }
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
+    });
+
+    it("still rejects all=true with idsOnly=true when --limit is also set", async () => {
+      // Guard: allowing --all + --ids-only (issue #71) must NOT open a hole that
+      // lets --all + --limit through. The limit/offset rejection is independent
+      // of the shape-modifier check and must still fire — verify no OmniJS call.
+      const result = await queryTasks({ all: true, idsOnly: true, limit: 5 });
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(result.error?.message).toContain(
+        "Cannot combine --all with --limit or --offset"
+      );
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    });
   });
 });
