@@ -7,8 +7,10 @@ description: Triage the OmniFocus inbox and co-plan with the user. Use when the 
 
 Use the `ofocus` CLI (see the `ofocus` skill for the full command reference). **Compute, don't reason:** for "due today / this week / what changed / workload," call `ofocus forecast`, `ofocus changes`, and `ofocus stats` rather than pulling raw task lists into context and reasoning over them.
 
+**Always read machine output with `--format toon`.** TOON carries the exact same data as the default `--format json` in ~40% fewer tokens — there is no information loss, so prefer it on every command you parse.
+
 ## Triage the inbox
-1. Read the inbox: `ofocus tasks --in-inbox --format json`.
+1. Read the inbox: `ofocus tasks --in-inbox --format toon`.
 2. For each item, decide a proposed disposition: a project, tags, defer/due dates, flag, or drop/delete.
 3. **Present all proposals as one batch for the user to approve or amend. Never mutate without confirmation.**
 4. On approval, apply with `ofocus update <id> …` (or `ofocus update-batch <ids…>` for shared changes; `ofocus complete` / `drop` / `delete` as decided).

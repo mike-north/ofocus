@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "ofocus-assistant",
+      "name": "omnifocus-automation",
       "source": {
         "source": "local",
-        "path": "./plugins/ofocus-assistant"
+        "path": "./plugins/omnifocus-automation"
       },
       "policy": {
         "installation": "AVAILABLE",

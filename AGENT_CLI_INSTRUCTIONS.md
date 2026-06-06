@@ -3,9 +3,11 @@
 <!-- generated: DO NOT EDIT BY HAND — see scripts/generate-agent-docs.ts -->
 
 This document is the authoritative reference for the `ofocus` CLI.
-All commands output JSON by default. Use `--human` for human-readable output.
+All commands output JSON by default. **Prefer `--format toon` for machine output** — it carries the same envelope in ~40% fewer tokens. Use `--human` for human-readable output.
 
 ## Output Format
+
+Every command returns the same envelope, in either JSON (default) or the token-efficient TOON encoding (`--format toon`):
 
 ```json
 { "success": true, "data": { ... } }

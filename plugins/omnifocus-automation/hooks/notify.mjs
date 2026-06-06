@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ofocus-assistant hook entry. Reads a hook payload on stdin, peeks the shared
+// omnifocus-automation hook entry. Reads a hook payload on stdin, peeks the shared
 // ofocus watch (non-draining), and surfaces/nudges per the tiered model.
 // Fail-open: ANY error → no output, exit 0. Never blocks a tool call or turn.
 
