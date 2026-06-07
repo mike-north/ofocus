@@ -14,7 +14,9 @@ export interface GatewayConfig {
 const httpsUrl = z
   .string()
   .url()
-  .refine((u) => u.startsWith("https://"), { message: "must be an https url" });
+  .refine((u) => u.startsWith("https://"), {
+    message: "OFOCUS_GATEWAY_ISSUER_URL must be an https:// URL",
+  });
 
 const csv = (s: string): string[] =>
   s
@@ -27,7 +29,9 @@ const envSchema = z.object({
   OFOCUS_GATEWAY_PORT: z.coerce.number().int().positive().default(8722),
   OFOCUS_GATEWAY_GOOGLE_CLIENT_ID: z.string().min(1),
   OFOCUS_GATEWAY_GOOGLE_CLIENT_SECRET: z.string().min(1),
-  OFOCUS_GATEWAY_ALLOWED_EMAILS: z.string(),
+  OFOCUS_GATEWAY_ALLOWED_EMAILS: z
+    .string()
+    .min(1, "must list at least one allowed email"),
   OFOCUS_GATEWAY_STATE_DIR: z.string().min(1),
   OFOCUS_GATEWAY_EXPOSED_TOOLS: z.string().optional(),
   OFOCUS_GATEWAY_ACCESS_TOKEN_TTL_SECONDS: z.coerce

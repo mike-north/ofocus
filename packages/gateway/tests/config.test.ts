@@ -53,4 +53,15 @@ describe("loadConfig", () => {
       loadConfig({ ...base, OFOCUS_GATEWAY_ALLOWED_EMAILS: "" })
     ).toThrow(/allow/i);
   });
+
+  it("treats an explicit 'all' as exposing all tools", () => {
+    const cfg = loadConfig({ ...base, OFOCUS_GATEWAY_EXPOSED_TOOLS: "all" });
+    expect(cfg.exposedTools).toBe("all");
+  });
+
+  it("rejects a whitespace-only allowlist", () => {
+    expect(() =>
+      loadConfig({ ...base, OFOCUS_GATEWAY_ALLOWED_EMAILS: "  ,  " })
+    ).toThrow(/allow/i);
+  });
 });
