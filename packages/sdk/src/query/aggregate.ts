@@ -70,10 +70,12 @@ export function compileAggregate(
 
   // Pagination (--limit/--offset) is meaningful only for the default `list`
   // shape. Every non-list shape maps over the full result set, so combining it
-  // with limit/offset would silently ignore them — reject instead. (`--all` is
-  // already rejected with these modifiers by validateAllFlag.) Keys off the
-  // user-provided values; the default limit applied later in the handler is
-  // unaffected.
+  // with limit/offset would silently ignore them — reject instead. (The
+  // analogous `--all` rule lives in validateAllFlag, which rejects --all with
+  // --count/--first/--last/--group-by but intentionally allows --ids-only with
+  // --all per #71, since the `ids` shape already returns the whole set.) Keys
+  // off the user-provided values; the default limit applied later in the
+  // handler is unaffected.
   const firstShapeFlag = setFlags[0];
   if (
     firstShapeFlag !== undefined &&
