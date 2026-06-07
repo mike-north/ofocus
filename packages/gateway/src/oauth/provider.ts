@@ -62,10 +62,12 @@ export class OfocusOAuthProvider implements OAuthServerProvider {
       state,
       clientId: client.client_id,
       clientRedirectUri: params.redirectUri,
-      clientState: params.state,
+      ...(params.state !== undefined ? { clientState: params.state } : {}),
       codeChallenge: params.codeChallenge,
       scopes: params.scopes ?? [],
-      resource: params.resource?.toString(),
+      ...(params.resource !== undefined
+        ? { resource: params.resource.toString() }
+        : {}),
       expiresAt: Date.now() + LOGIN_TTL_MS,
     });
     res.redirect(
@@ -94,6 +96,7 @@ export class OfocusOAuthProvider implements OAuthServerProvider {
       redirectUri: this.opts.callbackUrl,
     });
     if (!this.allowed.has(email.toLowerCase())) {
+      // Server-side error only (logged, never sent to the client).
       throw new Error(`account ${email} is not authorized`);
     }
     const code = randomUUID();
@@ -103,7 +106,7 @@ export class OfocusOAuthProvider implements OAuthServerProvider {
       redirectUri: login.clientRedirectUri,
       codeChallenge: login.codeChallenge,
       scopes: login.scopes,
-      resource: login.resource,
+      ...(login.resource !== undefined ? { resource: login.resource } : {}),
       email,
       expiresAt: Date.now() + CODE_TTL_MS,
     });
@@ -128,13 +131,16 @@ export class OfocusOAuthProvider implements OAuthServerProvider {
     client: OAuthClientInformationFull,
     authorizationCode: string,
     _codeVerifier?: string,
-    _redirectUri?: string,
+    redirectUri?: string,
     _resource?: URL
   ): Promise<OAuthTokens> {
     const pending =
       await this.opts.store.takePendingAuthorization(authorizationCode);
     if (!pending || pending.expiresAt < Date.now())
       throw new Error("invalid authorization code");
+    if (redirectUri !== undefined && redirectUri !== pending.redirectUri) {
+      throw new Error("redirect_uri mismatch");
+    }
     if (pending.clientId !== client.client_id)
       throw new Error("client mismatch");
     return this.issueTokens(pending.clientId, pending.scopes, pending.email);
@@ -147,7 +153,8 @@ export class OfocusOAuthProvider implements OAuthServerProvider {
     _resource?: URL
   ): Promise<OAuthTokens> {
     const existing = await this.opts.store.getTokenByRefreshToken(refreshToken);
-    if (existing?.clientId !== client.client_id)
+    if (!existing) throw new Error("invalid refresh token");
+    if (existing.clientId !== client.client_id)
       throw new Error("invalid refresh token");
     await this.opts.store.deleteToken(existing.accessToken);
     return this.issueTokens(

@@ -233,4 +233,86 @@ describe("OfocusOAuthProvider", () => {
       provider.exchangeRefreshToken(CLIENT, first.refresh_token!)
     ).rejects.toThrow();
   });
+
+  it("completeLogin() REJECTS replaying an already-consumed state", async () => {
+    const { provider, store } = makeProvider(["michael.l.north@gmail.com"]);
+    await store.putClient(CLIENT);
+    const { res, calls } = fakeRes();
+    await provider.authorize(
+      CLIENT,
+      {
+        codeChallenge: "CH",
+        redirectUri: CLIENT.redirect_uris[0],
+        scopes: [],
+        state: "cs",
+      },
+      res
+    );
+    const googleState = new URL(calls[0]).searchParams.get("state")!;
+    await provider.completeLogin({
+      googleCode: "goodcode",
+      state: googleState,
+    });
+    await expect(
+      provider.completeLogin({ googleCode: "goodcode", state: googleState })
+    ).rejects.toThrow(/expired or unknown/i);
+  });
+
+  it("exchangeRefreshToken() REJECTS a refresh token presented by a different client", async () => {
+    const { provider, store } = makeProvider(["michael.l.north@gmail.com"]);
+    await store.putClient(CLIENT);
+    const { res, calls } = fakeRes();
+    await provider.authorize(
+      CLIENT,
+      {
+        codeChallenge: "CH",
+        redirectUri: CLIENT.redirect_uris[0],
+        scopes: ["offline_access"],
+        state: "cs",
+      },
+      res
+    );
+    const googleState = new URL(calls[0]).searchParams.get("state")!;
+    const code = new URL(
+      await provider.completeLogin({
+        googleCode: "goodcode",
+        state: googleState,
+      })
+    ).searchParams.get("code")!;
+    const first = await provider.exchangeAuthorizationCode(CLIENT, code);
+    const otherClient = {
+      ...CLIENT,
+      client_id: "other-client",
+    } as OAuthClientInformationFull;
+    await expect(
+      provider.exchangeRefreshToken(otherClient, first.refresh_token!)
+    ).rejects.toThrow(/invalid refresh token/i);
+  });
+
+  it("exchangeAuthorizationCode() REJECTS an expired code", async () => {
+    const { provider, store } = makeProvider(["michael.l.north@gmail.com"]);
+    await store.putClient(CLIENT);
+    const { res, calls } = fakeRes();
+    await provider.authorize(
+      CLIENT,
+      {
+        codeChallenge: "CH",
+        redirectUri: CLIENT.redirect_uris[0],
+        scopes: [],
+        state: "cs",
+      },
+      res
+    );
+    const googleState = new URL(calls[0]).searchParams.get("state")!;
+    const code = new URL(
+      await provider.completeLogin({
+        googleCode: "goodcode",
+        state: googleState,
+      })
+    ).searchParams.get("code")!;
+    vi.setSystemTime(new Date("2026-06-07T12:10:00Z")); // > CODE_TTL_MS (5 min)
+    await expect(
+      provider.exchangeAuthorizationCode(CLIENT, code)
+    ).rejects.toThrow(/invalid authorization code/i);
+  });
 });
