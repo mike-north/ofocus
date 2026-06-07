@@ -6,6 +6,7 @@ import type {
 } from "@modelcontextprotocol/sdk/server/auth/provider.js";
 import type { OAuthRegisteredClientsStore } from "@modelcontextprotocol/sdk/server/auth/clients.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { InvalidTokenError } from "@modelcontextprotocol/sdk/server/auth/errors.js";
 import type {
   OAuthClientInformationFull,
   OAuthTokens,
@@ -166,10 +167,10 @@ export class OfocusOAuthProvider implements OAuthServerProvider {
 
   async verifyAccessToken(token: string): Promise<AuthInfo> {
     const stored = await this.opts.store.getTokenByAccessToken(token);
-    if (!stored) throw new Error("invalid token");
+    if (!stored) throw new InvalidTokenError("invalid token");
     if (stored.accessTokenExpiresAt < Date.now()) {
       await this.opts.store.deleteToken(token);
-      throw new Error("token expired");
+      throw new InvalidTokenError("token expired");
     }
     return {
       token,

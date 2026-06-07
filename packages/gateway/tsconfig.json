@@ -3,7 +3,12 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    // skipLibCheck: StreamableHTTPServerTransport in @modelcontextprotocol/sdk@1.26.0
+    // uses getter/setter onclose that allows undefined, which conflicts with
+    // exactOptionalPropertyTypes: true in the Transport interface. The runtime is correct;
+    // this is a declaration bug in the SDK. Remove when the SDK fixes its types.
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"],
