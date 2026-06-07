@@ -7,7 +7,6 @@ import {
 import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { GatewayConfig } from "./config.js";
 import type { Store } from "./store/types.js";
 import type { IdentityProvider } from "./identity/types.js";
@@ -94,11 +93,7 @@ export function buildApp(deps: BuildAppDeps): Express {
           };
           transport = t;
           const server = createGatedServer(config.exposedTools, version);
-          // `StreamableHTTPServerTransport` uses getter/setter for `onclose` that
-          // accepts `undefined`, which conflicts with `exactOptionalPropertyTypes: true`
-          // in the `Transport` interface. The runtime behaviour is correct; this cast
-          // works around a declaration incompatibility in the SDK (v1.26.0).
-          await server.connect(t as unknown as Transport);
+          await server.connect(t);
         }
 
         await transport.handleRequest(req, res, req.body);
