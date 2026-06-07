@@ -40,5 +40,11 @@ describe("createGatedServer", () => {
       arguments: { title: "x" },
     });
     expect(result.isError).toBe(true);
+    // Confirm it's the gate (tool disabled), not some other error.
+    const text = result.content
+      .filter((c) => c.type === "text")
+      .map((c) => c.text)
+      .join("");
+    expect(text).toContain("disabled");
   });
 });
