@@ -71,4 +71,19 @@ describe("gateway HTTP app", () => {
     expect(res.status).toBe(200);
     expect(res.body.version).toBe("0.0.0-test");
   });
+
+  it("callback with missing code or state returns 400", async () => {
+    const res = await request(app).get("/auth/google/callback?code=x"); // no state
+    expect(res.status).toBe(400);
+    const res2 = await request(app).get("/auth/google/callback"); // neither
+    expect(res2.status).toBe(400);
+  });
+
+  it("callback with an unknown state returns 403 (and does not leak detail)", async () => {
+    const res = await request(app).get(
+      "/auth/google/callback?code=whatever&state=notastate"
+    );
+    expect(res.status).toBe(403);
+    expect(res.text).toBe("Authorization denied"); // generic, no internal detail
+  });
 });

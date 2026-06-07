@@ -20,8 +20,9 @@ export function googleCallbackHandler(
         res.redirect(redirectUrl);
       })
       .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : "login failed";
-        res.status(403).send(`Authorization denied: ${msg}`);
+        const detail = err instanceof Error ? err.message : String(err);
+        console.error("[googleCallback] login failed:", detail);
+        res.status(403).send("Authorization denied");
       });
   };
 }

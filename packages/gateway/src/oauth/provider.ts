@@ -97,7 +97,8 @@ export class OfocusOAuthProvider implements OAuthServerProvider {
       redirectUri: this.opts.callbackUrl,
     });
     if (!this.allowed.has(email.toLowerCase())) {
-      // Server-side error only (logged, never sent to the client).
+      // Thrown on allowlist rejection; the Google callback handler logs the
+      // detail server-side and returns a generic 403 to the browser.
       throw new Error(`account ${email} is not authorized`);
     }
     const code = randomUUID();
