@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (ESM, NodeNext, strict tsconfig incl. `exactOptionalPropertyTypes`/`noUncheckedIndexedAccess`), Zod, **vitest**. Branch `claude/ofocus-resolve` (stacked on A2 / `claude/ofocus-temporal-engine`).
 
-**Spec:** [`docs/superpowers/specs/2026-05-31-ofocus-resolve-disambiguation-design.md`](../specs/2026-05-31-ofocus-resolve-disambiguation-design.md)
+**Spec:** [`docs/specs/2026-05-31-ofocus-resolve-disambiguation-design.md`](../specs/2026-05-31-ofocus-resolve-disambiguation-design.md)
 
 **Conventions (every commit):** author `--author="Mike North <michael.l.north@gmail.com>"`, no AI trailers, run from the worktree root. Tests: `pnpm --filter @ofocus/productivity exec vitest run <file>`.
 

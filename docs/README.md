@@ -13,16 +13,16 @@ root [`README.md`](../README.md) is the quick-start.
 
 ## Design specs (the durable contracts)
 
-- **[Agent collaboration principles & roadmap](./superpowers/specs/2026-05-30-ofocus-agent-principles.md)**
+- **[Agent collaboration principles & roadmap](./specs/2026-05-30-ofocus-agent-principles.md)**
   — the thesis, the four interaction patterns, the three layers (L1/L2/L3), the package
   architecture, and the A1–A4 + B capability roadmap. The north star for every later spec.
-- **[`changes` change-detection primitive](./superpowers/specs/2026-05-30-ofocus-changes-primitive-design.md)**
+- **[`changes` change-detection primitive](./specs/2026-05-30-ofocus-changes-primitive-design.md)**
   — the contract for `ofocus changes` (read modes, cache/generation semantics, cursor,
   `--semantic`).
 
 ## Plans
 
-- **[plans/](./superpowers/plans/)** — step-by-step implementation plans (one per capability).
+- **[plans/](./plans/)** — step-by-step implementation plans (one per capability).
   Downstream of a spec; the spec wins on conflict.
 
 ## Reference
@@ -39,7 +39,7 @@ root [`README.md`](../README.md) is the quick-start.
 
 ## Conventions
 
-- Design specs live in `docs/superpowers/specs/`; plans in `docs/superpowers/plans/`
+- Design specs live in `docs/specs/`; plans in `docs/plans/`
   (written by the brainstorm → spec → plan workflow). This index keeps them discoverable.
 - Keep specs current: a behavior change that leaves a spec asserting the old contract is a
   defect (see [agent-guide.md](./agent-guide.md) §4).

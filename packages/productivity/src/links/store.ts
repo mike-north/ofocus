@@ -7,7 +7,7 @@
  * default {@link FileLinkStore} keeps a single atomic JSON document under
  * `OFOCUS_STATE_DIR`, reusing the conventions established by the `changes` cache.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.2
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.2
  */
 import {
   existsSync,

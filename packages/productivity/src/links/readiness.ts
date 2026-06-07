@@ -3,7 +3,7 @@
  * lead-time / suggested due, time-block coverage, and the meeting-readiness
  * verdict. No I/O; `now` is always injected as an ISO string.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.3
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.3
  */
 import { dueIn } from "../recurrence/duration.js";
 import type {

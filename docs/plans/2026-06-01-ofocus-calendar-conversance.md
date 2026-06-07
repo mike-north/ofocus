@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (ESM/NodeNext, strict + `exactOptionalPropertyTypes`), zod, vitest, the `@ofocus/sdk` descriptor/`CliOutput` framework, A2 duration helpers, Node `fs`/`os`/`path` for the file store.
 
-**Spec:** `docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md`
+**Spec:** `docs/specs/2026-06-01-ofocus-calendar-conversance-design.md`
 
 **Branch:** `claude/ofocus-calendar` (already created off `main`; the spec is already committed there).
 
@@ -62,7 +62,7 @@
  * the agent from its own calendar tool. These types model the stored links and
  * the inputs/outputs of the deterministic readiness/coverage computations.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md
  */
 import type { DurationInfo } from "../recurrence/duration.js";
 
@@ -187,7 +187,7 @@ GIT_EDITOR=true git commit --author="Mike North <michael.l.north@gmail.com>" -m 
 /**
  * Tests for the LinkStore contract and the default FileLinkStore.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.2
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.2
  */
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -326,7 +326,7 @@ Expected: FAIL — cannot find `../../src/links/store.js`.
  * default {@link FileLinkStore} keeps a single atomic JSON document under
  * `OFOCUS_STATE_DIR`, reusing the conventions established by the `changes` cache.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.2
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.2
  */
 import {
   existsSync,
@@ -468,7 +468,7 @@ GIT_EDITOR=true git commit --author="Mike North <michael.l.north@gmail.com>" -m 
  *
  * Expected values are hand-derived from the spec, not captured from output.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.3
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.3
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -659,7 +659,7 @@ Expected: FAIL — cannot find `../../src/links/readiness.js`.
  * lead-time / suggested due, time-block coverage, and the meeting-readiness
  * verdict. No I/O; `now` is always injected as an ISO string.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.3
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.3
  */
 import { dueIn } from "../recurrence/duration.js";
 import type {
@@ -841,7 +841,7 @@ GIT_EDITOR=true git commit --author="Mike North <michael.l.north@gmail.com>" -m 
  * Tests for building/parsing the task-state OmniJS read. The live read is
  * exercised in the UAT; here we test the pure script-builder and parser.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.5
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.5
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -1005,7 +1005,7 @@ GIT_EDITOR=true git commit --author="Mike North <michael.l.north@gmail.com>" -m 
  * Unit tests for the link/unlink/links command handlers, with the store and
  * task-state fetcher injected (no disk, no OmniFocus).
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4, §4
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4, §4
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -1196,7 +1196,7 @@ Expected: FAIL — cannot find `../../src/commands/link.js`.
  * the `--event` JSON argument (a structured object over MCP; a JSON string over
  * the CLI, transparently parsed by a `z.preprocess` wrapper).
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
  */
 import { z } from "zod";
 import {
@@ -1569,7 +1569,7 @@ GIT_EDITOR=true git commit --author="Mike North <michael.l.north@gmail.com>" -m 
 /**
  * Unit tests for the readiness command handler (injected store + task fetcher).
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
  */
 import { describe, expect, it } from "vitest";
 import { runReadiness } from "../../src/commands/readiness.js";
@@ -1687,7 +1687,7 @@ Expected: FAIL — cannot find `../../src/commands/readiness.js`.
  * inline `--event` override refreshes the stored snapshots first (refresh on
  * supply); without it, the most recently captured stored snapshot is used.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
  */
 import {
   type CliOutput,
@@ -2063,7 +2063,7 @@ GIT_EDITOR=true git commit --author="Mike North <michael.l.north@gmail.com>" -m 
  * Drives the built CLI against the real DB in a temp OFOCUS_STATE_DIR; uses a
  * synthetic event (ofocus never reads a calendar). Shape/sanity assertions only.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §5
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §5
  */
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";

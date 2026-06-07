@@ -8,8 +8,8 @@
 
 **Tech Stack:** TypeScript (NodeNext, strict), Zod schemas, Commander (CLI), `@modelcontextprotocol/sdk` (MCP), vitest (tests), pnpm workspaces + tsc project references, TOON output.
 
-**Spec:** [`docs/superpowers/specs/2026-05-30-ofocus-changes-primitive-design.md`](../specs/2026-05-30-ofocus-changes-primitive-design.md)
-**Principles:** [`docs/superpowers/specs/2026-05-30-ofocus-agent-principles.md`](../specs/2026-05-30-ofocus-agent-principles.md)
+**Spec:** [`docs/specs/2026-05-30-ofocus-changes-primitive-design.md`](../specs/2026-05-30-ofocus-changes-primitive-design.md)
+**Principles:** [`docs/specs/2026-05-30-ofocus-agent-principles.md`](../specs/2026-05-30-ofocus-agent-principles.md)
 
 **Conventions for every commit in this plan:**
 - Author: `--author="Mike North <michael.l.north@gmail.com>"` (this repo's remote is `github.com/mnorth/ofocus`, a personal repo). No AI attribution trailers.
@@ -2019,7 +2019,7 @@ git commit --author="Mike North <michael.l.north@gmail.com>" \
  * require a built CLI; they assert output shape and exit codes, not OmniFocus
  * data (the scan is exercised against the live app only when present — see skip).
  *
- * @see ../../docs/superpowers/specs/2026-05-30-ofocus-changes-primitive-design.md
+ * @see ../../docs/specs/2026-05-30-ofocus-changes-primitive-design.md
  */
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";

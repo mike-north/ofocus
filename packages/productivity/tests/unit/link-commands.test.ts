@@ -2,7 +2,7 @@
  * Unit tests for the link/unlink/links command handlers, with the store and
  * task-state fetcher injected (no disk, no OmniFocus).
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4, §4
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4, §4
  */
 import { describe, expect, it } from "vitest";
 import {

@@ -2,7 +2,7 @@
  * Tests for building/parsing the task-state OmniJS read. The live read is
  * exercised in the UAT; here we test the pure script-builder and parser.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.5
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.5
  */
 import { describe, expect, it } from "vitest";
 import {

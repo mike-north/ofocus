@@ -13,7 +13,7 @@
  *
  * @see packages/productivity/src/commands/link.ts
  * @see packages/productivity/src/commands/readiness.ts
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md
  */
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";

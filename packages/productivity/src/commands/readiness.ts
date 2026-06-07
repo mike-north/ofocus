@@ -4,7 +4,7 @@
  * inline `--event` override refreshes the stored snapshots first (refresh on
  * supply); without it, the most recently captured stored snapshot is used.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.4
  */
 import { z } from "zod";
 import {

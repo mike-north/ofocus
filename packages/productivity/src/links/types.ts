@@ -5,7 +5,7 @@
  * the agent from its own calendar tool. These types model the stored links and
  * the inputs/outputs of the deterministic readiness/coverage computations.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md
  */
 import type { DurationInfo } from "../recurrence/duration.js";
 

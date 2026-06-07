@@ -1,7 +1,7 @@
 /**
  * Tests for the LinkStore contract and the default FileLinkStore.
  *
- * @see docs/superpowers/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.2
+ * @see docs/specs/2026-06-01-ofocus-calendar-conversance-design.md §3.2
  */
 import {
   mkdtempSync,
