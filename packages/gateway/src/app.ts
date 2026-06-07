@@ -101,7 +101,7 @@ export function buildApp(deps: BuildAppDeps): Express {
       .catch(next);
   };
 
-  app.post("/mcp", bearer, express.json(), mcpPost);
+  app.post("/mcp", bearer, express.json({ limit: "1mb" }), mcpPost);
 
   const sessionStream: RequestHandler = (req, res, next) => {
     Promise.resolve()

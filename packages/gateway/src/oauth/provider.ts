@@ -159,11 +159,10 @@ export class OfocusOAuthProvider implements OAuthServerProvider {
     if (existing.clientId !== client.client_id)
       throw new Error("invalid refresh token");
     await this.opts.store.deleteToken(existing.accessToken);
-    return this.issueTokens(
-      existing.clientId,
-      scopes ?? existing.scopes,
-      existing.email
-    );
+    const grantedScopes = scopes
+      ? scopes.filter((s) => existing.scopes.includes(s))
+      : existing.scopes;
+    return this.issueTokens(existing.clientId, grantedScopes, existing.email);
   }
 
   async verifyAccessToken(token: string): Promise<AuthInfo> {

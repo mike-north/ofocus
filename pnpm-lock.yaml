@@ -95,7 +95,7 @@ importers:
   packages/gateway:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: ^1.11.0
+        specifier: ^1.26.0
         version: 1.26.0(patch_hash=ff0795f902e52e596431a1bbdde980d3b63b1dbb3743af6fc6399c0514bf1a83)(zod@3.25.76)
       '@ofocus/mcp':
         specifier: workspace:*

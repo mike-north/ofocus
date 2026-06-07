@@ -19,9 +19,10 @@ export function googleCallbackHandler(
       .then((redirectUrl) => {
         res.redirect(redirectUrl);
       })
-      .catch((err: unknown) => {
-        const detail = err instanceof Error ? err.message : String(err);
-        console.error("[googleCallback] login failed:", detail);
+      .catch((_err: unknown) => {
+        console.error(
+          "[googleCallback] login failed (allowlist rejection, expired session, or upstream error)"
+        );
         res.status(403).send("Authorization denied");
       });
   };

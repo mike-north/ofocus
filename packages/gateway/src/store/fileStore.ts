@@ -71,7 +71,10 @@ export class FileStore implements Store {
 
   private flush(): void {
     const tmp = `${this.path}.tmp`;
-    writeFileSync(tmp, JSON.stringify(this.data), "utf8");
+    writeFileSync(tmp, JSON.stringify(this.data), {
+      encoding: "utf8",
+      mode: 0o600,
+    });
     renameSync(tmp, this.path); // atomic on same filesystem
   }
 

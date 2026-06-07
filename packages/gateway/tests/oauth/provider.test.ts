@@ -289,6 +289,39 @@ describe("OfocusOAuthProvider", () => {
     ).rejects.toThrow(/invalid refresh token/i);
   });
 
+  it("exchangeRefreshToken does NOT broaden scope beyond the original grant", async () => {
+    const { provider, store } = makeProvider(["michael.l.north@gmail.com"]);
+    await store.putClient(CLIENT);
+    const { res, calls } = fakeRes();
+    // original grant: only "offline_access"
+    await provider.authorize(
+      CLIENT,
+      {
+        codeChallenge: "CH",
+        redirectUri: CLIENT.redirect_uris[0],
+        scopes: ["offline_access"],
+        state: "cs",
+      },
+      res
+    );
+    const googleState = new URL(calls[0]).searchParams.get("state")!;
+    const code = new URL(
+      await provider.completeLogin({
+        googleCode: "goodcode",
+        state: googleState,
+      })
+    ).searchParams.get("code")!;
+    const first = await provider.exchangeAuthorizationCode(CLIENT, code);
+    // refresh requesting a BROADER scope set
+    const refreshed = await provider.exchangeRefreshToken(
+      CLIENT,
+      first.refresh_token!,
+      ["offline_access", "email", "admin"]
+    );
+    const granted = (refreshed.scope ?? "").split(" ").filter(Boolean).sort();
+    expect(granted).toEqual(["offline_access"]); // intersection only; no elevation
+  });
+
   it("exchangeAuthorizationCode() REJECTS an expired code", async () => {
     const { provider, store } = makeProvider(["michael.l.north@gmail.com"]);
     await store.putClient(CLIENT);
