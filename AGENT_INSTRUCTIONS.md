@@ -171,8 +171,8 @@ List tasks with defer dates.
 | excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100) |
-| offset | `number` | no | Number of results to skip for pagination |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 **Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
@@ -207,8 +207,8 @@ List subtasks of a parent task.
 | excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100) |
-| offset | `number` | no | Number of results to skip for pagination |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 **Example:** `{ "parentTaskId": "<parentTaskId>", "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
@@ -273,9 +273,9 @@ List and filter tasks from OmniFocus.
 | idsOnly | `boolean` | no | Return only the IDs of matching tasks as { kind: 'ids', ids } |
 | groupBy | `string` | no | Group matching tasks by this field key |
 | stats | `boolean` | no | When grouping, include count statistics per group |
-| limit | `number` | no | Maximum number of results to return (default: 100) |
-| offset | `number` | no | Number of results to skip for pagination |
-| all | `boolean` | no | When true, return every matching task ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `quick_add`
 
@@ -301,8 +301,8 @@ Search tasks by name or note content.
 | excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum results to return (default: 100) |
-| offset | `number` | no | Number of results to skip for pagination |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 **Example:** `{ "query": "<query>", "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
@@ -432,8 +432,8 @@ List and filter projects from OmniFocus
 | excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return |
-| offset | `number` | no | Number of results to skip for pagination |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 **Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
@@ -491,8 +491,8 @@ List folders from OmniFocus
 | excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return |
-| offset | `number` | no | Number of results to skip for pagination |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 **Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
@@ -545,8 +545,8 @@ List tags from OmniFocus
 | excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return |
-| offset | `number` | no | Number of results to skip for pagination |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 **Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
@@ -578,8 +578,8 @@ Query tasks due within N days (like the OmniFocus Forecast view).
 | excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100) |
-| offset | `number` | no | Number of results to skip for pagination |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 **Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`

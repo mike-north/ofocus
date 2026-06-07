@@ -604,11 +604,11 @@ export const createSubtaskDescriptor: ResolvedCommandDescriptor<    {
 parentTaskId: string;
 title: string;
 note?: string | undefined;
-estimatedMinutes?: number | undefined;
-tags?: string[] | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
+tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
 }, OFTaskWithChildren, z.ZodObject<{
 title: z.ZodString;
 parentTaskId: z.ZodString;
@@ -622,20 +622,20 @@ estimatedMinutes: z.ZodOptional<z.ZodNumber>;
 parentTaskId: string;
 title: string;
 note?: string | undefined;
-estimatedMinutes?: number | undefined;
-tags?: string[] | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
+tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
 }, {
 parentTaskId: string;
 title: string;
 note?: string | undefined;
-estimatedMinutes?: number | undefined;
-tags?: string[] | undefined;
 due?: string | undefined;
 defer?: string | undefined;
 flag?: boolean | undefined;
+tags?: string[] | undefined;
+estimatedMinutes?: number | undefined;
 }>>;
 
 // @public
@@ -1287,14 +1287,14 @@ export interface ListAttachmentsResult {
 
 // @public
 export const listFoldersDescriptor: ResolvedCommandDescriptor<    {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
-parent?: string | undefined;
+sort?: string[] | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
+all?: boolean | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+parent?: string | undefined;
 }, QueryResult<OFFolder>, z.ZodObject<{
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
@@ -1305,24 +1305,31 @@ fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | 
 excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
 parent: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+reverse?: boolean | undefined;
+sort?: string[] | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+all?: boolean | undefined;
 fields?: string[] | undefined;
 excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
 parent?: string | undefined;
+}, {
+reverse?: boolean | undefined;
+sort?: unknown;
 limit?: number | undefined;
 offset?: number | undefined;
-}, {
+all?: boolean | undefined;
 fields?: unknown;
 excludeFields?: unknown;
-sort?: unknown;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
 parent?: string | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
 }>>;
+
+// @public
+export const listPaginationSchema: {
+    readonly limit: z.ZodOptional<z.ZodNumber>;
+    readonly offset: z.ZodOptional<z.ZodNumber>;
+    readonly all: z.ZodOptional<z.ZodBoolean>;
+};
 
 // @public
 export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
@@ -1338,16 +1345,16 @@ export const listProjectionSchema: {
 
 // @public
 export const listProjectsDescriptor: ResolvedCommandDescriptor<    {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
+sort?: string[] | undefined;
 status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
-folder?: string | undefined;
-sequential?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
+all?: boolean | undefined;
+folder?: string | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+sequential?: boolean | undefined;
 }, QueryResult<OFProject>, z.ZodObject<{
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
@@ -1360,27 +1367,27 @@ folder: z.ZodOptional<z.ZodString>;
 status: z.ZodOptional<z.ZodEnum<["active", "on-hold", "completed", "dropped"]>>;
 sequential: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+reverse?: boolean | undefined;
+sort?: string[] | undefined;
+status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+all?: boolean | undefined;
+folder?: string | undefined;
 fields?: string[] | undefined;
 excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
-status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
-folder?: string | undefined;
 sequential?: boolean | undefined;
+}, {
+reverse?: boolean | undefined;
+sort?: unknown;
+status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
-}, {
+all?: boolean | undefined;
+folder?: string | undefined;
 fields?: unknown;
 excludeFields?: unknown;
-sort?: unknown;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
-status?: "active" | "completed" | "dropped" | "on-hold" | undefined;
-folder?: string | undefined;
 sequential?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
 }>>;
 
 // @public
@@ -1394,14 +1401,14 @@ export const listSortSchema: {
 
 // @public
 export const listTagsDescriptor: ResolvedCommandDescriptor<    {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
-parent?: string | undefined;
+sort?: string[] | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
+all?: boolean | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+parent?: string | undefined;
 }, QueryResult<OFTag>, z.ZodObject<{
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
@@ -1412,23 +1419,23 @@ fields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | 
 excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
 parent: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+reverse?: boolean | undefined;
+sort?: string[] | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+all?: boolean | undefined;
 fields?: string[] | undefined;
 excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
 parent?: string | undefined;
+}, {
+reverse?: boolean | undefined;
+sort?: unknown;
 limit?: number | undefined;
 offset?: number | undefined;
-}, {
+all?: boolean | undefined;
 fields?: unknown;
 excludeFields?: unknown;
-sort?: unknown;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
 parent?: string | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
 }>>;
 
 // @public
@@ -1784,16 +1791,16 @@ export function queryDeferred(options?: DeferredQueryOptions): Promise<CliOutput
 
 // @public
 export const queryDeferredDescriptor: ResolvedCommandDescriptor<    {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
+sort?: string[] | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
-blockedOnly?: boolean | undefined;
+all?: boolean | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
+blockedOnly?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
@@ -1806,27 +1813,27 @@ deferredAfter: z.ZodOptional<z.ZodString>;
 deferredBefore: z.ZodOptional<z.ZodString>;
 blockedOnly: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+reverse?: boolean | undefined;
+sort?: string[] | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+all?: boolean | undefined;
 fields?: string[] | undefined;
 excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
-blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
+blockedOnly?: boolean | undefined;
 }, {
+reverse?: boolean | undefined;
+sort?: unknown;
+limit?: number | undefined;
+offset?: number | undefined;
+all?: boolean | undefined;
 fields?: unknown;
 excludeFields?: unknown;
-sort?: unknown;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
-blockedOnly?: boolean | undefined;
 deferredAfter?: string | undefined;
 deferredBefore?: string | undefined;
+blockedOnly?: boolean | undefined;
 }>>;
 
 // @public
@@ -1840,14 +1847,14 @@ export function queryForecast(options?: ForecastOptions): Promise<CliOutput<Quer
 
 // @public
 export const queryForecastDescriptor: ResolvedCommandDescriptor<    {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
-days?: number | undefined;
+sort?: string[] | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
+all?: boolean | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+days?: number | undefined;
 includeDeferred?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
 limit: z.ZodOptional<z.ZodNumber>;
@@ -1860,24 +1867,24 @@ excludeFields: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, stri
 days: z.ZodOptional<z.ZodNumber>;
 includeDeferred: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+reverse?: boolean | undefined;
+sort?: string[] | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+all?: boolean | undefined;
 fields?: string[] | undefined;
 excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
 days?: number | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
 includeDeferred?: boolean | undefined;
 }, {
-fields?: unknown;
-excludeFields?: unknown;
-sort?: unknown;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
-days?: number | undefined;
+sort?: unknown;
 limit?: number | undefined;
 offset?: number | undefined;
+all?: boolean | undefined;
+fields?: unknown;
+excludeFields?: unknown;
+days?: number | undefined;
 includeDeferred?: boolean | undefined;
 }>>;
 
@@ -1942,15 +1949,15 @@ export function querySubtasks(parentTaskId: string, options?: SubtaskQueryOption
 // @public
 export const querySubtasksDescriptor: ResolvedCommandDescriptor<    {
 parentTaskId: string;
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
+sort?: string[] | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 all?: boolean | undefined;
 completed?: boolean | undefined;
 flagged?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
 limit: z.ZodOptional<z.ZodNumber>;
 offset: z.ZodOptional<z.ZodNumber>;
@@ -1964,26 +1971,26 @@ completed: z.ZodOptional<z.ZodBoolean>;
 flagged: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 parentTaskId: string;
+reverse?: boolean | undefined;
+sort?: string[] | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
+all?: boolean | undefined;
+completed?: boolean | undefined;
+flagged?: boolean | undefined;
 fields?: string[] | undefined;
 excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
-reverse?: boolean | undefined;
-all?: boolean | undefined;
-completed?: boolean | undefined;
-flagged?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
 }, {
 parentTaskId: string;
-fields?: unknown;
-excludeFields?: unknown;
-sort?: unknown;
 reverse?: boolean | undefined;
+sort?: unknown;
+limit?: number | undefined;
+offset?: number | undefined;
 all?: boolean | undefined;
 completed?: boolean | undefined;
 flagged?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
+fields?: unknown;
+excludeFields?: unknown;
 }>>;
 
 // @public
@@ -1994,20 +2001,19 @@ export function queryTasks(options?: TaskQueryOptions): Promise<CliOutput<QueryR
 
 // @public
 export const queryTasksDescriptor: ResolvedCommandDescriptor<    {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-nullsFirst?: boolean | undefined;
-count?: boolean | undefined;
-first?: boolean | undefined;
-last?: boolean | undefined;
-idsOnly?: boolean | undefined;
-groupBy?: string | undefined;
-stats?: boolean | undefined;
+sort?: string[] | undefined;
+status?: "active" | "completed" | "dropped" | "deferred" | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 all?: boolean | undefined;
+count?: boolean | undefined;
 completed?: boolean | undefined;
 dropped?: boolean | undefined;
+project?: string | string[] | undefined;
+tag?: string | string[] | undefined;
+tagMode?: "all" | "any" | "none" | undefined;
+folder?: string | string[] | undefined;
 flagged?: boolean | undefined;
 notFlagged?: boolean | undefined;
 notCompleted?: boolean | undefined;
@@ -2024,11 +2030,6 @@ hasSubtasks?: boolean | undefined;
 hasRepetition?: boolean | undefined;
 effectivelyCompleted?: boolean | undefined;
 effectivelyDropped?: boolean | undefined;
-status?: "active" | "completed" | "dropped" | "deferred" | undefined;
-project?: string | string[] | undefined;
-tag?: string | string[] | undefined;
-tagMode?: "any" | "all" | "none" | undefined;
-folder?: string | string[] | undefined;
 dueBefore?: string | undefined;
 dueAfter?: string | undefined;
 dueOn?: string | undefined;
@@ -2049,9 +2050,18 @@ nameRegex?: string | undefined;
 noteContains?: string | undefined;
 noteRegex?: string | undefined;
 caseSensitive?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+nullsFirst?: boolean | undefined;
+first?: boolean | undefined;
+last?: boolean | undefined;
+idsOnly?: boolean | undefined;
+groupBy?: string | undefined;
+stats?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 project: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
 tag: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
 tagMode: z.ZodOptional<z.ZodEnum<["any", "all", "none"]>>;
@@ -2106,24 +2116,20 @@ last: z.ZodOptional<z.ZodBoolean>;
 idsOnly: z.ZodOptional<z.ZodBoolean>;
 groupBy: z.ZodOptional<z.ZodString>;
 stats: z.ZodOptional<z.ZodBoolean>;
-limit: z.ZodOptional<z.ZodNumber>;
-offset: z.ZodOptional<z.ZodNumber>;
-all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-nullsFirst?: boolean | undefined;
-count?: boolean | undefined;
-first?: boolean | undefined;
-last?: boolean | undefined;
-idsOnly?: boolean | undefined;
-groupBy?: string | undefined;
-stats?: boolean | undefined;
+sort?: string[] | undefined;
+status?: "active" | "completed" | "dropped" | "deferred" | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 all?: boolean | undefined;
+count?: boolean | undefined;
 completed?: boolean | undefined;
 dropped?: boolean | undefined;
+project?: string | string[] | undefined;
+tag?: string | string[] | undefined;
+tagMode?: "all" | "any" | "none" | undefined;
+folder?: string | string[] | undefined;
 flagged?: boolean | undefined;
 notFlagged?: boolean | undefined;
 notCompleted?: boolean | undefined;
@@ -2140,11 +2146,6 @@ hasSubtasks?: boolean | undefined;
 hasRepetition?: boolean | undefined;
 effectivelyCompleted?: boolean | undefined;
 effectivelyDropped?: boolean | undefined;
-status?: "active" | "completed" | "dropped" | "deferred" | undefined;
-project?: string | string[] | undefined;
-tag?: string | string[] | undefined;
-tagMode?: "any" | "all" | "none" | undefined;
-folder?: string | string[] | undefined;
 dueBefore?: string | undefined;
 dueAfter?: string | undefined;
 dueOn?: string | undefined;
@@ -2165,23 +2166,28 @@ nameRegex?: string | undefined;
 noteContains?: string | undefined;
 noteRegex?: string | undefined;
 caseSensitive?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+nullsFirst?: boolean | undefined;
+first?: boolean | undefined;
+last?: boolean | undefined;
+idsOnly?: boolean | undefined;
+groupBy?: string | undefined;
+stats?: boolean | undefined;
 }, {
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-nullsFirst?: boolean | undefined;
-count?: boolean | undefined;
-first?: boolean | undefined;
-last?: boolean | undefined;
-idsOnly?: boolean | undefined;
-groupBy?: string | undefined;
-stats?: boolean | undefined;
+sort?: string[] | undefined;
+status?: "active" | "completed" | "dropped" | "deferred" | undefined;
+limit?: number | undefined;
+offset?: number | undefined;
 all?: boolean | undefined;
+count?: boolean | undefined;
 completed?: boolean | undefined;
 dropped?: boolean | undefined;
+project?: string | string[] | undefined;
+tag?: string | string[] | undefined;
+tagMode?: "all" | "any" | "none" | undefined;
+folder?: string | string[] | undefined;
 flagged?: boolean | undefined;
 notFlagged?: boolean | undefined;
 notCompleted?: boolean | undefined;
@@ -2198,11 +2204,6 @@ hasSubtasks?: boolean | undefined;
 hasRepetition?: boolean | undefined;
 effectivelyCompleted?: boolean | undefined;
 effectivelyDropped?: boolean | undefined;
-status?: "active" | "completed" | "dropped" | "deferred" | undefined;
-project?: string | string[] | undefined;
-tag?: string | string[] | undefined;
-tagMode?: "any" | "all" | "none" | undefined;
-folder?: string | string[] | undefined;
 dueBefore?: string | undefined;
 dueAfter?: string | undefined;
 dueOn?: string | undefined;
@@ -2223,8 +2224,14 @@ nameRegex?: string | undefined;
 noteContains?: string | undefined;
 noteRegex?: string | undefined;
 caseSensitive?: boolean | undefined;
-limit?: number | undefined;
-offset?: number | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
+nullsFirst?: boolean | undefined;
+first?: boolean | undefined;
+last?: boolean | undefined;
+idsOnly?: boolean | undefined;
+groupBy?: string | undefined;
+stats?: boolean | undefined;
 }>>;
 
 // @public
@@ -2397,13 +2404,13 @@ export function searchTasks(query: string, options?: SearchOptions): Promise<Cli
 // @public
 export const searchTasksDescriptor: ResolvedCommandDescriptor<    {
 query: string;
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
+sort?: string[] | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
+all?: boolean | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
 scope?: "name" | "note" | "both" | undefined;
 includeCompleted?: boolean | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
@@ -2419,24 +2426,24 @@ scope: z.ZodOptional<z.ZodEnum<["name", "note", "both"]>>;
 includeCompleted: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 query: string;
-fields?: string[] | undefined;
-excludeFields?: string[] | undefined;
-sort?: string[] | undefined;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
+sort?: string[] | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
+all?: boolean | undefined;
+fields?: string[] | undefined;
+excludeFields?: string[] | undefined;
 scope?: "name" | "note" | "both" | undefined;
 includeCompleted?: boolean | undefined;
 }, {
 query: string;
-fields?: unknown;
-excludeFields?: unknown;
-sort?: unknown;
 reverse?: boolean | undefined;
-all?: boolean | undefined;
+sort?: unknown;
 limit?: number | undefined;
 offset?: number | undefined;
+all?: boolean | undefined;
+fields?: unknown;
+excludeFields?: unknown;
 scope?: "name" | "note" | "both" | undefined;
 includeCompleted?: boolean | undefined;
 }>>;

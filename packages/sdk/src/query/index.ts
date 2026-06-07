@@ -307,4 +307,8 @@ export {
   compileFolderPredicates,
 } from "./predicates.js";
 export { splitCommaSeparated, commaSeparatedStringArray } from "./coerce.js";
-export { listProjectionSchema, listSortSchema } from "./list-schema.js";
+export {
+  listProjectionSchema,
+  listSortSchema,
+  listPaginationSchema,
+} from "./list-schema.js";

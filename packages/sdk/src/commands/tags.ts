@@ -14,6 +14,7 @@ import {
   tagGroupKeys,
   listProjectionSchema,
   listSortSchema,
+  listPaginationSchema,
   type QueryResult,
   type TagQueryOptions,
 } from "../query/index.js";
@@ -38,24 +39,7 @@ export const listTagsDescriptor = defineCommand({
     // ── Sort ─────────────────────────────────────────────────────────────────
     ...listSortSchema,
     // ── Pagination ───────────────────────────────────────────────────────────
-    limit: z
-      .number()
-      .int()
-      .min(1)
-      .optional()
-      .describe("Maximum number of results to return"),
-    offset: z
-      .number()
-      .int()
-      .min(0)
-      .optional()
-      .describe("Number of results to skip for pagination"),
-    all: z
-      .boolean()
-      .optional()
-      .describe(
-        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
-      ),
+    ...listPaginationSchema,
   }),
   handler: async (input) =>
     queryTags({
