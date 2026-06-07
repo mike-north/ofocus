@@ -38,6 +38,10 @@ function omit<T>(record: Record<string, T>, key: string): Record<string, T> {
  * Durable single-file JSON store. Single-user scale: the whole dataset is held
  * in memory and rewritten atomically on each mutation. The `Store` interface is
  * the seam for swapping in SQLite later without touching callers.
+ *
+ * Note: abandoned login-state and pending-authorization entries are not
+ * TTL-evicted from the file; this is acceptable at single-user scale because
+ * the OAuth layer enforces expiry on every read.
  */
 export class FileStore implements Store {
   private readonly path: string;
@@ -46,12 +50,23 @@ export class FileStore implements Store {
   constructor(dir: string) {
     mkdirSync(dir, { recursive: true });
     this.path = join(dir, "gateway-state.json");
-    this.data = existsSync(this.path)
-      ? {
-          ...EMPTY,
-          ...(JSON.parse(readFileSync(this.path, "utf8")) as Data),
-        }
-      : structuredClone(EMPTY);
+    if (existsSync(this.path)) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(readFileSync(this.path, "utf8"));
+      } catch (err) {
+        throw new Error(
+          `Failed to parse gateway store file at ${this.path}: ${String(err)}. ` +
+            `Delete or fix the file to start fresh.`,
+          { cause: err }
+        );
+      }
+      // Type assertion: we trust files we write to conform to Data. An old file
+      // missing a key is safe because EMPTY supplies defaults via the spread.
+      this.data = { ...EMPTY, ...(parsed as Data) };
+    } else {
+      this.data = structuredClone(EMPTY);
+    }
   }
 
   private flush(): void {

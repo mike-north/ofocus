@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { FileStore } from "../../src/store/fileStore.js";
@@ -81,5 +81,42 @@ describe("FileStore", () => {
     expect((await store.getTokenByRefreshToken("rt"))?.accessToken).toBe("at");
     await store.deleteToken("at");
     expect(await store.getTokenByAccessToken("at")).toBeUndefined();
+  });
+
+  it("deleteToken is durable across reloads", async () => {
+    await store.putToken({
+      accessToken: "at",
+      refreshToken: "rt",
+      clientId: "c1",
+      scopes: ["offline_access"],
+      email: "a@b.com",
+      accessTokenExpiresAt: FIXED + 3600000,
+    });
+    await store.deleteToken("at");
+    const reopened = new FileStore(dir);
+    expect(await reopened.getTokenByAccessToken("at")).toBeUndefined();
+  });
+
+  it("getPendingAuthorization peeks without consuming", async () => {
+    await store.putPendingAuthorization({
+      code: "p1",
+      clientId: "c1",
+      redirectUri: "https://claude.ai/cb",
+      codeChallenge: "ch",
+      scopes: [],
+      email: "a@b.com",
+      expiresAt: FIXED + 60000,
+    });
+    expect((await store.getPendingAuthorization("p1"))?.email).toBe("a@b.com");
+    expect((await store.getPendingAuthorization("p1"))?.email).toBe("a@b.com"); // still there
+    expect((await store.takePendingAuthorization("p1"))?.email).toBe("a@b.com"); // now consumed
+    expect(await store.getPendingAuthorization("p1")).toBeUndefined();
+  });
+
+  it("throws a descriptive error on a corrupt state file", () => {
+    writeFileSync(join(dir, "gateway-state.json"), "{not valid json", "utf8");
+    expect(() => new FileStore(dir)).toThrow(
+      /Failed to parse gateway store file/
+    );
   });
 });
