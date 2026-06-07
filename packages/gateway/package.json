@@ -1,0 +1,40 @@
+{
+  "name": "@ofocus/gateway",
+  "version": "0.1.0",
+  "description": "Remote-MCP gateway exposing OmniFocus to claude.ai and ChatGPT over OAuth 2.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "ofocus-gateway": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --build --watch",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:watch": "vitest"
+  },
+  "author": "Mike North",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "@ofocus/mcp": "workspace:*",
+    "express": "^4.21.2",
+    "google-auth-library": "^9.15.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
+    "typescript": "^5.9.3"
+  }
+}
