@@ -1,4 +1,17 @@
 /**
+ * Minimal structural type for the OmniJS `Selection` global, passed to
+ * `perform` and `validate` callbacks in a `PlugIn.Action`.
+ *
+ * @public
+ */
+export interface OmniSelectionLike {
+  /** The currently selected tasks. */
+  readonly tasks: readonly unknown[];
+  /** The currently selected projects. */
+  readonly projects: readonly unknown[];
+}
+
+/**
  * A typed OmniFocus script authored as a TypeScript function. The function's
  * source is serialized to OmniJS at emit time; it must be self-contained
  * (referencing only its parameter, locally-declared bindings, and OmniFocus

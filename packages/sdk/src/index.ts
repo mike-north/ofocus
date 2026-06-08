@@ -389,3 +389,21 @@ export {
 } from "./commands/templates.js";
 export { generateUrlDescriptor } from "./commands/url.js";
 export { openItemDescriptor } from "./commands/open.js";
+
+// Typed OmniAutomation authoring (defineOmniScript/defineOmniAction + backends)
+export {
+  defineOmniScript,
+  defineOmniAction,
+  composeScriptBody,
+  runOmniScript,
+  compileActionToPlugin,
+  resolvePluginsDir,
+  installOmniAction,
+} from "./authoring/index.js";
+export type {
+  OmniScript,
+  OmniAction,
+  OmniSelectionLike,
+  OmniActionMetadata,
+  InstallResult,
+} from "./authoring/index.js";

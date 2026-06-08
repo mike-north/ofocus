@@ -345,6 +345,9 @@ export interface CompactResult {
 }
 
 // @public
+export function compileActionToPlugin(action: OmniAction, meta: OmniActionMetadata): string;
+
+// @public
 export function compileAggregate(options: BaseListQueryOptions, groupKeys?: Record<string, GroupKeySpec>): CompiledAggregate;
 
 // @public
@@ -447,6 +450,9 @@ taskIds: string[];
 }, {
 taskIds: string[];
 }>>;
+
+// @public
+export function composeScriptBody(source: string, args: Record<string, unknown> | undefined): string;
 
 // @public
 export function createError(code: ErrorCode, message: string, details?: string): CliError;
@@ -747,6 +753,14 @@ export function defineCommand<TSchema extends z.AnyZodObject, TOutput>(spec: {
     cliPositional?: readonly string[];
     handler: (input: z.infer<TSchema>) => Promise<CliOutput<TOutput>>;
 }): ResolvedCommandDescriptor<z.infer<TSchema>, TOutput, TSchema>;
+
+// @public
+export function defineOmniAction(perform: (selection: OmniSelectionLike, sender: unknown) => void, options?: {
+    validate?: (selection: OmniSelectionLike, sender: unknown) => boolean;
+}): OmniAction;
+
+// @public
+export function defineOmniScript<Args, T>(fn: (args: Args) => T): OmniScript<Args, T>;
 
 // @public
 export function deleteFolder(folderId: string): Promise<CliOutput<DeleteFolderResult>>;
@@ -1262,6 +1276,17 @@ export interface InboxOptions {
 }
 
 // @public
+export function installOmniAction(action: OmniAction, meta: OmniActionMetadata, opts?: {
+    home?: string;
+    fileName?: string;
+}): Promise<CliOutput<InstallResult>>;
+
+// @public (undocumented)
+export interface InstallResult {
+    path: string;
+}
+
+// @public
 export function isMainModule(importMetaUrl: string): boolean;
 
 // @public
@@ -1576,10 +1601,55 @@ export interface OFTaskWithChildren extends OFTask {
 }
 
 // @public
+export interface OmniAction {
+    // (undocumented)
+    readonly kind: "action";
+    // (undocumented)
+    readonly performSource: string;
+    // (undocumented)
+    readonly validateSource: string | null;
+}
+
+// @public
+export interface OmniActionMetadata {
+    // (undocumented)
+    readonly author?: string;
+    // (undocumented)
+    readonly description?: string;
+    // (undocumented)
+    readonly identifier: string;
+    readonly image?: string;
+    // (undocumented)
+    readonly label: string;
+    // (undocumented)
+    readonly paletteLabel?: string;
+    // (undocumented)
+    readonly shortLabel?: string;
+    // (undocumented)
+    readonly version: string;
+}
+
+// @public
 export interface OmniJSResult<T> {
     data?: T;
     error?: CliError;
     success: boolean;
+}
+
+// @public
+export interface OmniScript<Args, T> {
+    readonly __args?: Args;
+    // (undocumented)
+    readonly __result?: T;
+    // (undocumented)
+    readonly kind: "script";
+    readonly source: string;
+}
+
+// @public
+export interface OmniSelectionLike {
+    readonly projects: readonly unknown[];
+    readonly tasks: readonly unknown[];
 }
 
 // @public
@@ -2308,6 +2378,11 @@ export type ResolvedCommandDescriptor<TInput, TOutput, TSchema extends z.AnyZodO
 };
 
 // @public
+export function resolvePluginsDir(opts?: {
+    home?: string;
+}): string;
+
+// @public
 export interface ReviewIntervalResult {
     // (undocumented)
     projectId: string;
@@ -2348,6 +2423,9 @@ export function runOmniJS<T>(script: string): Promise<OmniJSResult<T>>;
 
 // @public
 export function runOmniJSWrapped<T>(body: string): Promise<OmniJSResult<T>>;
+
+// @public
+export function runOmniScript<Args extends Record<string, unknown>, T>(script: OmniScript<Args, T>, args: Args): Promise<CliOutput<T>>;
 
 // @public
 export function saveTemplate(options: SaveTemplateOptions): Promise<CliOutput<SaveTemplateResult>>;
