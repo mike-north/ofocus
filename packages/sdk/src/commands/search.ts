@@ -19,6 +19,7 @@ import {
   taskGroupKeys,
   listProjectionSchema,
   listSortSchema,
+  listPaginationSchema,
   type QueryResult,
   type BaseListQueryOptions,
   type TaskQueryOptions,
@@ -185,24 +186,7 @@ export const searchTasksDescriptor = defineCommand({
     // ── Sort ─────────────────────────────────────────────────────────────────
     ...listSortSchema,
     // ── Pagination ───────────────────────────────────────────────────────────
-    limit: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .describe("Maximum results to return (default: 100)"),
-    offset: z
-      .number()
-      .int()
-      .min(0)
-      .optional()
-      .describe("Number of results to skip for pagination"),
-    all: z
-      .boolean()
-      .optional()
-      .describe(
-        "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
-      ),
+    ...listPaginationSchema,
   }),
   handler: async (input) =>
     searchTasks(input.query, {

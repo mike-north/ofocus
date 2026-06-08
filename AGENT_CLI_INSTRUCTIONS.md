@@ -204,8 +204,8 @@ ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredB
 | `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100) |
-| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus perspective`
@@ -254,8 +254,8 @@ ofocus subtasks <parentTaskId> [--completed] [--flagged] --fields <fields> --exc
 | `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100) |
-| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus tasks`
@@ -326,9 +326,9 @@ ofocus tasks [--project <project>] [--tag <tag>] [--tag-mode <tagMode>] [--folde
 | `--ids-only` / `--no-ids-only` | `boolean` | no | Return only the IDs of matching tasks as { kind: 'ids', ids } |
 | `--group-by` | `string` | no | Group matching tasks by this field key |
 | `--stats` / `--no-stats` | `boolean` | no | When grouping, include count statistics per group |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100) |
-| `--offset` | `number` | no | Number of results to skip for pagination |
-| `--all` / `--no-all` | `boolean` | no | When true, return every matching task ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus quick`
 
@@ -366,8 +366,8 @@ ofocus search <query> [--scope <scope>] [--include-completed] --fields <fields> 
 | `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum results to return (default: 100) |
-| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update`
@@ -523,8 +523,8 @@ ofocus projects [--folder <folder>] [--status <status>] [--sequential] --fields 
 | `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return |
-| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-project`
@@ -598,8 +598,8 @@ ofocus folders [--parent <parent>] --fields <fields> --exclude-fields <excludeFi
 | `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return |
-| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-folder`
@@ -668,8 +668,8 @@ ofocus tags [--parent <parent>] --fields <fields> --exclude-fields <excludeField
 | `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return |
-| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-tag`
@@ -712,8 +712,8 @@ ofocus forecast [--days <days>] [--include-deferred] --fields <fields> --exclude
 | `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
 | `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100) |
-| `--offset` | `number` | no | Number of results to skip for pagination |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 ## Focus

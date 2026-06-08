@@ -86,6 +86,7 @@ export {
   commaSeparatedStringArray,
   listProjectionSchema,
   listSortSchema,
+  listPaginationSchema,
 } from "./query/index.js";
 export type {
   BaseListQueryOptions,

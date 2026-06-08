@@ -116,6 +116,48 @@ describe("compileAggregate", () => {
     });
   });
 
+  describe("pagination applies only to list output", () => {
+    const cases = [
+      { opt: { idsOnly: true }, flag: "--ids-only" },
+      { opt: { count: true }, flag: "--count" },
+      { opt: { first: true }, flag: "--first" },
+      { opt: { last: true }, flag: "--last" },
+      { opt: { groupBy: "project" }, flag: "--group-by" },
+    ] as const;
+
+    for (const { opt, flag } of cases) {
+      it(`rejects ${flag} combined with limit`, () => {
+        const r = compileAggregate({ ...opt, limit: 5 });
+        expect(r.validationErrors[0]?.code).toBe(ErrorCode.VALIDATION_ERROR);
+        expect(r.validationErrors[0]?.message).toBe(
+          `Cannot combine --limit/--offset with ${flag}`
+        );
+      });
+
+      it(`rejects ${flag} combined with offset`, () => {
+        const r = compileAggregate({ ...opt, offset: 10 });
+        expect(r.validationErrors[0]?.message).toBe(
+          `Cannot combine --limit/--offset with ${flag}`
+        );
+      });
+
+      it(`allows ${flag} with neither limit nor offset`, () => {
+        const r = compileAggregate(opt);
+        expect(
+          r.validationErrors.some((e) =>
+            e.message.startsWith("Cannot combine --limit/--offset")
+          )
+        ).toBe(false);
+      });
+    }
+
+    it("allows limit/offset on the default list shape", () => {
+      const r = compileAggregate({ limit: 5, offset: 10 });
+      expect(r.shape).toBe("list");
+      expect(r.validationErrors).toEqual([]);
+    });
+  });
+
   describe("stats", () => {
     it("stats: true is captured", () => {
       const r = compileAggregate({ groupBy: "project", stats: true });

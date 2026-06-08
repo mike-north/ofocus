@@ -43,3 +43,38 @@ export const listSortSchema = {
     .optional()
     .describe("Reverse the sort order (default: false)"),
 } as const;
+
+/**
+ * Shared Zod schema fragment for pagination on the standard list commands.
+ *
+ * `limit`/`offset` slice the default `list` output; combining them with a shape
+ * modifier (`--ids-only`, `--count`, `--first`, `--last`, `--group-by`) is
+ * rejected because those shapes return the full match set. `all` materialises
+ * everything and is mutually exclusive with `limit`/`offset`.
+ *
+ * @public
+ */
+export const listPaginationSchema = {
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      "Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset."
+    ),
+  offset: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe(
+      "Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset."
+    ),
+  all: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset."
+    ),
+} as const;

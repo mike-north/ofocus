@@ -1325,6 +1325,13 @@ offset?: number | undefined;
 }>>;
 
 // @public
+export const listPaginationSchema: {
+    readonly limit: z.ZodOptional<z.ZodNumber>;
+    readonly offset: z.ZodOptional<z.ZodNumber>;
+    readonly all: z.ZodOptional<z.ZodBoolean>;
+};
+
+// @public
 export function listPerspectives(): Promise<CliOutput<OFPerspective[]>>;
 
 // @public
@@ -2052,6 +2059,9 @@ caseSensitive?: boolean | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
+limit: z.ZodOptional<z.ZodNumber>;
+offset: z.ZodOptional<z.ZodNumber>;
+all: z.ZodOptional<z.ZodBoolean>;
 project: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
 tag: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
 tagMode: z.ZodOptional<z.ZodEnum<["any", "all", "none"]>>;
@@ -2106,9 +2116,6 @@ last: z.ZodOptional<z.ZodBoolean>;
 idsOnly: z.ZodOptional<z.ZodBoolean>;
 groupBy: z.ZodOptional<z.ZodString>;
 stats: z.ZodOptional<z.ZodBoolean>;
-limit: z.ZodOptional<z.ZodNumber>;
-offset: z.ZodOptional<z.ZodNumber>;
-all: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
 fields?: string[] | undefined;
 excludeFields?: string[] | undefined;

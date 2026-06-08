@@ -544,4 +544,47 @@ describe("queryTasks", () => {
       expect(mockRunOmniJS).not.toHaveBeenCalled();
     });
   });
+
+  describe("pagination + shape modifiers (pagination applies only to list output)", () => {
+    it("rejects --ids-only combined with --limit and makes no OmniJS call", async () => {
+      const result = await queryTasks({ idsOnly: true, limit: 5 });
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(result.error?.message).toBe(
+        "Cannot combine --limit/--offset with --ids-only"
+      );
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    });
+
+    it("rejects --count combined with --offset and makes no OmniJS call", async () => {
+      const result = await queryTasks({ count: true, offset: 10 });
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
+      expect(result.error?.message).toBe(
+        "Cannot combine --limit/--offset with --count"
+      );
+      expect(mockRunOmniJS).not.toHaveBeenCalled();
+    });
+
+    it("still allows bare --ids-only (returns all ids)", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { kind: "ids", ids: ["a", "b"] },
+      } as OmniJSResult<QueryResult<OFTask>>);
+      const result = await queryTasks({ idsOnly: true });
+      expect(result.success).toBe(true);
+      expect(result.data?.kind).toBe("ids");
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
+    });
+
+    it("still allows --ids-only --all (issue #71 preserved)", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { kind: "ids", ids: ["a", "b"] },
+      } as OmniJSResult<QueryResult<OFTask>>);
+      const result = await queryTasks({ idsOnly: true, all: true });
+      expect(result.success).toBe(true);
+      expect(result.data?.kind).toBe("ids");
+    });
+  });
 });
