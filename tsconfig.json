@@ -4,6 +4,7 @@
     { "path": "packages/sdk" },
     { "path": "packages/productivity" },
     { "path": "packages/cli" },
-    { "path": "packages/ofocus" }
+    { "path": "packages/ofocus" },
+    { "path": "packages/gateway" }
   ]
 }
