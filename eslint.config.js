@@ -1,6 +1,7 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
+import omniscriptClosure from "./tools/eslint-rules/no-omniscript-closure.mjs";
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -24,6 +25,13 @@ export default tseslint.config(
       ],
       "no-plusplus": "off",
     },
+  },
+  {
+    files: ["packages/**/*.ts"],
+    plugins: {
+      ofocus: { rules: { "no-omniscript-closure": omniscriptClosure } },
+    },
+    rules: { "ofocus/no-omniscript-closure": "error" },
   },
   {
     ignores: [
