@@ -33,7 +33,7 @@ export function createGatedServer(
   // tool that is not in the allowlist.  All other property accesses and method
   // calls are forwarded transparently to the real server instance.
   const gated = new Proxy(server, {
-    get(target, prop, receiver): unknown {
+    get(target, prop, _receiver): unknown {
       if (prop === "registerTool") {
         // Return a wrapper that delegates to the real registerTool then
         // conditionally disables the resulting handle.
@@ -46,7 +46,7 @@ export function createGatedServer(
           const originalRegisterTool = Reflect.get(
             target,
             "registerTool",
-            receiver
+            target
           ) as (n: string, ...r: unknown[]) => RegisteredTool;
 
           const handle = originalRegisterTool.call(target, name, ...rest);
@@ -59,14 +59,16 @@ export function createGatedServer(
         };
       }
 
-      const value = Reflect.get(target, prop, receiver) as unknown;
+      // Use `target` (not the proxy `receiver`) so that getters accessing
+      // private fields run against the real instance and do not throw.
+      const value = Reflect.get(target, prop, target) as unknown;
       // Preserve `this` binding for any method retrieved from the target.
       return typeof value === "function"
-        ? (value as (...args: unknown[]) => unknown).bind(target)
+        ? (value as (...a: unknown[]) => unknown).bind(target)
         : value;
     },
   });
 
   registerAllTools(gated);
-  return server;
+  return gated;
 }

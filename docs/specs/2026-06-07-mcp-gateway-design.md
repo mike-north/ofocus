@@ -18,6 +18,7 @@ This is **single-user** by design: the only human who should ever authenticate i
 ## 2. Scope
 
 **In scope (v1):**
+
 - A new package `@ofocus/gateway`: a Node (≥20) HTTP server that
   - mounts a **Streamable HTTP MCP transport** backed by an in-process `@ofocus/mcp` server, and
   - implements a **spec-compliant OAuth 2.1 authorization layer** (both Authorization Server and Resource Server roles per the MCP auth spec).
@@ -29,11 +30,12 @@ This is **single-user** by design: the only human who should ever authenticate i
 - **Tests** at unit / integration / UAT layers (see §7).
 
 **Out of scope (deferred):**
+
 - **Multi-user / multi-tenant auth.** The allowlist is one entry. Multi-user is a later concern with real user/session modeling.
-- **Per-tool OAuth scopes** (e.g. a distinct `write` scope the client must request). v1's gate is a static config allowlist, not a scope negotiation. *(Natural follow-on once the gate exists.)*
+- **Per-tool OAuth scopes** (e.g. a distinct `write` scope the client must request). v1's gate is a static config allowlist, not a scope negotiation. _(Natural follow-on once the gate exists.)_
 - **Changes to `@ofocus/mcp` tool definitions.** The gateway exposes exactly what `createServer()` registers, filtered by the allowlist.
 - **A port-forward + Caddy exposure path.** Cloudflare Tunnel is the chosen exposure; the port-forward alternative is documented as a fallback only (§5.4), not built.
-- **Rate-limiting tuned for abuse at scale.** v1 has basic per-token request limiting; DDoS-grade protection is Cloudflare's job at the edge.
+- **Rate-limiting.** Per-token gateway rate limiting is not implemented in v1; DDoS-grade protection is Cloudflare's job at the edge.
 
 ## 3. Architecture
 
@@ -76,10 +78,12 @@ Everything runs on the **Ventura** macOS VM except the Cloudflare edge.
 The gateway plays **both** roles defined by the MCP authorization spec, against its own issuer (`https://ofocus.huangnorth.com`):
 
 **Resource Server**
+
 - `GET /.well-known/oauth-protected-resource` (RFC 9728) — advertises the resource and its `authorization_servers`.
 - `/mcp` requires a valid bearer access token. Missing/invalid/expired → **`401`** with `WWW-Authenticate: Bearer resource_metadata="…/.well-known/oauth-protected-resource"` so clients can discover the AS.
 
 **Authorization Server**
+
 - `GET /.well-known/oauth-authorization-server` (RFC 8414) — metadata: endpoints, `code_challenge_methods_supported: ["S256"]`, `grant_types_supported` incl. `authorization_code` + `refresh_token`, `scopes_supported` incl. `offline_access`.
 - `POST /register` — **DCR** (RFC 7591). Accepts the dynamic registration that claude.ai / ChatGPT perform; persists the client.
 - `GET /authorize` — validates PKCE `code_challenge` (S256 required), then **redirects to Google** for the actual human login.
@@ -88,7 +92,7 @@ The gateway plays **both** roles defined by the MCP authorization spec, against 
 
 **Why delegate to Google rather than point clients straight at Google:** Google does not support DCR, which ChatGPT in particular relies on. By being its own AS, the gateway presents a fully spec-compliant surface (DCR + S256 + refresh) to the clients while outsourcing only password handling to Google. No credentials are ever stored by the gateway.
 
-*Implementation note (decided during build, not here):* whether to use the MCP TS SDK's built-in auth (`mcpAuthRouter` + a custom `OAuthServerProvider`) or a small purpose-built provider. The spec fixes the **behavior and endpoints**, not the library.
+_Implementation note (decided during build, not here):_ whether to use the MCP TS SDK's built-in auth (`mcpAuthRouter` + a custom `OAuthServerProvider`) or a small purpose-built provider. The spec fixes the **behavior and endpoints**, not the library.
 
 ### 3.4 Tool-exposure gate
 
@@ -119,21 +123,25 @@ Environment / config file supplies: listen port; public issuer URL (`https://ofo
 ## 5. Deployment — Ventura macOS VM
 
 ### 5.1 The "remote management" the operator asked about — what it actually is
+
 1. **Automation permission**: System Settings → Privacy & Security → Automation → allow the Node process (and/or Terminal/the launchd context) to control **OmniFocus**. Without this, `@ofocus/sdk` automation fails. Accessibility may also be required depending on the automation path.
 2. **A logged-in GUI session**: OmniFocus is a GUI app and cannot be driven headless. The VM must **auto-login** to the operator's account and stay logged in (the gateway runs as a **user** launchd agent in that GUI session, not a system daemon).
 3. **Remote Login (SSH)** for administration; **Screen Sharing** optional for first-time permission grants (which need the GUI).
 
 ### 5.2 Runtime services (launchd user agents)
+
 - `com.ofocus.gateway` — runs the gateway; `KeepAlive` + `RunAtLoad`.
 - `com.ofocus.cloudflared` — runs the tunnel; `KeepAlive` + `RunAtLoad`.
 - OmniFocus added to Login Items so it's running in the session.
 
 ### 5.3 Cloudflare Tunnel
+
 - Install `cloudflared` on Ventura (Homebrew). Create a named tunnel; route `ofocus.huangnorth.com` → `http://127.0.0.1:<port>`.
 - The DNS (CNAME to the tunnel) is created in the `huangnorth.com` zone — doable from the operator's machine with the authenticated `cf` CLI, or `cloudflared tunnel route dns`.
 - **No inbound port-forward on the UDM Pro** — the tunnel is outbound-initiated, so nothing new is opened on the home network.
 
 ### 5.4 Exposure fallback (documented, not built)
+
 If end-to-end TLS to the VM (no edge termination) is later preferred: port-forward 443 → Ventura + Caddy with a Cloudflare DNS-01 cert on `ofocus.huangnorth.com`. Only the exposure layer changes; the gateway is identical.
 
 ## 6. Security posture
@@ -141,8 +149,8 @@ If end-to-end TLS to the VM (no edge termination) is later preferred: port-forwa
 - **Single-email allowlist** is the real access control: Google login is "public," but only the allowlisted account passes the callback check.
 - **No open inbound ports** (Cloudflare Tunnel).
 - **Token discipline**: short-lived access tokens, rotating refresh tokens, PKCE S256 enforced.
-- **Audit logging**: each authenticated `/mcp` request logs principal + tool name (+ outcome). Each authorization decision (allow/deny + email) is logged.
-- **Basic per-token rate limiting** at the gateway; edge protection is Cloudflare's.
+- **v1 logging**: startup banner (version, issuer, exposed-tool count) and server-side logging of Google-callback authorization failures (generic `403 Authorization denied` to the client; full error message and stack to stderr only).
+- **Deferred (not in v1):** per-request audit logging of authenticated `/mcp` calls (principal + tool name + outcome), and per-token rate limiting. Edge-level rate limiting is provided by Cloudflare in front.
 - **Blast radius awareness**: v1 exposes all tools, including destructive ones (`task_delete`, etc.). The config gate exists precisely so this can be narrowed; the default is accepted only because the surface is single-user and authenticated.
 
 ## 7. Testing strategy
@@ -150,6 +158,7 @@ If end-to-end TLS to the VM (no edge termination) is later preferred: port-forwa
 Per the repo's multi-layer testing approach. Assertions about OAuth metadata and error responses are written **from the specs** (RFC 8414/7591/9728 + the MCP auth spec), not snapshotted.
 
 **Unit**
+
 - PKCE: S256 challenge/verifier match accepted; mismatch rejected; non-S256 method rejected.
 - Allowlist: allowed email passes; any other email denied; missing/invalid Google ID token denied.
 - Token lifecycle: issue, validate, expiry rejection, refresh-rotation, reuse-of-rotated-refresh rejected.
@@ -157,16 +166,19 @@ Per the repo's multi-layer testing approach. Assertions about OAuth metadata and
 - Tool gate: `"all"` exposes everything; an explicit list exposes exactly those and **rejects invocation** of an omitted tool (not just hides it from `tools/list`).
 
 **Integration**
+
 - Real `StreamableHTTPServerTransport` + in-process MCP server: a valid bearer round-trips a real `tools/call`.
 - Negative: missing / expired / wrong-issuer token → `401` with a correct `WWW-Authenticate` pointing at the resource-metadata URL.
 - Session lifecycle: initialize creates a session; reuse via `mcp-session-id`; `DELETE` tears down.
 
 **UAT (locally automatable)**
+
 - Boot the gateway locally; drive the full OAuth dance with a scripted client / MCP Inspector / `mcp-remote` against a **stubbed Google** endpoint; complete a real tool call end-to-end.
 - Negative end-to-end: a non-allowlisted email is rejected at the callback and no token is issued.
-- *Manual (cannot run in CI — needs the hosted clients):* a documented checklist for verifying the connector actually attaches in claude.ai and in ChatGPT (see `manual-test-design`).
+- _Manual (cannot run in CI — needs the hosted clients):_ a documented checklist for verifying the connector actually attaches in claude.ai and in ChatGPT (see `manual-test-design`).
 
 ## 8. Open decisions (resolved during implementation)
+
 - OAuth implementation: MCP SDK built-in auth vs. purpose-built provider.
 - Persistence engine: SQLite vs. guarded JSON file.
 - HTTP framework: Express vs. Hono.
@@ -174,6 +186,7 @@ Per the repo's multi-layer testing approach. Assertions about OAuth metadata and
 None of these change the externally-observable behavior fixed above.
 
 ## 9. References
+
 - MCP authorization spec — <https://modelcontextprotocol.io/specification/draft/basic/authorization>
 - Connect to remote MCP servers — <https://modelcontextprotocol.io/docs/develop/connect-remote-servers>
 - Claude custom connectors — <https://support.claude.com/en/articles/11503834-building-custom-connectors-via-remote-mcp-servers>
