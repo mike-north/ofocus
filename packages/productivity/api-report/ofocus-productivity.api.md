@@ -11,6 +11,7 @@ import { ProjectQueryOptions } from '@ofocus/sdk';
 import { QueryResult } from '@ofocus/sdk';
 import { RepetitionRule } from '@ofocus/sdk';
 import { ResolvedCommandDescriptor } from '@ofocus/sdk';
+import { TaskQueryOptions } from '@ofocus/sdk';
 import { z } from 'zod';
 
 // @public
@@ -341,6 +342,30 @@ export interface ListedLink {
 export function needsRefresh(link: TaskEventLink, now: string, taskOpen?: boolean): RefreshStatus;
 
 // @public
+export interface NextAction {
+    dueDate: string | null;
+    id: string;
+    name: string;
+    projectId: string | null;
+    projectName: string | null;
+}
+
+// @public
+export interface NextActionsDeps {
+    // Warning: (ae-forgotten-export) The symbol "EnrichedTask" needs to be exported by the entry point index.d.ts
+    queryTasksEnriched: (options?: TaskQueryOptions) => Promise<CliOutput<QueryResult<EnrichedTask>>>;
+}
+
+// @public
+export const nextActionsDescriptor: ResolvedCommandDescriptor<    {}, NextActionsOutput, z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
+
+// @public
+export interface NextActionsOutput {
+    actions: NextAction[];
+    count: number;
+}
+
+// @public
 export interface NextOccurrencesDeps {
     now: string;
     readTaskRule: (id: string) => Promise<TaskRule | null>;
@@ -610,6 +635,9 @@ export function runLink(input: LinkInput, deps: LinkDeps): Promise<CliOutput<Lin
 //
 // @public
 export function runLinks(input: LinksInput, deps: LinkDeps): Promise<CliOutput<LinksResult>>;
+
+// @public
+export function runNextActions(deps?: NextActionsDeps): Promise<CliOutput<NextActionsOutput>>;
 
 // @public
 export function runNextOccurrences(input: NextOccurrencesInput, deps: NextOccurrencesDeps): Promise<CliOutput<NextOccurrencesOutput>>;

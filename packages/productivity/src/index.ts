@@ -17,6 +17,7 @@ import { occurrencesDescriptor } from "./commands/occurrences.js";
 import { readinessDescriptor } from "./commands/readiness.js";
 import { resolveDescriptor } from "./commands/resolve.js";
 import { stalledProjectsDescriptor } from "./commands/stalled-projects.js";
+import { nextActionsDescriptor } from "./commands/next-actions.js";
 
 export { changesDescriptor } from "./changes/command.js";
 export type { ChangesOutput, ChangesDeps } from "./changes/command.js";
@@ -97,6 +98,16 @@ export type {
   StalledProjectsDeps,
   StalledProjectsOutput,
 } from "./commands/stalled-projects.js";
+
+export {
+  runNextActions,
+  nextActionsDescriptor,
+} from "./commands/next-actions.js";
+export type {
+  NextAction,
+  NextActionsDeps,
+  NextActionsOutput,
+} from "./commands/next-actions.js";
 export { FileLinkStore } from "./links/store.js";
 export type { LinkStore } from "./links/store.js";
 export * from "./links/types.js";
@@ -132,5 +143,6 @@ export const productivityDescriptors: readonly ResolvedCommandDescriptor<
   linksDescriptor,
   readinessDescriptor,
   stalledProjectsDescriptor,
+  nextActionsDescriptor,
 ];
 /* eslint-enable @typescript-eslint/no-explicit-any */
