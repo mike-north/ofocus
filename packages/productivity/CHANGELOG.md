@@ -1,5 +1,24 @@
 # @ofocus/productivity
 
+## 0.2.0
+
+### Minor Changes
+
+- 11b30a7: Add the derived-state engine (A3): explicit `effectiveStatus`, `blockedReason`
+  (ordered by binding precedence), `isNextAction`, and project `stalled`/`empty` —
+  via an enriched wrapping-SDK surface in `@ofocus/productivity`
+  (`queryTasksEnriched`, `queryProjectsEnriched`) plus `stalled-projects` and
+  `next-actions` commands. The SDK gains raw `taskStatus`, project
+  `availableTaskCount`, and task effective-date query fields.
+
+### Patch Changes
+
+- Updated dependencies [028f439]
+- Updated dependencies [11b30a7]
+- Updated dependencies [f0036dd]
+- Updated dependencies [2ab21ed]
+  - @ofocus/sdk@0.7.0
+
 ## 0.1.1
 
 ### Patch Changes

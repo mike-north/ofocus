@@ -1,5 +1,28 @@
 # @ofocus/sdk
 
+## 0.7.0
+
+### Minor Changes
+
+- 11b30a7: Add the derived-state engine (A3): explicit `effectiveStatus`, `blockedReason`
+  (ordered by binding precedence), `isNextAction`, and project `stalled`/`empty` —
+  via an enriched wrapping-SDK surface in `@ofocus/productivity`
+  (`queryTasksEnriched`, `queryProjectsEnriched`) plus `stalled-projects` and
+  `next-actions` commands. The SDK gains raw `taskStatus`, project
+  `availableTaskCount`, and task effective-date query fields.
+- 2ab21ed: Add typed OmniAutomation authoring: `defineOmniScript`/`defineOmniAction`
+  compile type-checked TypeScript to OmniJS, runnable via `osascript`
+  (`runOmniScript`) or installable as a headless single-file plugin
+  (`installOmniAction`). Adds the `@ofocus/omnijs-types` ambient-types package.
+
+### Patch Changes
+
+- 028f439: Allow `--ids-only` to be combined with `--all` on list queries (`tasks`, `projects`, `tags`, `folders`, `search`, `deferred`, `forecast`, `subtasks`).
+
+  Previously this combination was rejected with `Cannot combine --all with --ids-only`. The `ids` shape already returns every matching id, so `--all` is naturally satisfied rather than contradictory — the two now compose, returning all matching IDs without requiring the caller to guess a high `--limit`. The remaining scalar/single/grouped shapes (`--count`, `--first`, `--last`, `--group-by`) stay mutually exclusive with `--all`.
+
+- f0036dd: Reject `--limit`/`--offset` when combined with a non-list shape modifier (`--ids-only`, `--count`, `--first`, `--last`, `--group-by`). Previously these flags were silently ignored on non-list output; they now return a clear `VALIDATION_ERROR`. Pagination applies only to the default list shape. Also factor the shared `limit`/`offset`/`all` descriptor fields into `listPaginationSchema`.
+
 ## 0.6.0
 
 ### Minor Changes
