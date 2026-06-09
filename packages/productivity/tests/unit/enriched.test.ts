@@ -204,6 +204,90 @@ describe("enrichTasks (pure assembly over injected raw data)", () => {
     expect(enriched[0]!.blockedReason).toEqual([]);
   });
 
+  // Regression (Copilot review): a BLOCKED task whose PROJECT is deferred to
+  // the future, but which has NO own defer date, must NOT report `own-defer`.
+  // `own-defer` is the task's own `deferDate` only; project deferral is
+  // `project-deferred` (spec §5.3). Before the fix, `ownDeferInFuture` used the
+  // inherited `effectiveDeferDate`, double-counting both reasons.
+  it("blocked task in a future-deferred project (no own defer) → ['project-deferred'] only (spec §5.3)", () => {
+    const rawTasks = [
+      {
+        id: "pd",
+        name: "blocked by project defer only",
+        taskStatus: "blocked",
+        effectivelyCompleted: false,
+        effectivelyDropped: false,
+        deferDate: null, // no OWN defer
+        effectiveDeferDate: "2026-06-09T00:00:00Z", // inherited from the project
+        projectId: "deferred",
+        projectName: "Deferred Project",
+      },
+    ] as never[];
+    const projects = new Map<string, ProjectFacts>([
+      [
+        "deferred",
+        { status: "active" as const, deferInFuture: true, sequential: false },
+      ],
+    ]);
+    const relational = new Map([
+      [
+        "pd",
+        {
+          hasIncompleteSequentialPredecessor: false,
+          hasIncompleteChildren: false,
+        },
+      ],
+    ]);
+    const enriched = enrichTasks(
+      rawTasks,
+      projects,
+      relational,
+      "2026-06-08T00:00:00Z"
+    );
+    expect(enriched[0]!.effectiveStatus).toBe("blocked");
+    expect(enriched[0]!.blockedReason).toEqual(["project-deferred"]);
+  });
+
+  // Positive companion: a blocked task with its OWN future defer date still
+  // reports `own-defer`.
+  it("blocked task with its own future defer date → blockedReason includes 'own-defer' (spec §5.3)", () => {
+    const rawTasks = [
+      {
+        id: "od",
+        name: "own-deferred",
+        taskStatus: "blocked",
+        effectivelyCompleted: false,
+        effectivelyDropped: false,
+        deferDate: "2026-06-09T00:00:00Z", // OWN future defer
+        effectiveDeferDate: "2026-06-09T00:00:00Z",
+        projectId: "ap",
+        projectName: "Active",
+      },
+    ] as never[];
+    const projects = new Map<string, ProjectFacts>([
+      [
+        "ap",
+        { status: "active" as const, deferInFuture: false, sequential: false },
+      ],
+    ]);
+    const relational = new Map([
+      [
+        "od",
+        {
+          hasIncompleteSequentialPredecessor: false,
+          hasIncompleteChildren: false,
+        },
+      ],
+    ]);
+    const enriched = enrichTasks(
+      rawTasks,
+      projects,
+      relational,
+      "2026-06-08T00:00:00Z"
+    );
+    expect(enriched[0]!.blockedReason).toEqual(["own-defer"]);
+  });
+
   // Negative: a completed task should NOT be a next action
   it("completed task → not a next action (spec §5.2)", () => {
     const rawTasks = [

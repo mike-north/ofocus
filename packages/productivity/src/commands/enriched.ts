@@ -97,8 +97,9 @@ export type RawEnrichableTask = OFTask & {
  *
  * For each raw task:
  * 1. Compute `effectiveStatus` via `compute.effectiveStatus`.
- * 2. Compute `ownDeferInFuture` by lexically comparing the task's `deferDate`
- *    (falling back to `effectiveDeferDate`) against `nowIso`.
+ * 2. Compute `ownDeferInFuture` by lexically comparing the task's own
+ *    `deferDate` (NOT `effectiveDeferDate` — inherited/project deferral is
+ *    tracked separately as `project-deferred`, spec §5.3) against `nowIso`.
  * 3. Look up the task's project facts from `projectFacts`.
  * 4. Look up the task's relational facts from `relational`.
  * 5. Assemble `blockedReason` only when `effectiveStatus === "blocked"`;
@@ -132,9 +133,10 @@ export function enrichTasks(
       effectivelyDropped: raw.effectivelyDropped,
     });
 
-    // Determine if the task's own defer date is in the future.
-    const deferDateIso = raw.effectiveDeferDate ?? raw.deferDate;
-    const ownDeferInFuture = deferDateIso !== null && deferDateIso > nowIso;
+    // `own-defer` is the task's OWN defer date only — never the inherited
+    // (project) deferral, which is tracked separately as `project-deferred`
+    // (spec §5.3). Using `effectiveDeferDate` here would double-count.
+    const ownDeferInFuture = raw.deferDate !== null && raw.deferDate > nowIso;
 
     // Look up project and relational facts (fall back to neutral values when
     // the task has no project or no relational record).

@@ -41,7 +41,7 @@ function makeEnrichedTask(
     projectName: "Test Project",
     tags: [],
     estimatedMinutes: null,
-    taskStatus: "active",
+    taskStatus: "available",
     effectiveStatus: "available",
     blockedReason: [],
     isNextAction: false,
