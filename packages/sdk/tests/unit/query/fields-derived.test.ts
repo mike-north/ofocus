@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { taskFieldSpec } from "../../../src/query/fields.js";
+import { taskFieldSpec, projectFieldSpec } from "../../../src/query/fields.js";
 
 describe("taskFieldSpec raw-native additions (A3 spec §4)", () => {
   it("exposes taskStatus mapping the native Task.Status enum to lowercase strings", () => {
@@ -25,5 +25,14 @@ describe("taskFieldSpec raw-native additions (A3 spec §4)", () => {
     expect(taskFieldSpec.fields.effectiveDeferDate?.omnijsExpr).toContain(
       "effectiveDeferDate"
     );
+  });
+});
+
+describe("projectFieldSpec derived additions (A3 spec §4)", () => {
+  it("project field spec exposes availableTaskCount (A3 spec §4)", () => {
+    const expr = projectFieldSpec.fields.availableTaskCount?.omnijsExpr;
+    expect(expr).toBeDefined();
+    // OmniJS uses Task.Status.Available (capital A) — the enum value name is "Available"
+    expect(expr).toContain("Available");
   });
 });

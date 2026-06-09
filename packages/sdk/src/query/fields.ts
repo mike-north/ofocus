@@ -152,6 +152,10 @@ export const projectFieldSpec: EntityFieldSpec = {
       omnijsExpr:
         "t.task.flattenedTasks.filter(function(s){ return !s.completed && !s.effectivelyDropped; }).length",
     },
+    availableTaskCount: {
+      omnijsExpr:
+        "t.task.flattenedTasks.filter(function(s){ return s.taskStatus === Task.Status.Available || s.taskStatus === Task.Status.Next || s.taskStatus === Task.Status.DueSoon || s.taskStatus === Task.Status.Overdue; }).length",
+    },
   },
   defaultFields: ["id", "name", "status", "folderName", "remainingTaskCount"],
 };
