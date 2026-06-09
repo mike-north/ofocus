@@ -246,8 +246,11 @@ Established by direct experiment on the target machine; encoded as tests in §7.
    so **public hosting is not required** — `localhost`/LAN URLs work.
 2. **Headless folder-install works.** Writing a `.omnijs` directly into
    `…/com.omnigroup.OmniFocus4/Data/Library/Application Support/Plug-Ins/` caused OmniFocus to
-   **load and register it immediately** (`PlugIn.all` reflected it) with **no approval sheet and
-   no user interaction**. The CLI can write there from outside the sandbox (no TCC block).
+   **load and register it** (`PlugIn.all` reflected it) with **no approval sheet and no user
+   interaction**. The load is via a filesystem watcher that fires **~600–900 ms** after the
+   write (measured during Task 10's UAT, build 185.15) — effectively immediate, but a consumer
+   polling `PlugIn.all` must allow ~1 s. The CLI can write there from outside the sandbox (no
+   TCC block).
 3. **Load is live; unload is not.** Deleting a plugin file does not de-register it until
    OmniFocus relaunches; the in-memory `PlugIn.all` is stale until then.
 
