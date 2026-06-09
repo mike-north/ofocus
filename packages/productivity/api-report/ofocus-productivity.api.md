@@ -5,7 +5,10 @@
 ```ts
 
 import { CliOutput } from '@ofocus/sdk';
+import type { OFProject } from '@ofocus/sdk';
 import { OFTask } from '@ofocus/sdk';
+import { ProjectQueryOptions } from '@ofocus/sdk';
+import { QueryResult } from '@ofocus/sdk';
 import { RepetitionRule } from '@ofocus/sdk';
 import { ResolvedCommandDescriptor } from '@ofocus/sdk';
 import { z } from 'zod';
@@ -625,6 +628,9 @@ export function runReadiness(input: ReadinessInput, deps: LinkDeps): Promise<Cli
 export function runResolve(input: ResolveInput, deps: ResolveDeps): Promise<CliOutput<ResolveOutput>>;
 
 // @public
+export function runStalledProjects(deps?: StalledProjectsDeps): Promise<CliOutput<StalledProjectsOutput>>;
+
+// @public
 export function runThisWeek(deps: ThisWeekDeps): Promise<CliOutput<WeekDigest>>;
 
 // @public
@@ -639,6 +645,29 @@ export function runUnlink(input: UnlinkInput, deps: LinkDeps): Promise<CliOutput
 
 // @public
 export type Snapshot = Partial<Record<WatchedClass, Record<string, WatchedObject>>>;
+
+// @public
+export interface StalledProject {
+    folderName: string | null;
+    id: string;
+    name: string;
+    remainingTaskCount: number;
+}
+
+// @public
+export interface StalledProjectsDeps {
+    // Warning: (ae-forgotten-export) The symbol "EnrichedProject" needs to be exported by the entry point index.d.ts
+    queryProjectsEnriched: (options?: ProjectQueryOptions) => Promise<CliOutput<QueryResult<EnrichedProject>>>;
+}
+
+// @public
+export const stalledProjectsDescriptor: ResolvedCommandDescriptor<    {}, StalledProjectsOutput, z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>>;
+
+// @public
+export interface StalledProjectsOutput {
+    count: number;
+    projects: StalledProject[];
+}
 
 // @public
 export function suggestedDue(eventStart: string, estimatedMinutes: number | null): string | null;
