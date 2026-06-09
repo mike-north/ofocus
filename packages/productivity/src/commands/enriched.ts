@@ -163,7 +163,8 @@ export function enrichTasks(
   });
 
   // Second pass: determine next-action flags using the now-known effective
-  // statuses.
+  // statuses. Correctness of "first available per project" relies on the SDK
+  // returning tasks in OmniFocus outline order (no default sort applied).
   const naInput = partials.map(({ raw, effectiveStatus: es }) => ({
     id: raw.id,
     projectId: raw.projectId,

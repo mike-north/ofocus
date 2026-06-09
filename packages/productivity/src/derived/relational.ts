@@ -37,17 +37,27 @@ export const relationalFactsScript = defineOmniScript(
       const hasIncompleteChildren = t.children.some(
         (c) => !c.completed && !c.dropped
       );
-      const container = t.containingProject;
       let hasPred = false;
-      if (container?.sequential) {
-        const siblings = container.task.children;
+      const project = t.containingProject;
+      if (project?.sequential) {
+        const siblings = project.task.children;
+        let earlierIncomplete = false;
+        let foundSelf = false;
         for (const s of siblings) {
-          if (s.id.primaryKey === t.id.primaryKey) break;
-          if (!s.completed && !s.dropped) {
-            hasPred = true;
+          if (s.id.primaryKey === t.id.primaryKey) {
+            foundSelf = true;
             break;
           }
+          if (!s.completed && !s.dropped) {
+            earlierIncomplete = true;
+          }
         }
+        // Only a direct top-level action of the project can be blocked by a
+        // top-level predecessor. A nested task (inside an action group) is not in
+        // `project.task.children`, so `foundSelf` stays false and we conservatively
+        // report no predecessor rather than a false positive. (Action-group
+        // predecessors are a documented v1 limitation — see the spec note below.)
+        hasPred = foundSelf && earlierIncomplete;
       }
       return {
         taskId: id,

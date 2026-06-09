@@ -3,6 +3,9 @@
  * action. Diverges from native single-valued `Task.Status.Next` so an overdue
  * or due-soon first action still qualifies (spec §5.2).
  *
+ * Inbox tasks (null `projectId`) collapse into a single `__inbox__` bucket, so
+ * only the first available inbox task is flagged as the next action.
+ *
  * @public
  */
 export function markNextActions(

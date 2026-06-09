@@ -19,6 +19,13 @@ describe("relationalFactsScript", () => {
     expect(relationalFactsScript.source).toContain("sequential");
   });
 
+  it("source uses foundSelf guard to avoid false positives for nested tasks", () => {
+    // spec §5.5: only a direct top-level action of the project can have a
+    // sequential predecessor; nested tasks (in action groups) are not in
+    // project.task.children so foundSelf stays false — conservative no-predecessor.
+    expect(relationalFactsScript.source).toContain("foundSelf");
+  });
+
   it("source inspects completed and dropped flags", () => {
     expect(relationalFactsScript.source).toContain("completed");
     expect(relationalFactsScript.source).toContain("dropped");
