@@ -1,6 +1,6 @@
 {
   "name": "@ofocus/omnijs-types",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TypeScript types for the OmniFocus OmniJS (Omni Automation) API",
   "type": "module",
   "types": "./dist/ofocus-omnijs-types.d.ts",
