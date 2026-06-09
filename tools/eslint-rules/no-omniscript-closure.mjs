@@ -63,16 +63,55 @@ export default {
       }
     }
 
+    /**
+     * If `node` is an `ObjectExpression`, find and return the value of the
+     * property named `key`, provided it is an `ArrowFunctionExpression` or
+     * `FunctionExpression`. Returns `null` otherwise.
+     */
+    function getFunctionProp(objectNode, key) {
+      if (objectNode.type !== "ObjectExpression") return null;
+      for (const prop of objectNode.properties) {
+        if (
+          prop.type === "Property" &&
+          !prop.computed &&
+          ((prop.key.type === "Identifier" && prop.key.name === key) ||
+            (prop.key.type === "Literal" && prop.key.value === key)) &&
+          (prop.value.type === "ArrowFunctionExpression" ||
+            prop.value.type === "FunctionExpression")
+        ) {
+          return prop.value;
+        }
+      }
+      return null;
+    }
+
     return {
       CallExpression(node) {
         if (
-          node.callee.type === "Identifier" &&
-          WRAPPERS.has(node.callee.name) &&
+          node.callee.type !== "Identifier" ||
+          !WRAPPERS.has(node.callee.name)
+        ) {
+          return;
+        }
+
+        // Check the primary perform/fn callback (arguments[0]) for both wrappers.
+        if (
           node.arguments[0] !== undefined &&
           (node.arguments[0].type === "ArrowFunctionExpression" ||
             node.arguments[0].type === "FunctionExpression")
         ) {
           checkCallback(node.arguments[0]);
+        }
+
+        // For defineOmniAction, also check the `validate` callback in
+        // arguments[1] — it is serialised via `.toString()` and injected into
+        // the plugin, so closures inside it cause the same ReferenceError in
+        // the OmniFocus runtime.
+        if (node.callee.name === "defineOmniAction" && node.arguments[1] !== undefined) {
+          const validateFn = getFunctionProp(node.arguments[1], "validate");
+          if (validateFn !== null) {
+            checkCallback(validateFn);
+          }
         }
       },
     };
