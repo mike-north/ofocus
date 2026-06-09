@@ -160,6 +160,8 @@ importers:
         specifier: workspace:*
         version: link:../sdk
 
+  packages/omnijs-types: {}
+
   packages/productivity:
     dependencies:
       '@ofocus/sdk':

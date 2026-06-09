@@ -1,0 +1,49 @@
+{
+  "name": "@ofocus/omnijs-types",
+  "version": "0.1.0",
+  "description": "TypeScript types for the OmniFocus OmniJS (Omni Automation) API",
+  "type": "module",
+  "types": "./dist/ofocus-omnijs-types.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/ofocus-omnijs-types.d.ts"
+    },
+    "./globals": {
+      "types": "./dist/globals.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "api-report"
+  ],
+  "scripts": {
+    "build": "tsc --build && api-extractor run --local --verbose",
+    "build:tsc": "tsc --build",
+    "test": "tsc -p tsconfig.test-d.json --noEmit",
+    "test:unit": "tsc -p tsconfig.test-d.json --noEmit",
+    "api-extractor": "api-extractor run --verbose"
+  },
+  "keywords": [
+    "omnifocus",
+    "omnijs",
+    "omni-automation",
+    "types"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mnorth/ofocus.git",
+    "directory": "packages/omnijs-types"
+  },
+  "homepage": "https://github.com/mnorth/ofocus/tree/main/packages/omnijs-types#readme",
+  "bugs": {
+    "url": "https://github.com/mnorth/ofocus/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
