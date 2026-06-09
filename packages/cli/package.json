@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsc --build",
     "test": "vitest run",
-    "test:unit": "vitest run --dir tests/unit",
+    "test:unit": "vitest run tests/unit",
     "test:watch": "vitest"
   },
   "keywords": [
