@@ -1,13 +1,15 @@
 import { defineConfig } from "@ai-plugin-marketplace/core";
 
 export default defineConfig({
-  version: "0.1.0",
+  version: "0.2.0",
   targets: ["claude", "cursor", "codex", "vercel"],
   description:
-    "Proactive OmniFocus change notifications (tiered, per-session, low-noise) plus an inbox-triage and co-planning skill. Built on the ofocus CLI.",
+    "OmniFocus chief-of-staff assistant: a proactive daily brief (what matters today, what's stuck, the next action per project), inbox triage and co-planning, and tiered low-noise change notifications. Built on the ofocus CLI.",
   keywords: [
     "omnifocus",
     "productivity",
+    "chief-of-staff",
+    "brief",
     "notifications",
     "triage",
     "calendar",

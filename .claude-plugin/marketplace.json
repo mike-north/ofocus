@@ -10,10 +10,12 @@
     {
       "name": "omnifocus-automation",
       "source": "./plugins/omnifocus-automation",
-      "description": "Proactive OmniFocus change notifications (tiered, per-session, low-noise) plus an inbox-triage and co-planning skill. Built on the ofocus CLI.",
+      "description": "OmniFocus chief-of-staff assistant: a proactive daily brief (what matters today, what's stuck, the next action per project), inbox triage and co-planning, and tiered low-noise change notifications. Built on the ofocus CLI.",
       "tags": [
         "omnifocus",
         "productivity",
+        "chief-of-staff",
+        "brief",
         "notifications",
         "triage",
         "calendar"

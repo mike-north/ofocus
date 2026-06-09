@@ -1,6 +1,6 @@
 # OmniFocus Automation
 
-A Claude Code plugin (`omnifocus-automation`) that turns OmniFocus into a collaborative surface: it proactively surfaces what changed and helps triage your inbox and plan — built on the `ofocus` CLI.
+A Claude Code plugin (`omnifocus-automation`) that turns OmniFocus into a **chief of staff**: a proactive daily brief (the few things that matter today, what's stuck, and the next action per project), inbox triage and co-planning, and tiered low-noise change notifications — built on the `ofocus` CLI.
 
 > Requires macOS with OmniFocus and the `ofocus` CLI installed and on `PATH`.
 
@@ -32,13 +32,19 @@ Hooks load at session start, so **restart Claude Code** after installing. If the
 
 ## What it does
 
-A tiered, low-noise change-notification model over a shared `ofocus changes` watch, plus a triage skill. Tracking is keyed per session, so concurrent agent sessions never silence each other.
+### Chief-of-staff brief & co-planning (skills + commands)
+
+- **`ofocus-brief` skill — or `/ofocus-brief`** — a proactive briefing. It runs the deterministic `ofocus` commands (`today`, `this-week`, `stalled-projects`, `next-actions`, the inbox count), then **synthesizes** rather than dumps: the few things that matter today, what's **stuck** (active projects with no available next action — they need a _decision_), and the next action per project — and offers the highest-leverage next move. Read-only. Triggers when you ask for a brief/standup, "what should I focus on", or "catch me up on OmniFocus".
+- **`ofocus-triage` skill — or `/ofocus-triage`** — inbox processing, task breakdown, weekly review, and unsticking stalled projects. Proposes dispositions as one batch and only applies after you confirm.
+
+### Proactive change notifications (hook)
+
+A tiered, low-noise change-notification model over a shared `ofocus changes` watch. Tracking is keyed per session, so concurrent agent sessions never silence each other.
 
 - **SessionStart digest** — at session start, injects a short summary of what changed since the last refresh.
 - **End-of-turn surface (Stop)** — when the agent finishes a turn, surfaces anything that changed while it worked (no mid-work interruption).
 - **Urgent interjection (PreToolUse)** — for time-sensitive changes only (a task became overdue/due-today, was newly flagged, or gained the configured agent tag), injects a one-line note mid-turn so it doesn't wait for the turn to end.
 - **Soft nudge (PreToolUse, throttled)** — for non-urgent changes on long runs, at most once per `NUDGE_INTERVAL`, a one-line reminder to add a follow-up task (the agent dedups against its own task list). The soft nudge does not consume the change — the authoritative summary still arrives at the next end-of-turn/SessionStart.
-- **Triage skill** — `ofocus-triage` guides inbox processing, task breakdown, and weekly review (propose-then-apply).
 
 ## Configuration (env)
 
@@ -54,6 +60,10 @@ A tiered, low-noise change-notification model over a shared `ofocus changes` wat
 | `OFOCUS_ASSISTANT_DISABLE`             | (unset)     | If set, the hook is a silent no-op.                   |
 
 The hook is **fail-open**: if `ofocus` is missing or errors, it injects nothing and never blocks a tool call or turn.
+
+## Try it
+
+After install (restart Claude Code so the hooks load), run **`/ofocus-brief`** for your daily chief-of-staff briefing — or just ask _"what should I focus on?"_. Use **`/ofocus-triage`** (or _"triage my inbox"_) to process the inbox together (propose → confirm → apply).
 
 ## Manual test (hooks load at session start — restart required)
 
