@@ -1109,6 +1109,16 @@ ofocus links [--task <task>] [--event-id <eventId>] [--prune]
 | `--event-id` | `string` | no | List links for this event id |
 | `--prune` / `--no-prune` | `boolean` | no | Remove links whose task no longer exists |
 
+#### `ofocus next-actions`
+
+The single next actionable task per active project — the one thing to do in each project. Returns a decision-ready list with task name, project, and due date so you can immediately act on each project.
+
+**Usage:**
+
+```bash
+ofocus next-actions
+```
+
 #### `ofocus next-occurrences`
 
 Read a task's repetition rule and project its next occurrence dates. Schedule-anchored repeats (Fixed/DueDate) are predictable; completion-anchored repeats (Start) are projected and may shift.
@@ -1176,6 +1186,16 @@ ofocus resolve <query> [--kind <kind>] [--limit <limit>]
 | --- | --- | --- | --- |
 | `--kind` | `project \| task \| tag \| folder \| temporal-anchor \| any` | no | What to resolve (default: project; 'any' = project + task) |
 | `--limit` | `number` | no | Max candidates (default 5) |
+
+#### `ofocus stalled-projects`
+
+Active projects where all remaining work is blocked (stalled). Returns a decision-ready list with project name, folder, and remaining task count so you can unblock or defer each project.
+
+**Usage:**
+
+```bash
+ofocus stalled-projects
+```
 
 #### `ofocus this-week`
 

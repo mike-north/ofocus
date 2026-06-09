@@ -7,8 +7,11 @@
 import { CliOutput } from '@ofocus/sdk';
 import type { OFProject } from '@ofocus/sdk';
 import { OFTask } from '@ofocus/sdk';
+import { OmniScript } from '@ofocus/sdk';
 import { ProjectQueryOptions } from '@ofocus/sdk';
+import { queryProjects } from '@ofocus/sdk';
 import { QueryResult } from '@ofocus/sdk';
+import { queryTasks } from '@ofocus/sdk';
 import { RepetitionRule } from '@ofocus/sdk';
 import { ResolvedCommandDescriptor } from '@ofocus/sdk';
 import { TaskQueryOptions } from '@ofocus/sdk';
@@ -25,6 +28,18 @@ export interface BlockCoverage {
 
 // @public
 export function blockCoverage(event: EventSnapshot, estimatedMinutes: number | null): BlockCoverage;
+
+// @public (undocumented)
+export type BlockedReason = "project-dropped" | "project-done" | "project-on-hold" | "project-deferred" | "own-defer" | "sequential-predecessor" | "incomplete-children";
+
+// @public (undocumented)
+export function blockedReason(f: {
+    projectStatus: "active" | "on-hold" | "completed" | "dropped" | null;
+    projectDeferInFuture: boolean;
+    ownDeferInFuture: boolean;
+    hasIncompleteSequentialPredecessor: boolean;
+    hasIncompleteChildren: boolean;
+}): BlockedReason[];
 
 // Warning: (ae-forgotten-export) The symbol "DisambiguationResult" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "ResolvedAnchor" needs to be exported by the entry point index.d.ts
@@ -149,11 +164,42 @@ export interface DayGroup {
     tasks: WeekItem[];
 }
 
+// @public (undocumented)
+export type EffectiveStatus = "available" | "blocked" | "completed" | "dropped";
+
+// @public (undocumented)
+export function effectiveStatus(f: {
+    taskStatus: string;
+    effectivelyCompleted: boolean;
+    effectivelyDropped: boolean;
+}): EffectiveStatus;
+
 // @public
 export function emptyChangeSet(): ChangeSet;
 
 // @public
 export function endOfUtcDay(nowISO: string): string;
+
+// @public (undocumented)
+export interface EnrichedProject extends OFProject {
+    // (undocumented)
+    availableTaskCount: number;
+    // (undocumented)
+    empty: boolean;
+    // (undocumented)
+    stalled: boolean;
+}
+
+// @public (undocumented)
+export interface EnrichedTask extends OFTask {
+    blockedReason: readonly BlockedReason[];
+    // (undocumented)
+    effectiveStatus: EffectiveStatus;
+    // (undocumented)
+    isNextAction: boolean;
+    // (undocumented)
+    taskStatus: string;
+}
 
 // @public
 export interface EventInput {
@@ -174,6 +220,9 @@ export function eventNeedsRefresh(event: EventSnapshot, now: string, taskOpen: b
 export interface EventSnapshot extends EventInput {
     capturedAt: string;
 }
+
+// @public
+export function fetchRelationalFacts(taskIds: string[]): Promise<CliOutput<RelationalFacts[]>>;
 
 // @public
 export interface FieldDelta {
@@ -339,6 +388,13 @@ export interface ListedLink {
 }
 
 // @public
+export function markNextActions(tasks: readonly {
+    id: string;
+    projectId: string | null;
+    effectiveStatus: string;
+}[]): Record<string, boolean>;
+
+// @public
 export function needsRefresh(link: TaskEventLink, now: string, taskOpen?: boolean): RefreshStatus;
 
 // @public
@@ -352,7 +408,6 @@ export interface NextAction {
 
 // @public
 export interface NextActionsDeps {
-    // Warning: (ae-forgotten-export) The symbol "EnrichedTask" needs to be exported by the entry point index.d.ts
     queryTasksEnriched: (options?: TaskQueryOptions) => Promise<CliOutput<QueryResult<EnrichedTask>>>;
 }
 
@@ -494,6 +549,54 @@ export interface PrepTaskReadiness {
 export const productivityDescriptors: readonly ResolvedCommandDescriptor<any, any, any>[];
 
 // @public
+export interface ProjectFacts {
+    // (undocumented)
+    deferInFuture: boolean;
+    // (undocumented)
+    sequential: boolean;
+    // (undocumented)
+    status: "active" | "on-hold" | "completed" | "dropped";
+}
+
+// @public (undocumented)
+export function projectHealth(f: {
+    status: string;
+    remainingTaskCount: number;
+    availableTaskCount: number;
+}): {
+    stalled: boolean;
+    empty: boolean;
+};
+
+// @public
+export function queryProjectsEnriched(options?: ProjectQueryOptions, deps?: QueryProjectsEnrichedDeps): Promise<CliOutput<QueryResult<EnrichedProject>>>;
+
+// @public
+export interface QueryProjectsEnrichedDeps {
+    queryProjects: typeof queryProjects;
+}
+
+// @public
+export function queryTasksEnriched(options?: TaskQueryOptions, deps?: QueryTasksEnrichedDeps): Promise<CliOutput<QueryResult<EnrichedTask>>>;
+
+// @public
+export interface QueryTasksEnrichedDeps {
+    fetchRelationalFacts: typeof fetchRelationalFacts;
+    now: string;
+    queryProjects: typeof queryProjects;
+    queryTasks: typeof queryTasks;
+}
+
+// @public
+export type RawEnrichableTask = OFTask & {
+    taskStatus: string;
+    effectivelyCompleted: boolean;
+    effectivelyDropped: boolean;
+    deferDate: string | null;
+    effectiveDeferDate: string | null;
+};
+
+// @public
 export function readDbMtime(packagePath: string): string | null;
 
 // @public
@@ -584,6 +687,25 @@ export interface RefreshStatus {
     // (undocumented)
     reason?: string;
 }
+
+// @public
+export interface RelationalFacts {
+    // (undocumented)
+    hasIncompleteChildren: boolean;
+    // (undocumented)
+    hasIncompleteSequentialPredecessor: boolean;
+    // (undocumented)
+    taskId: string;
+}
+
+// @public
+export const relationalFactsScript: OmniScript<    {
+taskIds: string[];
+}, {
+taskId: string;
+hasIncompleteSequentialPredecessor: boolean;
+hasIncompleteChildren: boolean;
+}[]>;
 
 // @public
 export function resolveDbPackagePath(): string | null;
@@ -684,7 +806,6 @@ export interface StalledProject {
 
 // @public
 export interface StalledProjectsDeps {
-    // Warning: (ae-forgotten-export) The symbol "EnrichedProject" needs to be exported by the entry point index.d.ts
     queryProjectsEnriched: (options?: ProjectQueryOptions) => Promise<CliOutput<QueryResult<EnrichedProject>>>;
 }
 
@@ -711,6 +832,14 @@ export interface TaskEventLink {
     note?: string;
     // (undocumented)
     taskId: string;
+}
+
+// @public
+export interface TaskRelationalFacts {
+    // (undocumented)
+    hasIncompleteChildren: boolean;
+    // (undocumented)
+    hasIncompleteSequentialPredecessor: boolean;
 }
 
 // @public

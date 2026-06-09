@@ -108,6 +108,41 @@ export type {
   NextActionsDeps,
   NextActionsOutput,
 } from "./commands/next-actions.js";
+
+// ── A3 Derived State public authoring surface ────────────────────────────────
+
+export type {
+  EffectiveStatus,
+  BlockedReason,
+  EnrichedTask,
+  EnrichedProject,
+} from "./derived/types.js";
+
+export {
+  queryTasksEnriched,
+  queryProjectsEnriched,
+} from "./commands/enriched.js";
+export type {
+  ProjectFacts,
+  TaskRelationalFacts,
+  RawEnrichableTask,
+  QueryTasksEnrichedDeps,
+  QueryProjectsEnrichedDeps,
+} from "./commands/enriched.js";
+
+export {
+  fetchRelationalFacts,
+  relationalFactsScript,
+} from "./derived/relational.js";
+export type { RelationalFacts } from "./derived/relational.js";
+
+export {
+  effectiveStatus,
+  blockedReason,
+  projectHealth,
+} from "./derived/compute.js";
+
+export { markNextActions } from "./derived/next-action.js";
 export { FileLinkStore } from "./links/store.js";
 export type { LinkStore } from "./links/store.js";
 export * from "./links/types.js";

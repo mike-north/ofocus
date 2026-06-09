@@ -167,10 +167,12 @@ ofocus review-interval-get <projectId>  # Get the review interval for a project 
 ofocus review-interval-set <projectId> --interval-days <intervalDays>  # Set the review interval for a project in days
 ofocus link <taskId> --event <event> [--type <type>] [--note <note>]  # Link an OmniFocus task to a calendar event the agent supplies. --type prep-for (task done before the event) or time-block (event reserves work time). ofocus never reads a calendar; pass event data via --event.
 ofocus links [--task <task>] [--event-id <eventId>] [--prune]  # List task↔event links for a task (--task) or an event (--event-id). Each link is annotated with refresh status and (for time-blocks) coverage. --prune drops links whose task no longer exists.
+ofocus next-actions  # The single next actionable task per active project — the one thing to do in each project. Returns a decision-ready list with task name, project, and due date so you can immediately act on each project.
 ofocus next-occurrences <taskId> [--count <count>] [--from <from>]  # Read a task's repetition rule and project its next occurrence dates. Schedule-anchored repeats (Fixed/DueDate) are predictable; completion-anchored repeats (Start) are projected and may shift.
 ofocus occurrences [--days <days>]  # Project every incomplete repeating task forward over a window and list the upcoming occurrences, ascending by date.
 ofocus readiness --event-id <eventId> [--event <event>] [--now <now>]  # Assess meeting readiness for a calendar event: are its prep-for tasks done, and are they on track relative to the event start? Pass --event to refresh the stored snapshot with current calendar data.
 ofocus resolve <query> [--kind <kind>] [--limit <limit>]  # Resolve a fuzzy reference to an OmniFocus entity. Returns a confidently resolved match, a tight ranked candidate set (ambiguous), or none. --kind temporal-anchor matches a repeating task and returns its next occurrence.
+ofocus stalled-projects  # Active projects where all remaining work is blocked (stalled). Returns a decision-ready list with project name, folder, and remaining task count so you can unblock or defer each project.
 ofocus this-week  # Digest of tasks due over the next seven days, grouped by calendar day and annotated with how soon each is due.
 ofocus today  # Digest of what needs attention today: overdue, due today, and flagged tasks, each annotated with how overdue or how soon it is.
 ofocus unlink <taskId> --event-id <eventId> [--type <type>]  # Remove a task↔event link by task id, event id, and type.
