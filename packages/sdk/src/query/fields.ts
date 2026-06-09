@@ -74,6 +74,24 @@ export const taskFieldSpec: EntityFieldSpec = {
     hasAttachments: { omnijsExpr: "(t.attachments.length > 0)" },
     hasRepetition: { omnijsExpr: "(t.repetitionRule != null)" },
     inInbox: { omnijsExpr: "(t.containingProject == null)" },
+    taskStatus: {
+      omnijsExpr:
+        '(t.taskStatus === Task.Status.Available ? "available" : ' +
+        't.taskStatus === Task.Status.Blocked ? "blocked" : ' +
+        't.taskStatus === Task.Status.Next ? "next" : ' +
+        't.taskStatus === Task.Status.DueSoon ? "dueSoon" : ' +
+        't.taskStatus === Task.Status.Overdue ? "overdue" : ' +
+        't.taskStatus === Task.Status.Completed ? "completed" : ' +
+        't.taskStatus === Task.Status.Dropped ? "dropped" : "available")',
+    },
+    effectiveDueDate: {
+      omnijsExpr:
+        "(t.effectiveDueDate ? t.effectiveDueDate.toISOString() : null)",
+    },
+    effectiveDeferDate: {
+      omnijsExpr:
+        "(t.effectiveDeferDate ? t.effectiveDeferDate.toISOString() : null)",
+    },
   },
   defaultFields: ["id", "name", "flagged", "dueDate", "projectName"],
 };
@@ -133,6 +151,10 @@ export const projectFieldSpec: EntityFieldSpec = {
     remainingTaskCount: {
       omnijsExpr:
         "t.task.flattenedTasks.filter(function(s){ return !s.completed && !s.effectivelyDropped; }).length",
+    },
+    availableTaskCount: {
+      omnijsExpr:
+        "t.task.flattenedTasks.filter(function(s){ return s.taskStatus === Task.Status.Available || s.taskStatus === Task.Status.Next || s.taskStatus === Task.Status.DueSoon || s.taskStatus === Task.Status.Overdue; }).length",
     },
   },
   defaultFields: ["id", "name", "status", "folderName", "remainingTaskCount"],

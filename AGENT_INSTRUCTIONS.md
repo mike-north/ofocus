@@ -877,6 +877,12 @@ List task↔event links for a task (--task) or an event (--event-id). Each link 
 | eventId | `string` | no | List links for this event id |
 | prune | `boolean` | no | Remove links whose task no longer exists |
 
+#### `next_actions`
+
+The single next actionable task per active project — the one thing to do in each project. Returns a decision-ready list with task name, project, and due date so you can immediately act on each project.
+
+_No parameters._
+
 #### `next_occurrences`
 
 Read a task's repetition rule and project its next occurrence dates. Schedule-anchored repeats (Fixed/DueDate) are predictable; completion-anchored repeats (Start) are projected and may shift.
@@ -920,6 +926,12 @@ Resolve a fuzzy reference to an OmniFocus entity. Returns a confidently resolved
 | limit | `number` | no | Max candidates (default 5) |
 
 **Example:** `{ "query": "<query>" }`
+
+#### `stalled_projects`
+
+Active projects where all remaining work is blocked (stalled). Returns a decision-ready list with project name, folder, and remaining task count so you can unblock or defer each project.
+
+_No parameters._
 
 #### `this_week`
 

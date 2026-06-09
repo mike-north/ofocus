@@ -4,18 +4,21 @@
   "description": "OmniFocus productivity niceties (Layer 2) built on @ofocus/sdk",
   "type": "module",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/ofocus-productivity.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/ofocus-productivity.d.ts",
       "import": "./dist/index.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "api-report"
   ],
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && api-extractor run --local --verbose",
+    "build:tsc": "tsc --build",
+    "api-extractor": "api-extractor run --verbose",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:watch": "vitest"
@@ -43,6 +46,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@ofocus/omnijs-types": "workspace:*",
     "typescript": "^5.9.3"
   }
 }

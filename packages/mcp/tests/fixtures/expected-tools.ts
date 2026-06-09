@@ -93,6 +93,8 @@ export const PRODUCTIVITY_TOOLS = [
   "unlink",
   "links",
   "readiness",
+  "stalled_projects",
+  "next_actions",
 ] as const;
 
 export const ALL_TOOLS = [

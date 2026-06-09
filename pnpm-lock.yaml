@@ -171,6 +171,9 @@ importers:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@ofocus/omnijs-types':
+        specifier: workspace:*
+        version: link:../omnijs-types
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
