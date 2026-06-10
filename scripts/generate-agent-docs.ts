@@ -40,6 +40,7 @@ interface ZodNode {
     type?: ZodNode | undefined; // ZodArray element type
     values?: string[] | undefined; // ZodEnum values
     options?: ZodNode[] | undefined; // ZodUnion options
+    schema?: ZodNode | undefined; // ZodEffects inner schema (preprocess/transform)
     shape?: () => Record<string, ZodNode>;
   };
 }
@@ -300,14 +301,27 @@ export function kebabFromSchemaField(name: string): string {
 }
 
 /**
- * Unwrap Zod optional/nullable/default wrappers.
+ * Unwrap Zod optional/nullable/default/effects wrappers to expose the
+ * underlying type.
  *
  * Uses duck typing on `_def.typeName` so this works without importing zod.
+ *
+ * `ZodEffects` (produced by `z.preprocess` / `z.transform`, e.g.
+ * `commaSeparatedStringArray`) wraps its target schema under `_def.schema`.
+ * Stripping it lets the generator see the real `ZodArray`/`ZodOptional` inside,
+ * so a preprocessed optional array is documented as an optional `--flag
+ * <val...>` rather than a required `unknown`. This mirrors how the CLI adapter
+ * (`registry-adapter.ts`) unwraps `ZodEffects` when registering Commander
+ * options, keeping the generated docs in sync with the real flag surface.
  */
 function unwrapZodNode(node: ZodNode): ZodNode {
   const tn = node._def.typeName;
   if (tn === "ZodOptional" || tn === "ZodNullable" || tn === "ZodDefault") {
     const inner = node._def.innerType;
+    if (inner) return unwrapZodNode(inner);
+  }
+  if (tn === "ZodEffects") {
+    const inner = node._def.schema;
     if (inner) return unwrapZodNode(inner);
   }
   return node;
@@ -347,8 +361,25 @@ export function zodTypeLabel(node: ZodNode): string {
 }
 
 function isNodeRequired(node: ZodNode): boolean {
-  const tn = node._def.typeName;
-  return tn !== "ZodOptional" && tn !== "ZodNullable";
+  // A field is optional if optionality appears anywhere in the wrapper chain.
+  // `ZodEffects` (z.preprocess/z.transform) can sit OUTSIDE the `ZodOptional`
+  // (as with `commaSeparatedStringArray`), so peeking only at the top node
+  // would misreport a preprocessed optional as required. Walk the chain.
+  let current: ZodNode | undefined = node;
+  while (current) {
+    const tn = current._def.typeName;
+    if (tn === "ZodOptional" || tn === "ZodNullable") return false;
+    if (tn === "ZodEffects") {
+      current = current._def.schema;
+      continue;
+    }
+    if (tn === "ZodDefault") {
+      // A default makes the field optional for the caller.
+      return false;
+    }
+    break;
+  }
+  return true;
 }
 
 function isNodeBoolean(node: ZodNode): boolean {
@@ -763,6 +794,9 @@ export function renderSkillMd(descriptors: DescriptorView[]): string {
   lines.push(
     `- Pass \`--format json\` (or set \`$OFOCUS_FORMAT=json\`) when you need standard JSON — e.g. to pipe into a JSON ` +
       `tool like \`jq\`. An explicit \`--format\` always overrides detection.`
+  );
+  lines.push(
+    `- \`--format ids\` emits one task ID per line (no envelope), for piping an \`--ids-only\` result into \`xargs\`.`
   );
   lines.push(`- \`--human\` is for human-readable display, not for parsing.`);
   lines.push("");
