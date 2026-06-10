@@ -7,7 +7,7 @@ description: Interact with OmniFocus on macOS via CLI. Manage tasks, projects, f
 
 <!-- generated: DO NOT EDIT BY HAND — see scripts/generate-agent-docs.ts -->
 
-Use the `ofocus` CLI to interact with OmniFocus on macOS. Machine output defaults to JSON; **prefer `--format toon` on every command** — it carries the same data in ~40% fewer tokens.
+Use the `ofocus` CLI to interact with OmniFocus on macOS. When an agent runs it, machine output **defaults to the token-efficient TOON encoding** (the agent is auto-detected) — you do **not** need to pass `--format toon`.
 
 ## Prerequisites
 
@@ -16,8 +16,8 @@ Use the `ofocus` CLI to interact with OmniFocus on macOS. Machine output default
 
 ## Output Format
 
-- **Prefer `--format toon`** for all machine output. TOON encodes the same envelope as JSON (`success` plus `data` or `error`) in ~40% fewer tokens — no fields are dropped. Use it whenever you read command output.
-- `--format json` is the default; pass it explicitly only when you need standard JSON.
+- Machine output **defaults to TOON when an AI agent is detected** (Claude Code, Cursor, Gemini CLI, …) — the same envelope as JSON (`success` plus `data` or `error`) in ~40% fewer tokens, no fields dropped. You normally don't pass a format flag.
+- Pass `--format json` (or set `$OFOCUS_FORMAT=json`) when you need standard JSON — e.g. to pipe into a JSON tool like `jq`. An explicit `--format` always overrides detection.
 - `--human` is for human-readable display, not for parsing.
 
 ## Command Quick Reference

@@ -3,11 +3,11 @@
 <!-- generated: DO NOT EDIT BY HAND — see scripts/generate-agent-docs.ts -->
 
 This document is the authoritative reference for the `ofocus` CLI.
-All commands output JSON by default. **Prefer `--format toon` for machine output** — it carries the same envelope in ~40% fewer tokens. Use `--human` for human-readable output.
+When an AI agent runs the CLI, machine output **defaults to the token-efficient TOON encoding** (the agent is auto-detected; TOON carries the same envelope as JSON in ~40% fewer tokens) — you do **not** need to pass `--format toon`. Pass `--format json` (or set `$OFOCUS_FORMAT=json`) when you need standard JSON, e.g. to pipe into `jq`. Use `--human` for human-readable output.
 
 ## Output Format
 
-Every command returns the same envelope, in either JSON (default) or the token-efficient TOON encoding (`--format toon`):
+Every command returns the same envelope. Output is TOON by default when an AI agent is detected, otherwise JSON; override either way with `--format json|toon` or `$OFOCUS_FORMAT`:
 
 ```json
 { "success": true, "data": { ... } }

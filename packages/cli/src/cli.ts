@@ -87,6 +87,7 @@ import {
   type OutputFormat,
 } from "./output.js";
 import { registerCliCommand } from "./registry-adapter.js";
+import { defaultMachineFormat } from "./format-default.js";
 
 interface GlobalOptions {
   json?: boolean | undefined;
@@ -172,25 +173,33 @@ Use --format json|toon for machine output (default: json). Use --human for human
   program.addOption(
     new Option(
       "--format <fmt>",
-      "Machine output format: json or toon (default: json). Use --human for human-readable output."
-    ).default("json")
+      "Machine output format: json or toon. Default: json, or toon when an AI agent is detected (override with $OFOCUS_FORMAT=json|toon). Use --human for human-readable output."
+    )
   );
 
   /**
    * Derive the effective output format from the resolved global options.
    *
    * Order of precedence (highest to lowest):
-   * 1. `--human`   → always selects the human-readable formatter
-   * 2. `--format`  → selects between `json` and `toon` (default: `json`)
+   * 1. `--human`         → always selects the human-readable formatter
+   * 2. `--format <x>`    → explicit `json` or `toon`
+   * 3. `$OFOCUS_FORMAT`  → `json` or `toon` (env override for scripts/CI)
+   * 4. agent detection   → `toon` when an AI agent is driving, else `json`
    *
-   * An unrecognised `--format` value is rejected with a structured error
-   * written to stdout so callers receive a machine-parseable envelope.
+   * An unrecognised explicit `--format` value is rejected with a structured
+   * error written to stdout so callers receive a machine-parseable envelope.
    */
   function getOutputFormat(options: GlobalOptions): OutputFormat {
     if (options.human === true) {
       return "human";
     }
-    const fmt = options.format ?? "json";
+    // No explicit --format: default to JSON, or token-efficient TOON when an
+    // AI agent is driving the CLI (overridable via $OFOCUS_FORMAT). Explicit
+    // --format / --human always win over detection.
+    if (options.format === undefined) {
+      return defaultMachineFormat();
+    }
+    const fmt = options.format;
     if (fmt === "json" || fmt === "toon") {
       return fmt;
     }

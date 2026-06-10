@@ -19,11 +19,11 @@ Use the `ofocus` CLI (see the `ofocus` skill for the full command reference). Fo
 | Workload stats                                    | `ofocus stats`                            |
 | What changed                                      | `ofocus changes`                          |
 
-**Always read machine output with `--format toon`** — identical data to JSON in ~40% fewer tokens, no information loss.
+Machine output is **TOON by default** when an agent runs the CLI (auto-detected) — identical data to JSON in ~40% fewer tokens, no information loss, no `--format` flag needed. Pass `--format json` (or set `$OFOCUS_FORMAT=json`) only when you need standard JSON, e.g. to pipe into `jq`.
 
 ## Triage the inbox
 
-1. Read the inbox: `ofocus tasks --in-inbox --format toon`.
+1. Read the inbox: `ofocus tasks --in-inbox`.
 2. For each item, decide a proposed disposition: a project, tags, defer/due dates, flag, or drop/delete. Use `ofocus next-actions` / `stalled-projects` to place an item where it actually moves work forward.
 3. **Present all proposals as one batch for the user to approve or amend. Never mutate without confirmation.**
 4. On approval, apply with `ofocus update <id> …` (or `ofocus update-batch <ids…>` for shared changes; `ofocus complete` / `drop` / `delete` as decided).

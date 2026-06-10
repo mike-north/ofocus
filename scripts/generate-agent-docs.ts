@@ -92,9 +92,11 @@ async function loadDescriptors(): Promise<DescriptorView[]> {
   }
   let productivity: Record<string, unknown>;
   try {
-    productivity = (await import(
-      "../packages/productivity/dist/index.js"
-    )) as Record<string, unknown>;
+    productivity =
+      (await import("../packages/productivity/dist/index.js")) as Record<
+        string,
+        unknown
+      >;
   } catch {
     throw new Error(
       "Could not import @ofocus/productivity dist. Run `pnpm build` first."
@@ -682,14 +684,17 @@ export function renderCliInstructions(descriptors: DescriptorView[]): string {
     `This document is the authoritative reference for the \`ofocus\` CLI.`
   );
   lines.push(
-    `All commands output JSON by default. **Prefer \`--format toon\` for machine output** — it carries the same ` +
-      `envelope in ~40% fewer tokens. Use \`--human\` for human-readable output.`
+    `When an AI agent runs the CLI, machine output **defaults to the token-efficient TOON encoding** ` +
+      `(the agent is auto-detected; TOON carries the same envelope as JSON in ~40% fewer tokens) — you do **not** ` +
+      `need to pass \`--format toon\`. Pass \`--format json\` (or set \`$OFOCUS_FORMAT=json\`) when you need standard ` +
+      `JSON, e.g. to pipe into \`jq\`. Use \`--human\` for human-readable output.`
   );
   lines.push("");
   lines.push(`## Output Format`);
   lines.push("");
   lines.push(
-    `Every command returns the same envelope, in either JSON (default) or the token-efficient TOON encoding (\`--format toon\`):`
+    `Every command returns the same envelope. Output is TOON by default when an AI agent is detected, otherwise JSON; ` +
+      `override either way with \`--format json|toon\` or \`$OFOCUS_FORMAT\`:`
   );
   lines.push("");
   lines.push("```json");
@@ -739,7 +744,8 @@ export function renderSkillMd(descriptors: DescriptorView[]): string {
   lines.push("");
   lines.push(
     `Use the \`ofocus\` CLI to interact with OmniFocus on macOS. ` +
-      `Machine output defaults to JSON; **prefer \`--format toon\` on every command** — it carries the same data in ~40% fewer tokens.`
+      `When an agent runs it, machine output **defaults to the token-efficient TOON encoding** (the agent is ` +
+      `auto-detected) — you do **not** need to pass \`--format toon\`.`
   );
   lines.push("");
   lines.push(`## Prerequisites`);
@@ -750,10 +756,14 @@ export function renderSkillMd(descriptors: DescriptorView[]): string {
   lines.push(`## Output Format`);
   lines.push("");
   lines.push(
-    `- **Prefer \`--format toon\`** for all machine output. TOON encodes the same envelope as JSON ` +
-      `(\`success\` plus \`data\` or \`error\`) in ~40% fewer tokens — no fields are dropped. Use it whenever you read command output.`
+    `- Machine output **defaults to TOON when an AI agent is detected** (Claude Code, Cursor, Gemini CLI, …) — the ` +
+      `same envelope as JSON (\`success\` plus \`data\` or \`error\`) in ~40% fewer tokens, no fields dropped. You ` +
+      `normally don't pass a format flag.`
   );
-  lines.push(`- \`--format json\` is the default; pass it explicitly only when you need standard JSON.`);
+  lines.push(
+    `- Pass \`--format json\` (or set \`$OFOCUS_FORMAT=json\`) when you need standard JSON — e.g. to pipe into a JSON ` +
+      `tool like \`jq\`. An explicit \`--format\` always overrides detection.`
+  );
   lines.push(`- \`--human\` is for human-readable display, not for parsing.`);
   lines.push("");
   lines.push(`## Command Quick Reference`);

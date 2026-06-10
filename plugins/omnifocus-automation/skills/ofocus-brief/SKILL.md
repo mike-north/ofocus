@@ -9,16 +9,16 @@ Act as the user's chief of staff: do the homework with deterministic commands, t
 
 ## Gather (compute, don't reason)
 
-Run these and read the output — **always `--format toon`** (identical data to JSON, ~40% fewer tokens). Don't pull raw task lists into context and reason over them; these commands have already done the computing:
+Run these and read the output. When you (an agent) run the CLI it **auto-detects you and returns TOON by default** — identical data to JSON in ~40% fewer tokens, no flag needed. Don't pull raw task lists into context and reason over them; these commands have already done the computing:
 
-| What                                                                          | Command                                      |
-| ----------------------------------------------------------------------------- | -------------------------------------------- |
-| Due today, overdue, flagged (with how-overdue / how-soon)                     | `ofocus today --format toon`                 |
-| The week ahead, grouped by day                                                | `ofocus this-week --format toon`             |
-| Stuck projects — active, with remaining work but **no available next action** | `ofocus stalled-projects --format toon`      |
-| The single next action per active project                                     | `ofocus next-actions --format toon`          |
-| Inbox backlog awaiting triage                                                 | `ofocus tasks --in-inbox --count`            |
-| What changed since the last review (only if a watch is configured)            | `ofocus changes --watch agent --format toon` |
+| What                                                                          | Command                           |
+| ----------------------------------------------------------------------------- | --------------------------------- |
+| Due today, overdue, flagged (with how-overdue / how-soon)                     | `ofocus today`                    |
+| The week ahead, grouped by day                                                | `ofocus this-week`                |
+| Stuck projects — active, with remaining work but **no available next action** | `ofocus stalled-projects`         |
+| The single next action per active project                                     | `ofocus next-actions`             |
+| Inbox backlog awaiting triage                                                 | `ofocus tasks --in-inbox --count` |
+| What changed since the last review (only if a watch is configured)            | `ofocus changes --watch agent`    |
 
 Run them concurrently where you can. If one errors (e.g. OmniFocus not running), note it in a phrase and continue with what you have — never block the whole brief on one missing piece.
 
