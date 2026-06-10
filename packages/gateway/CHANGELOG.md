@@ -1,5 +1,11 @@
 # @ofocus/gateway
 
+## 0.2.1
+
+### Patch Changes
+
+- @ofocus/mcp@0.5.3
+
 ## 0.2.0
 
 ### Minor Changes

@@ -1,5 +1,43 @@
 # @ofocus/sdk
 
+## 0.8.0
+
+### Minor Changes
+
+- 1032698: Add bulk-triage flags for agent batch operations on `tasks`.
+  - **`--exclude-ids <ids>`** — filter OUT the given task IDs from results
+    (comma- or space-separated). It composes with every other filter, so an agent
+    can express "everything EXCEPT these" in a single query instead of fetching
+    all results and set-subtracting client-side. IDs not present are ignored; an
+    empty list excludes nothing.
+  - **`--ids-only` now paginates** — the rule that forbade combining `--ids-only`
+    with `--limit`/`--offset` is removed. The id list is an ordered collection
+    that can be stepped through page-by-page, exactly like the default list shape.
+    The scalar/single-item shapes (`--count`, `--first`, `--last`, `--group-by`)
+    still cannot be paginated.
+  - **`--format ids`** — a new machine-only output mode that emits one task ID per
+    line with no JSON/TOON envelope, so the output pipes directly into `xargs`
+    (e.g. `ofocus tasks --in-inbox --exclude-ids a,b,c --ids-only --format ids |
+xargs ofocus delete-batch`). It applies only to an `--ids-only` result; any
+    other payload (or a failed query) is reported as a structured error rather
+    than silently producing a misleading id list. `--human` still takes
+    precedence over `--format`, and the `json`/`toon`/`human` envelope behaviour
+    for normal queries is unchanged.
+
+  These flags are surfaced on both the CLI (`ofocus tasks`) and the MCP
+  `tasks_list` tool from the single command descriptor.
+
+### Patch Changes
+
+- d95b70d: Accept task IDs that contain a dot (e.g. `ab7XE6LYJBv.0`)
+
+  OmniFocus gives repeating tasks per-occurrence "instance" IDs that include a dot,
+  such as `ab7XE6LYJBv.0`. These IDs were shown in listing output but mutation
+  commands (`delete`, `update`, `focus`, URL generation, etc.) rejected them with
+  `INVALID_ID_FORMAT`, leaving those tasks impossible to act on from the CLI. ID
+  validation now accepts dots, so any ID that appears in output can also be used as
+  input. Path and shell metacharacters remain rejected.
+
 ## 0.7.0
 
 ### Minor Changes
