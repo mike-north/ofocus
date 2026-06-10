@@ -82,13 +82,24 @@ describe("duplicateTask", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should reject task ID with periods", async () => {
-      // Periods are not allowed in IDs per validation regex
+    // Regression: github.com/mike-north/ofocus#84 — repeating-task instance IDs
+    // contain a dot (`<base>.<n>`) and must be accepted, not rejected.
+    it("should accept task ID with periods (#84)", async () => {
+      const mockResult: DuplicateTaskResult = {
+        originalTaskId: "task.123.test",
+        newTaskId: "task_456",
+        newTaskName: "Test task",
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockResult,
+      } as OmniJSResult<DuplicateTaskResult>);
+
       const result = await duplicateTask("task.123.test");
 
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunOmniJS).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -104,6 +104,26 @@ describe("generateUrl", () => {
 
       expect(result.success).toBe(true);
     });
+
+    // Regression: github.com/mike-north/ofocus#84 — repeating-task instance
+    // IDs contain a dot (`<base>.<n>`) and must be accepted.
+    it("should accept repeating-task instance IDs containing a dot (#84)", async () => {
+      const mockResult: UrlResult = {
+        id: "ab7XE6LYJBv.0",
+        type: "task",
+        url: "omnifocus:///task/ab7XE6LYJBv.0",
+        name: "Repeating Task",
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockResult,
+      } as OmniJSResult<UrlResult>);
+
+      const result = await generateUrl("ab7XE6LYJBv.0");
+
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("successful URL generation", () => {

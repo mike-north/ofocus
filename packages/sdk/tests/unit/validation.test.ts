@@ -37,6 +37,14 @@ describe("validateId", () => {
       expect(validateId("proj123", "project")).toBeNull();
       expect(validateId("tag456", "tag")).toBeNull();
     });
+
+    // Regression: github.com/mike-north/ofocus#84
+    // OmniFocus repeating-task *instance* IDs contain a dot (`<base>.<n>`).
+    // The CLI lists these IDs, so mutation commands must accept them too.
+    it("should accept repeating-task instance IDs containing a dot (#84)", () => {
+      expect(validateId("ab7XE6LYJBv.0", "task")).toBeNull();
+      expect(validateId("ab7XE6LYJBv.1", "task")).toBeNull();
+    });
   });
 
   describe("invalid IDs", () => {
@@ -75,6 +83,16 @@ describe("validateId", () => {
       expect(validateId("abc@123", "task")).not.toBeNull();
       expect(validateId("abc#123", "task")).not.toBeNull();
       expect(validateId("abc$123", "task")).not.toBeNull();
+    });
+
+    // Even after broadening the pattern to accept dots (#84), path and shell
+    // metacharacters must stay rejected so an ID can never become a traversal
+    // or injection vector.
+    it("should reject IDs with path/shell metacharacters", () => {
+      expect(validateId("a/b", "task")).not.toBeNull();
+      expect(validateId("../etc", "task")).not.toBeNull();
+      expect(validateId("a;b", "task")).not.toBeNull();
+      expect(validateId("a'b", "task")).not.toBeNull();
     });
 
     it("should include type in error message", () => {
