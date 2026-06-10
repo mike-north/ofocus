@@ -1,5 +1,14 @@
 # @ofocus/mcp
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [d95b70d]
+- Updated dependencies [1032698]
+  - @ofocus/sdk@0.8.0
+  - @ofocus/productivity@0.2.1
+
 ## 0.5.2
 
 ### Patch Changes

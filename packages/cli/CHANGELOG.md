@@ -1,5 +1,43 @@
 # @ofocus/cli
 
+## 0.7.0
+
+### Minor Changes
+
+- 6df012a: Agent-aware default output format. When no `--format` is given, the CLI now emits token-efficient TOON automatically if it detects an AI coding agent (Claude Code, Cursor, Gemini CLI, Aider) is invoking it, and JSON otherwise — so agents no longer need to remember `--format toon`.
+
+  The resolution order is `--human` → explicit `--format` → `$OFOCUS_FORMAT` (`json` or `toon`) → agent detection, so an explicit flag or the env var always wins. Set `OFOCUS_FORMAT=json` (or pass `--format json`) when piping CLI output to a JSON tool such as `jq` from inside an agent session.
+
+- 1032698: Add bulk-triage flags for agent batch operations on `tasks`.
+  - **`--exclude-ids <ids>`** — filter OUT the given task IDs from results
+    (comma- or space-separated). It composes with every other filter, so an agent
+    can express "everything EXCEPT these" in a single query instead of fetching
+    all results and set-subtracting client-side. IDs not present are ignored; an
+    empty list excludes nothing.
+  - **`--ids-only` now paginates** — the rule that forbade combining `--ids-only`
+    with `--limit`/`--offset` is removed. The id list is an ordered collection
+    that can be stepped through page-by-page, exactly like the default list shape.
+    The scalar/single-item shapes (`--count`, `--first`, `--last`, `--group-by`)
+    still cannot be paginated.
+  - **`--format ids`** — a new machine-only output mode that emits one task ID per
+    line with no JSON/TOON envelope, so the output pipes directly into `xargs`
+    (e.g. `ofocus tasks --in-inbox --exclude-ids a,b,c --ids-only --format ids |
+xargs ofocus delete-batch`). It applies only to an `--ids-only` result; any
+    other payload (or a failed query) is reported as a structured error rather
+    than silently producing a misleading id list. `--human` still takes
+    precedence over `--format`, and the `json`/`toon`/`human` envelope behaviour
+    for normal queries is unchanged.
+
+  These flags are surfaced on both the CLI (`ofocus tasks`) and the MCP
+  `tasks_list` tool from the single command descriptor.
+
+### Patch Changes
+
+- Updated dependencies [d95b70d]
+- Updated dependencies [1032698]
+  - @ofocus/sdk@0.8.0
+  - @ofocus/productivity@0.2.1
+
 ## 0.6.2
 
 ### Patch Changes
