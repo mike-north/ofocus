@@ -88,6 +88,26 @@ describe("focusOn", () => {
 
       expect(result.success).toBe(true);
     });
+
+    // Regression: github.com/mike-north/ofocus#84 — the shared ID validator was
+    // broadened to accept dots; the focus path must not independently reject them.
+    it("should accept IDs containing a dot (#84)", async () => {
+      const mockResult: FocusResult = {
+        focused: true,
+        targetId: "ab7XE6LYJBv.0",
+        targetName: "Test Project",
+        targetType: "project",
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockResult,
+      } as OmniJSResult<FocusResult>);
+
+      const result = await focusOn("ab7XE6LYJBv.0", { byId: true });
+
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("successful focus", () => {

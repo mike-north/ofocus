@@ -2,7 +2,9 @@ import { type CliError, ErrorCode, createError } from "./errors.js";
 
 /**
  * Validate an OmniFocus ID string.
- * IDs are alphanumeric with possible dashes/underscores.
+ * IDs are alphanumeric with possible dashes, underscores, and dots.
+ * Dots appear in repeating-task *instance* IDs (e.g. `ab7XE6LYJBv.0`), so any
+ * ID the CLI surfaces in its output must also be accepted as input here.
  * Returns null if valid, or a CliError if invalid.
  */
 export function validateId(
@@ -16,14 +18,16 @@ export function validateId(
     );
   }
 
-  // OmniFocus IDs are typically alphanumeric with possible dashes/underscores
-  // They should not contain special characters that could be used for injection
-  const idPattern = /^[a-zA-Z0-9_-]+$/;
+  // OmniFocus IDs are alphanumeric with possible dashes, underscores, and dots.
+  // The dot appears in repeating-task instance IDs (e.g. `ab7XE6LYJBv.0`).
+  // A literal dot is injection-safe; path/shell metacharacters (`/`, spaces,
+  // quotes, `;`, etc.) remain rejected.
+  const idPattern = /^[a-zA-Z0-9._-]+$/;
   if (!idPattern.test(id)) {
     return createError(
       ErrorCode.INVALID_ID_FORMAT,
       `Invalid ${type} ID format: ${id}`,
-      "IDs must contain only alphanumeric characters, dashes, and underscores"
+      "IDs must contain only alphanumeric characters, dashes, underscores, and dots"
     );
   }
 

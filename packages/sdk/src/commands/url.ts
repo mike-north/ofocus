@@ -23,8 +23,9 @@ function validateUrlId(id: string): { code: string; message: string } | null {
     return { code: "INVALID_ID_FORMAT", message: "ID cannot be empty" };
   }
 
-  // IDs should be alphanumeric with possible dashes/underscores
-  const idPattern = /^[a-zA-Z0-9_-]+$/;
+  // IDs are alphanumeric with possible dashes, underscores, and dots
+  // (dots appear in repeating-task instance IDs, e.g. `ab7XE6LYJBv.0`).
+  const idPattern = /^[a-zA-Z0-9._-]+$/;
   if (!idPattern.test(id)) {
     return {
       code: "INVALID_ID_FORMAT",

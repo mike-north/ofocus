@@ -467,13 +467,23 @@ describe("deleteFolder", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should reject folder IDs with periods", async () => {
-      // Periods are not allowed in IDs per validation regex
+    // Regression: github.com/mike-north/ofocus#84 — repeating-task instance IDs
+    // contain a dot (`<base>.<n>`) and must be accepted, not rejected.
+    it("should accept folder IDs with periods (#84)", async () => {
+      const mockResult: DeleteFolderResult = {
+        folderId: "folder.123.test",
+        deleted: true,
+      };
+
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: mockResult,
+      } as OmniJSResult<DeleteFolderResult>);
+
       const result = await deleteFolder("folder.123.test");
 
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.INVALID_ID_FORMAT);
-      expect(mockRunOmniJS).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
     });
   });
 
