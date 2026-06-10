@@ -4,7 +4,7 @@ description: Proactive OmniFocus chief-of-staff briefing — what matters today,
 
 Give me my OmniFocus chief-of-staff brief.
 
-Follow the **`ofocus-brief`** skill: gather the decision-ready data with deterministic commands — `ofocus today`, `ofocus this-week`, `ofocus stalled-projects`, `ofocus next-actions`, and the inbox count, all with `--format toon` — running them concurrently where possible. Then **synthesize**, don't dump:
+Follow the **`ofocus-brief`** skill: gather the decision-ready data with deterministic commands — `ofocus today`, `ofocus this-week`, `ofocus stalled-projects`, `ofocus next-actions`, and the inbox count — running them concurrently where possible. (When an agent runs the CLI, machine output is TOON by default; no `--format` flag needed.) Then **synthesize**, don't dump:
 
 - Lead with the **3–5 things that actually matter today** (overdue → due-today → flagged → urgent).
 - Note what's **stuck** (stalled projects need a decision, not just doing) and how many **inbox** items await triage.

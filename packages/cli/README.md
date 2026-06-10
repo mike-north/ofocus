@@ -86,11 +86,11 @@ Only increase `--limit` beyond 100 when you specifically need all matching items
 
 Three output formats are supported:
 
-| Flag            | Format                          | Best for                                       |
-| --------------- | ------------------------------- | ---------------------------------------------- |
-| _(none)_        | JSON (default)                  | Machine parsing                                |
-| `--format toon` | [TOON](https://toonformat.dev/) | LLM/agent consumption (~40% smaller than JSON) |
-| `--human`       | Human-readable text             | Terminal use                                   |
+| Flag            | Format                                     | Best for                                       |
+| --------------- | ------------------------------------------ | ---------------------------------------------- |
+| _(none)_        | JSON, or TOON when an AI agent is detected | Machine parsing / agent consumption            |
+| `--format toon` | [TOON](https://toonformat.dev/)            | LLM/agent consumption (~40% smaller than JSON) |
+| `--human`       | Human-readable text                        | Terminal use                                   |
 
 ```bash
 # JSON (default)
@@ -104,6 +104,15 @@ ofocus-cli tasks --flagged --human
 ```
 
 The `--format` option accepts `json` or `toon`. Use `--human` (not `--format human`) for human-readable output. `--human` takes precedence over `--format` when both are specified.
+
+### Agent-aware default
+
+When you don't pass `--format`, the CLI picks a default based on **who is calling**:
+
+- If an AI coding agent is detected (Claude Code, Cursor, Gemini CLI, Aider — via [`is-agentic-tui`](https://github.com/mike-north/is-agentic-tui)), the default is **TOON** — the same envelope in ~40% fewer tokens, so agents don't have to remember `--format toon`.
+- Otherwise the default is **JSON**.
+
+The resolution order is: `--human` → explicit `--format` → `--json` (shorthand for `--format json`) → the `OFOCUS_FORMAT` environment variable (`json` or `toon`) → agent detection. An explicit flag or `OFOCUS_FORMAT` always wins, so set `OFOCUS_FORMAT=json` (or pass `--format json` / `--json`) in a script that runs inside an agent session but pipes output to a JSON tool like `jq`.
 
 ## Commands
 
