@@ -27,6 +27,7 @@ import {
   outputJson,
   outputToon,
   outputHuman,
+  outputIds,
   type OutputFormat,
 } from "../../src/output.js";
 
@@ -499,6 +500,137 @@ describe("output", () => {
       // Should not output raw JSON
       expect(consoleLogSpy).not.toHaveBeenCalledWith(
         expect.stringContaining("{")
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // outputIds — raw newline-delimited ID list (issue #83 §3)
+  // -------------------------------------------------------------------------
+  //
+  // Precedence/scope contract under test:
+  //   • `--format ids` emits one id per line with NO envelope.
+  //   • It applies ONLY to an `{ kind: "ids" }` payload (i.e. --ids-only).
+  //   • Any other payload (list/count/single/groups/failure) is an error,
+  //     surfaced as a JSON envelope with a non-zero exit code — it never
+  //     silently reinterprets non-id output.
+  describe("ID output (format='ids')", () => {
+    // outputIds mutates process.exitCode on the error path; isolate it so a
+    // failing case cannot leak a non-zero code into unrelated tests.
+    let savedExitCode: typeof process.exitCode;
+    beforeEach(() => {
+      savedExitCode = process.exitCode;
+      process.exitCode = undefined;
+    });
+    afterEach(() => {
+      process.exitCode = savedExitCode;
+    });
+
+    it("emits one id per line with no envelope for an ids payload", () => {
+      const result = success({
+        kind: "ids" as const,
+        ids: ["id-1", "id-2", "id-3"],
+      });
+      const wrote = outputIds(result);
+
+      expect(wrote).toBe(true);
+      expect(consoleLogSpy).toHaveBeenCalledTimes(3);
+      expect(consoleLogSpy).toHaveBeenNthCalledWith(1, "id-1");
+      expect(consoleLogSpy).toHaveBeenNthCalledWith(2, "id-2");
+      expect(consoleLogSpy).toHaveBeenNthCalledWith(3, "id-3");
+      // No JSON/TOON envelope — none of the lines contain envelope markers.
+      for (const call of consoleLogSpy.mock.calls) {
+        expect(call[0]).not.toContain("success");
+        expect(call[0]).not.toContain("{");
+      }
+      expect(process.exitCode).toBeUndefined();
+    });
+
+    it("emits nothing (zero lines) for an empty ids payload", () => {
+      // Edge case: an empty match set is the xargs-friendly "nothing" — no
+      // lines, exit 0. This is what makes `... | xargs ofocus delete-batch`
+      // safely do nothing when there is nothing to delete.
+      const result = success({ kind: "ids" as const, ids: [] });
+      const wrote = outputIds(result);
+
+      expect(wrote).toBe(true);
+      expect(consoleLogSpy).not.toHaveBeenCalled();
+      expect(process.exitCode).toBeUndefined();
+    });
+
+    it("routes an ids payload through the format dispatcher", () => {
+      const result = success({ kind: "ids" as const, ids: ["only-1"] });
+      output(result, "ids");
+      expect(consoleLogSpy).toHaveBeenCalledExactlyOnceWith("only-1");
+    });
+
+    it("rejects a non-ids (list) payload with a VALIDATION_ERROR envelope", () => {
+      // Negative test: --format ids on a normal list query must NOT emit a
+      // bare, misleading id list — it errors instead.
+      const result = success({
+        kind: "list" as const,
+        items: [createMockTask("abc", "Task")],
+        totalCount: 1,
+        returnedCount: 1,
+        hasMore: false,
+        offset: 0,
+        limit: 100,
+      });
+      const wrote = outputIds(result);
+
+      expect(wrote).toBe(false);
+      expect(process.exitCode).toBe(1);
+      const printed = consoleLogSpy.mock.calls[0]?.[0] as string;
+      const parsed = JSON.parse(printed) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
+      expect(parsed.success).toBe(false);
+      expect(parsed.error.code).toBe("VALIDATION_ERROR");
+      expect(parsed.error.message).toContain("--ids-only");
+    });
+
+    it("rejects a count payload (scalar shape) with an error envelope", () => {
+      const result = success({ kind: "count" as const, count: 42 });
+      const wrote = outputIds(result);
+      expect(wrote).toBe(false);
+      expect(process.exitCode).toBe(1);
+    });
+
+    it("rejects an ids payload whose elements are not all strings", () => {
+      // Negative test: a malformed payload with non-string ids must NOT be
+      // written raw onto the (xargs) stream — a number would be coerced and
+      // corrupt the pipeline. It routes through the structured-error path.
+      const result = success({
+        kind: "ids" as const,
+        // Deliberately non-string elements; cast through unknown since the
+        // narrowed type forbids this shape but a malformed backend could emit it.
+        ids: [1, 2] as unknown as string[],
+      });
+      const wrote = outputIds(result);
+
+      expect(wrote).toBe(false);
+      expect(process.exitCode).toBe(1);
+      // No raw "1"/"2" lines were emitted; the only console.log is the envelope.
+      const printed = consoleLogSpy.mock.calls[0]?.[0] as string;
+      const parsed = JSON.parse(printed) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
+      expect(parsed.success).toBe(false);
+      expect(parsed.error.code).toBe("VALIDATION_ERROR");
+      expect(parsed.error.message).toContain("--ids-only");
+    });
+
+    it("surfaces a failed query as its JSON error envelope with exit 1", () => {
+      const error = createError(ErrorCode.OMNIFOCUS_NOT_RUNNING, "Not running");
+      const result = failure(error);
+      const wrote = outputIds(result);
+
+      expect(wrote).toBe(false);
+      expect(process.exitCode).toBe(1);
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        JSON.stringify(result, null, 2)
       );
     });
   });

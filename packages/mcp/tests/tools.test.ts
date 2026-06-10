@@ -192,6 +192,9 @@ describe("tasks_list MCP tool schema", () => {
 
     // Extended boolean predicates (newly exposed via descriptor)
     expect(schemaKeys).toContain("folder");
+    // Issue #83 §1: --exclude-ids is surfaced on the MCP tool via the same
+    // descriptor (single source of truth).
+    expect(schemaKeys).toContain("excludeIds");
     expect(schemaKeys).toContain("tagMode");
     expect(schemaKeys).toContain("inInbox");
     expect(schemaKeys).toContain("hasDue");

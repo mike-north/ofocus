@@ -165,6 +165,47 @@ describe("buildListQueryBody", () => {
       expect(body).toContain('kind: "ids"');
       expect(body).toContain("t.id.primaryKey");
     });
+
+    // Issue #83 §2: the `ids` shape paginates like `list`. By default it slices
+    // the matched rows by offset/limit before extracting primary keys.
+    it("slices by offset/limit before extracting IDs (default)", () => {
+      const body = buildListQueryBody({
+        ...baseArgs,
+        offset: 50,
+        limit: 25,
+        conditions: [],
+        comparator: null,
+        aggregate: compileAggregate({ idsOnly: true }),
+      });
+      expect(body).toContain("__paged = rows.slice");
+      expect(body).toContain("__offset = 50");
+      expect(body).toContain("__limit = 25");
+      // The id extraction runs over the paged slice, not the full rows array.
+      expect(body).toContain(
+        "__paged.map(function(t) { return t.id.primaryKey; })"
+      );
+    });
+
+    // Issue #83 §2 + #71 carve-out: --all returns every matching id, ignoring
+    // offset/limit (no slice).
+    it("when all=true returns every id without slicing", () => {
+      const body = buildListQueryBody({
+        ...baseArgs,
+        offset: 50,
+        limit: 25,
+        conditions: [],
+        comparator: null,
+        aggregate: compileAggregate({ idsOnly: true }),
+        all: true,
+      });
+      expect(body).toContain('kind: "ids"');
+      expect(body).not.toContain("__paged");
+      expect(body).not.toContain("rows.slice");
+      // Maps the full rows array directly.
+      expect(body).toContain(
+        "rows.map(function(t) { return t.id.primaryKey; })"
+      );
+    });
   });
 
   describe("single shape", () => {

@@ -134,11 +134,7 @@ return JSON.stringify({
 });`;
 
     case "ids":
-      return `
-return JSON.stringify({
-  kind: "ids",
-  ids: rows.map(function(${itemVar}) { return ${itemVar}.id.primaryKey; })
-});`;
+      return renderIds({ itemVar, limit, offset, all });
 
     case "single-first":
       return `
@@ -178,6 +174,43 @@ return JSON.stringify({
       throw new Error(`Unknown shape: ${String(exhaustive)}`);
     }
   }
+}
+
+/**
+ * Render the `ids` shape. Returns `{ kind: "ids", ids: string[] }` containing
+ * the primary keys of the matched rows.
+ *
+ * Like the `list` shape, the `ids` shape is paginated: when `all` is not set it
+ * slices the matched rows by `offset`/`limit` before extracting primary keys,
+ * so an id-list can be stepped through page-by-page. `--all` ignores
+ * `offset`/`limit` and returns every matching id.
+ */
+function renderIds(args: {
+  itemVar: string;
+  limit: number;
+  offset: number;
+  all?: boolean | undefined;
+}): string {
+  const { itemVar, limit, offset, all } = args;
+
+  if (all === true) {
+    return `
+return JSON.stringify({
+  kind: "ids",
+  ids: rows.map(function(${itemVar}) { return ${itemVar}.id.primaryKey; })
+});`;
+  }
+
+  return `
+{
+  var __offset = ${String(offset)};
+  var __limit = ${String(limit)};
+  var __paged = rows.slice(__offset, __offset + __limit);
+  return JSON.stringify({
+    kind: "ids",
+    ids: __paged.map(function(${itemVar}) { return ${itemVar}.id.primaryKey; })
+  });
+}`;
 }
 
 function renderList(args: {

@@ -67,7 +67,7 @@ export interface OutputFormatFlags {
   human?: boolean | undefined;
   /** `--json` — explicit shorthand for `--format json`. */
   json?: boolean | undefined;
-  /** `--format <fmt>` — explicit machine format (`json` or `toon`). */
+  /** `--format <fmt>` — explicit machine format (`json`, `toon`, or `ids`). */
   format?: string | undefined;
 }
 
@@ -76,13 +76,17 @@ export interface OutputFormatFlags {
  *
  * Precedence (highest first):
  *  1. `--human`        → human-readable formatter
- *  2. `--format <x>`   → explicit `json` or `toon`
+ *  2. `--format <x>`   → explicit `json`, `toon`, or `ids`
  *  3. `--json`         → explicit shorthand for JSON
  *  4. `$OFOCUS_FORMAT` → `json` or `toon` (env override for scripts/CI)
  *  5. agent detection  → `toon` when an AI agent is driving, else `json`
  *
  * Every explicit flag wins over the env var and agent detection — passing
  * `--json` (or `--format json`) inside an agent session yields JSON.
+ *
+ * `ids` (raw newline-delimited id list) is reachable ONLY via an explicit
+ * `--format ids`; it is never an agent-detected or `$OFOCUS_FORMAT` default
+ * (it is intentionally excluded from {@link MachineFormat}).
  *
  * Returns `{ invalid }` when an explicit `--format` value is unrecognised;
  * the caller is responsible for emitting the structured error envelope.
@@ -97,7 +101,16 @@ export function resolveOutputFormat(
     return "human";
   }
   if (flags.format !== undefined) {
-    if (flags.format === "json" || flags.format === "toon") {
+    // `ids` is accepted ONLY as an explicit `--format ids` — it is a raw
+    // newline-delimited id list (no envelope) for piping an `--ids-only`
+    // result into `xargs`. It is deliberately NOT part of `MachineFormat`, so
+    // it can never be selected as an agent-detected or `$OFOCUS_FORMAT`
+    // default (`OFOCUS_FORMAT=ids` is ignored — see `defaultMachineFormat`).
+    if (
+      flags.format === "json" ||
+      flags.format === "toon" ||
+      flags.format === "ids"
+    ) {
       return flags.format;
     }
     return { invalid: flags.format };

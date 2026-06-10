@@ -66,6 +66,17 @@ function zodEnum(values: string[], desc?: string): object {
   return { _def: { typeName: "ZodEnum", values, description: desc } };
 }
 
+/**
+ * Wrap a node in ZodEffects (z.preprocess / z.transform). The wrapped schema
+ * lives under `_def.schema`. This models `commaSeparatedStringArray`, which is
+ * `ZodEffects(ZodOptional(ZodArray(ZodString)))`.
+ */
+function zodEffects(inner: object, desc?: string): object {
+  return {
+    _def: { typeName: "ZodEffects", schema: inner, description: desc },
+  };
+}
+
 // ─── test helpers ────────────────────────────────────────────────────────────
 
 /** Build a minimal DescriptorView for testing. Handler is never called. */
@@ -186,6 +197,29 @@ const booleanDefaultTrueDescriptor = makeDescriptor({
   },
 });
 
+/**
+ * Descriptor with a ZodEffects-wrapped optional array field — the shape of
+ * `commaSeparatedStringArray` used by `--exclude-ids` / `--fields` (issue #83).
+ * Regression coverage: the generator must strip ZodEffects and document the
+ * field as an OPTIONAL ARRAY flag (`[--exclude-ids <val...>]`), not a required
+ * `unknown` scalar.
+ */
+const effectsArrayDescriptor = makeDescriptor({
+  name: "queryTasks",
+  cliName: "tasks",
+  mcpName: "tasks_list",
+  description: "List and filter tasks.",
+  cliPositional: [],
+  inputSchema: {
+    shape: {
+      excludeIds: zodEffects(
+        zodOptional(zodArray(zodString())),
+        "Exclude tasks with these IDs"
+      ) as never,
+    },
+  },
+});
+
 // ─── kebabFromSchemaField ────────────────────────────────────────────────────
 
 describe("kebabFromSchemaField", () => {
@@ -253,6 +287,13 @@ describe("zodTypeLabel", () => {
     );
     expect(result).toBe("active | on-hold | completed");
   });
+
+  it("unwraps ZodEffects (preprocess) to the inner type — issue #83", () => {
+    // commaSeparatedStringArray is ZodEffects(ZodOptional(ZodArray(ZodString))).
+    // The generator must see through the effects wrapper to the array.
+    const node = zodEffects(zodOptional(zodArray(zodString())));
+    expect(zodTypeLabel(node as never)).toBe("string[]");
+  });
 });
 
 // ─── extractFields ───────────────────────────────────────────────────────────
@@ -292,6 +333,17 @@ describe("extractFields", () => {
     const taskId = fields.find((f) => f.name === "taskId");
     expect(taskId?.description).toBe("The task ID");
   });
+
+  // Regression for issue #83: a ZodEffects-wrapped optional array (the
+  // `commaSeparatedStringArray` shape used by --exclude-ids) must be reported
+  // as an OPTIONAL ARRAY, not a required `unknown` scalar.
+  it("treats a ZodEffects-wrapped optional array as an optional array", () => {
+    const fields = extractFields(effectsArrayDescriptor);
+    const excludeIds = fields.find((f) => f.name === "excludeIds");
+    expect(excludeIds?.required).toBe(false);
+    expect(excludeIds?.isArray).toBe(true);
+    expect(excludeIds?.type).toBe("string[]");
+  });
 });
 
 // ─── usageLineForDescriptor ───────────────────────────────────────────────────
@@ -326,6 +378,15 @@ describe("usageLineForDescriptor", () => {
   it("renders array flags with <val...> placeholder", () => {
     const line = usageLineForDescriptor(fullDescriptor);
     expect(line).toContain("[--tags <val...>]");
+  });
+
+  // Regression for issue #83: --exclude-ids (a ZodEffects-wrapped optional
+  // array) must render as an optional variadic flag, matching how Commander
+  // actually registers it — NOT as a required `--exclude-ids <excludeIds>`.
+  it("renders a ZodEffects-wrapped optional array as an optional variadic flag", () => {
+    const line = usageLineForDescriptor(effectsArrayDescriptor);
+    expect(line).toContain("[--exclude-ids <val...>]");
+    expect(line).not.toContain("--exclude-ids <excludeIds>");
   });
 
   it("handles no positionals — all fields become flags", () => {
@@ -583,6 +644,12 @@ describe("renderCliInstructions", () => {
   it("includes the descriptor's cliName in usage", () => {
     const out = renderCliInstructions([simpleDescriptor]);
     expect(out).toContain("ofocus complete");
+  });
+
+  it("documents the --format ids id-list mode (issue #83)", () => {
+    const out = renderCliInstructions([simpleDescriptor]);
+    expect(out).toContain("--format ids");
+    expect(out).toContain("xargs");
   });
 
   it("produces a deterministic output", () => {

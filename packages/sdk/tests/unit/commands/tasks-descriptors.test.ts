@@ -238,6 +238,39 @@ describe("queryTasksDescriptor — metadata", () => {
     });
     expect(parsed.success).toBe(true);
   });
+
+  // Issue #83 §1: --exclude-ids on the tasks command.
+  it("schema accepts excludeIds as a space-separated array", () => {
+    const parsed = queryTasksDescriptor.inputSchema.safeParse({
+      excludeIds: ["id-1", "id-2", "id-3"],
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.excludeIds).toEqual(["id-1", "id-2", "id-3"]);
+    }
+  });
+
+  it("schema splits comma-separated excludeIds into an array", () => {
+    // CLI delivers `--exclude-ids a,b,c` as a single-element array; the schema
+    // must split it on commas (commaSeparatedStringArray preprocessing).
+    const parsed = queryTasksDescriptor.inputSchema.safeParse({
+      excludeIds: ["id-1,id-2,id-3"],
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.excludeIds).toEqual(["id-1", "id-2", "id-3"]);
+    }
+  });
+
+  it("schema accepts --ids-only combined with limit/offset (pagination)", () => {
+    // Issue #83 §2: the old rule forbidding this combination is removed.
+    const parsed = queryTasksDescriptor.inputSchema.safeParse({
+      idsOnly: true,
+      limit: 25,
+      offset: 25,
+    });
+    expect(parsed.success).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -398,5 +431,59 @@ describe("queryTasksDescriptor — handler forwarding", () => {
     const body = getScriptBody();
     expect(body).toContain("rows.map(__mapFn)");
     expect(body).not.toContain("__paged");
+  });
+
+  // Issue #83 §1: --exclude-ids forwards an exclusion predicate.
+  it("forwards excludeIds into OmniJS query body as an exclusion predicate", async () => {
+    mockRunOmniJS.mockResolvedValue(makeListResult([]));
+
+    await queryTasksDescriptor.handler({ excludeIds: ["keep-1", "keep-2"] });
+
+    const body = getScriptBody();
+    // The named ids are excluded → indexOf(...) === -1 over the id primaryKey.
+    expect(body).toContain(
+      '["keep-1", "keep-2"].indexOf(t.id.primaryKey) === -1'
+    );
+  });
+
+  it("composes excludeIds with another filter (delete-all-but-these flow)", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: { kind: "ids", ids: [] },
+    });
+
+    // The canonical "everything in the inbox EXCEPT these" query: inbox + ids.
+    await queryTasksDescriptor.handler({
+      inInbox: true,
+      excludeIds: ["keep-1"],
+      idsOnly: true,
+    });
+
+    const body = getScriptBody();
+    // Both predicates present and AND-combined.
+    expect(body).toContain("&&");
+    expect(body).toContain('(t.id.primaryKey !== "keep-1")');
+    expect(body).toContain('kind: "ids"');
+  });
+
+  // Issue #83 §2: --ids-only + pagination produces a sliced ids body (no error).
+  it("accepts --ids-only with limit/offset and emits a sliced ids body", async () => {
+    mockRunOmniJS.mockResolvedValue({
+      success: true,
+      data: { kind: "ids", ids: [] },
+    });
+
+    const result = await queryTasksDescriptor.handler({
+      idsOnly: true,
+      limit: 25,
+      offset: 50,
+    });
+
+    expect(result.success).toBe(true);
+    const body = getScriptBody();
+    expect(body).toContain('kind: "ids"');
+    expect(body).toContain("__paged = rows.slice");
+    expect(body).toContain("__offset = 50");
+    expect(body).toContain("__limit = 25");
   });
 });

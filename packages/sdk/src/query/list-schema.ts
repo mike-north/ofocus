@@ -47,10 +47,11 @@ export const listSortSchema = {
 /**
  * Shared Zod schema fragment for pagination on the standard list commands.
  *
- * `limit`/`offset` slice the default `list` output; combining them with a shape
- * modifier (`--ids-only`, `--count`, `--first`, `--last`, `--group-by`) is
- * rejected because those shapes return the full match set. `all` materialises
- * everything and is mutually exclusive with `limit`/`offset`.
+ * `limit`/`offset` slice the `list` and `ids` (`--ids-only`) output — both
+ * return an ordered collection that can be paged. Combining them with the
+ * scalar/single-item shape modifiers (`--count`, `--first`, `--last`,
+ * `--group-by`) is rejected because those collapse the result set. `all`
+ * materialises everything and is mutually exclusive with `limit`/`offset`.
  *
  * @public
  */
@@ -61,7 +62,7 @@ export const listPaginationSchema = {
     .min(1)
     .optional()
     .describe(
-      "Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset."
+      "Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset."
     ),
   offset: z
     .number()
@@ -69,7 +70,7 @@ export const listPaginationSchema = {
     .min(0)
     .optional()
     .describe(
-      "Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset."
+      "Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset."
     ),
   all: z
     .boolean()

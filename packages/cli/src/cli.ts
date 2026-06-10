@@ -157,7 +157,7 @@ Quick start:
   ofocus tasks            Query tasks
   ofocus complete <id>    Complete a task
 
-Machine output defaults to token-efficient TOON here (agent detected). Pass --format json, --json, or set $OFOCUS_FORMAT=json for standard JSON. Use --human for human-readable output.
+Machine output defaults to token-efficient TOON here (agent detected). Pass --format json, --json, or set $OFOCUS_FORMAT=json for standard JSON. Use --format ids with --ids-only to emit one ID per line for piping into xargs. Use --human for human-readable output.
 `;
       }
       // Default help for humans - use the base Help class to avoid recursion
@@ -173,7 +173,7 @@ Machine output defaults to token-efficient TOON here (agent detected). Pass --fo
   program.addOption(
     new Option(
       "--format <fmt>",
-      "Machine output format: json or toon. Default: json, or toon when an AI agent is detected (override with $OFOCUS_FORMAT=json|toon). Use --human for human-readable output."
+      "Machine output format: json, toon, or ids. Default: json, or toon when an AI agent is detected (override with $OFOCUS_FORMAT=json|toon). 'ids' emits one ID per line with no envelope, for piping an --ids-only result into xargs (explicit --format ids only; not a detected/env default). Use --human for human-readable output."
     )
   );
 
@@ -182,10 +182,18 @@ Machine output defaults to token-efficient TOON here (agent detected). Pass --fo
    *
    * Order of precedence (highest to lowest):
    * 1. `--human`         → always selects the human-readable formatter
-   * 2. `--format <x>`    → explicit `json` or `toon`
+   * 2. `--format <x>`    → explicit `json`, `toon`, or `ids`
    * 3. `--json`          → explicit shorthand for JSON
    * 4. `$OFOCUS_FORMAT`  → `json` or `toon` (env override for scripts/CI)
    * 5. agent detection   → `toon` when an AI agent is driving, else `json`
+   *
+   * `ids` is a deliberately narrow, machine-only mode: a raw newline-delimited
+   * id list (one id per line, no envelope) that only makes sense alongside
+   * `--ids-only`. It is reachable ONLY via an explicit `--format ids` — never
+   * as an agent-detected or `$OFOCUS_FORMAT` default — and never alters the
+   * `json`/`toon`/`human` envelope behaviour of any other query: when the
+   * result is not an ids payload, the `ids` formatter emits a structured error
+   * rather than guessing (see {@link outputIds}).
    *
    * Every explicit flag wins over the env var and agent detection. An
    * unrecognised explicit `--format` value is rejected with a structured
@@ -208,7 +216,7 @@ Machine output defaults to token-efficient TOON here (agent detected). Pass --fo
       success: false,
       error: {
         code: "VALIDATION_ERROR",
-        message: `Unknown --format value: "${fmt}". Valid values are: json, toon. Use --human for human-readable output.`,
+        message: `Unknown --format value: "${fmt}". Valid values are: json, toon, ids. Use --human for human-readable output.`,
       },
     };
     console.log(JSON.stringify(errorEnvelope, null, 2));

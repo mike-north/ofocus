@@ -1687,4 +1687,66 @@ describe("compileTaskPredicates — new predicates (W4 migration)", () => {
       expect(r.conditions).toEqual([]);
     });
   });
+
+  // excludeIds — "everything EXCEPT these" bulk-triage filter (issue #83 §1).
+  // The emitted condition must filter OUT the named primary keys and compose
+  // (AND) with every other predicate.
+  describe("excludeIds", () => {
+    it("emits a single primaryKey inequality for one ID", () => {
+      const r = compileTaskPredicates({ excludeIds: ["keep-1"] });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+      // Spec §1: filter OUT the given ID. A single exclusion is a `!==` test.
+      expect(r.conditions[0]).toBe('(t.id.primaryKey !== "keep-1")');
+    });
+
+    it("emits an indexOf === -1 membership test for multiple IDs", () => {
+      const r = compileTaskPredicates({ excludeIds: ["a", "b", "c"] });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toHaveLength(1);
+      // The id is excluded iff it is NOT found in the list → indexOf === -1.
+      expect(r.conditions[0]).toBe(
+        '(["a", "b", "c"].indexOf(t.id.primaryKey) === -1)'
+      );
+    });
+
+    it("is a no-op for an empty exclude set (excludes nothing)", () => {
+      // Edge case: an empty array must NOT emit a condition and must NOT error,
+      // so callers can pass a possibly-empty keep/exclude set unguarded.
+      const r = compileTaskPredicates({ excludeIds: [] });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toEqual([]);
+    });
+
+    it("composes (AND) with other predicates", () => {
+      // Excluding ids alongside a flag filter must produce BOTH conditions; the
+      // caller AND-combines them. This is the core compose requirement of §1.
+      const r = compileTaskPredicates({
+        flagged: true,
+        excludeIds: ["x", "y"],
+      });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions).toContain("t.flagged");
+      expect(r.conditions).toContain(
+        '(["x", "y"].indexOf(t.id.primaryKey) === -1)'
+      );
+    });
+
+    it("rejects IDs with injection characters (quotes/backslashes)", () => {
+      // Negative test: the value is interpolated into the OmniJS body, so
+      // quote/backslash injection must be rejected.
+      const r = compileTaskPredicates({ excludeIds: ['bad"id'] });
+      expect(r.validationErrors.length).toBeGreaterThan(0);
+      expect(r.conditions).toEqual([]);
+    });
+
+    it("allows dotted IDs (OmniFocus ID grammar permits dots)", () => {
+      // Regression guard for issue #83's constraint: dotted IDs must NOT be
+      // re-rejected by the new code path (PR #84 owns validateId; this filter
+      // uses validateNames, which only rejects quotes/backslashes).
+      const r = compileTaskPredicates({ excludeIds: ["abc.def.123"] });
+      expect(r.validationErrors).toEqual([]);
+      expect(r.conditions[0]).toBe('(t.id.primaryKey !== "abc.def.123")');
+    });
+  });
 });
