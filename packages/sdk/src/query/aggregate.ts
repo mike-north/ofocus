@@ -68,26 +68,36 @@ export function compileAggregate(
     );
   }
 
-  // Pagination (--limit/--offset) is meaningful only for the default `list`
-  // shape. Every non-list shape maps over the full result set, so combining it
-  // with limit/offset would silently ignore them — reject instead. (The
-  // analogous `--all` rule lives in validateAllFlag, which rejects --all with
-  // --count/--first/--last/--group-by but intentionally allows --ids-only with
-  // --all per #71, since the `ids` shape already returns the whole set.) Keys
-  // off the user-provided values; the default limit applied later in the
+  // Pagination (--limit/--offset) is meaningful for the default `list` shape
+  // and for the `ids` shape — both return an ordered collection that can be
+  // sliced into pages. The scalar/single shapes (`count`, `first`, `last`,
+  // `groupBy`) collapse the result set, so paginating them is meaningless and
+  // is rejected.
+  //
+  // `idsOnly` is intentionally excluded from this rejection (it paginates like
+  // `list`): an agent triaging a large inbox can request a page of IDs and step
+  // through them with --offset. The `ids` OmniJS shape slices by limit/offset
+  // exactly like `list`. This mirrors the existing `--all` carve-out (see
+  // validateAllFlag, #71): the `ids` shape is a full ordered collection, not a
+  // scalar.
+  //
+  // Keys off the user-provided values; the default limit applied later in the
   // handler is unaffected.
-  const firstShapeFlag = setFlags[0];
+  const paginatableShapes = new Set(["idsOnly"]);
+  const conflictingShapeFlag = setFlags.find(
+    (f) => !paginatableShapes.has(f.name)
+  );
   if (
-    firstShapeFlag !== undefined &&
+    conflictingShapeFlag !== undefined &&
     (options.limit !== undefined || options.offset !== undefined)
   ) {
     const modifier =
-      "--" + firstShapeFlag.name.replace(/([A-Z])/g, "-$1").toLowerCase();
+      "--" + conflictingShapeFlag.name.replace(/([A-Z])/g, "-$1").toLowerCase();
     validationErrors.push(
       createError(
         ErrorCode.VALIDATION_ERROR,
         `Cannot combine --limit/--offset with ${modifier}`,
-        "Pagination applies only to list output; remove --limit/--offset or drop the shape modifier."
+        "Pagination applies only to list and ids output; remove --limit/--offset or drop the shape modifier."
       )
     );
   }

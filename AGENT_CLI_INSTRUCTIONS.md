@@ -14,6 +14,8 @@ Every command returns the same envelope. Output is TOON by default when an AI ag
 { "success": false, "error": { "code": "...", "message": "..." } }
 ```
 
+For bulk id workflows, `--format ids` (explicit only) emits one task ID per line with no envelope — pair it with `--ids-only` to pipe a (possibly paginated or `--exclude-ids`-filtered) id list straight into `xargs`, e.g. `ofocus tasks --in-inbox --exclude-ids a,b,c --ids-only --format ids | xargs ofocus delete-batch`.
+
 ## Tasks
 
 #### `ofocus inbox`
@@ -190,7 +192,7 @@ List tasks with defer dates.
 **Usage:**
 
 ```bash
-ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredBefore>] [--blocked-only] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
+ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredBefore>] [--blocked-only] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -200,12 +202,12 @@ ofocus deferred [--deferred-after <deferredAfter>] [--deferred-before <deferredB
 | `--deferred-after` | `string` | no | Only tasks deferred after this date |
 | `--deferred-before` | `string` | no | Only tasks deferred before this date |
 | `--blocked-only` / `--no-blocked-only` | `boolean` | no | Only show tasks currently blocked by their defer date |
-| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--fields` | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus perspective`
@@ -241,7 +243,7 @@ List subtasks of a parent task.
 **Usage:**
 
 ```bash
-ofocus subtasks <parentTaskId> [--completed] [--flagged] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
+ofocus subtasks <parentTaskId> [--completed] [--flagged] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -250,12 +252,12 @@ ofocus subtasks <parentTaskId> [--completed] [--flagged] --fields <fields> --exc
 | --- | --- | --- | --- |
 | `--completed` / `--no-completed` | `boolean` | no | Filter by completion status (true = only completed, false = only incomplete) |
 | `--flagged` / `--no-flagged` | `boolean` | no | Filter by flagged status |
-| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--fields` | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus tasks`
@@ -265,7 +267,7 @@ List and filter tasks from OmniFocus.
 **Usage:**
 
 ```bash
-ofocus tasks [--project <project>] [--tag <tag>] [--tag-mode <tagMode>] [--folder <folder>] [--flagged] [--not-flagged] [--completed] [--not-completed] [--dropped] [--not-dropped] [--blocked] [--available] [--in-inbox] [--has-due] [--no-due] [--has-defer] [--has-note] [--has-attachments] [--has-subtasks] [--has-repetition] [--effectively-completed] [--effectively-dropped] [--status <status>] [--due-before <dueBefore>] [--due-after <dueAfter>] [--due-on <dueOn>] [--due-within <dueWithin>] [--defer-before <deferBefore>] [--defer-after <deferAfter>] [--defer-on <deferOn>] [--defer-within <deferWithin>] [--completed-before <completedBefore>] [--completed-after <completedAfter>] [--estimate-lt <estimateLt>] [--estimate-gt <estimateGt>] [--estimate-eq <estimateEq>] [--name-contains <nameContains>] [--name-starts <nameStarts>] [--name-equals <nameEquals>] [--name-regex <nameRegex>] [--note-contains <noteContains>] [--note-regex <noteRegex>] [--case-sensitive] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--nulls-first] [--count] [--first] [--last] [--ids-only] [--group-by <groupBy>] [--stats] [--limit <limit>] [--offset <offset>] [--all]
+ofocus tasks [--project <project>] [--tag <tag>] [--tag-mode <tagMode>] [--folder <folder>] [--exclude-ids <val...>] [--flagged] [--not-flagged] [--completed] [--not-completed] [--dropped] [--not-dropped] [--blocked] [--available] [--in-inbox] [--has-due] [--no-due] [--has-defer] [--has-note] [--has-attachments] [--has-subtasks] [--has-repetition] [--effectively-completed] [--effectively-dropped] [--status <status>] [--due-before <dueBefore>] [--due-after <dueAfter>] [--due-on <dueOn>] [--due-within <dueWithin>] [--defer-before <deferBefore>] [--defer-after <deferAfter>] [--defer-on <deferOn>] [--defer-within <deferWithin>] [--completed-before <completedBefore>] [--completed-after <completedAfter>] [--estimate-lt <estimateLt>] [--estimate-gt <estimateGt>] [--estimate-eq <estimateEq>] [--name-contains <nameContains>] [--name-starts <nameStarts>] [--name-equals <nameEquals>] [--name-regex <nameRegex>] [--note-contains <noteContains>] [--note-regex <noteRegex>] [--case-sensitive] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--nulls-first] [--count] [--first] [--last] [--ids-only] [--group-by <groupBy>] [--stats] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -276,6 +278,7 @@ ofocus tasks [--project <project>] [--tag <tag>] [--tag-mode <tagMode>] [--folde
 | `--tag` | `string \| string[]` | no | Filter by tag name (single value or array) |
 | `--tag-mode` | `any \| all \| none` | no | Tag-matching mode when multiple tags are given (default: all) |
 | `--folder` | `string \| string[]` | no | Filter by folder name (transitive; single value or array) |
+| `--exclude-ids` | `string[]` | no | Exclude tasks with these IDs from results (comma- or space-separated). Composes with all other filters — use it to express 'everything EXCEPT these'. IDs not present are ignored; an empty list excludes nothing. |
 | `--flagged` / `--no-flagged` | `boolean` | no | Filter by flagged status |
 | `--not-flagged` / `--no-not-flagged` | `boolean` | no | Exclude flagged tasks when true |
 | `--completed` / `--no-completed` | `boolean` | no | Include completed tasks when true |
@@ -326,8 +329,8 @@ ofocus tasks [--project <project>] [--tag <tag>] [--tag-mode <tagMode>] [--folde
 | `--ids-only` / `--no-ids-only` | `boolean` | no | Return only the IDs of matching tasks as { kind: 'ids', ids } |
 | `--group-by` | `string` | no | Group matching tasks by this field key |
 | `--stats` / `--no-stats` | `boolean` | no | When grouping, include count statistics per group |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus quick`
@@ -353,7 +356,7 @@ Search tasks by name or note content.
 **Usage:**
 
 ```bash
-ofocus search <query> [--scope <scope>] [--include-completed] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
+ofocus search <query> [--scope <scope>] [--include-completed] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -362,12 +365,12 @@ ofocus search <query> [--scope <scope>] [--include-completed] --fields <fields> 
 | --- | --- | --- | --- |
 | `--scope` | `name \| note \| both` | no | Where to search (default: both) |
 | `--include-completed` / `--no-include-completed` | `boolean` | no | Include completed tasks in the results |
-| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--fields` | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update`
@@ -393,7 +396,7 @@ ofocus update <taskId> [--title <title>] [--note <note>] [--due <due>] [--defer 
 | `--tags` | `string[]` | no | Replace all tags with this list |
 | `--estimated-minutes` | `number` | no | Estimated duration in minutes |
 | `--clear-estimate` / `--no-clear-estimate` | `boolean` | no | Clear the estimated duration when true |
-| `--repeat` | `unknown` | no | Set a repetition rule on the task. MCP: pass as an object. CLI: pass as a JSON string, e.g. --repeat '{"frequency":"weekly","interval":1,"repeatMethod":"due-again","daysOfWeek":[1,3,5]}' |
+| `--repeat` | `object` | no | Set a repetition rule on the task. MCP: pass as an object. CLI: pass as a JSON string, e.g. --repeat '{"frequency":"weekly","interval":1,"repeatMethod":"due-again","daysOfWeek":[1,3,5]}' |
 | `--clear-repeat` / `--no-clear-repeat` | `boolean` | no | Clear the repetition rule when true |
 
 ## Batch
@@ -509,7 +512,7 @@ List and filter projects from OmniFocus
 **Usage:**
 
 ```bash
-ofocus projects [--folder <folder>] [--status <status>] [--sequential] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
+ofocus projects [--folder <folder>] [--status <status>] [--sequential] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -519,12 +522,12 @@ ofocus projects [--folder <folder>] [--status <status>] [--sequential] --fields 
 | `--folder` | `string` | no | Filter by folder name or ID |
 | `--status` | `active \| on-hold \| completed \| dropped` | no | Filter by project status (active, on-hold, completed, dropped) |
 | `--sequential` / `--no-sequential` | `boolean` | no | Filter by sequential/parallel type |
-| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--fields` | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-project`
@@ -586,7 +589,7 @@ List folders from OmniFocus
 **Usage:**
 
 ```bash
-ofocus folders [--parent <parent>] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
+ofocus folders [--parent <parent>] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -594,12 +597,12 @@ ofocus folders [--parent <parent>] --fields <fields> --exclude-fields <excludeFi
 | Flag | Type | Required | Description |
 | --- | --- | --- | --- |
 | `--parent` | `string` | no | Filter by parent folder name or ID |
-| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--fields` | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-folder`
@@ -656,7 +659,7 @@ List tags from OmniFocus
 **Usage:**
 
 ```bash
-ofocus tags [--parent <parent>] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
+ofocus tags [--parent <parent>] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -664,12 +667,12 @@ ofocus tags [--parent <parent>] --fields <fields> --exclude-fields <excludeField
 | Flag | Type | Required | Description |
 | --- | --- | --- | --- |
 | `--parent` | `string` | no | Filter by parent tag name or ID |
-| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--fields` | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `ofocus update-tag`
@@ -699,7 +702,7 @@ Query tasks due within N days (like the OmniFocus Forecast view).
 **Usage:**
 
 ```bash
-ofocus forecast [--days <days>] [--include-deferred] --fields <fields> --exclude-fields <excludeFields> --sort <sort> [--reverse] [--limit <limit>] [--offset <offset>] [--all]
+ofocus forecast [--days <days>] [--include-deferred] [--fields <val...>] [--exclude-fields <val...>] [--sort <val...>] [--reverse] [--limit <limit>] [--offset <offset>] [--all]
 ```
 
 **Flags:**
@@ -708,12 +711,12 @@ ofocus forecast [--days <days>] [--include-deferred] --fields <fields> --exclude
 | --- | --- | --- | --- |
 | `--days` | `number` | no | Number of days ahead to include (default: 7) |
 | `--include-deferred` / `--no-include-deferred` | `boolean` | no | Include tasks deferred to the same window |
-| `--fields` | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| `--exclude-fields` | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| `--sort` | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| `--fields` | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| `--exclude-fields` | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| `--sort` | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | `--reverse` / `--no-reverse` | `boolean` | no | Reverse the sort order (default: false) |
-| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| `--offset` | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| `--limit` | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| `--offset` | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | `--all` / `--no-all` | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 ## Focus
@@ -997,7 +1000,7 @@ Apply a repetition rule to an existing task. Supports daily, weekly (with BYDAY)
 **Usage:**
 
 ```bash
-ofocus apply-repetition <taskId> --frequency <frequency> --interval <interval> --repeat-method <repeatMethod> [--days-of-week <val...>] [--day-of-month <dayOfMonth>] [--days-of-week-positions <val...>] [--months-of-year <val...>]
+ofocus apply-repetition <taskId> --frequency <frequency> [--interval <interval>] [--repeat-method <repeatMethod>] [--days-of-week <val...>] [--day-of-month <dayOfMonth>] [--days-of-week-positions <val...>] [--months-of-year <val...>]
 ```
 
 **Flags:**
@@ -1005,8 +1008,8 @@ ofocus apply-repetition <taskId> --frequency <frequency> --interval <interval> -
 | Flag | Type | Required | Description |
 | --- | --- | --- | --- |
 | `--frequency` | `daily \| weekly \| monthly \| yearly` | yes | Repeat frequency |
-| `--interval` | `number` | yes | Repeat every N periods (default: 1) |
-| `--repeat-method` | `due-again \| defer-another \| scheduled` | yes | How to reschedule: due-again (from completion), defer-another (from defer date), scheduled (fixed cadence) |
+| `--interval` | `number` | no | Repeat every N periods (default: 1) |
+| `--repeat-method` | `due-again \| defer-another \| scheduled` | no | How to reschedule: due-again (from completion), defer-another (from defer date), scheduled (fixed cadence) |
 | `--days-of-week` | `number[]` | no | Days of week (0=Sunday, 6=Saturday) |
 | `--day-of-month` | `number` | no | Day of month (1-31) for monthly recurrences |
 | `--days-of-week-positions` | `number[]` | no | Positional prefixes for Nth-weekday monthly rules, e.g. [1,-1] for first and last. Values in [-5,-1]∪[1,5]. |
@@ -1087,7 +1090,7 @@ ofocus link <taskId> --event <event> [--type <type>] [--note <note>]
 
 | Flag | Type | Required | Description |
 | --- | --- | --- | --- |
-| `--event` | `unknown` | yes | Event JSON: {"eventId","title","start","end","location"?,"source"?} |
+| `--event` | `object` | yes | Event JSON: {"eventId","title","start","end","location"?,"source"?} |
 | `--type` | `prep-for \| time-block` | no | Link type (default: prep-for) |
 | `--note` | `string` | no | Optional note describing the link |
 
@@ -1167,7 +1170,7 @@ ofocus readiness --event-id <eventId> [--event <event>] [--now <now>]
 | Flag | Type | Required | Description |
 | --- | --- | --- | --- |
 | `--event-id` | `string` | yes | The event id to assess |
-| `--event` | `unknown` | no | Optional fresh event JSON to refresh the stored snapshot |
+| `--event` | `object` | no | Optional fresh event JSON to refresh the stored snapshot |
 | `--now` | `string` | no | Override the current instant (ISO 8601; for testing/determinism) |
 
 #### `ofocus resolve`

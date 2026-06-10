@@ -97,4 +97,56 @@ describe("resolveOutputFormat (full flag precedence)", () => {
     expect(resolveOutputFormat({}, deps)).toBe("toon");
     expect(resolveOutputFormat({}, { env: {}, isAgentic: human })).toBe("json");
   });
+
+  // Issue #83 §3: `--format ids` is the raw newline-delimited id-list mode.
+  // It is reachable ONLY via an explicit --format ids — never as an
+  // agent-detected or $OFOCUS_FORMAT default.
+  describe("--format ids (raw id-list mode)", () => {
+    it("resolves an explicit --format ids to 'ids'", () => {
+      expect(resolveOutputFormat({ format: "ids" }, deps)).toBe("ids");
+    });
+
+    it("resolves --format ids even for a non-agent caller", () => {
+      expect(
+        resolveOutputFormat({ format: "ids" }, { env: {}, isAgentic: human })
+      ).toBe("ids");
+    });
+
+    it("ignores $OFOCUS_FORMAT=ids — env never selects the ids mode", () => {
+      // `ids` is intentionally NOT a MachineFormat, so the env override cannot
+      // pick it; resolution falls through to agent detection (toon here).
+      expect(
+        resolveOutputFormat(
+          {},
+          { env: { OFOCUS_FORMAT: "ids" }, isAgentic: agent }
+        )
+      ).toBe("toon");
+      // …and to json for a non-agent caller.
+      expect(
+        resolveOutputFormat(
+          {},
+          { env: { OFOCUS_FORMAT: "ids" }, isAgentic: human }
+        )
+      ).toBe("json");
+    });
+
+    it("--human still beats --format ids", () => {
+      expect(
+        resolveOutputFormat({ human: true, format: "ids" }, deps)
+      ).toBe("human");
+    });
+  });
+});
+
+// `defaultMachineFormat` must never return `ids`: it is the detected/env
+// default path, and `ids` is an explicit-only format.
+describe("defaultMachineFormat never yields ids", () => {
+  it("ignores OFOCUS_FORMAT=ids and falls through to detection", () => {
+    expect(
+      defaultMachineFormat({ env: { OFOCUS_FORMAT: "ids" }, isAgentic: agent })
+    ).toBe("toon");
+    expect(
+      defaultMachineFormat({ env: { OFOCUS_FORMAT: "ids" }, isAgentic: human })
+    ).toBe("json");
+  });
 });

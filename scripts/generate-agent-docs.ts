@@ -735,6 +735,13 @@ export function renderCliInstructions(descriptors: DescriptorView[]): string {
   );
   lines.push("```");
   lines.push("");
+  lines.push(
+    `For bulk id workflows, \`--format ids\` (explicit only) emits one task ID per line with no ` +
+      `envelope — pair it with \`--ids-only\` to pipe a (possibly paginated or \`--exclude-ids\`-filtered) ` +
+      `id list straight into \`xargs\`, e.g. \`ofocus tasks --in-inbox --exclude-ids a,b,c --ids-only ` +
+      `--format ids | xargs ofocus delete-batch\`.`
+  );
+  lines.push("");
 
   for (const [domain, group] of groups) {
     lines.push(`## ${domain}`);

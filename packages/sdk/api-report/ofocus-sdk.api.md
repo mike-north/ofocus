@@ -2126,6 +2126,7 @@ nameRegex?: string | undefined;
 noteContains?: string | undefined;
 noteRegex?: string | undefined;
 caseSensitive?: boolean | undefined;
+excludeIds?: string[] | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, QueryResult<OFTask>, z.ZodObject<{
@@ -2136,6 +2137,7 @@ project: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]
 tag: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
 tagMode: z.ZodOptional<z.ZodEnum<["any", "all", "none"]>>;
 folder: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>>;
+excludeIds: z.ZodEffects<z.ZodOptional<z.ZodArray<z.ZodString, "many">>, string[] | undefined, unknown>;
 flagged: z.ZodOptional<z.ZodBoolean>;
 notFlagged: z.ZodOptional<z.ZodBoolean>;
 completed: z.ZodOptional<z.ZodBoolean>;
@@ -2242,6 +2244,7 @@ nameRegex?: string | undefined;
 noteContains?: string | undefined;
 noteRegex?: string | undefined;
 caseSensitive?: boolean | undefined;
+excludeIds?: string[] | undefined;
 limit?: number | undefined;
 offset?: number | undefined;
 }, {
@@ -2300,6 +2303,7 @@ nameRegex?: string | undefined;
 noteContains?: string | undefined;
 noteRegex?: string | undefined;
 caseSensitive?: boolean | undefined;
+excludeIds?: unknown;
 limit?: number | undefined;
 offset?: number | undefined;
 }>>;
@@ -2724,6 +2728,7 @@ export interface TaskQueryOptions extends BaseListQueryOptions {
     estimateGt?: number | undefined;
     // (undocumented)
     estimateLt?: number | undefined;
+    excludeIds?: string[] | undefined;
     // (undocumented)
     flagged?: boolean | undefined;
     folder?: string | string[] | undefined;

@@ -545,15 +545,23 @@ describe("queryTasks", () => {
     });
   });
 
-  describe("pagination + shape modifiers (pagination applies only to list output)", () => {
-    it("rejects --ids-only combined with --limit and makes no OmniJS call", async () => {
-      const result = await queryTasks({ idsOnly: true, limit: 5 });
-      expect(result.success).toBe(false);
-      expect(result.error?.code).toBe(ErrorCode.VALIDATION_ERROR);
-      expect(result.error?.message).toBe(
-        "Cannot combine --limit/--offset with --ids-only"
-      );
-      expect(mockRunOmniJS).not.toHaveBeenCalled();
+  describe("pagination + shape modifiers (pagination applies to list and ids output)", () => {
+    // Issue #83 §2: the rule that forbade --ids-only + --limit/--offset is
+    // removed. The `ids` shape paginates like a list, so the combination now
+    // succeeds and issues a (sliced) OmniJS query.
+    it("allows --ids-only combined with --limit and issues a sliced query", async () => {
+      mockRunOmniJS.mockResolvedValue({
+        success: true,
+        data: { kind: "ids", ids: ["a", "b"] },
+      } as OmniJSResult<QueryResult<OFTask>>);
+      const result = await queryTasks({ idsOnly: true, limit: 5, offset: 10 });
+      expect(result.success).toBe(true);
+      expect(result.data?.kind).toBe("ids");
+      expect(mockRunOmniJS).toHaveBeenCalledTimes(1);
+      const body = mockRunOmniJS.mock.calls[0]?.[0] as string;
+      expect(body).toContain("__paged = rows.slice");
+      expect(body).toContain("__offset = 10");
+      expect(body).toContain("__limit = 5");
     });
 
     it("rejects --count combined with --offset and makes no OmniJS call", async () => {

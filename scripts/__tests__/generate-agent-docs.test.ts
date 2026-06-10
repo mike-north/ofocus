@@ -646,6 +646,12 @@ describe("renderCliInstructions", () => {
     expect(out).toContain("ofocus complete");
   });
 
+  it("documents the --format ids id-list mode (issue #83)", () => {
+    const out = renderCliInstructions([simpleDescriptor]);
+    expect(out).toContain("--format ids");
+    expect(out).toContain("xargs");
+  });
+
   it("produces a deterministic output", () => {
     const descriptors = [simpleDescriptor, fullDescriptor];
     expect(renderCliInstructions(descriptors)).toBe(

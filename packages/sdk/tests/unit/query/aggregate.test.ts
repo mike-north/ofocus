@@ -110,22 +110,24 @@ describe("compileAggregate", () => {
       expect(compileAggregate({ first: true }).validationErrors).toEqual([]);
       expect(compileAggregate({ last: true }).validationErrors).toEqual([]);
       expect(compileAggregate({ idsOnly: true }).validationErrors).toEqual([]);
-      expect(
-        compileAggregate({ groupBy: "project" }).validationErrors
-      ).toEqual([]);
+      expect(compileAggregate({ groupBy: "project" }).validationErrors).toEqual(
+        []
+      );
     });
   });
 
-  describe("pagination applies only to list output", () => {
-    const cases = [
-      { opt: { idsOnly: true }, flag: "--ids-only" },
+  describe("pagination applies to list and ids output, not scalar shapes", () => {
+    // Issue #83 §2: the scalar/single-item shapes collapse the result set, so
+    // paginating them is meaningless and must still be rejected. `--ids-only`
+    // is deliberately ABSENT here — it now paginates like a list (see below).
+    const rejectedCases = [
       { opt: { count: true }, flag: "--count" },
       { opt: { first: true }, flag: "--first" },
       { opt: { last: true }, flag: "--last" },
       { opt: { groupBy: "project" }, flag: "--group-by" },
     ] as const;
 
-    for (const { opt, flag } of cases) {
+    for (const { opt, flag } of rejectedCases) {
       it(`rejects ${flag} combined with limit`, () => {
         const r = compileAggregate({ ...opt, limit: 5 });
         expect(r.validationErrors[0]?.code).toBe(ErrorCode.VALIDATION_ERROR);
@@ -155,6 +157,29 @@ describe("compileAggregate", () => {
       const r = compileAggregate({ limit: 5, offset: 10 });
       expect(r.shape).toBe("list");
       expect(r.validationErrors).toEqual([]);
+    });
+
+    // Issue #83 §2: the validation rule that forbade --ids-only + --limit/
+    // --offset is removed. The `ids` shape is an ordered collection that can be
+    // paged exactly like a list, so an id-list can now be paginated.
+    describe("--ids-only is paginatable", () => {
+      it("allows --ids-only with --limit", () => {
+        const r = compileAggregate({ idsOnly: true, limit: 5 });
+        expect(r.shape).toBe("ids");
+        expect(r.validationErrors).toEqual([]);
+      });
+
+      it("allows --ids-only with --offset", () => {
+        const r = compileAggregate({ idsOnly: true, offset: 50 });
+        expect(r.shape).toBe("ids");
+        expect(r.validationErrors).toEqual([]);
+      });
+
+      it("allows --ids-only with both --limit and --offset", () => {
+        const r = compileAggregate({ idsOnly: true, limit: 25, offset: 25 });
+        expect(r.shape).toBe("ids");
+        expect(r.validationErrors).toEqual([]);
+      });
     });
   });
 

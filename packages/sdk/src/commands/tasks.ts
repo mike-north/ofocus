@@ -7,6 +7,7 @@ import { runOmniJSWrapped } from "../omnijs.js";
 import { defineCommand } from "../registry/define.js";
 import {
   buildListQueryBody,
+  commaSeparatedStringArray,
   compileAggregate,
   compileProjection,
   compileSort,
@@ -142,6 +143,9 @@ export const queryTasksDescriptor = defineCommand({
       .union([z.string(), z.array(z.string())])
       .optional()
       .describe("Filter by folder name (transitive; single value or array)"),
+    excludeIds: commaSeparatedStringArray.describe(
+      "Exclude tasks with these IDs from results (comma- or space-separated). Composes with all other filters — use it to express 'everything EXCEPT these'. IDs not present are ignored; an empty list excludes nothing."
+    ),
 
     // ── Boolean state predicates ───────────────────────────────────────────
     flagged: z.boolean().optional().describe("Filter by flagged status"),
@@ -377,6 +381,7 @@ export const queryTasksDescriptor = defineCommand({
       tag: input.tag,
       tagMode: input.tagMode,
       folder: input.folder,
+      excludeIds: input.excludeIds,
       flagged: input.flagged,
       notFlagged: input.notFlagged,
       completed: input.completed,

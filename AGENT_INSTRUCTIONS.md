@@ -167,15 +167,13 @@ List tasks with defer dates.
 | deferredAfter | `string` | no | Only tasks deferred after this date |
 | deferredBefore | `string` | no | Only tasks deferred before this date |
 | blockedOnly | `boolean` | no | Only show tasks currently blocked by their defer date |
-| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| fields | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
-
-**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `perspective_query`
 
@@ -203,15 +201,15 @@ List subtasks of a parent task.
 | parentTaskId | `string` | yes | ID of the parent task |
 | completed | `boolean` | no | Filter by completion status (true = only completed, false = only incomplete) |
 | flagged | `boolean` | no | Filter by flagged status |
-| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| fields | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
-**Example:** `{ "parentTaskId": "<parentTaskId>", "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
+**Example:** `{ "parentTaskId": "<parentTaskId>" }`
 
 #### `tasks_list`
 
@@ -223,6 +221,7 @@ List and filter tasks from OmniFocus.
 | tag | `string \| string[]` | no | Filter by tag name (single value or array) |
 | tagMode | `any \| all \| none` | no | Tag-matching mode when multiple tags are given (default: all) |
 | folder | `string \| string[]` | no | Filter by folder name (transitive; single value or array) |
+| excludeIds | `string[]` | no | Exclude tasks with these IDs from results (comma- or space-separated). Composes with all other filters — use it to express 'everything EXCEPT these'. IDs not present are ignored; an empty list excludes nothing. |
 | flagged | `boolean` | no | Filter by flagged status |
 | notFlagged | `boolean` | no | Exclude flagged tasks when true |
 | completed | `boolean` | no | Include completed tasks when true |
@@ -273,8 +272,8 @@ List and filter tasks from OmniFocus.
 | idsOnly | `boolean` | no | Return only the IDs of matching tasks as { kind: 'ids', ids } |
 | groupBy | `string` | no | Group matching tasks by this field key |
 | stats | `boolean` | no | When grouping, include count statistics per group |
-| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
 #### `quick_add`
@@ -297,15 +296,15 @@ Search tasks by name or note content.
 | query | `string` | yes | Search query text |
 | scope | `name \| note \| both` | no | Where to search (default: both) |
 | includeCompleted | `boolean` | no | Include completed tasks in the results |
-| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| fields | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
 
-**Example:** `{ "query": "<query>", "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
+**Example:** `{ "query": "<query>" }`
 
 #### `task_update`
 
@@ -323,7 +322,7 @@ Update properties of an existing task.
 | tags | `string[]` | no | Replace all tags with this list |
 | estimatedMinutes | `number` | no | Estimated duration in minutes |
 | clearEstimate | `boolean` | no | Clear the estimated duration when true |
-| repeat | `unknown` | no | Set a repetition rule on the task. MCP: pass as an object. CLI: pass as a JSON string, e.g. --repeat '{"frequency":"weekly","interval":1,"repeatMethod":"due-again","daysOfWeek":[1,3,5]}' |
+| repeat | `object` | no | Set a repetition rule on the task. MCP: pass as an object. CLI: pass as a JSON string, e.g. --repeat '{"frequency":"weekly","interval":1,"repeatMethod":"due-again","daysOfWeek":[1,3,5]}' |
 | clearRepeat | `boolean` | no | Clear the repetition rule when true |
 
 **Example:** `{ "taskId": "<taskId>" }`
@@ -428,15 +427,13 @@ List and filter projects from OmniFocus
 | folder | `string` | no | Filter by folder name or ID |
 | status | `active \| on-hold \| completed \| dropped` | no | Filter by project status (active, on-hold, completed, dropped) |
 | sequential | `boolean` | no | Filter by sequential/parallel type |
-| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| fields | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
-
-**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `project_update`
 
@@ -487,15 +484,13 @@ List folders from OmniFocus
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | parent | `string` | no | Filter by parent folder name or ID |
-| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| fields | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
-
-**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `folder_update`
 
@@ -541,15 +536,13 @@ List tags from OmniFocus
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | parent | `string` | no | Filter by parent tag name or ID |
-| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| fields | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
-
-**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 #### `tag_update`
 
@@ -574,15 +567,13 @@ Query tasks due within N days (like the OmniFocus Forecast view).
 | --- | --- | --- | --- |
 | days | `number` | no | Number of days ahead to include (default: 7) |
 | includeDeferred | `boolean` | no | Include tasks deferred to the same window |
-| fields | `unknown` | yes | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
-| excludeFields | `unknown` | yes | Fields to exclude from the result items (comma- or space-separated) |
-| sort | `unknown` | yes | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
+| fields | `string[]` | no | Fields to include in each result item (comma- or space-separated, e.g. id,name,dueDate) |
+| excludeFields | `string[]` | no | Fields to exclude from the result items (comma- or space-separated) |
+| sort | `string[]` | no | Sort keys (comma- or space-separated field names, e.g. dueDate,name) |
 | reverse | `boolean` | no | Reverse the sort order (default: false) |
-| limit | `number` | no | Maximum number of results to return (default: 100). Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
-| offset | `number` | no | Number of results to skip for pagination. Applies only to list output; shape modifiers that return the full match set cannot be combined with --limit/--offset. |
+| limit | `number` | no | Maximum number of results to return (default: 100). Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
+| offset | `number` | no | Number of results to skip for pagination. Applies to list and --ids-only output; the scalar shape modifiers (--count/--first/--last/--group-by) cannot be combined with --limit/--offset. |
 | all | `boolean` | no | When true, return every matching item ignoring --limit/--offset. Mutually exclusive with --limit and --offset. |
-
-**Example:** `{ "fields": "<fields>", "excludeFields": "<excludeFields>", "sort": "<sort>" }`
 
 ## Focus
 
@@ -796,14 +787,14 @@ Apply a repetition rule to an existing task. Supports daily, weekly (with BYDAY)
 | --- | --- | --- | --- |
 | taskId | `string` | yes | ID of the task to update |
 | frequency | `daily \| weekly \| monthly \| yearly` | yes | Repeat frequency |
-| interval | `number` | yes | Repeat every N periods (default: 1) |
-| repeatMethod | `due-again \| defer-another \| scheduled` | yes | How to reschedule: due-again (from completion), defer-another (from defer date), scheduled (fixed cadence) |
+| interval | `number` | no | Repeat every N periods (default: 1) |
+| repeatMethod | `due-again \| defer-another \| scheduled` | no | How to reschedule: due-again (from completion), defer-another (from defer date), scheduled (fixed cadence) |
 | daysOfWeek | `number[]` | no | Days of week (0=Sunday, 6=Saturday) |
 | dayOfMonth | `number` | no | Day of month (1-31) for monthly recurrences |
 | daysOfWeekPositions | `number[]` | no | Positional prefixes for Nth-weekday monthly rules, e.g. [1,-1] for first and last. Values in [-5,-1]∪[1,5]. |
 | monthsOfYear | `number[]` | no | Months of year (1=January, 12=December) for yearly recurrences |
 
-**Example:** `{ "taskId": "<taskId>", "frequency": "<frequency>", "interval": "<interval>", "repeatMethod": "<repeatMethod>" }`
+**Example:** `{ "taskId": "<taskId>", "frequency": "<frequency>" }`
 
 #### `task_clear_repetition`
 
@@ -829,7 +820,7 @@ Scripts must end with a return <expression>; statement and are capped at 64 KB. 
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| script | `unknown` | no | OmniJS source code to evaluate against the user's OmniFocus database. Must end with a `return <expression>` statement. Mutually exclusive with --file. |
+| script | `string` | no | OmniJS source code to evaluate against the user's OmniFocus database. Must end with a `return <expression>` statement. Mutually exclusive with --file. |
 | file | `string` | no | Path to a file containing OmniJS source. Read at execution time. Mutually exclusive with --script. CLI: --file <path> |
 | args | `unknown` | no | Arguments injected into the script as a global `args` constant (deserialized from JSON). Use this instead of string-interpolating values into the script body — args go through JSON.stringify and avoid escaping issues. |
 
@@ -861,7 +852,7 @@ Link an OmniFocus task to a calendar event the agent supplies. --type prep-for (
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | taskId | `string` | yes | The task to link |
-| event | `unknown` | yes | Event JSON: {"eventId","title","start","end","location"?,"source"?} |
+| event | `object` | yes | Event JSON: {"eventId","title","start","end","location"?,"source"?} |
 | type | `prep-for \| time-block` | no | Link type (default: prep-for) |
 | note | `string` | no | Optional note describing the link |
 
@@ -910,7 +901,7 @@ Assess meeting readiness for a calendar event: are its prep-for tasks done, and 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | eventId | `string` | yes | The event id to assess |
-| event | `unknown` | no | Optional fresh event JSON to refresh the stored snapshot |
+| event | `object` | no | Optional fresh event JSON to refresh the stored snapshot |
 | now | `string` | no | Override the current instant (ISO 8601; for testing/determinism) |
 
 **Example:** `{ "eventId": "<eventId>" }`

@@ -714,6 +714,29 @@ export function compileTaskPredicates(
     }
   }
 
+  // excludeIds — filter OUT the named primary keys. Composes (AND) with every
+  // other predicate, enabling "everything EXCEPT these" bulk triage.
+  //
+  // An empty array is a deliberate no-op (excludes nothing) rather than an
+  // error: it lets callers pass a possibly-empty keep/exclude set without a
+  // guard. IDs that match no task are harmlessly absent from the set. We still
+  // reject quote/backslash injection via validateNames; dotted IDs are allowed
+  // (validateNames only rejects quotes and backslashes), matching OmniFocus's
+  // ID grammar.
+  const excludeIds = options.excludeIds;
+  if (excludeIds !== undefined && excludeIds.length > 0) {
+    const nameError = validateNames(excludeIds, "excludeIds");
+    if (nameError) {
+      validationErrors.push(nameError);
+    } else if (excludeIds.length === 1) {
+      const id = excludeIds[0] ?? "";
+      conditions.push(`(t.id.primaryKey !== "${escapeJSString(id)}")`);
+    } else {
+      const arr = jsStringArray(excludeIds);
+      conditions.push(`(${arr}.indexOf(t.id.primaryKey) === -1)`);
+    }
+  }
+
   return { conditions, validationErrors };
 }
 

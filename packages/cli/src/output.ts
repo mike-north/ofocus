@@ -37,10 +37,13 @@ import { encode } from "@toon-format/toon";
  * - `'toon'`  – TOON encoding (~40% smaller than JSON for uniform arrays).
  *               See https://toonformat.dev/ for the format specification.
  * - `'human'` – Human-readable text (selected via `--human`).
+ * - `'ids'`   – Raw newline-delimited IDs (one per line, no envelope). Only
+ *               valid for an `--ids-only` result (`{ kind: "ids" }`); designed
+ *               to pipe straight into `xargs`. Any other payload is an error.
  *
  * @public
  */
-export type OutputFormat = "json" | "toon" | "human";
+export type OutputFormat = "json" | "toon" | "human" | "ids";
 
 /**
  * Output the result as JSON to stdout.
@@ -74,6 +77,80 @@ export function outputToon<T>(result: CliOutput<T>): void {
     );
     console.log(JSON.stringify(result, null, 2));
   }
+}
+
+/**
+ * A query result narrowed to the `ids` shape: `{ kind: "ids", ids: string[] }`.
+ * This is the only payload `--format ids` can render.
+ */
+interface IdsResultLike {
+  kind: "ids";
+  ids: string[];
+}
+
+function isIdsResult(data: unknown): data is IdsResultLike {
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    !("kind" in data) ||
+    (data as { kind: unknown }).kind !== "ids" ||
+    !("ids" in data)
+  ) {
+    return false;
+  }
+  const ids = (data as { ids: unknown }).ids;
+  // Require every element to be a string. A non-string element (e.g. a number)
+  // would otherwise be coerced and written raw onto the xargs stream, so reject
+  // the whole payload and route it through the structured-error path instead.
+  return Array.isArray(ids) && ids.every((x) => typeof x === "string");
+}
+
+/**
+ * Output an `--ids-only` result as raw newline-delimited IDs — one ID per line,
+ * with no JSON/TOON envelope — so the output composes directly with `xargs` and
+ * other line-oriented tools.
+ *
+ * This format is deliberately narrow: it ONLY applies to the `{ kind: "ids" }`
+ * payload produced by `--ids-only`. Any other payload (a normal list, a count,
+ * a single item, a grouped result, or a failed envelope) cannot be expressed as
+ * a bare id list, so this function writes a structured JSON error envelope to
+ * stdout and sets a non-zero exit code instead of silently emitting something
+ * misleading. It never changes the envelope behaviour of `--format json|toon`
+ * or `--human`.
+ *
+ * @returns `true` if raw IDs were written; `false` if the payload was not an
+ * ids result (in which case an error envelope was written and the exit code set).
+ */
+export function outputIds<T>(result: CliOutput<T>): boolean {
+  if (!result.success || result.data === null || result.data === undefined) {
+    // A failed query (or empty payload) has no id list to emit. Surface the
+    // underlying error as a JSON envelope so the caller still receives a
+    // machine-parseable result.
+    outputJson(result);
+    process.exitCode = 1;
+    return false;
+  }
+
+  if (!isIdsResult(result.data)) {
+    const errorEnvelope = {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message:
+          "--format ids requires an --ids-only result. Add --ids-only to the query, or choose --format json|toon for non-id output.",
+      },
+    };
+    console.log(JSON.stringify(errorEnvelope, null, 2));
+    process.exitCode = 1;
+    return false;
+  }
+
+  // Emit one id per line. An empty id set produces no output (zero lines),
+  // which is the correct, xargs-friendly representation of "nothing matched".
+  for (const id of result.data.ids) {
+    console.log(id);
+  }
+  return true;
 }
 
 /**
@@ -205,6 +282,7 @@ export function outputHuman<T>(result: CliOutput<T>): void {
  * - `'json'`  – Pretty-printed JSON envelope (default).
  * - `'toon'`  – TOON-encoded envelope; ~40% smaller for uniform arrays.
  * - `'human'` – Human-readable text (selected via `--human`).
+ * - `'ids'`   – Raw newline-delimited IDs (only for an `--ids-only` result).
  *
  * @see https://toonformat.dev/ for the TOON format specification.
  */
@@ -215,6 +293,9 @@ export function output<T>(result: CliOutput<T>, format: OutputFormat): void {
       break;
     case "human":
       outputHuman(result);
+      break;
+    case "ids":
+      outputIds(result);
       break;
     case "json":
     default:

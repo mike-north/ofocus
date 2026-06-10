@@ -170,6 +170,16 @@ export interface TaskQueryOptions extends BaseListQueryOptions {
    * single ID or an array (any-of). Used by `querySubtasks`.
    */
   parentTaskId?: string | string[] | undefined;
+
+  // ── Identity exclusion ────────────────────────────────────────────────────
+  /**
+   * Exclude tasks whose primary key is in this list. Filters OUT the named IDs
+   * from the result set; composes (AND) with every other predicate. Enables the
+   * "everything EXCEPT these" bulk-triage workflow without a client-side set
+   * subtraction. An empty array is a no-op (excludes nothing); IDs that do not
+   * match any task are silently ignored.
+   */
+  excludeIds?: string[] | undefined;
 }
 
 /**

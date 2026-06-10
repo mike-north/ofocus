@@ -171,5 +171,50 @@ describe.skipIf(!cliAvailable)(
       // The human output is NOT the TOON envelope (which starts with "success:")
       expect(toonOut.trim()).not.toMatch(/^success:/);
     });
+
+    // ------------------------------------------------------------------
+    // --format ids — raw newline-delimited id list (issue #83 §3)
+    // ------------------------------------------------------------------
+    //
+    // The raw id output is only emittable for an `--ids-only` payload, which
+    // requires a live OmniFocus database — so these UATs cover the parts of the
+    // contract that are deterministic without OmniFocus: that `ids` is accepted
+    // as a valid --format value, that it errors cleanly (not "unknown format")
+    // when the payload is not an id list, and that --human still wins over it.
+    // The happy-path raw-line emission is covered by the outputIds unit tests.
+
+    it("--format ids is a recognised value (not an 'unknown format' error)", () => {
+      // list-commands returns a non-ids payload, so --format ids must report a
+      // payload-mismatch error — NOT the "Unknown --format value" error that an
+      // unrecognised format would produce.
+      const { stdout } = runCli(["list-commands", "--format", "ids"]);
+      const parsed = JSON.parse(stdout) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
+      expect(parsed.success).toBe(false);
+      expect(parsed.error.code).toBe("VALIDATION_ERROR");
+      // The message is the payload-mismatch message, mentioning --ids-only.
+      expect(parsed.error.message).toContain("--ids-only");
+      expect(parsed.error.message).not.toContain("Unknown --format value");
+    });
+
+    it("--format ids on a non-ids payload exits with code 1", () => {
+      const { exitCode } = runCli(["list-commands", "--format", "ids"]);
+      expect(exitCode).toBe(1);
+    });
+
+    it("--human overrides --format ids", () => {
+      // Precedence: --human wins over --format ids (just like over toon/json).
+      const { stdout: humanWithIds, exitCode } = runCli([
+        "list-commands",
+        "--human",
+        "--format",
+        "ids",
+      ]);
+      const { stdout: humanOnly } = runCli(["list-commands", "--human"]);
+      expect(exitCode).toBe(0);
+      expect(humanWithIds).toBe(humanOnly);
+    });
   }
 );
