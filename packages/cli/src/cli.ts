@@ -87,7 +87,7 @@ import {
   type OutputFormat,
 } from "./output.js";
 import { registerCliCommand } from "./registry-adapter.js";
-import { defaultMachineFormat } from "./format-default.js";
+import { resolveOutputFormat } from "./format-default.js";
 
 interface GlobalOptions {
   json?: boolean | undefined;
@@ -157,7 +157,7 @@ Quick start:
   ofocus tasks            Query tasks
   ofocus complete <id>    Complete a task
 
-Use --format json|toon for machine output (default: json). Use --human for human-readable output.
+Machine output defaults to token-efficient TOON here (agent detected). Pass --format json, --json, or set $OFOCUS_FORMAT=json for standard JSON. Use --human for human-readable output.
 `;
       }
       // Default help for humans - use the base Help class to avoid recursion
@@ -167,7 +167,7 @@ Use --format json|toon for machine output (default: json). Use --human for human
 
   // Global options
   program.addOption(
-    new Option("--json", "Output as JSON (default)").default(true)
+    new Option("--json", "Shorthand for --format json (explicit JSON output)")
   );
   program.addOption(new Option("--human", "Output as human-readable text"));
   program.addOption(
@@ -183,26 +183,22 @@ Use --format json|toon for machine output (default: json). Use --human for human
    * Order of precedence (highest to lowest):
    * 1. `--human`         → always selects the human-readable formatter
    * 2. `--format <x>`    → explicit `json` or `toon`
-   * 3. `$OFOCUS_FORMAT`  → `json` or `toon` (env override for scripts/CI)
-   * 4. agent detection   → `toon` when an AI agent is driving, else `json`
+   * 3. `--json`          → explicit shorthand for JSON
+   * 4. `$OFOCUS_FORMAT`  → `json` or `toon` (env override for scripts/CI)
+   * 5. agent detection   → `toon` when an AI agent is driving, else `json`
    *
-   * An unrecognised explicit `--format` value is rejected with a structured
+   * Every explicit flag wins over the env var and agent detection. An
+   * unrecognised explicit `--format` value is rejected with a structured
    * error written to stdout so callers receive a machine-parseable envelope.
+   * (The full resolution lives in `resolveOutputFormat`, which is pure and
+   * unit-tested; this wrapper owns only the error envelope + exit.)
    */
   function getOutputFormat(options: GlobalOptions): OutputFormat {
-    if (options.human === true) {
-      return "human";
+    const resolved = resolveOutputFormat(options);
+    if (typeof resolved === "string") {
+      return resolved;
     }
-    // No explicit --format: default to JSON, or token-efficient TOON when an
-    // AI agent is driving the CLI (overridable via $OFOCUS_FORMAT). Explicit
-    // --format / --human always win over detection.
-    if (options.format === undefined) {
-      return defaultMachineFormat();
-    }
-    const fmt = options.format;
-    if (fmt === "json" || fmt === "toon") {
-      return fmt;
-    }
+    const fmt = resolved.invalid;
     // Unknown --format value: write structured error to stdout then exit 1.
     // We fall back to JSON for the error itself because we can't trust the
     // caller's requested format when the value is unrecognised. We call

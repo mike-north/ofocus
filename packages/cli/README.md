@@ -112,7 +112,7 @@ When you don't pass `--format`, the CLI picks a default based on **who is callin
 - If an AI coding agent is detected (Claude Code, Cursor, Gemini CLI, Aider — via [`is-agentic-tui`](https://github.com/mike-north/is-agentic-tui)), the default is **TOON** — the same envelope in ~40% fewer tokens, so agents don't have to remember `--format toon`.
 - Otherwise the default is **JSON**.
 
-The resolution order is: `--human` → explicit `--format` → the `OFOCUS_FORMAT` environment variable (`json` or `toon`) → agent detection. An explicit flag or `OFOCUS_FORMAT` always wins, so set `OFOCUS_FORMAT=json` (or pass `--format json`) in a script that runs inside an agent session but pipes output to a JSON tool like `jq`.
+The resolution order is: `--human` → explicit `--format` → `--json` (shorthand for `--format json`) → the `OFOCUS_FORMAT` environment variable (`json` or `toon`) → agent detection. An explicit flag or `OFOCUS_FORMAT` always wins, so set `OFOCUS_FORMAT=json` (or pass `--format json` / `--json`) in a script that runs inside an agent session but pipes output to a JSON tool like `jq`.
 
 ## Commands
 

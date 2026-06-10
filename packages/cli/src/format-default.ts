@@ -1,4 +1,5 @@
 import { isAgenticTui } from "is-agentic-tui";
+import type { OutputFormat } from "./output.js";
 
 /**
  * The machine-readable output formats the CLI can choose as a default.
@@ -54,4 +55,55 @@ export function defaultMachineFormat(
   }
 
   return isAgentic() ? "toon" : "json";
+}
+
+/**
+ * The global CLI flags that participate in output-format resolution.
+ *
+ * @public
+ */
+export interface OutputFormatFlags {
+  /** `--human` — human-readable text output. */
+  human?: boolean | undefined;
+  /** `--json` — explicit shorthand for `--format json`. */
+  json?: boolean | undefined;
+  /** `--format <fmt>` — explicit machine format (`json` or `toon`). */
+  format?: string | undefined;
+}
+
+/**
+ * Resolve the effective output format from the global CLI flags.
+ *
+ * Precedence (highest first):
+ *  1. `--human`        → human-readable formatter
+ *  2. `--format <x>`   → explicit `json` or `toon`
+ *  3. `--json`         → explicit shorthand for JSON
+ *  4. `$OFOCUS_FORMAT` → `json` or `toon` (env override for scripts/CI)
+ *  5. agent detection  → `toon` when an AI agent is driving, else `json`
+ *
+ * Every explicit flag wins over the env var and agent detection — passing
+ * `--json` (or `--format json`) inside an agent session yields JSON.
+ *
+ * Returns `{ invalid }` when an explicit `--format` value is unrecognised;
+ * the caller is responsible for emitting the structured error envelope.
+ *
+ * @public
+ */
+export function resolveOutputFormat(
+  flags: OutputFormatFlags,
+  deps: DefaultFormatDeps = {}
+): OutputFormat | { invalid: string } {
+  if (flags.human === true) {
+    return "human";
+  }
+  if (flags.format !== undefined) {
+    if (flags.format === "json" || flags.format === "toon") {
+      return flags.format;
+    }
+    return { invalid: flags.format };
+  }
+  if (flags.json === true) {
+    return "json";
+  }
+  return defaultMachineFormat(deps);
 }
