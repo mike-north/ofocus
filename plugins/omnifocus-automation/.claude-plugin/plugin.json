@@ -1,7 +1,7 @@
 {
   "schemaVersion": "0.1.0",
   "name": "omnifocus-automation",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "OmniFocus chief-of-staff assistant: a proactive daily brief (what matters today, what's stuck, the next action per project), inbox triage and co-planning, and tiered low-noise change notifications. Built on the ofocus CLI.",
   "author": { "name": "Mike North" },
   "keywords": [
@@ -14,6 +14,5 @@
     "calendar"
   ],
   "skills": ["./skills/ofocus-brief", "./skills/ofocus-triage"],
-  "commands": "./commands",
-  "hooks": "./hooks/hooks.json"
+  "commands": "./commands"
 }
