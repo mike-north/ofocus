@@ -72,4 +72,4 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter @ofocus/sdk run api-extractor
+      - run: pnpm --filter @ofocus/sdk run api-report:check

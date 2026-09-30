@@ -17,7 +17,7 @@
     "docs"
   ],
   "scripts": {
-    "build": "tsc --build && api-extractor run --local --verbose",
+    "build": "tsc --build && api-extractor run --config api-extractor.types.json --local --verbose",
     "build:tsc": "tsc --build",
     "test": "vitest run && tsc -p tsconfig.test-d.json",
     "test:types": "tsc -p tsconfig.test-d.json",
@@ -26,8 +26,8 @@
     "test:integration:watch": "vitest --config vitest.integration.config.ts",
     "test:watch": "vitest",
     "cleanup:integration": "tsx tests/integration/cleanup.ts",
-    "api-extractor": "api-extractor run --verbose",
-    "api-extractor:local": "api-extractor run --local --verbose",
+    "api-report:check": "api-extractor run --config api-extractor.report.json --verbose",
+    "api-report:update": "api-extractor run --config api-extractor.report.json --local --verbose",
     "docs": "api-documenter markdown -i temp -o docs"
   },
   "keywords": [

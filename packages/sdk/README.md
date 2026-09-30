@@ -8,6 +8,18 @@ Core SDK for interacting with OmniFocus via the [OmniJS](https://omni-automation
 pnpm add @ofocus/sdk
 ```
 
+## Developing the SDK
+
+From `packages/sdk`, use the package scripts for the intended action:
+
+| Action                                                | Command                  | Configuration                                                                |
+| ----------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------- |
+| Build SDK code and bundled types                      | `pnpm build`             | `api-extractor.types.json` disables API report and documentation generation  |
+| Check the committed API report in CI or before review | `pnpm api-report:check`  | `api-extractor.report.json` checks for API drift without updating the report |
+| Accept a public API change                            | `pnpm api-report:update` | `api-extractor.report.json` updates the committed report                     |
+
+`api-extractor.types.json` inherits the shared settings from `api-extractor.report.json`; the package scripts select the right file. Run `pnpm docs` after `pnpm api-report:update` to regenerate the Markdown API documentation.
+
 ## Usage
 
 ```typescript
