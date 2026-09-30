@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.mjs\"",
+            "command": "node \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/notify.mjs\"",
             "timeout": 15
           }
         ]
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.mjs\"",
+            "command": "node \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/notify.mjs\"",
             "timeout": 12
           }
         ]
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.mjs\"",
+            "command": "node \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/notify.mjs\"",
             "timeout": 10
           }
         ]

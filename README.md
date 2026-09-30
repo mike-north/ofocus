@@ -1,29 +1,30 @@
 # OFocus
 
-A SDK and CLI for integrating with OmniFocus on macOS
+A CLI, SDK, and MCP server for integrating with OmniFocus on macOS.
 
 [![CI](https://github.com/mike-north/ofocus/actions/workflows/ci.yml/badge.svg)](https://github.com/mike-north/ofocus/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A monorepo containing the OmniFocus CLI and SDK for AI agents.
-
-> **Note**: Requires macOS with OmniFocus 4+ installed. The SDK communicates with OmniFocus via OmniJS (OmniFocus's built-in JavaScript automation API), invoked through `osascript` for cross-process script evaluation.
+Requires macOS with OmniFocus 4+ installed. The SDK uses OmniJS through `osascript`; most operations require OmniFocus to be running. macOS may ask you to allow Automation access on first use.
 
 ## Quick Start
 
+Install the `ofocus` command with Node.js 20 or newer:
+
 ```bash
-# Install globally
 npm install -g ofocus
 
-# Add a task to inbox
-ofocus inbox "Buy groceries"
+# Add a flagged task to the inbox
+ofocus inbox "Buy groceries" --flag
 
-# Query tasks
-ofocus tasks --flagged
+# Find the task and its ID
+ofocus tasks --flagged --limit 20
 
-# Complete a task
-ofocus complete <task-id>
+# Replace TASK_ID_FROM_OUTPUT with an ID returned by the query
+ofocus complete "TASK_ID_FROM_OUTPUT"
 ```
+
+Output defaults to TOON when an AI agent is detected and JSON otherwise. Use `--format json` for JSON or `--human` for readable output. Run `ofocus list-commands` to discover commands and `ofocus tasks --help` for options.
 
 ## Claude Code plugin
 
@@ -45,235 +46,58 @@ See the [plugin README](./plugins/omnifocus-automation) for the notification mod
 
 ## Packages
 
-| Package                                           | Description                                                     |
-| ------------------------------------------------- | --------------------------------------------------------------- |
-| [`@ofocus/sdk`](./packages/sdk)                   | Core SDK with zero runtime dependencies                         |
-| [`@ofocus/productivity`](./packages/productivity) | Productivity niceties (change detection, etc.) built on the SDK |
-| [`@ofocus/cli`](./packages/cli)                   | CLI using Commander.js                                          |
-| [`@ofocus/mcp`](./packages/mcp)                   | MCP server for AI agents                                        |
-| [`ofocus`](./packages/ofocus)                     | Umbrella package re-exporting SDK, CLI, and MCP                 |
+| Package                                           | Purpose                                                          |
+| ------------------------------------------------- | ---------------------------------------------------------------- |
+| [`ofocus`](./packages/ofocus)                     | Installs the `ofocus` CLI and re-exports the SDK and MCP helpers |
+| [`@ofocus/cli`](./packages/cli)                   | Standalone CLI, installed as `ofocus-cli`                        |
+| [`@ofocus/sdk`](./packages/sdk)                   | Core OmniFocus SDK                                               |
+| [`@ofocus/productivity`](./packages/productivity) | Productivity features built on the SDK                           |
+| [`@ofocus/omnijs-types`](./packages/omnijs-types) | TypeScript types for OmniJS                                      |
+| [`@ofocus/mcp`](./packages/mcp)                   | MCP server, installed as `ofocus-mcp`                            |
+| [`@ofocus/gateway`](./packages/gateway)           | Remote MCP gateway                                               |
 
 ## API Reference
 
-### CLI Commands
+### CLI
 
-| Command                   | Description                                                                |
-| ------------------------- | -------------------------------------------------------------------------- |
-| `inbox <title>`           | Add a task to the OmniFocus inbox                                          |
-| `tasks`                   | Query and filter tasks                                                     |
-| `projects`                | List and query projects                                                    |
-| `folders`                 | List and query folders                                                     |
-| `tags`                    | List and query tags                                                        |
-| `complete <task-id>`      | Mark a task as complete                                                    |
-| `update <task-id>`        | Update task properties                                                     |
-| `drop <task-id>`          | Drop a task (preserves history)                                            |
-| `delete <task-id>`        | Permanently delete a task                                                  |
-| `create-project <name>`   | Create a new project                                                       |
-| `update-project <id>`     | Update project properties                                                  |
-| `delete-project <id>`     | Permanently delete a project                                               |
-| `drop-project <id>`       | Drop a project (preserves history)                                         |
-| `create-folder <name>`    | Create a new folder                                                        |
-| `update-folder <id>`      | Update folder properties                                                   |
-| `delete-folder <id>`      | Permanently delete a folder                                                |
-| `create-tag <name>`       | Create a new tag                                                           |
-| `update-tag <id>`         | Update tag properties                                                      |
-| `delete-tag <id>`         | Permanently delete a tag                                                   |
-| `subtask <title>`         | Create a subtask under a parent task                                       |
-| `subtasks <parent-id>`    | Query subtasks of a task                                                   |
-| `move-to-parent <id>`     | Move a task to become a subtask                                            |
-| `complete-batch <ids...>` | Complete multiple tasks                                                    |
-| `update-batch <ids...>`   | Update multiple tasks                                                      |
-| `delete-batch <ids...>`   | Delete multiple tasks                                                      |
-| `search <query>`          | Full-text search across tasks                                              |
-| `perspectives`            | List all perspectives                                                      |
-| `perspective <name>`      | Query tasks from a perspective                                             |
-| `review <project-id>`     | Mark a project as reviewed                                                 |
-| `projects-for-review`     | List projects due for review                                               |
-| `review-interval <id>`    | Get/set project review interval                                            |
-| `forecast`                | Query tasks by date range                                                  |
-| `focus <name>`            | Focus on a project or folder                                               |
-| `unfocus`                 | Clear focus                                                                |
-| `focused`                 | Show current focus state                                                   |
-| `deferred`                | List tasks with defer dates                                                |
-| `url <id>`                | Generate OmniFocus URL deep link                                           |
-| `defer <task-id>`         | Defer a task                                                               |
-| `defer-batch <ids...>`    | Defer multiple tasks                                                       |
-| `duplicate <task-id>`     | Clone a task with all properties                                           |
-| `open <id>`               | Open an item in OmniFocus UI                                               |
-| `quick "<input>"`         | Quick capture with natural language                                        |
-| `export`                  | Export to TaskPaper format                                                 |
-| `import <file>`           | Import from TaskPaper format                                               |
-| `changes`                 | Detect what changed since the last look (cache-first; --fresh / --pending) |
-| `stats`                   | Display productivity statistics                                            |
-| `template-save`           | Save a project as a template                                               |
-| `template-list`           | List available templates                                                   |
-| `template-get <name>`     | Get template details                                                       |
-| `template-create <name>`  | Create project from template                                               |
-| `template-delete <name>`  | Delete a template                                                          |
-| `attach <task-id> <file>` | Add file attachment to task                                                |
-| `attachments <task-id>`   | List task attachments                                                      |
-| `detach <task-id> <id>`   | Remove attachment from task                                                |
-| `archive`                 | Archive completed/dropped tasks                                            |
-| `compact`                 | Trigger database compaction                                                |
-| `sync-status`             | Get sync status                                                            |
-| `sync`                    | Trigger synchronization                                                    |
-| `eval [script]`           | Run arbitrary OmniJS (last resort)                                         |
+Use `ofocus list-commands` for command discovery and [the generated CLI reference](./AGENT_CLI_INSTRUCTIONS.md) for current arguments, filters, and output formats. The [CLI guide](./packages/cli/README.md) has examples.
 
-### MCP Tools
+### SDK
 
-| Tool                          | Description                                    |
-| ----------------------------- | ---------------------------------------------- |
-| `inbox_add`                   | Add a task to inbox                            |
-| `tasks_list`                  | List and filter tasks                          |
-| `task_complete`               | Mark a task as complete                        |
-| `task_update`                 | Update task properties                         |
-| `task_drop`                   | Drop a task                                    |
-| `task_delete`                 | Delete a task                                  |
-| `task_defer`                  | Defer a task                                   |
-| `task_duplicate`              | Clone a task                                   |
-| `tasks_complete_batch`        | Complete multiple tasks                        |
-| `tasks_update_batch`          | Update multiple tasks                          |
-| `tasks_delete_batch`          | Delete multiple tasks                          |
-| `tasks_defer_batch`           | Defer multiple tasks                           |
-| `search`                      | Search tasks by text                           |
-| `projects_list`               | List and filter projects                       |
-| `project_create`              | Create a new project                           |
-| `project_update`              | Update project properties                      |
-| `project_delete`              | Delete a project                               |
-| `project_drop`                | Drop a project                                 |
-| `project_review`              | Mark project as reviewed                       |
-| `projects_for_review`         | Get projects due for review                    |
-| `project_review_interval_get` | Get review interval                            |
-| `project_review_interval_set` | Set review interval                            |
-| `folders_list`                | List folders                                   |
-| `folder_create`               | Create a folder                                |
-| `folder_update`               | Update folder properties                       |
-| `folder_delete`               | Delete a folder                                |
-| `tags_list`                   | List tags                                      |
-| `tag_create`                  | Create a tag                                   |
-| `tag_update`                  | Update tag properties                          |
-| `tag_delete`                  | Delete a tag                                   |
-| `subtask_create`              | Create a subtask                               |
-| `subtasks_list`               | List subtasks                                  |
-| `open`                        | Open an item in OmniFocus UI                   |
-| `perspectives_list`           | List perspectives                              |
-| `perspective_query`           | Query a perspective                            |
-| `forecast`                    | Query forecast                                 |
-| `focus`                       | Focus on project/folder                        |
-| `unfocus`                     | Clear focus                                    |
-| `focused`                     | Get focus state                                |
-| `deferred`                    | List deferred tasks                            |
-| `url`                         | Generate URL deep link                         |
-| `quick_capture`               | Quick capture with NLP                         |
-| `export_taskpaper`            | Export to TaskPaper                            |
-| `import_taskpaper`            | Import from TaskPaper                          |
-| `stats`                       | Get productivity stats                         |
-| `template_save`               | Save template                                  |
-| `template_list`               | List templates                                 |
-| `template_get`                | Get template                                   |
-| `template_create`             | Create from template                           |
-| `template_delete`             | Delete template                                |
-| `attachment_add`              | Add attachment                                 |
-| `attachments_list`            | List attachments                               |
-| `attachment_remove`           | Remove attachment                              |
-| `archive`                     | Archive tasks                                  |
-| `compact`                     | Compact database                               |
-| `sync_status`                 | Get sync status                                |
-| `sync_trigger`                | Trigger sync                                   |
-| `omnifocus_eval`              | Run arbitrary OmniJS (last resort — see below) |
-
-### SDK Functions
+Install `@ofocus/sdk` directly, or import its exports from `ofocus`:
 
 ```typescript
-import {
-  // Tasks
-  addToInbox,
-  queryTasks,
-  completeTask,
-  completeTasks,
-  updateTask,
-  updateTasks,
-  dropTask,
-  deleteTask,
-  deleteTasks,
-  deferTask,
-  deferTasks,
-  duplicateTask,
-  searchTasks,
+import { addToInbox, queryTasks } from "@ofocus/sdk";
 
-  // Projects
-  createProject,
-  queryProjects,
-  updateProject,
-  deleteProject,
-  dropProject,
-  reviewProject,
-  queryProjectsForReview,
-  getReviewInterval,
-  setReviewInterval,
+const created = await addToInbox("Buy groceries");
+if (created.success) {
+  console.log(created.data.id);
+}
 
-  // Folders
-  createFolder,
-  queryFolders,
-  updateFolder,
-  deleteFolder,
-
-  // Tags
-  createTag,
-  queryTags,
-  updateTag,
-  deleteTag,
-
-  // Subtasks
-  createSubtask,
-  querySubtasks,
-  moveTaskToParent,
-
-  // Perspectives
-  listPerspectives,
-  queryPerspective,
-
-  // Forecast & Focus
-  queryForecast,
-  focus,
-  unfocus,
-  getFocused,
-  queryDeferred,
-
-  // Utilities
-  generateUrl,
-  openItem,
-  quickCapture,
-
-  // Import/Export
-  exportTaskPaper,
-  importTaskPaper,
-
-  // Statistics
-  getStats,
-
-  // Templates
-  saveTemplate,
-  listTemplates,
-  getTemplate,
-  createFromTemplate,
-  deleteTemplate,
-
-  // Attachments
-  addAttachment,
-  listAttachments,
-  removeAttachment,
-
-  // Maintenance
-  archiveTasks,
-  compactDatabase,
-  getSyncStatus,
-  triggerSync,
-
-  // Eval escape hatch (last resort)
-  evaluateScript,
-} from "@ofocus/sdk";
+const flagged = await queryTasks({ flagged: true });
+if (flagged.success) {
+  console.log(flagged.data.items);
+}
 ```
+
+See the [SDK guide](./packages/sdk/README.md) and [generated API reference](./packages/sdk/docs/sdk.md).
+
+### MCP server
+
+An MCP client that supports standard server configuration can launch `@ofocus/mcp` with:
+
+```json
+{
+  "mcpServers": {
+    "ofocus": {
+      "command": "npx",
+      "args": ["-y", "@ofocus/mcp"]
+    }
+  }
+}
+```
+
+See the [MCP setup guide](./packages/mcp/README.md) and [generated tool reference](./AGENT_INSTRUCTIONS.md) for registered tool names.
 
 ## Using `ofocus eval`
 
@@ -419,106 +243,62 @@ try {
 
 - Node.js >= 20
 - pnpm >= 10.24.0
-- macOS with OmniFocus installed (for integration tests)
+- macOS with OmniFocus 4+ installed and running for integration tests
 
-### Setup
+### Setup and build
 
 ```bash
 pnpm install
-```
-
-### Build
-
-```bash
-# Build all packages
 pnpm build
-
-# Build with clean
-pnpm build:clean
 ```
 
-### Test
+`pnpm build` compiles the TypeScript projects and regenerates the agent command references. It does not update the committed SDK API report. To remove generated output before building, run `pnpm build:clean`.
+
+### Tests and checks
 
 ```bash
-# Run all tests
+# Package, generator, and plugin tests
 pnpm test
 
-# Run unit tests only
-pnpm test:unit
-```
+# SDK integration tests (requires OmniFocus on macOS)
+pnpm --filter @ofocus/sdk test:integration
 
-### Lint
-
-```bash
-# Check for lint errors
 pnpm lint
-
-# Fix lint errors
-pnpm lint:fix
-```
-
-### Type Check
-
-```bash
 pnpm typecheck
+pnpm format:check
 ```
 
-### Quality Tools
+`pnpm test:unit` runs packages with a dedicated unit-test script. Use `pnpm lint:fix` for ESLint fixes, `pnpm knip` for unused exports and dependencies, and `pnpm syncpack:check` for dependency versions.
+
+### SDK API report
+
+The SDK package build uses `api-extractor.types.json` to bundle declarations without updating the committed report. Run these commands after `pnpm build` when the SDK's public API changes:
 
 ```bash
-# Check for unused exports/dependencies
-pnpm knip
+# Fail if the committed API report differs from the SDK
+pnpm --filter @ofocus/sdk run api-report:check
 
-# Check dependency version consistency
-pnpm syncpack:check
-
-# Fix dependency version mismatches
-pnpm syncpack:fix
-```
-
-### API Documentation
-
-The SDK uses API Extractor to generate documentation:
-
-```bash
-# Generate API report (CI mode - fails on changes)
-pnpm --filter @ofocus/sdk run api-extractor
-
-# Update API report (local development)
-pnpm --filter @ofocus/sdk run api-extractor:local
-
-# Generate markdown documentation
+# Accept the API change, then regenerate Markdown docs
+pnpm --filter @ofocus/sdk run api-report:update
 pnpm --filter @ofocus/sdk run docs
 ```
 
+Both report commands use `api-extractor.report.json`; see the [SDK development guide](./packages/sdk/README.md#developing-the-sdk) for the config mapping.
+
 ## Architecture
 
+```text
+packages/
+├── omnijs-types/  # TypeScript types for OmniJS
+├── sdk/           # Core OmniFocus commands
+├── productivity/  # Derived productivity features
+├── cli/           # Command-line interface
+├── mcp/           # MCP server
+├── gateway/       # Remote MCP gateway
+└── ofocus/        # Combined package and CLI
 ```
-ofocus/
-├── packages/
-│   ├── sdk/           # @ofocus/sdk - Core SDK
-│   │   ├── src/
-│   │   │   ├── index.ts
-│   │   │   ├── types.ts
-│   │   │   ├── errors.ts
-│   │   │   ├── result.ts
-│   │   │   ├── omnijs.ts
-│   │   │   ├── validation.ts
-│   │   │   └── commands/
-│   │   ├── api-report/
-│   │   └── docs/
-│   │
-│   ├── cli/           # @ofocus/cli - CLI
-│   │   └── src/
-│   │       ├── index.ts
-│   │       ├── cli.ts
-│   │       ├── output.ts
-│   │       └── commands/
-│   │
-│   └── ofocus/        # ofocus - Umbrella
-│       └── src/
-│           └── index.ts
-```
+
+See [the architecture guide](./docs/architecture.md) for the package graph and command registry.
 
 ## Contributing
 
